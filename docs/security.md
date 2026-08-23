@@ -151,17 +151,13 @@ confidence: **high**.
 
 ## Deferred roadmap
 
-1. Add a pinned dependency-vulnerability audit to hosted CI. CI now installs
-   the exact `uv.lock` graph with a pinned `uv` version, but advisory results
-   are still gathered explicitly during security reviews rather than on every
-   pull request.
-2. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
+1. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
    execution if the tool begins consuming untrusted ROMs, Lua scripts, or
    externally supplied patches.
-3. Define retention and deletion policy for ignored screenshots, traces, and
+2. Define retention and deletion policy for ignored screenshots, traces, and
    session evidence if the workstation becomes shared or those artifacts gain
    sensitive annotations.
-4. Expand the canonical high-confidence credential scanner only with reviewed
+3. Expand the canonical high-confidence credential scanner only with reviewed
    patterns or a pinned dedicated scanner; broad entropy checks need an
    allowlist policy to avoid hiding real failures in fixture noise.
 
@@ -187,7 +183,9 @@ Bandit found zero high-confidence medium/high issues; its single medium,
 low-confidence HTML false positive is documented above. `pip-audit` found no
 known vulnerabilities in the dependency graph exported from `uv.lock`; it
 skipped only this unpublished local package because it has no PyPI release to
-audit.
+audit. Hosted pull requests now also run the immutable-pinned GitHub dependency
+review action and reject newly introduced moderate-or-higher vulnerabilities;
+weekly Dependabot updates cover both `uv` and GitHub Actions dependencies.
 
 ## Experimental adapter onboarding
 

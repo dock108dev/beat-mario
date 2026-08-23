@@ -11,6 +11,7 @@ import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/rom-free-ci.yml"
+DEPENDABOT_PATH = REPOSITORY_ROOT / ".github/dependabot.yml"
 GATE_PATH = REPOSITORY_ROOT / "scripts/validate_phase0.sh"
 PYPROJECT_PATH = REPOSITORY_ROOT / "pyproject.toml"
 CLI_PATH = REPOSITORY_ROOT / "src/smb3_agent/cli.py"
@@ -25,6 +26,10 @@ STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
 FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
+SETUP_UV_PIN = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
+DEPENDENCY_REVIEW_PIN = (
+    "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
+)
 MACOS_MODULES = (
     "smb3_agent.backends.mednafen",
     "smb3_agent.probes.mednafen_probe",
@@ -58,11 +63,16 @@ def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
     assert "timeout-minutes: 20" in workflow
     assert 'CI: "true"' in workflow
     assert "python-version: \"3.11\"" in workflow
-    assert "cache: pip" in workflow
-    assert "cache-dependency-path: uv.lock" in workflow
-    assert "python -m pip install uv==0.9.10" in workflow
+    assert 'version: "0.9.10"' in workflow
+    assert "enable-cache: true" in workflow
+    assert "cache-dependency-glob: uv.lock" in workflow
+    assert "python -m pip install" not in workflow
+    assert "if: github.event_name == 'pull_request'" in workflow
+    assert "fail-on-severity: moderate" in workflow
     assert CHECKOUT_PIN in action_refs
     assert SETUP_PYTHON_PIN in action_refs
+    assert SETUP_UV_PIN in action_refs
+    assert DEPENDENCY_REVIEW_PIN in action_refs
     assert action_refs
     assert all(re.search(r"@[0-9a-f]{40}$", action_ref) for action_ref in action_refs)
 
@@ -81,6 +91,15 @@ def test_workflow_has_no_live_gameplay_or_artifact_steps() -> None:
         "upload-artifact",
     )
     assert all(token not in workflow for token in forbidden)
+
+
+def test_dependabot_covers_locked_python_and_actions_dependencies() -> None:
+    dependabot = DEPENDABOT_PATH.read_text(encoding="utf-8")
+
+    assert dependabot.count("interval: weekly") == 2
+    assert "package-ecosystem: uv" in dependabot
+    assert "package-ecosystem: github-actions" in dependabot
+    assert dependabot.count("directory: /") == 2
 
 
 def test_canonical_gate_covers_complete_rom_free_surface() -> None:

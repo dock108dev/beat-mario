@@ -75,7 +75,10 @@ PYTHON=.venv/bin/python scripts/validate_phase0.sh
 
 Ruff is the configured Python linter. The repository has no separate formatter
 or static type-checker configuration. GitHub Actions runs the canonical gate on
-Python 3.11 without a game file or emulator.
+Python 3.11 without a game file or emulator. Pull requests also receive a
+dependency-review check that rejects newly introduced dependencies with known
+moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
+Actions dependency surfaces weekly.
 
 For live route changes, ROM-free validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)

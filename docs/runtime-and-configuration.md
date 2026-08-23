@@ -103,8 +103,9 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions
-installs the exact locked development graph on Python 3.11 and runs the
-ROM-free gate.
+installs the exact locked development graph on Python 3.11 using a cache keyed
+by `uv.lock` and runs the ROM-free gate. Pull requests additionally compare
+dependency changes against GitHub's advisory data.
 
 ## Persistence and data ownership
 
