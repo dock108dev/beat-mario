@@ -62,3 +62,7 @@ capabilities:
     label: History
     summary: Review sessions, runs, records, recovery, learning, and evidence status locally.
     contract_references: [src/smb3_agent/run_library.py, src/smb3_agent/metrics.py]
+  - id: unattended_regression_provider
+    label: Unattended regression provider
+    summary: Engineering-only fresh FCEUX regression with immutable non-promotable evidence; never a player mode.
+    contract_references: [src/smb3_agent/unattended.py, data/scenarios/unattended-artifact-contract.yaml]

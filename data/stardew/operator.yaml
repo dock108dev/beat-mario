@@ -79,6 +79,9 @@ capabilities:
   - id: combined_catalog
     status: implemented_validation_deferred
     contract_references: [src/smb3_agent/companion_catalog.py, data/companion/catalog-contract.yaml]
+  - id: unattended_regression_provider
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/unattended.py, data/scenarios/unattended-artifact-contract.yaml]
 fail_closed_on:
   - unknown or stale visible state
   - incomplete farm sweep

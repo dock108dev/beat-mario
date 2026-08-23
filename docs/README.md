@@ -46,6 +46,12 @@ flows. The documents below provide implementation and operating detail.
 - [Agent architecture](agent-architecture.md#combined-catalog-and-switching):
   V2.12 provider-owned catalog, explicit safe switching, bounded persistence,
   and adapter/evidence isolation.
+- [Unattended regression operator guide](unattended-regression.md): V2.13
+  provider, display, isolation, cancellation, artifact, repeatability,
+  proof-limit, and owner-data boundaries.
+- [New Game Onboarding and Experimental adapter contributor guide](new-game-onboarding.md):
+  V2.14 contract, state labels, deterministic scaffold, conformance, provider
+  discovery, atomic installation, fail-closed removal, and proof limits.
 - [Consolidated final campaign](final-campaign-guide.md): frozen owner-pilot
   manifest, evidence rules, failure retention, and explicit acceptance boundary.
 - [Route status](route-status.md): accepted route and evidence history.

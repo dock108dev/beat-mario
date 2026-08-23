@@ -1,0 +1,94 @@
+schema_version: game-companion-experimental-adapter/v1
+identity:
+  adapter_id: fixture-quest
+  game_id: fixture-quest
+  display_name: Fixture Quest
+  adapter_version: v1
+  description: Fixture-only sample for the Experimental contributor workflow.
+  status: Experimental
+detection:
+  executable_names: [fixture-quest-game]
+  window_title_contains: [Fixture Quest]
+  continuity_fields: [process_id, window_id, executable_identity, session_nonce]
+observation:
+  method: screen_capture
+  transport: local_only
+  mutation: none
+  envelope_fields: [observed_at, freshness, facts, unknowns, source]
+input:
+  method: ordinary_keyboard
+  dispatch: host_owned_allowlist
+  allowed_actions: [neutral, up, down, left, right, confirm, cancel]
+ownership:
+  default_owner: player
+  authorization: fresh_same_process
+  reclaim: immediate
+  handback: neutral_then_confirmed
+  ambiguity: fail_closed
+capabilities:
+  - id: observe
+    state: declared
+    description: Fixture observation only.
+  - id: tell
+    state: declared
+    description: Fixture-grounded guidance only.
+  - id: show
+    state: unsupported
+    description: No executable solution is included.
+  - id: takeover
+    state: unsupported
+    description: No live input implementation is included.
+goals:
+  - id: fixture-goal
+    label: Reach fixture progress
+    requirements:
+      - fact: progress
+        operator: gte
+        value: 1
+    evidence_fields: [observed_at, facts.progress, source]
+solution_profiles:
+  - id: fixture-normal
+    goal_id: fixture-goal
+    execution: fixture_only
+protected_actions: [purchase, delete-save, multiplayer, account-change, permanent-choice]
+takeover_scopes:
+  - id: fixture-step
+    state: unsupported
+    stop_conditions: [goal-complete, reclaim, timeout, observation-unknown]
+fixtures:
+  observation-idle: fixtures/observation-idle.json
+  observation-progress: fixtures/observation-progress.json
+  input-neutral: fixtures/input-neutral.json
+  reclaim: fixtures/reclaim.json
+  goal-complete: fixtures/goal-complete.json
+evidence:
+  namespace: experimental.fixture-quest
+  storage: local_adapter_namespace
+  promotion: never_automatic
+  classifications: [fixture, technical, owner_feedback]
+proof_limits:
+  - real-game compatibility
+  - live observation correctness
+  - effective input
+  - reliability
+  - authoritative completion
+  - usefulness
+  - owner acceptance
+  - supported-catalog eligibility
+installation:
+  owner: local_manifest
+  atomic: true
+  overwrite: refuse
+  inventory:
+    - README.md
+    - adapter.yaml
+    - fixtures/goal-complete.json
+    - fixtures/input-neutral.json
+    - fixtures/observation-idle.json
+    - fixtures/observation-progress.json
+    - fixtures/reclaim.json
+removal:
+  policy: exact_manifest_owned_only
+  modified_files: refuse
+  preserve: [evidence, history]
+  zero_residual_proofs: [process, authority, input, session]

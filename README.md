@@ -27,7 +27,7 @@ its provenance and classification, and requires owner review, later compatible
 replay, the existing exact-diff route-patch workflow, and affected reliability
 gates before promotion. See [Adaptive assistance and solution learning](docs/learning.md).
 
-V2.6–V2.12 are implementation-complete with final validation deferred. The
+V2.6–V2.14 are implementation-complete with final validation deferred. The
 prepared [consolidated final campaign](docs/final-campaign-guide.md) has not run
 and no owner acceptance is claimed.
 
@@ -39,7 +39,9 @@ attempt-owned copy while preserving prior attempts and reverifying the primary
 save. V2.12 adds the combined provider-owned catalog, safe switching, bounded
 local presentation persistence, and evidence isolation. See the [Stardew
 Companion Guide](docs/stardew-operator-guide.md). No validation or game activity
-was run for V2.12.
+was run for V2.12 or V2.13. V2.13 adds an engineering-only, honestly labeled
+unattended regression runner; its output cannot count as visible, Show,
+reliability, authoritative, usefulness, acceptance, or campaign proof.
 
 The repository contains no game file. ROMs, savestates, screenshots, logs, and
 generated evidence remain ignored and local-only.
@@ -136,6 +138,13 @@ issues, advanced route execution, and reviewed route patches remain in the Lab:
 It is not designed for network exposure. See [Game Companion Lab](docs/mario-route-lab.md),
 [security](docs/security.md), and [error handling](docs/error-handling.md).
 
+V2.14 also adds `/onboarding`: a desktop and narrow-screen contributor flow for
+deterministic declarative Experimental-adapter scaffolds, fixture conformance,
+atomic local installation, provider discovery, integrity inspection, and exact
+fail-closed removal. It does not generate executable code or launch a game.
+Installed adapters remain `Experimental · live-unproven` and cannot promote
+themselves to Supported. See the [contributor guide](docs/new-game-onboarding.md).
+
 Mario first use checks `SMB3_GAME_FILE`, a saved local selection,
 `game-file.nes`, and `roms/smb3.nes`, then offers a native macOS picker and
 manual local-path selection. It verifies the supported fingerprint without
@@ -177,6 +186,8 @@ Start with [the documentation index](docs/README.md). Key references are:
 - [Mario player guide](docs/mario-player-guide.md)
 - [Consolidated final campaign](docs/final-campaign-guide.md)
 - [Stardew companion guide](docs/stardew-operator-guide.md)
+- [Unattended regression operator guide](docs/unattended-regression.md)
+- [New Game Onboarding and Experimental adapter contributor guide](docs/new-game-onboarding.md)
 
 ## Working rules
 

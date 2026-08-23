@@ -250,10 +250,39 @@ Implementation-only catalog inspection/render commands, contracts, fixtures,
 scenario hooks, artifact requirements, and unexecuted desktop/390-pixel tests
 are prepared. No validation or live activity ran.
 
-## Later slices — unstarted
+## V2.13 — implementation complete / final validation deferred
 
-- V2.13: honestly labeled unattended regression.
-- V2.14: New Game Onboarding and experimental-adapter conformance.
+The optional local unattended runner admits only explicitly classified
+`unattended_regression` scenarios and explicit adapter providers. Immutable
+manifests bind source/dirty identity, adapter/scenario/goal/profile/solution,
+asset/fixture, display, invocation/environment, timeouts/concurrency, cleanup,
+protected data/actions, artifacts, and exact proof limits. Fresh owned
+processes and run roots, display continuity, cancellation, failed retention,
+integrity, metrics isolation, and exact-compatible repeatability are shared;
+Mario and Stardew retain their own assets, fixtures, safety, predicates,
+cleanup, and evidence.
+
+The CLI and Lab expose truthful capability, planning, manifest, lifecycle,
+cancellation, cleanup, retained-artifact, failure, and comparison surfaces.
+Prepared contracts, tests, and campaign hooks have not run. No unattended
+output can count as visible, Show, reliability, authoritative, usefulness,
+acceptance, or campaign proof. See the
+[operator guide](unattended-regression.md).
+
+## V2.14 — implementation complete / final validation deferred
+
+New Game Onboarding now has the versioned Experimental contract, deterministic
+data-only scaffold, fixture sample, provider discovery without shared-core
+game-ID branches, atomic manifest/hash installation and rollback, integrity
+inspection, fail-closed exact removal, CLI/Lab/onboarding surfaces, desktop and
+390-pixel presentation contract, prepared comprehensive tests, evidence rules,
+and deferred campaign hooks. Mario and Stardew remain explicit trusted
+built-ins. Experimental entries remain live-unproven and cannot self-promote.
+
+No V2.14 validation, rendering, conformance execution, scaffold/install/remove
+operation, live game activity, or owner acceptance has run. The next action is
+to freeze the cumulative release candidate and begin deterministic contract
+validation.
 
 ## V2 completion
 

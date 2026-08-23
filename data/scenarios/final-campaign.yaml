@@ -7,12 +7,15 @@ event_schema: data/scenarios/event-schema.json
 metrics_schema: data/scenarios/metrics-schema.json
 fixtures: data/scenarios/fixtures.yaml
 artifact_contract: data/scenarios/artifact-contract.yaml
+unattended_artifact_contract: data/scenarios/unattended-artifact-contract.yaml
+experimental_adapter_artifact_contract: data/experimental-adapters/artifact-contract.yaml
 mario_owner_pilot: data/scenarios/mario-owner-pilot.yaml
 stardew_owner_pilot: data/scenarios/stardew-owner-pilot.yaml
 phases:
   - id: deterministic_contracts
     classifications: [deterministic_only]
     owner_required: false
+    required_onboarding_checks: [schema, provider_truth, observation_envelopes, capability_agreement, ownership_reclaim, protected_action_refusal, measurable_goals, evidence_isolation, persistence_isolation, installation_integrity, removal, catalog_labeling, no_shared_core_edit]
   - id: visible_technical
     classifications: [visible_technical, review_only]
     owner_required: false
@@ -28,6 +31,21 @@ phases:
   - id: unattended_regression
     classifications: [unattended_regression]
     regression_only: true
+    required_proofs:
+      - repeatable isolated execution with fresh owned processes and run directories
+      - immutable honest regression-only classification and proof-limit statement
+      - Mario and Stardew provider isolation with no shared-core game-id branching
+      - failure retention, exact-process cancellation, bounded cleanup, and fresh-attempt retry
+      - primary-save and protected-asset exclusion
+      - explicit correlation-only visible references with no equivalence or causation claim
+      - structural inability to satisfy visible, Show, reliability, authoritative, usefulness, acceptance, or campaign requirements
+  - id: experimental_onboarding_removal
+    classifications: [visible_technical]
+    owner_required: false
+    scenario_id: adapters.experimental_onboarding_removal
+    fixture_only: true
+    live_game_forbidden: true
+    required_proofs: [deterministic scaffold, bounded paths and collision refusal, provider discovery without shared-core edits, atomic manifest-owned installation and rollback, modified-file refusal, clean removal, zero process authority input and session state, Experimental labeling, complete proof-limit statement]
   - id: final_owner_decision
     classifications: [final_campaign_orchestration]
     owner_required: true
@@ -60,7 +78,8 @@ failure_rules:
   stardew_disposable_reset_primary_preservation_required: true
   stardew_stale_authority_after_reset_required: true
   stardew_protected_action_matrix_required: true
-  exact_two_adapter_catalog_required: true
+  exact_two_trusted_builtin_adapters_required: true
+  installed_experimental_adapters_may_extend_catalog_without_support_promotion: true
   adapter_owned_catalog_truth_required: true
   every_unsafe_switch_state_refused: true
   neutral_handoff_before_switch_required: true
@@ -69,3 +88,11 @@ failure_rules:
   corrupt_stale_catalog_persistence_fails_closed: true
   root_mario_stardew_and_lab_surfaces_required: true
   mario_contract_regression_required: true
+  unattended_repeatability_required: true
+  unattended_provider_isolation_required: true
+  unattended_failure_retention_and_cleanup_required: true
+  unattended_owner_data_protection_required: true
+  unattended_correlation_boundary_required: true
+  unattended_cannot_substitute_for_visible_or_owner_proof: true
+  experimental_onboarding_removal_required: true
+  experimental_conformance_cannot_substitute_for_live_or_owner_proof: true

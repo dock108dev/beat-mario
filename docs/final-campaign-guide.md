@@ -1,6 +1,6 @@
 # Consolidated Final Campaign
 
-The final campaign is prepared but has not run. V2.6 through V2.12 are
+The final campaign is prepared but has not run. V2.6 through V2.14 are
 implementation-complete only until the frozen release candidate passes the
 campaign and the owner records an explicit decision.
 
@@ -86,7 +86,20 @@ selection, every switching refusal, neutral handoff, volatile-state
 invalidation, safe persistence recovery, root/standalone/Lab preservation, and
 desktop/390-pixel presentation. Catalog-switch evidence must remain separate
 from both games' evidence.
-V2.13 unattended runs remain regression-only and cannot substitute for visible
-or owner proof. V2.14 onboarding/conformance and the final explicit owner
-decision remain required. Mario live, takeover, reclaim, route, reliability,
-and owner requirements remain unchanged and deferred.
+V2.13's implemented runner must prove repeatable isolated execution, immutable
+regression-only classification, Mario/Stardew provider isolation, failure
+retention, exact-process cancellation, cleanup, owner-data protection, and
+correlation-only visible references. Its output cannot substitute for visible,
+Show, reliability, authoritative, owner, or campaign proof.
+
+V2.14's fixture-only scenario must validate the contract, compare deterministic
+scaffolds, run every conformance check, prove path/symlink/command/code/network/
+collision refusal, install and discover the sample as Experimental, demonstrate
+rollback, refuse modified removal, then cleanly remove only exact manifest-owned
+files with zero process, authority, input, and session state while preserving
+evidence/history. Its proof-limit artifact must explicitly deny real-game
+compatibility, live observation correctness, effective input, reliability,
+authoritative completion, usefulness, owner acceptance, and Supported
+eligibility. The final explicit owner decision remains required. Mario live,
+takeover, reclaim, route, reliability, and owner requirements remain unchanged
+and deferred.

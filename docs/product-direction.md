@@ -86,6 +86,23 @@ completion reconciliation, and safe disposable-copy reset. Stardew facts and
 safety remain adapter-owned behind the shared envelope. V2.12 implements the
 combined catalog with final validation deferred.
 
+V2.13 adds an optional engineering-only unattended regression surface after
+both adapters exist. It is not a player-facing mode. Only explicitly eligible
+scenarios and adapter providers may use it, every attempt is isolated and
+bounded, and its evidence is permanently `unattended_regression_result`.
+Neither normal nor virtual-display output can supply visible player proof,
+Show, route reliability, authoritative completion, usefulness, acceptance, or
+the consolidated campaign. Mario protected assets/evidence and Stardew primary
+saves remain outside its artifact and mutation boundaries.
+
+V2.14 implements the final barebones collaborator path. A contributor can
+declare metadata, detection, read-only observation, ordinary allowlisted input,
+ownership, reclaim/handback, capabilities, measurable goals, fixture-only
+profiles, safety, scopes, fixtures, evidence, and removal; review a deterministic
+non-executable scaffold; run fixture conformance; and atomically install or
+safely remove it. Discovery is provider-based and adds no shared-core game-ID
+branch. Every such entry remains Experimental, installed, and live-unproven.
+
 ## Combined product
 
 Mario and Stardew must use the same session contract:
@@ -134,6 +151,6 @@ The ordered implementation and acceptance gates are in the
   remain distinct.
 - Reliability metrics cannot substitute for owner usefulness feedback.
 - The user can cancel or take over; no input continues after handback.
-- V2.6–V2.12 are implementation-complete only. The prepared owner pilots and
+- V2.6–V2.14 are implementation-complete only. The prepared owner pilots and
   consolidated validation campaign have not run and cannot be inferred from UI,
   deterministic, scenario-contract, or route evidence.

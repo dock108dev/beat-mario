@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 
 from smb3_agent.commands import CommandParseError, parse_command, run_command
@@ -41,6 +43,18 @@ from smb3_agent.companion_catalog import (
     CatalogRegistry,
     CatalogSession,
     CompanionCatalogError,
+)
+from smb3_agent.experimental_adapters import (
+    ExperimentalAdapterError,
+    default_install_root,
+    discover_installed_providers,
+    inspect_contract,
+    install_adapter,
+    installation_status,
+    load_contract as load_experimental_contract,
+    run_conformance,
+    scaffold_adapter,
+    uninstall_adapter,
 )
 from smb3_agent.learning import LearningError, LocalLearningStore, backfill_run_library
 from smb3_agent.metrics import LocalMetricsStore, MetricsError, metric_definitions
@@ -86,6 +100,19 @@ from smb3_agent.stardew_adapter import (
     render_stardew_operator,
 )
 from smb3_agent.stardew_companion import StardewCatalogProvider
+from smb3_agent.unattended import (
+    ACKNOWLEDGEMENT,
+    DeclaredDisplayProvider,
+    MarioUnattendedProvider,
+    NoDisplayProvider,
+    ProbedDisplayProvider,
+    StardewUnattendedProvider,
+    UnattendedError,
+    UnattendedRunner,
+    compare_attempts,
+    load_manifest,
+    source_identity,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -590,6 +617,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     companion_render.add_argument("--output", default="artifacts/companion/catalog.html")
 
+    adapter = subparsers.add_parser(
+        "adapter", help="Safely manage local Experimental game adapters"
+    )
+    adapter_subparsers = adapter.add_subparsers(dest="adapter_command", required=True)
+    adapter_validate = adapter_subparsers.add_parser("validate", help="Validate a versioned declarative contract")
+    adapter_validate.add_argument("contract")
+    adapter_scaffold = adapter_subparsers.add_parser("scaffold", help="Generate a deterministic non-executable scaffold")
+    adapter_scaffold.add_argument("adapter_id")
+    adapter_scaffold.add_argument("--display-name", required=True)
+    adapter_scaffold.add_argument("--root", default="experimental-adapters")
+    adapter_inspect = adapter_subparsers.add_parser("inspect", help="Inspect declared truth and proof limits")
+    adapter_inspect.add_argument("contract")
+    adapter_conformance = adapter_subparsers.add_parser("conformance", help="Run deterministic fixture-only conformance")
+    adapter_conformance.add_argument("source")
+    adapter_install = adapter_subparsers.add_parser("install", help="Atomically install one conformant Experimental adapter")
+    adapter_install.add_argument("source")
+    adapter_install.add_argument("--install-root", default=None)
+    adapter_status = adapter_subparsers.add_parser("status", help="Inspect installed Experimental adapters and integrity")
+    adapter_status.add_argument("adapter_id", nargs="?")
+    adapter_status.add_argument("--install-root", default=None)
+    adapter_installed = adapter_subparsers.add_parser("installed", help="List provider-discoverable Experimental adapters")
+    adapter_installed.add_argument("--install-root", default=None)
+    adapter_remove = adapter_subparsers.add_parser("remove", help="Fail closed unless exact owned files and zero active state are proven")
+    adapter_remove.add_argument("adapter_id")
+    adapter_remove.add_argument("--install-root", default=None)
+
     scenario = subparsers.add_parser(
         "scenario", help="Inspect versioned local session-automation scenarios"
     )
@@ -608,6 +661,56 @@ def build_parser() -> argparse.ArgumentParser:
         "final-campaign-readiness", help="Report classified final-campaign blockers"
     )
     readiness.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+
+    unattended = subparsers.add_parser(
+        "unattended", help="Inspect or run honestly labeled local unattended regression"
+    )
+    unattended_subparsers = unattended.add_subparsers(dest="unattended_command", required=True)
+    unattended_capabilities = unattended_subparsers.add_parser(
+        "capabilities", help="Inspect adapter and display eligibility without creating an attempt"
+    )
+    unattended_plan = unattended_subparsers.add_parser(
+        "plan", help="Build a side-effect-free immutable-manifest preview"
+    )
+    unattended_run = unattended_subparsers.add_parser(
+        "run", help="Execute a bounded regression-only attempt"
+    )
+    for command in (unattended_capabilities, unattended_plan, unattended_run):
+        command.add_argument("--adapter", choices=("smb3", "stardew"), default="smb3")
+        command.add_argument("--display-provider", default="none")
+        command.add_argument("--display-backend", choices=("normal_desktop", "local_virtual_display", "none"), default="none")
+        command.add_argument("--display-identity", default="unavailable")
+        command.add_argument("--display-probe-executable", default=None)
+        command.add_argument("--display-probe-arg", action="append", default=[])
+        command.add_argument("--rom", default=None)
+        command.add_argument("--fceux", default="/usr/local/bin/fceux")
+        command.add_argument("--mario-goal", default="world_8_double_whistle")
+        command.add_argument("--stardew-fixture", default=None)
+        command.add_argument("--stardew-executable", default=None)
+        command.add_argument("--owner-save-root", action="append", default=[])
+        command.add_argument("--artifact-root", default="artifacts/unattended-regression")
+    for command in (unattended_plan, unattended_run):
+        command.add_argument("--scenario", default="regression.unattended")
+        command.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+        command.add_argument("--goal-version", required=True)
+        command.add_argument("--profile-version", required=True)
+        command.add_argument("--solution-version", required=True)
+        command.add_argument("--runs", type=int, default=1)
+        command.add_argument("--per-run-timeout", type=int, default=300)
+        command.add_argument("--aggregate-timeout", type=int, default=600)
+        command.add_argument("--concurrency", type=int, default=1)
+        command.add_argument("--correlation-reference", default=None)
+    unattended_run.add_argument("--acknowledgement", required=True, help=f"Must equal {ACKNOWLEDGEMENT}")
+    unattended_manifest = unattended_subparsers.add_parser("manifest", help="Inspect and integrity-check an immutable attempt manifest")
+    unattended_manifest.add_argument("path")
+    unattended_status = unattended_subparsers.add_parser("status", help="Inspect one retained attempt")
+    unattended_status.add_argument("attempt_id")
+    unattended_status.add_argument("--artifact-root", default="artifacts/unattended-regression")
+    unattended_cancel = unattended_subparsers.add_parser("cancel", help="Request cancellation of one exact retained/running attempt")
+    unattended_cancel.add_argument("attempt_id")
+    unattended_cancel.add_argument("--artifact-root", default="artifacts/unattended-regression")
+    unattended_compare = unattended_subparsers.add_parser("compare", help="Compare exact compatible unattended attempts only")
+    unattended_compare.add_argument("attempt_roots", nargs="+")
 
     metrics = subparsers.add_parser(
         "metrics", help="Inspect and maintain local classified product metrics"
@@ -1156,7 +1259,7 @@ def main() -> None:
 
     if args.command == "companion":
         try:
-            registry = CatalogRegistry((MarioCatalogProvider(), StardewCatalogProvider()))
+            registry = CatalogRegistry((MarioCatalogProvider(), StardewCatalogProvider(), *discover_installed_providers()))
             catalog = CatalogSession(registry, CatalogPreferenceStore())
             if args.companion_command == "catalog-status":
                 print(json.dumps(catalog.inspection_payload(), indent=2, sort_keys=True))
@@ -1171,6 +1274,39 @@ def main() -> None:
             print("live_activity_run=false")
             return
         except CompanionCatalogError as exc:
+            parser.error(str(exc))
+
+    if args.command == "adapter":
+        try:
+            install_root = Path(args.install_root) if getattr(args, "install_root", None) else default_install_root()
+            if args.adapter_command == "validate":
+                contract = load_experimental_contract(Path(args.contract))
+                print(json.dumps({"valid": True, "adapter_id": contract["identity"]["adapter_id"], "schema_version": contract["schema_version"]}, indent=2, sort_keys=True))
+                return
+            if args.adapter_command == "scaffold":
+                print(f"scaffold={scaffold_adapter(Path(args.root), args.adapter_id, args.display_name)}")
+                print("generated_executable_code=false")
+                return
+            if args.adapter_command == "inspect":
+                print(json.dumps(asdict(inspect_contract(Path(args.contract))), indent=2, sort_keys=True))
+                return
+            if args.adapter_command == "conformance":
+                print(json.dumps(run_conformance(Path(args.source)).to_dict(), indent=2, sort_keys=True))
+                return
+            if args.adapter_command == "install":
+                print(f"installed={install_adapter(Path(args.source), install_root)}")
+                print("catalog_status=Experimental")
+                return
+            if args.adapter_command == "status":
+                print(json.dumps(installation_status(install_root, args.adapter_id), indent=2, sort_keys=True))
+                return
+            if args.adapter_command == "installed":
+                print(json.dumps([asdict(provider.catalog_entry()) for provider in discover_installed_providers(install_root)], indent=2, sort_keys=True))
+                return
+            if args.adapter_command == "remove":
+                print(json.dumps(uninstall_adapter(install_root, args.adapter_id), indent=2, sort_keys=True))
+                return
+        except (ExperimentalAdapterError, OSError, json.JSONDecodeError) as exc:
             parser.error(str(exc))
 
     if args.command == "scenario":
@@ -1239,6 +1375,89 @@ def main() -> None:
                 print(f"metrics_export={store.export(Path(args.output))}")
                 return
         except MetricsError as exc:
+            parser.error(str(exc))
+
+    if args.command == "unattended":
+        try:
+            if args.unattended_command == "manifest":
+                print(json.dumps(load_manifest(Path(args.path)).to_dict(), indent=2, sort_keys=True))
+                return
+            if args.unattended_command == "compare":
+                roots = [Path(item) for item in args.attempt_roots]
+                manifests = [load_manifest(root / "manifest.json") for root in roots]
+                reports = [json.loads((root / "repeatability.json").read_text(encoding="utf-8")) for root in roots]
+                print(json.dumps(compare_attempts(manifests, reports), indent=2, sort_keys=True))
+                return
+            if args.unattended_command in {"status", "cancel"}:
+                runner = UnattendedRunner([], [], artifact_root=Path(args.artifact_root))
+                if args.unattended_command == "status":
+                    print(json.dumps(runner.attempt_status(args.attempt_id), indent=2, sort_keys=True))
+                else:
+                    print(f"cancellation_request={runner.request_cancellation(args.attempt_id)}")
+                return
+            display = (
+                NoDisplayProvider()
+                if args.display_provider == "none"
+                else ProbedDisplayProvider(
+                    args.display_provider,
+                    args.display_backend,
+                    args.display_identity,
+                    args.display_probe_executable,
+                    tuple(args.display_probe_arg),
+                    args.display_backend == "normal_desktop",
+                )
+                if args.display_probe_executable
+                else DeclaredDisplayProvider(
+                    args.display_provider,
+                    args.display_backend,
+                    args.display_identity,
+                    False,
+                    False,
+                    args.display_backend == "normal_desktop",
+                    "a live argument-vector display probe is required",
+                )
+            )
+            provider = (
+                MarioUnattendedProvider(
+                    rom_path=Path(args.rom) if args.rom else None,
+                    executable=Path(args.fceux),
+                    goal_id=args.mario_goal,
+                )
+                if args.adapter == "smb3"
+                else StardewUnattendedProvider(
+                    fixture_path=Path(args.stardew_fixture) if args.stardew_fixture else None,
+                    owner_save_roots=[Path(item) for item in args.owner_save_root],
+                    executable=Path(args.stardew_executable) if args.stardew_executable else None,
+                )
+            )
+            runner = UnattendedRunner([provider], [display], artifact_root=Path(args.artifact_root))
+            if args.unattended_command == "capabilities":
+                print(json.dumps(runner.capability_status(), indent=2, sort_keys=True))
+                return
+            catalog = load_scenario_catalog(Path(args.catalog))
+            scenario = next((item for item in catalog if item.scenario_id == args.scenario), None)
+            if scenario is None:
+                raise UnattendedError(f"unknown unattended scenario: {args.scenario}")
+            plan = runner.plan(
+                scenario,
+                adapter_id=args.adapter,
+                display_provider_id=display.inspect().provider_id,
+                source_identity=source_identity(),
+                goal_version=args.goal_version,
+                profile_version=args.profile_version,
+                solution_version=args.solution_version,
+                run_count=args.runs,
+                per_run_timeout_seconds=args.per_run_timeout,
+                aggregate_timeout_seconds=args.aggregate_timeout,
+                concurrency=args.concurrency,
+                correlation_reference=args.correlation_reference,
+            )
+            if args.unattended_command == "plan":
+                print(json.dumps(plan.to_dict(), indent=2, sort_keys=True))
+                return
+            print(json.dumps(runner.execute(plan, acknowledgement=args.acknowledgement), indent=2, sort_keys=True))
+            return
+        except (UnattendedError, OSError, subprocess.SubprocessError) as exc:
             parser.error(str(exc))
 
     parser.error("Unsupported command")

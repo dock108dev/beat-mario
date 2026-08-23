@@ -1,0 +1,29 @@
+schema_version: game-companion-experimental-artifacts/v1
+classification: technical_session_result
+isolated_namespace: artifacts/experimental-adapters
+required_for_conformance:
+  - exact validated contract and canonical hash
+  - source inventory and SHA-256 hashes
+  - every named conformance check and result
+  - Experimental catalog label and provider-owned capability snapshot
+  - complete proof-limit statement
+required_for_installation:
+  - local installation manifest
+  - exact manifest-owned inventory and hashes
+  - atomic promotion or complete rollback result
+  - collision and overwrite refusal result
+required_for_removal:
+  - pre-removal integrity result
+  - modified unknown symlink and ambiguous-file refusal results
+  - zero active process authority input and session proofs
+  - exact removed manifest-owned inventory
+  - explicit evidence and history preservation
+forbidden:
+  - executable generated code
+  - arbitrary command or shell content
+  - network dependencies
+  - ROM or save content
+  - credentials or personal data
+  - supported status or capability promotion
+  - authoritative reliability usefulness or owner-acceptance claim
+proof_limits: [real-game compatibility, live observation correctness, effective input, reliability, authoritative completion, usefulness, owner acceptance, supported-catalog eligibility]

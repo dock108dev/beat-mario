@@ -373,6 +373,19 @@ class ObjectiveSessionManager:
         }
         (snapshot.artifact_dir / "objective_reconciliation.json").write_text(json.dumps(payload, indent=2, default=_json_default) + "\n")
 
+    def invalidate_volatile_state(self) -> None:
+        """Clear live objective, coaching, comparison, and Tell presentation state."""
+        self.profile_id = None
+        self.policy = CoachingPolicy.QUIET
+        self.reference_id = None
+        self.emitted_keys.clear()
+        self.suggestion = None
+        self.suppression_reason = None
+        self.tell_answer = None
+        self._last_progress_signature = None
+        self._last_fresh_progress = None
+        self._last_fresh_comparison = None
+
     def _profiles(self, snapshot: Any) -> tuple[ObjectiveProfile, ...]:
         level = "world_1_1" if snapshot.checkpoint_id == "world_1_1_clear" or any(sample.world == 0 and sample.object_set == 1 for sample in snapshot.samples) else ""
         return profiles_for_level("smb3", level) if level else ()

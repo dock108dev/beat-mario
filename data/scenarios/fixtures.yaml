@@ -11,7 +11,8 @@ fixture_sets:
   comparison: [faster_compatible, slower_compatible, incompatible]
   learning: [candidate_derived, review, rejection, validation_failure, promotion_preparation, rollback_preparation]
   takeover: [authorization, transfer, reclaim, timeout, cancellation, process_loss, cleanup_failure]
-  adapters: [mario, stardew_companion, experimental_planned, safe_initial_selection, switching_isolation, successful_neutral_handoff, every_active_or_ambiguous_refusal, volatile_state_invalidation, corrupt_stale_persistence, cross_adapter_reference_refusal]
+  adapters: [mario, stardew_companion, experimental_fixture_quest, safe_initial_selection, switching_isolation, successful_neutral_handoff, every_active_or_ambiguous_refusal, volatile_state_invalidation, corrupt_stale_persistence, cross_adapter_reference_refusal]
+  experimental_onboarding: [valid_contract, invalid_contract, reserved_id, mario_collision, stardew_collision, capability_conflict, absolute_path, traversal, symlink_escape, overwrite, arbitrary_command, generated_code, network_dependency, unknown_file, deterministic_scaffold, provider_isolation, atomic_install, install_collision, rollback, modified_uninstall_refusal, ambiguous_uninstall_refusal, clean_removal, zero_residual_state, experimental_label, proof_limits, desktop_flow, narrow_390_flow, scenario_agreement]
   stardew_save: [disposable_creation, exact_identity, primary_isolation, mismatch, source_change, symlink_refusal]
   stardew_window: [visible_windowed, occluded, missing, process_loss, process_restart]
   stardew_crops: [exact_initial_set, exact_progress, unknown, occluded, added, removed, final_reconciliation]
@@ -20,6 +21,10 @@ fixture_sets:
   stardew_modes: [observe_conversion, tell_grounding, stale_refusal, show_review_only, do_authorization, per_input_revalidation, reclaim_each_phase, neutral_handback]
   stardew_reset: [fresh_destination, primary_before_after, prior_attempt_preserved, stale_authority, existing_nested_symlink_alias_refusal]
   evidence: [complete, missing_artifact, integrity_failure, classification_mismatch, incomplete_rebuild]
+  unattended_eligibility: [eligible, owner_required, visible_live, review_only, reliability, final_campaign, unknown_adapter, unsupported_provider, stale_source, missing_asset, missing_fixture, unsafe_path, unsupported_display, requested_promotion, ambiguous_cleanup]
+  unattended_process: [fresh_process, isolated_run_root, sequential_default, bounded_concurrency, cancellation, per_run_timeout, aggregate_timeout, process_loss, display_loss, input_loss, failed_retention, cleanup_complete, cleanup_incomplete, fresh_retry]
+  unattended_adapters: [mario_rom_reference_only, mario_namespace_isolation, mario_reliability_isolation, stardew_dedicated_fixture, stardew_primary_overlap_refusal, stardew_fresh_copy, stardew_protected_action_refusal, stardew_neutral_handback]
+  unattended_repeatability: [compatible, incompatible_adapter, incompatible_scenario, incompatible_source, incompatible_fixture_asset, incompatible_display, incompatible_environment, incompatible_runner, incompatible_evidence_contract, correlation_reference_only]
   layout: [desktop_compact_workspace, narrow_390, keyboard_order, focus_retention, in_place_refresh]
   owner_pilot: [manifest_complete, release_candidate_placeholders, feedback_blank, acceptance_blank, first_unmet_requirement]
 negative_cases:
@@ -66,6 +71,31 @@ negative_cases:
   - adapter_switch_with_unsafe_save_transition
   - cross_adapter_goal_profile_scope_or_evidence_reference
   - stale_or_aliased_adapter_selection_restored
+  - unattended_evidence_classification_changed
+  - unattended_owner_or_visible_scenario_launched
+  - unattended_reliability_or_show_scenario_launched
+  - unattended_final_campaign_launched
+  - unattended_shell_composed_invocation
+  - unattended_symlink_or_path_escape
+  - unattended_broad_cleanup_target
+  - unattended_unowned_process_termination
+  - unattended_failed_attempt_overwritten
+  - unattended_primary_save_overlap
+  - unattended_rom_copied_to_artifacts
+  - unattended_fastest_or_learning_mutation
+  - unattended_visible_reference_called_equivalent_or_causal
+  - experimental_reserved_or_builtin_id
+  - experimental_absolute_or_traversal_path
+  - experimental_symlink_escape
+  - experimental_unknown_or_executable_file
+  - experimental_command_or_network_dependency
+  - experimental_overwrite_or_install_collision
+  - experimental_capability_provider_disagreement
+  - experimental_self_promotes_supported
+  - experimental_install_partial_or_rollback_incomplete
+  - experimental_uninstall_modified_or_ambiguous_file
+  - experimental_uninstall_with_active_process_authority_input_or_session
+  - experimental_evidence_or_history_removed
 assertions:
   owner_feedback_is_never_simulated: true
   unattended_is_regression_only: true
@@ -87,3 +117,10 @@ assertions:
   adapter_catalog_is_provider_owned: true
   successful_switch_requires_new_adapter_observation: true
   corrupt_catalog_preferences_fail_closed: true
+  unattended_classification_is_immutable: true
+  unattended_series_isolated_from_all_acceptance_and_reliability_metrics: true
+  unattended_has_no_blended_success_score: true
+  experimental_provider_discovery_requires_no_shared_core_game_id_branch: true
+  experimental_conformance_never_implies_live_or_owner_proof: true
+  experimental_installation_and_removal_are_manifest_owned: true
+  experimental_adapters_cannot_become_supported_by_declaration: true

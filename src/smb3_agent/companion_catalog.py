@@ -21,6 +21,7 @@ KNOWN_EVIDENCE_CLASSIFICATIONS = frozenset(
     {
         "review_only",
         "technical",
+        "fixture",
         "owner_feedback",
         "reliability",
         "authoritative_gameplay",
@@ -135,14 +136,17 @@ class AdapterRuntimeState:
 
     def refusal_reasons(self) -> tuple[str, ...]:
         checks = (
-            (self.active_mode == "observe", "observation is active and must be stopped"),
+            (self.active_mode is not None, "the current adapter mode must be stopped"),
             (self.active_agent_input, "agent input is active"),
             (self.active_show, "Show is active"),
             (self.active_do_authorization, "Do authorization is active"),
             (self.pending_reclaim, "reclaim is pending"),
             (self.pending_neutralization, "input neutralization is pending"),
             (not self.handback_confirmed, "player handback is unconfirmed"),
-            (self.ownership_ambiguous or self.input_owner == "ambiguous", "input ownership is ambiguous"),
+            (
+                self.ownership_ambiguous or self.input_owner != "player",
+                "input ownership is not confirmed as player-owned",
+            ),
             (self.incomplete_failure_retention, "failure retention is incomplete"),
             (self.unsafe_save_transition, "a save or reset transition is unsafe"),
             (not self.continuity_known, "process or window continuity is unknown"),
@@ -193,11 +197,7 @@ class CatalogRegistry:
             raise CompanionCatalogError(f"unknown adapter id: {adapter_id}")
         entry = provider.catalog_entry()
         baseline = next(item for item in self._entries if item.adapter_id == adapter_id)
-        if (
-            entry.adapter_id != baseline.adapter_id
-            or entry.game_id != baseline.game_id
-            or entry.adapter_version != baseline.adapter_version
-        ):
+        if _static_provider_payload(entry) != _static_provider_payload(baseline):
             raise CompanionCatalogError(f"catalog/provider disagreement: {adapter_id}")
         self._validate_entry(entry)
         return entry
@@ -213,10 +213,13 @@ class CatalogRegistry:
             raise CompanionCatalogError("catalog requires at least one explicit provider")
         adapter_ids = [item.adapter_id for item in self._entries]
         game_ids = [item.game_id for item in self._entries]
+        evidence_namespaces = [item.evidence.namespace for item in self._entries]
         if len(adapter_ids) != len(set(adapter_ids)):
             raise CompanionCatalogError("duplicate adapter id")
         if len(game_ids) != len(set(game_ids)):
             raise CompanionCatalogError("duplicate game id")
+        if len(evidence_namespaces) != len(set(evidence_namespaces)):
+            raise CompanionCatalogError("duplicate evidence namespace")
         for provider, entry in zip(self._providers, self._entries):
             repeated = provider.catalog_entry()
             if repeated != entry:
@@ -256,10 +259,13 @@ class CatalogRegistry:
         if not entry.safety.protected_decisions or not entry.evidence.classifications:
             raise CompanionCatalogError(f"missing safety or evidence declaration: {entry.adapter_id}")
         capability_ids = [item.capability_id for item in entry.capabilities]
+        goal_ids = [item.goal_id for item in entry.goals]
         profile_ids = {item.profile_id for item in entry.profiles}
         scope_ids = [item.scope_id for item in entry.scopes]
         if len(capability_ids) != len(set(capability_ids)):
             raise CompanionCatalogError(f"duplicate capability id: {entry.adapter_id}")
+        if len(goal_ids) != len(set(goal_ids)):
+            raise CompanionCatalogError(f"duplicate goal id: {entry.adapter_id}")
         if len(profile_ids) != len(entry.profiles):
             raise CompanionCatalogError(f"duplicate profile id: {entry.adapter_id}")
         if len(scope_ids) != len(set(scope_ids)):
@@ -267,6 +273,11 @@ class CatalogRegistry:
         if {"tell", "show", "do"} - set(capability_ids):
             raise CompanionCatalogError(f"Tell, Show, and Do declarations are required: {entry.adapter_id}")
         for capability in entry.capabilities:
+            if any(
+                not value.strip()
+                for value in (capability.capability_id, capability.label, capability.summary)
+            ):
+                raise CompanionCatalogError(f"missing provider field: {entry.adapter_id}")
             if capability.status not in KNOWN_CAPABILITY_STATUSES:
                 raise CompanionCatalogError(
                     f"unknown capability status: {entry.adapter_id}/{capability.capability_id}"
@@ -276,10 +287,27 @@ class CatalogRegistry:
                     f"unavailable capability requires a reason: {entry.adapter_id}/{capability.capability_id}"
                 )
         for goal in entry.goals:
+            if any(not value.strip() for value in (goal.goal_id, goal.label, goal.summary)):
+                raise CompanionCatalogError(f"missing provider field: {entry.adapter_id}")
             if not goal.profile_ids or not set(goal.profile_ids).issubset(profile_ids):
                 raise CompanionCatalogError(f"unsupported goal/profile reference: {entry.adapter_id}/{goal.goal_id}")
-        if any(not scope.stop_conditions for scope in entry.scopes):
+        if any(
+            any(not value.strip() for value in (profile.profile_id, profile.label, profile.profile_type, profile.summary))
+            for profile in entry.profiles
+        ):
+            raise CompanionCatalogError(f"missing provider field: {entry.adapter_id}")
+        if any(
+            not scope.scope_id.strip()
+            or not scope.label.strip()
+            or not scope.stop_conditions
+            or any(not condition.strip() for condition in scope.stop_conditions)
+            for scope in entry.scopes
+        ):
             raise CompanionCatalogError(f"unsupported scope/stop reference: {entry.adapter_id}")
+        if any(not decision.strip() for decision in entry.safety.protected_decisions):
+            raise CompanionCatalogError(f"missing safety or evidence declaration: {entry.adapter_id}")
+        if len(entry.evidence.classifications) != len(set(entry.evidence.classifications)):
+            raise CompanionCatalogError(f"duplicate evidence classification: {entry.adapter_id}")
         unknown_evidence = set(entry.evidence.classifications) - KNOWN_EVIDENCE_CLASSIFICATIONS
         if unknown_evidence:
             raise CompanionCatalogError(f"unknown evidence classification: {entry.adapter_id}")
@@ -322,6 +350,8 @@ class CatalogPreferenceStore:
             allowed_adapter = {"last_goal_id", "last_profile_id", "sections"}
             if set(display) - allowed_display:
                 raise CompanionCatalogError("catalog preferences contain unsupported display state")
+            if any(not isinstance(value, bool) for value in display.values()):
+                raise CompanionCatalogError("catalog preferences contain unsafe display state")
             for adapter_id, values in adapters.items():
                 if not isinstance(values, dict) or set(values) - allowed_adapter:
                     raise CompanionCatalogError(f"unsafe persisted state in adapter namespace: {adapter_id}")
@@ -423,6 +453,9 @@ class CatalogSession:
             return self.select_initial(adapter_id)
         if current_id == adapter_id:
             raise SwitchRefused("the requested adapter is already selected")
+        target = self.registry.entry(adapter_id)
+        if target.availability == "unavailable":
+            raise SwitchRefused(f"Switch refused: {target.availability_reason}")
         current = self.registry.provider(current_id)
         state = current.runtime_state()
         if state.adapter_id != current_id:
@@ -434,7 +467,7 @@ class CatalogSession:
             raise SwitchRefused("Switch refused: current attempt and evidence were not retained")
         if not current.invalidate_volatile_state():
             raise SwitchRefused("Switch refused: volatile authority or observation could not be invalidated")
-        return self._complete_switch(current_id, adapter_id)
+        return self._complete_switch(current_id, adapter_id, target=target)
 
     def update_display_preferences(
         self,
@@ -450,8 +483,14 @@ class CatalogSession:
         }
         self.store.write(self.preferences, self.registry)
 
-    def _complete_switch(self, from_adapter_id: str, adapter_id: str) -> SwitchEvent:
-        target = self.registry.entry(adapter_id)
+    def _complete_switch(
+        self,
+        from_adapter_id: str,
+        adapter_id: str,
+        *,
+        target: AdapterCatalogEntry | None = None,
+    ) -> SwitchEvent:
+        target = target or self.registry.entry(adapter_id)
         if target.availability == "unavailable":
             raise SwitchRefused(f"Switch refused: {target.availability_reason}")
         self.preferences.selected_adapter_id = adapter_id
@@ -496,3 +535,11 @@ class CatalogSession:
             "adapters": [asdict(entry) for entry in self.registry.entries],
             "live_activity_run": False,
         }
+
+
+def _static_provider_payload(entry: AdapterCatalogEntry) -> dict[str, object]:
+    """Compare provider-owned truth while permitting live setup availability to refresh."""
+    payload = asdict(entry)
+    for field_name in ("availability", "availability_reason", "setup_state"):
+        payload.pop(field_name)
+    return payload

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import traceback
 from typing import Any, Callable, Iterable, Mapping
 
 import yaml
@@ -140,6 +141,8 @@ class ScenarioDefinition:
     result_can_prove: tuple[str, ...]
     result_cannot_prove: tuple[str, ...]
     capability_status: str = "available"
+    visible_live_proof: bool = False
+    authoritative_game_outcome: bool = False
 
     def validate(self) -> None:
         if not self.scenario_id or not self.version:
@@ -154,7 +157,12 @@ class ScenarioDefinition:
         if self.may_count_toward_owner_acceptance and not self.owner_participation_required:
             raise ScenarioError(f"{self.scenario_id}: owner acceptance requires owner participation")
         if self.classification is ScenarioClassification.UNATTENDED_REGRESSION and (
-            self.may_count_toward_owner_acceptance or self.evidence_classification is not EvidenceClassification.UNATTENDED_REGRESSION
+            self.may_count_toward_reliability
+            or self.may_count_toward_owner_acceptance
+            or self.visible_live_proof
+            or self.authoritative_game_outcome
+            or self.evidence_classification is not EvidenceClassification.UNATTENDED_REGRESSION
+            or self.execution_classification != ScenarioClassification.UNATTENDED_REGRESSION.value
         ):
             raise ScenarioError(f"{self.scenario_id}: unattended execution is regression-only")
         if any(step.owner_action_required for step in self.automated_steps):
@@ -212,6 +220,7 @@ class ScenarioAttempt:
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     history: list[Mapping[str, Any]] = field(default_factory=list)
     failure: str | None = None
+    failure_details: list[Mapping[str, str]] = field(default_factory=list)
     cleanup_complete: bool = False
 
 
@@ -260,6 +269,8 @@ def _load_definition(raw: Mapping[str, Any], defaults: Mapping[str, Any]) -> Sce
         owner_participation_required=bool(item.get("owner_participation_required", False)),
         may_count_toward_reliability=bool(item.get("may_count_toward_reliability", False)),
         may_count_toward_owner_acceptance=bool(item.get("may_count_toward_owner_acceptance", False)),
+        visible_live_proof=bool(item.get("visible_live_proof", False)),
+        authoritative_game_outcome=bool(item.get("authoritative_game_outcome", False)),
         retry_policy=RetryPolicy(
             maximum_new_attempts=int(retry.get("maximum_new_attempts", 0)),
             retryable_terminal_states=_tuples(retry.get("retryable_terminal_states")),
@@ -383,6 +394,7 @@ class ScenarioRunner:
             return self.transition(attempt, definition.expected_terminal_state)
         except Exception as exc:
             attempt.failure = str(exc)
+            attempt.failure_details.append(_exception_record(exc, phase="execution"))
             self.transition(attempt, ScenarioLifecycle.CLEANUP_PENDING, reason=attempt.failure)
             self.cleanup(attempt, cleanup_action)
             if attempt.state is not ScenarioLifecycle.RETAINED_FOR_REVIEW:
@@ -440,6 +452,7 @@ class ScenarioRunner:
             attempt.history.append({"at": datetime.now(timezone.utc).isoformat(), "state": "cleanup_complete"})
         except Exception as exc:
             attempt.failure = f"cleanup failure: {exc}"
+            attempt.failure_details.append(_exception_record(exc, phase="cleanup"))
             attempt.state = ScenarioLifecycle.RETAINED_FOR_REVIEW
             attempt.history.append({"at": datetime.now(timezone.utc).isoformat(), "state": attempt.state.value, "reason": attempt.failure})
         self._persist(attempt)
@@ -514,6 +527,7 @@ class ScenarioRunner:
             "created_at": attempt.created_at,
             "history": attempt.history,
             "failure": attempt.failure,
+            "failure_details": attempt.failure_details,
             "cleanup_complete": attempt.cleanup_complete,
         }
         encoded = json.dumps(payload, indent=2, sort_keys=True).encode("utf-8") + b"\n"
@@ -527,6 +541,15 @@ class ScenarioRunner:
         temporary = target.with_suffix(f".{secrets.token_hex(4)}.tmp")
         temporary.write_bytes(encoded)
         os.replace(temporary, target)
+
+
+def _exception_record(exc: Exception, *, phase: str) -> dict[str, str]:
+    return {
+        "phase": phase,
+        "type": type(exc).__name__,
+        "message": str(exc),
+        "traceback": traceback.format_exc(),
+    }
 
 
 def final_campaign_readiness(catalog: Iterable[ScenarioDefinition]) -> dict[str, Any]:

@@ -125,6 +125,40 @@ switch retains the attempt, invalidates volatile state, records a
 `catalog_switch` event, selects the target, and leaves active modes disabled
 until a new target-owned observation exists.
 
+Target identity and availability are validated before any current-adapter hook
+runs. The Mario provider's invalidation hook clears the stopped live-observation
+identity, terminal Show presentation, objective/coaching comparison, and Tell
+state while leaving retained artifacts and adapter-owned history on disk. It
+cannot report success while an observer thread, Show, authorization, agent
+ownership, or unretained failure remains active.
+
+## Unattended regression runner
+
+V2.13 adds `unattended.py` as a separate adapter-neutral engineering runner.
+Its provider registry dispatches through explicit contracts instead of
+shared-core game-id branches. The shared runner owns eligibility, immutable
+manifests, source dirty-state identity, safe paths, sanitized environments,
+display continuity, bounded sequential fresh processes, isolated workspaces,
+cancellation, exact-process termination, cleanup, failed-attempt retention,
+integrity, local metrics, and compatible repeatability reports.
+
+Adapter providers own executable/argument vectors, assets and fixtures,
+ordinary input and observation paths, protected data/actions, milestones,
+success/failure predicates, cleanup, and evidence. Mario references but never
+copies the local ROM, uses fresh FCEUX processes and the existing gameplay
+path, and cannot mutate accepted evidence, reliability, routes, records, or
+learning. Stardew accepts only a dedicated non-owner regression fixture,
+creates a fresh disposable run copy, uses visible pixels and ordinary protected
+input, preserves exact task reconciliation, and requires neutral handback
+without opening a primary save.
+
+Normal desktop, supported local virtual display, and unavailable-display
+providers are explicit. Virtual pixels remain unattended evidence, never
+visible player proof. Display/process/input loss, timeouts, missing evidence,
+or incomplete cleanup fail closed and retain the attempt. Classifications and
+proof denials are immutable after creation. See the
+[operator guide](unattended-regression.md).
+
 ## Local learning and candidate review
 
 The V2.6 run library remains the immutable observed-run source. V2.7 wraps each
@@ -433,3 +467,24 @@ scenario readiness, missing final evidence, pilot manifest, and recovery state.
 `data/scenarios/mario-owner-pilot.yaml` is the prepared, disabled owner-pilot
 contract. It cannot populate feedback or acceptance and cannot upgrade
 technical evidence.
+
+## Experimental adapter onboarding and discovery
+
+`experimental_adapters.py` owns the V2.14 versioned contract, deterministic
+data-only scaffold, conformance report, source inventory, atomic manifest-owned
+installation, integrity status, exact removal, and installed-provider discovery.
+The shared registry receives discovered provider objects beside the explicit
+Mario and Stardew built-ins; it contains no Experimental game-ID branches.
+
+Generated scaffolds contain only known YAML, JSON, and README files. Detection
+is names and visible-window text, observation is declared local read-only data,
+and input is ordinary action tokens dispatched only by a separately implemented
+host allowlist. No command, code, driver, module, URL, or dependency can be
+generated. Provider capability truth remains declared or unsupported and the
+catalog forces Experimental/live-unproven labeling.
+
+Installation stages under the destination root, hashes the complete inventory,
+writes a local ownership manifest, and atomically promotes only into an absent
+adapter-ID directory. Removal rechecks every owned hash and refuses unknown,
+modified, symlinked, ambiguous, or active state; it never reaches the external
+evidence and history namespaces.

@@ -45,6 +45,8 @@ EVENT_TYPES = frozenset(
         "takeover_authorized", "agent_control_started", "reclaim_requested", "input_neutralized", "handback_completed",
         "objective_outcome", "failure", "recovery", "process_lost", "cleanup", "adapter_switched", "evidence_reconciled",
         "artifact_missing", "integrity_failure", "owner_usefulness_feedback", "owner_acceptance_decision",
+        "unattended_attempt_created", "display_checked", "process_started", "classified_adapter_event",
+        "unattended_repeatability_reported",
     }
 )
 
@@ -118,6 +120,24 @@ class EventEnvelope:
             raise MetricsError("player input actor mismatch")
         if self.event_type == "agent_input" and self.actor != "agent":
             raise MetricsError("agent input actor mismatch")
+        if self.evidence_classification == "unattended_regression_result":
+            forbidden = {
+                "owner_feedback_prompted", "owner_usefulness_feedback", "owner_acceptance_decision",
+                "fastest_observed_updated", "candidate_reviewed", "candidate_promotion_state",
+            }
+            if self.event_type in forbidden:
+                raise MetricsError("unattended evidence cannot mutate owner, fastest-run, or learning state")
+            immutable = {
+                "classification": "unattended_regression",
+                "execution_classification": "unattended_regression",
+                "may_count_toward_reliability": False,
+                "may_count_toward_owner_acceptance": False,
+                "visible_live_proof": False,
+                "authoritative_game_outcome": False,
+            }
+            for key, expected_value in immutable.items():
+                if self.payload.get(key) != expected_value:
+                    raise MetricsError(f"unattended event has invalid immutable field: {key}")
         expected = integrity_hash(self.canonical_content())
         if self.integrity_hash != expected:
             raise MetricsError("event integrity hash mismatch")
@@ -338,11 +358,26 @@ class LocalMetricsStore:
         classifications: dict[str, int] = {}
         for item in events:
             classifications[item.evidence_classification] = classifications.get(item.evidence_classification, 0) + 1
+        unattended = [item for item in events if item.evidence_classification == "unattended_regression_result"]
         return {
             "schema_version": "game-companion-metrics-summary/v1",
             "filters": {"source": "all local raw events", "unknowns_dropped": False},
             "event_count": len(events), "session_count": len(sessions), "event_type_counts": counts,
             "classification_counts": classifications, "player_input_count": counts.get("player_input", 0),
+            "unattended_regression_series": {
+                "event_count": len(unattended),
+                "attempt_count": len({item.attempt_id for item in unattended}),
+                "event_type_counts": {
+                    event_type: sum(item.event_type == event_type for item in unattended)
+                    for event_type in sorted({item.event_type for item in unattended})
+                },
+                "excluded_from": [
+                    "route_reliability", "visible_live_counts", "authoritative_outcomes",
+                    "player_completion", "owner_usefulness", "owner_acceptance",
+                    "accepted_fastest_run_indexes", "learning_promotion_state",
+                ],
+                "combined_score": None,
+            },
             "agent_input_count": counts.get("agent_input", 0), "ambiguous_ownership_count": sum(item.input_owner == "ambiguous" for item in inputs),
             "boundary_violation_count": boundaries, "boundary_violation_required_value": 0,
             "unknown_count": sum(1 for item in events if item.confidence is None or item.input_owner == "unknown" or item.payload.get("status") in {"unknown", "unverifiable"}),

@@ -711,9 +711,11 @@ class StardewOperator:
         try:
             driver.send(command)
         except Exception as exc:
-            driver.neutralize()
-            self.input_neutralized = True
-            self.fail(FailureCode.INPUT_REJECTED, f"ordinary input failed: {exc}", driver=driver)
+            self.fail(
+                FailureCode.INPUT_REJECTED,
+                f"ordinary input failed: {type(exc).__name__}: {exc}",
+                driver=driver,
+            )
             raise StardewAdapterError(FailureCode.INPUT_REJECTED.value) from exc
 
     def record_post_input(self, observation: ScreenObservation) -> WateringLedger:
@@ -757,11 +759,18 @@ class StardewOperator:
         driver: OrdinaryInputDriver | None = None,
     ) -> OperatorFailure:
         neutralized = True
+        neutralization_error: str | None = None
         if driver is not None:
             try:
                 driver.neutralize()
-            except Exception:
+            except Exception as exc:
                 neutralized = False
+                neutralization_error = f"{type(exc).__name__}: {exc}"
+        recorded_detail = (
+            detail
+            if neutralization_error is None
+            else f"{detail}; neutralization failed: {neutralization_error}"
+        )
         self.input_neutralized = neutralized
         self.epoch = None
         self.owner = (
@@ -772,13 +781,15 @@ class StardewOperator:
         self.lifecycle = OperatorLifecycle.FAILED
         self.failure = OperatorFailure(
             code=code,
-            detail=detail,
+            detail=recorded_detail,
             observed_at=_utc_now(),
             input_neutralized=neutralized,
             evidence_retained=True,
             safe_recovery="Stop. Keep the copied save and evidence. Re-detect the process, window, save identity, and player ownership before a fresh attempt.",
             first_unmet_requirement=(
-                detail if neutralized else f"input neutralization could not be verified: {detail}"
+                detail
+                if neutralized
+                else f"input neutralization could not be verified: {neutralization_error}"
             ),
         )
         return self.failure

@@ -367,12 +367,23 @@ class ShowProcessController:
         try:
             os.killpg(process.pid, signal.SIGTERM)
             process.wait(timeout=5)
-        except (ProcessLookupError, subprocess.TimeoutExpired):
+        except ProcessLookupError as exc:
             if process.poll() is None:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait(timeout=5)
-        finally:
-            self.input_stopped.set()
+                raise ShowError(
+                    "Show process ownership was lost before input stop could be verified"
+                ) from exc
+        except subprocess.TimeoutExpired:
+            if process.poll() is None:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.wait(timeout=5)
+                except (ProcessLookupError, subprocess.TimeoutExpired) as exc:
+                    raise ShowError(
+                        "Show process did not stop after bounded termination"
+                    ) from exc
+        if process.poll() is None:
+            raise ShowError("Show process termination could not be verified")
+        self.input_stopped.set()
 
 
 Runner = Callable[[ShowRequest, ShowDefinition, Path, ShowProcessController, Callable[[str], None]], ShowOutcome]
@@ -529,6 +540,27 @@ class ShowSessionManager:
             controller = self._controller
         controller.request_stop(takeover=takeover)
         return self.snapshot()  # type: ignore[return-value]
+
+    def invalidate_volatile_state(self) -> bool:
+        """Forget only a terminal Show session; retained artifacts remain on disk."""
+        with self._lock:
+            thread = self._thread
+            session = self._session
+            if session is not None and session.lifecycle in {
+                ShowLifecycle.STARTING,
+                ShowLifecycle.ACTIVE,
+                ShowLifecycle.STOP_REQUESTED,
+            }:
+                return False
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=5)
+        with self._lock:
+            if thread is not None and thread.is_alive():
+                return False
+            self._session = None
+            self._controller = None
+            self._thread = None
+            return True
 
     def shutdown(self) -> None:
         with self._lock:

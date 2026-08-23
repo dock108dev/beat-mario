@@ -104,6 +104,31 @@ def test_server_routes_player_shell_and_secondary_lab() -> None:
     assert "Run World 8 Route" in lab
 
 
+def test_server_catalog_switch_invalidates_mario_volatile_presentation_state(
+    tmp_path: Path,
+) -> None:
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    try:
+        catalog = getattr(server, "catalog_session")
+        catalog.store.path = tmp_path / "catalog-preferences.json"
+        catalog.switch_event_path = tmp_path / "catalog-switch-events.jsonl"
+        catalog.preferences.selected_adapter_id = None
+        catalog.preferences.display = {}
+        catalog.preferences.adapters = {}
+        objective = getattr(server, "objective_session_manager")
+        objective.profile_id = "smb3.world-1-1.fastest-accepted-clear"
+        objective.reference_id = "accepted-world-1-1"
+        catalog.select_initial("smb3")
+        event = catalog.switch("stardew")
+        assert event.new_observation_required is True
+        assert objective.profile_id is None
+        assert objective.reference_id is None
+        assert getattr(server, "live_observation_manager").snapshot().session_id is None
+        assert getattr(server, "show_manager").snapshot() is None
+    finally:
+        server.server_close()
+
+
 def test_player_start_uses_repo_local_game_file_when_env_is_unset(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

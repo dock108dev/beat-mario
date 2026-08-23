@@ -48,6 +48,21 @@ required_for_combined_catalog_switching:
   - catalog-switch event in the separate catalog_switch classification
   - selected target adapter and explicit new-observation-required state
   - corrupt and stale preference recovery to player-owned catalog-only state
+required_for_unattended_regression:
+  contract: data/scenarios/unattended-artifact-contract.yaml
+  classification: unattended_regression
+  evidence_classification: unattended_regression_result
+  immutable_proof_fields: [may_count_toward_reliability=false, may_count_toward_owner_acceptance=false, visible_live_proof=false, authoritative_game_outcome=false]
+  isolated_namespace: artifacts/unattended-regression
+  owner_fields: forbidden
+  accepted_evidence_mutation: forbidden
+required_for_experimental_onboarding_removal:
+  contract: data/experimental-adapters/artifact-contract.yaml
+  classification: technical_session_result
+  isolated_namespace: artifacts/experimental-adapters
+  installed_status: Experimental
+  support_promotion: forbidden
+  live_game_activity: forbidden
 failure_policy:
   retain_failed_attempt: true
   retry_creates_new_attempt: true
@@ -59,6 +74,9 @@ classification_policy:
   technical_counts_as_reliability: false
   technical_counts_as_owner_acceptance: false
   unattended_counts_as_owner_acceptance: false
+  unattended_counts_as_reliability: false
+  unattended_counts_as_visible_live: false
+  unattended_counts_as_authoritative: false
   review_only_counts_as_authoritative: false
 privacy:
   local_only: true

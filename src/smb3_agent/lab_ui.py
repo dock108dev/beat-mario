@@ -39,6 +39,19 @@ from smb3_agent.companion_catalog import (
     CatalogSession,
     CompanionCatalogError,
 )
+from smb3_agent.experimental_adapters import (
+    ExperimentalAdapterError,
+    PROOF_LIMITS as EXPERIMENTAL_PROOF_LIMITS,
+    default_install_root,
+    discover_installed_providers,
+    inspect_contract,
+    install_adapter,
+    installation_status,
+    load_contract as load_experimental_contract,
+    run_conformance,
+    scaffold_adapter,
+    uninstall_adapter,
+)
 from smb3_agent.lab import (
     LabError,
     add_batch_notes_to_latest,
@@ -120,7 +133,7 @@ from smb3_agent.route_patch import (
     rollback_route_patch,
     validate_route_patch,
 )
-from smb3_agent.run_library import LocalRunLibrary
+from smb3_agent.run_library import LocalRunLibrary, RunLibraryError
 from smb3_agent.takeover import TakeoverError, supported_solutions
 from smb3_agent.scenarios import ScenarioError, final_campaign_readiness, load_scenario_catalog, scenario_plan
 from smb3_agent.stardew_adapter import InputOwner, OperatorLifecycle, OperatorView, load_stardew_contract, render_stardew_operator
@@ -131,6 +144,7 @@ WORLD_1_LOCATION_PATH = Path("data/worlds/world_1_locations.yaml")
 LAST_COMMAND_PATH = Path("artifacts/ui/last_command.yaml")
 LOCAL_ASSET_DIR = Path("public/assets/local")
 ARTIFACT_DIR = Path("artifacts")
+EXPERIMENTAL_SCAFFOLD_ROOT = Path("experimental-adapters")
 MAX_FORM_BYTES = 64 * 1024
 MAX_SERVED_FILE_BYTES = 50 * 1024 * 1024
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
@@ -240,6 +254,12 @@ POST_PATHS = frozenset(
         "/setup-retry",
         "/catalog-switch",
         "/catalog-preferences",
+        "/adapter-scaffold",
+        "/adapter-validate",
+        "/adapter-inspect",
+        "/adapter-conformance",
+        "/adapter-install",
+        "/adapter-remove",
     }
 )
 SAFE_INLINE_TYPES = {
@@ -350,10 +370,39 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     mario_provider = MarioCatalogProvider(
         availability=lambda: _mario_catalog_availability(product_manager),
         runtime=lambda: _mario_catalog_runtime(server),
+        retain=lambda: _retain_mario_catalog_state(server),
+        invalidate=lambda: _invalidate_mario_catalog_state(server),
     )
-    registry = CatalogRegistry((mario_provider, StardewCatalogProvider()))
+    base_providers = (mario_provider, StardewCatalogProvider())
+    setattr(server, "base_catalog_providers", base_providers)
+    registry = CatalogRegistry((*base_providers, *discover_installed_providers()))
     setattr(server, "catalog_session", CatalogSession(registry, CatalogPreferenceStore()))
     return server
+
+
+def _refresh_catalog_registry(server: ThreadingHTTPServer) -> None:
+    base = getattr(server, "base_catalog_providers", None)
+    current = getattr(server, "catalog_session", None)
+    if not isinstance(base, tuple) or not isinstance(current, CatalogSession):
+        raise RuntimeError("Game Companion server is missing catalog provider state")
+    setattr(
+        server,
+        "catalog_session",
+        CatalogSession(
+            CatalogRegistry((*base, *discover_installed_providers())),
+            current.store,
+        ),
+    )
+
+
+def _experimental_source(adapter_id: str) -> Path:
+    if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", adapter_id):
+        raise ExperimentalAdapterError("invalid Experimental adapter id")
+    root = EXPERIMENTAL_SCAFFOLD_ROOT.resolve(strict=False)
+    source = (EXPERIMENTAL_SCAFFOLD_ROOT / adapter_id).resolve(strict=False)
+    if source.parent != root:
+        raise ExperimentalAdapterError("Experimental adapter source escapes the bounded root")
+    return source
 
 
 def _mario_catalog_availability(
@@ -382,8 +431,12 @@ def _mario_catalog_runtime(server: ThreadingHTTPServer) -> AdapterRuntimeState:
         in {ShowLifecycle.STARTING, ShowLifecycle.ACTIVE, ShowLifecycle.STOP_REQUESTED}
     )
     owner = live.control_owner or "player"
-    neutralizing = live.control_state == "neutralizing"
+    neutralizing = live.control_state == "neutralizing" or not live.input_neutralized
     agent_active = owner == "agent"
+    product_failure = getattr(server, "product_session_manager").view(
+        live,
+        show_active=show_active,
+    ).current_failure
     return AdapterRuntimeState(
         adapter_id="smb3",
         input_owner=owner,
@@ -393,15 +446,55 @@ def _mario_catalog_runtime(server: ThreadingHTTPServer) -> AdapterRuntimeState:
         active_do_authorization=agent_active or live.control_state in {"authorized", "active"},
         pending_reclaim=neutralizing,
         pending_neutralization=neutralizing,
-        handback_confirmed=not neutralizing and owner == "player",
+        handback_confirmed=not neutralizing and owner == "player" and live.input_neutralized,
         ownership_ambiguous=owner not in {"player", "agent"},
-        incomplete_failure_retention=False,
+        incomplete_failure_retention=bool(
+            product_failure and not product_failure.evidence_retained
+        ),
         unsafe_save_transition=False,
         continuity_known=live.state not in {ConnectionState.DISCONNECTED, ConnectionState.UNKNOWN}
         or live.session_id is None,
-        volatile_observation_present=live.observed_at is not None,
+        volatile_observation_present=live.session_id is not None,
         volatile_authority_present=agent_active or neutralizing,
     )
+
+
+def _retain_mario_catalog_state(server: ThreadingHTTPServer) -> bool:
+    live = getattr(server, "live_observation_manager").snapshot()
+    show = getattr(server, "show_manager").snapshot()
+    if live.observation_active:
+        return False
+    if live.session_id is not None and (
+        live.artifact_dir is None or not live.artifact_dir.is_dir()
+    ):
+        return False
+    if show is not None and show.lifecycle in {
+        ShowLifecycle.STARTING,
+        ShowLifecycle.ACTIVE,
+        ShowLifecycle.STOP_REQUESTED,
+    }:
+        return False
+    if show is not None and show.artifacts_dir is not None and not show.artifacts_dir.is_dir():
+        return False
+    failure = getattr(server, "product_session_manager").view(
+        live,
+        show_active=False,
+    ).current_failure
+    return failure is None or failure.evidence_retained
+
+
+def _invalidate_mario_catalog_state(server: ThreadingHTTPServer) -> bool:
+    live_manager = getattr(server, "live_observation_manager")
+    show_manager = getattr(server, "show_manager")
+    if not live_manager.invalidate_volatile_state():
+        return False
+    if not show_manager.invalidate_volatile_state():
+        return False
+    getattr(server, "objective_session_manager").invalidate_volatile_state()
+    product = getattr(server, "product_session_manager")
+    product.clear_error()
+    product.mark_stage(ProductStage.IDLE)
+    return True
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -424,6 +517,7 @@ class _Handler(BaseHTTPRequestHandler):
             MarioProductError,
             TakeoverError,
             CompanionCatalogError,
+            ExperimentalAdapterError,
         ) as exc:
             self._send_request_failure(exc)
         except Exception:
@@ -510,6 +604,14 @@ class _Handler(BaseHTTPRequestHandler):
                 )
             )
             return
+        if path == "/onboarding":
+            self._send_html(
+                render_experimental_onboarding(
+                    csrf_token=self._csrf_token(),
+                    message=getattr(self.server, "onboarding_message", None),
+                )
+            )
+            return
         if path == "/api/summary":
             query = parse_qs(parsed.query)
             goal_id = query.get("goal", [ACTIVE_PRODUCT_GOAL_ID])[0]
@@ -569,6 +671,7 @@ class _Handler(BaseHTTPRequestHandler):
             MarioProductError,
             TakeoverError,
             CompanionCatalogError,
+            ExperimentalAdapterError,
             FileNotFoundError,
             subprocess.TimeoutExpired,
         ) as exc:
@@ -601,6 +704,30 @@ class _Handler(BaseHTTPRequestHandler):
                         catalog_expanded=_single(data, "catalog_expanded", default="") == "true",
                     )
                     self._redirect("/")
+                    return
+                if path.startswith("/adapter-"):
+                    adapter_id = _single(data, "adapter_id")
+                    source = _experimental_source(adapter_id)
+                    if path == "/adapter-scaffold":
+                        display_name = _single(data, "display_name")
+                        result: object = {"scaffold": str(scaffold_adapter(EXPERIMENTAL_SCAFFOLD_ROOT, adapter_id, display_name)), "state": "scaffolded"}
+                    elif path == "/adapter-validate":
+                        contract = load_experimental_contract(source / "adapter.yaml")
+                        result = {"valid": True, "adapter_id": contract["identity"]["adapter_id"], "schema_version": contract["schema_version"], "state": "declared"}
+                    elif path == "/adapter-inspect":
+                        result = asdict(inspect_contract(source / "adapter.yaml"))
+                    elif path == "/adapter-conformance":
+                        result = run_conformance(source).to_dict()
+                    elif path == "/adapter-install":
+                        result = {"installed": str(install_adapter(source, default_install_root())), "state": "installed", "status": "Experimental"}
+                        _refresh_catalog_registry(self.server)
+                    elif path == "/adapter-remove":
+                        result = uninstall_adapter(default_install_root(), adapter_id)
+                        _refresh_catalog_registry(self.server)
+                    else:
+                        raise LabUiError("Unknown Experimental adapter action")
+                    setattr(self.server, "onboarding_message", result)
+                    self._redirect("/onboarding")
                     return
                 if path == "/notes":
                     notes = _notes_from_form(data)
@@ -2095,6 +2222,60 @@ def render_safe_stardew_workspace() -> str:
     )
 
 
+def render_experimental_onboarding(
+    *,
+    csrf_token: str,
+    message: object | None = None,
+) -> str:
+    installed = installation_status(default_install_root())
+    installed_rows = "".join(
+        f'''<article class="adapter-row" data-testid="installed-experimental-adapter"><div><strong>{_esc(str(item["adapter_id"]))}</strong><br><span>Experimental · installed · live-unproven · integrity {_esc(str(item["integrity"]))}</span></div><form method="post" action="/adapter-remove"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><input type="hidden" name="adapter_id" value="{_esc(str(item["adapter_id"]))}"><button class="danger" type="submit">Remove safely</button></form></article>'''
+        for item in installed
+    ) or '<p class="empty">No Experimental adapters are locally installed.</p>'
+    result = (
+        f'<section class="result" role="status" data-testid="onboarding-result"><h2>Latest result</h2><pre>{_esc(json.dumps(message, indent=2, sort_keys=True, default=str))}</pre></section>'
+        if message is not None
+        else ""
+    )
+    steps = (
+        ("1", "Metadata", "Choose a non-reserved adapter ID, display name, game identity, version, and Experimental status."),
+        ("2", "Detection", "Declare executable names, visible-window matching, and process/window/session continuity. Paths and commands are refused."),
+        ("3", "Observation", "Declare a local read-only screen or accessibility envelope with freshness, facts, unknowns, and source."),
+        ("4", "Input", "Name ordinary host-allowlisted actions only. Generated executable code and command dispatch are unavailable."),
+        ("5", "Safety", "Player ownership, fresh same-process authorization, immediate reclaim, neutral handback, protected actions, and fail-closed ambiguity are required."),
+        ("6", "Goals", "Define measurable fact/operator/value requirements and evidence fields."),
+        ("7", "Capabilities", "Mark each capability declared or unsupported. Declared never means live-proven."),
+        ("8", "Fixtures", "Provide only the bounded observation, neutral-input, reclaim, and goal fixtures."),
+        ("9", "Scaffold review", "Inspect deterministic YAML, JSON, and README files beneath the Experimental scaffold root."),
+        ("10", "Conformance", "Check schema, provider truth, envelopes, capability agreement, ownership, safety, goals, isolation, integrity, removal, labels, and core independence."),
+        ("11", "Installation", "Install atomically with exact inventory and hashes; collisions and overwrites are refused."),
+        ("12", "Removal", "Remove exact manifest-owned unmodified files only after zero process, authority, input, and session state is proven; evidence/history remain."),
+    )
+    step_html = "".join(f'<article class="step"><span>{number}</span><div><h2>{title}</h2><p>{description}</p></div></article>' for number, title, description in steps)
+    limits = "".join(f"<li>{_esc(item)}</li>" for item in EXPERIMENTAL_PROOF_LIMITS)
+    return _page(
+        title="Game Companion — New Game Onboarding",
+        csrf_token=csrf_token,
+        body=f'''
+        <style>
+          .onboarding{{max-width:1160px;margin:auto;padding:20px}}.onboarding header{{background:var(--navy);color:#fff;border-radius:12px;padding:22px}}.onboarding header p{{color:#dbeafe}}.state-key,.steps,.actions{{display:grid;gap:12px;margin:16px 0}}.state-key{{grid-template-columns:repeat(6,minmax(0,1fr))}}.state-key span,.step,.action-card,.installed,.result,.proof-limits{{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}}.steps{{grid-template-columns:repeat(2,minmax(0,1fr))}}.step{{display:grid;grid-template-columns:34px 1fr;gap:10px}}.step>span{{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:#fff;font-weight:800}}.step h2{{font-size:17px;margin:0}}.step p{{margin:5px 0 0}}.actions{{grid-template-columns:repeat(3,minmax(0,1fr))}}.action-card form{{display:grid;gap:8px}}.adapter-row{{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--line);padding:10px 0}}.adapter-row:first-of-type{{border-top:0}}.danger{{background:#9b2c2c}}pre{{max-height:360px}}@media(max-width:760px){{.onboarding{{padding:10px}}.state-key{{grid-template-columns:repeat(2,1fr)}}.steps,.actions{{grid-template-columns:1fr}}}}@media(max-width:390px){{.onboarding{{padding:6px}}.state-key{{grid-template-columns:1fr}}.step,.action-card,.installed,.proof-limits{{padding:11px}}.adapter-row{{align-items:stretch;flex-direction:column}}input,button{{width:100%}}}}
+        </style>
+        <div class="onboarding" data-testid="experimental-onboarding">
+          <header><p class="eyebrow">V2.14 · local contributor kit</p><h1>New Game Onboarding</h1><p>Create a declarative fixture-only scaffold, inspect its truth, run local conformance, install it as Experimental, or remove only what its manifest owns.</p><nav><a class="secondary-button nav-link" href="/">Catalog</a> <a class="secondary-button nav-link" href="/lab">Lab</a></nav></header>
+          <section class="state-key" aria-label="Adapter states"><span>Declared</span><span>Conformant</span><span>Live-unproven</span><span>Unsupported</span><span>Scaffolded</span><span>Installed</span></section>
+          {result}
+          <section class="steps" aria-label="Onboarding steps">{step_html}</section>
+          <section class="actions">
+            <article class="action-card"><h2>Generate scaffold</h2><form method="post" action="/adapter-scaffold"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>Adapter ID<input name="adapter_id" required pattern="[a-z][a-z0-9-]*" placeholder="my-game"></label><label>Display name<input name="display_name" required placeholder="My Game"></label><button type="submit">Create bounded scaffold</button></form></article>
+            <article class="action-card"><h2>Validate, inspect, and conform</h2><form method="post" action="/adapter-validate"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>Scaffolded adapter ID<input name="adapter_id" required></label><button type="submit">Validate contract</button></form><form method="post" action="/adapter-inspect"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>Scaffolded adapter ID<input name="adapter_id" required></label><button type="submit">Inspect declared truth</button></form><form method="post" action="/adapter-conformance"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>Scaffolded adapter ID<input name="adapter_id" required></label><button type="submit">Run fixture conformance</button></form></article>
+            <article class="action-card"><h2>Install</h2><form method="post" action="/adapter-install"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>Conformant adapter ID<input name="adapter_id" required></label><button type="submit">Install as Experimental</button></form><p>Atomic manifest-owned install. No support promotion and no shared-core game-ID edit.</p></article>
+          </section>
+          <section class="installed"><h2>Installed Experimental adapters</h2>{installed_rows}</section>
+          <section class="proof-limits"><h2>What conformance cannot prove</h2><ul>{limits}</ul><p><strong>Experimental providers cannot promote themselves to Supported.</strong> Mario and Stardew remain explicit trusted built-ins.</p></section>
+        </div>''',
+    )
+
+
 def render_combined_catalog(
     session: CatalogSession,
     *,
@@ -2125,6 +2306,7 @@ def render_combined_catalog(
         f'<div><dt>Neutralization</dt><dd>{"pending" if runtime.pending_neutralization else "neutral"}</dd></div>'
         f'<div><dt>Handback</dt><dd>{"confirmed" if runtime.handback_confirmed else "unconfirmed"}</dd></div></dl>'
         f'<p class="callout">A game switch is allowed only after active Show/Do/input stops, input is neutral, player handback is confirmed, evidence is retained, and continuity is known. The new adapter requires a fresh observation.</p>'
+        f'<p><strong>Recovery guidance:</strong> {_esc(selected.recovery_guidance)}</p>'
         f'<p><a class="primary-button nav-link" href="{_esc(selected.standalone_surface)}">Enter {_esc(selected.display_name)} workspace</a></p></section>'
         if selected and runtime
         else '<section class="catalog-empty" data-testid="safe-catalog-only"><h2>Select a game</h2><p>No game observation or authority is active. Choose an adapter to enter its existing player workspace.</p></section>'
@@ -2154,7 +2336,7 @@ def render_combined_catalog(
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
           <header class="catalog-header"><div><p class="eyebrow">Local multi-game companion</p><h1>Game Companion</h1><p>Adapter-owned help and explicit player-controlled handoff.</p></div><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
           {recovery_panel}
-          <main>{preference_form}<section aria-labelledby="games-heading"><div class="section-title"><div><p class="eyebrow">Supported games</p><h2 id="games-heading">Choose the adapter whose truth you want to use</h2></div><span class="status-pill">2 adapters</span></div><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{workspace}</main>
+          <main>{preference_form}<section aria-labelledby="games-heading"><div class="section-title"><div><p class="eyebrow">Trusted built-ins and locally installed Experimental adapters</p><h2 id="games-heading">Choose the adapter whose truth you want to use</h2></div><span class="status-pill">{len(session.registry.entries)} adapters</span></div><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{workspace}<p><a class="secondary-button nav-link" href="/onboarding">Onboard an Experimental game</a></p></main>
         </div>
         """,
     )
@@ -2190,10 +2372,10 @@ def _catalog_card(
     return f"""
       <article class="catalog-card{' selected' if selected else ''}" data-testid="catalog-card" data-adapter-id="{_esc(entry.adapter_id)}" data-game-id="{_esc(entry.game_id)}">
         <div class="section-title"><div><p class="eyebrow">{_esc(entry.adapter_id)} · {_esc(entry.adapter_version)}</p><h2>{_esc(entry.display_name)}</h2></div><span class="status-pill">{_esc(entry.availability.replace('_', ' '))}</span></div>
-        <p>{_esc(entry.description)}</p><p class="callout"><strong>{_esc(entry.implementation_status)}</strong><br>{_esc(entry.availability_reason)}</p>
+        <p>{_esc(entry.description)}</p><p class="callout"><strong>{_esc(entry.implementation_status)}</strong><br><strong>Setup:</strong> {_esc(entry.setup_state)}<br>{_esc(entry.availability_reason)}</p>
         <h3>Tell, Show, and Do</h3><div class="catalog-capabilities">{modes}</div>
         <details {'open' if expanded else ''}><summary>Observation, goals, and solution profiles</summary><p><strong>{_esc(entry.observation.label)}:</strong> {_esc(entry.observation.trust_boundary)}</p><h3>Goals</h3><ul>{goals}</ul><h3>Profiles</h3><ul>{profiles}</ul></details>
-        <details><summary>Takeover, stop, and safety</summary><ul>{scopes}</ul><p><strong>Safety:</strong> {_esc(entry.safety.summary)}</p><ul>{''.join(f'<li>{_esc(item)}</li>' for item in entry.safety.protected_decisions)}</ul><p><strong>Reclaim:</strong> {_esc(entry.safety.reclaim_behavior)}</p><p><strong>Handback:</strong> {_esc(entry.safety.handback_behavior)}</p></details>
+        <details><summary>Takeover, stop, and safety</summary><ul>{scopes}</ul><p><strong>Stop behavior:</strong> {_esc(entry.safety.stop_behavior)}</p><p><strong>Safety:</strong> {_esc(entry.safety.summary)}</p><ul>{''.join(f'<li>{_esc(item)}</li>' for item in entry.safety.protected_decisions)}</ul><p><strong>Reclaim:</strong> {_esc(entry.safety.reclaim_behavior)}</p><p><strong>Handback:</strong> {_esc(entry.safety.handback_behavior)}</p></details>
         <details><summary>Evidence and recovery</summary><p><strong>Namespace:</strong> <code>{_esc(entry.evidence.namespace)}</code></p><p>{_esc(', '.join(entry.evidence.classifications))}</p><p>{_esc(entry.evidence.trust_boundary)}</p><p><strong>Recovery:</strong> {_esc(entry.recovery_guidance)}</p></details>
         {button}
       </article>"""
@@ -2727,11 +2909,29 @@ def render_lab_ui(
             </section>
             {_learning_engineering_panel(learning)}
             {_scenario_engineering_panel()}
+            {_unattended_regression_panel()}
+            {_experimental_onboarding_panel()}
             {_product_engineering_panel(product_view, live_snapshot)}
           </section>
         </div>
         """,
     )
+
+
+def _experimental_onboarding_panel() -> str:
+    installed = installation_status(default_install_root())
+    rows = "".join(
+        f'<li><strong>{_esc(str(item["adapter_id"]))}</strong> · Experimental · installed · live-unproven · integrity {_esc(str(item["integrity"]))}</li>'
+        for item in installed
+    ) or "<li>No Experimental adapters installed.</li>"
+    return f'''
+      <section class="paper-panel" id="experimental-onboarding" data-testid="lab-experimental-onboarding">
+        <div class="section-title"><div><h2>New Game Onboarding</h2><p>V2.14 contributor and removal surface</p></div><span class="status-pill">Experimental only</span></div>
+        <p>Validate contracts, create deterministic scaffolds, inspect provider truth, run fixture conformance, install atomically, inspect integrity, and remove exact manifest-owned files.</p>
+        <ul>{rows}</ul>
+        <p class="callout">Conformance is local and deterministic. It cannot prove live compatibility, effective input, reliability, completion, usefulness, owner acceptance, or Supported eligibility.</p>
+        <a class="primary-button nav-link" href="/onboarding">Open onboarding flow</a>
+      </section>'''
 
 
 def _learning_engineering_panel(snapshot: LearningSnapshot) -> str:
@@ -2777,7 +2977,7 @@ def _player_session_history_panel() -> str:
     counts = summary["event_type_counts"]
     try:
         runs = LocalRunLibrary().runs()
-    except Exception as exc:
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError, RunLibraryError) as exc:
         runs = []
         run_recovery = f'<p class="callout action-error">Run history needs explicit recovery: {_esc(str(exc))}. Raw evidence was not removed.</p>'
     else:
@@ -2872,6 +3072,43 @@ def _scenario_engineering_panel() -> str:
         <details><summary>Metric definitions and classification filters</summary><ul>{labels}</ul><p>No combined success score exists. Unknown, failed, incompatible, and missing evidence stay visible.</p></details>
         <details><summary>Storage, reconciliation, and recovery</summary><p>Raw events are append-only and integrity hashed. Derived indexes are atomic and rebuildable. Malformed, contradictory, duplicate-content, out-of-order, unsupported, or classification-changing events are rejected or quarantined.</p><p>Failed attempts and artifacts are retained; retries create new immutable attempts. Deletion planning protects accepted route evidence.</p></details>
         <details><summary>Final-campaign readiness</summary><pre>{_esc(json.dumps(readiness, indent=2, sort_keys=True))}</pre></details>
+      </section>'''
+
+
+def _unattended_regression_panel() -> str:
+    root = Path("artifacts/unattended-regression")
+    attempts: list[dict[str, object]] = []
+    if root.is_dir():
+        for status_path in sorted(root.glob("*/status.json"), reverse=True)[:10]:
+            try:
+                status = json.loads(status_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                status = {
+                    "attempt_id": status_path.parent.name,
+                    "lifecycle": "retained_for_review",
+                    "first_missing_requirement": "status artifact is unreadable",
+                }
+            attempts.append(status)
+    rows = "".join(
+        f'''<article class="issue-row" data-testid="lab-unattended-attempt">
+          <strong>{_esc(str(item.get("attempt_id", "unknown")))}</strong>
+          <span class="status-pill">{_esc(str(item.get("lifecycle", "unknown")).replace("_", " ").title())}</span>
+          <p>First unmet requirement: {_esc(str(item.get("first_missing_requirement") or "none reported"))}</p>
+        </article>'''
+        for item in attempts
+    ) or '<p class="empty">No unattended attempt has been created or executed.</p>'
+    return f'''
+      <section class="paper-panel" data-testid="lab-unattended-regression">
+        <div class="section-title"><div><h2>Unattended regression</h2><p>Engineering-only, local, bounded, and adapter-declared</p></div><span class="status-pill">Regression only</span></div>
+        <dl class="fact-grid">
+          <div><dt>Adapter eligibility</dt><dd>Explicit provider required</dd></div>
+          <div><dt>Display readiness</dt><dd>Declared rendered-pixel provider required</dd></div>
+          <div><dt>Protected data</dt><dd>Primary saves, ROM content, accepted evidence, and owner history excluded</dd></div>
+          <div><dt>Lifecycle</dt><dd>Immutable manifest · isolated runs · exact cancellation · retained cleanup</dd></div>
+        </dl>
+        <p class="callout"><strong>Exact proof limits:</strong> unattended output is not visible player proof, Show evidence, route reliability, authoritative completion, owner usefulness, owner acceptance, or a replacement for the consolidated campaign.</p>
+        <details open><summary>Retained attempts, failures, cleanup, and first unmet requirements</summary>{rows}</details>
+        <details><summary>Manifest, comparison, and cancellation surfaces</summary><p>Use the local unattended capability, plan, manifest, run, cancel, status, and compare commands. Execution requires the exact regression-only acknowledgement. Compatible comparisons report technical repeatability only; visible references remain correlation references, never equivalence or causation.</p></details>
       </section>'''
 
 

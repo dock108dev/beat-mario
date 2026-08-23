@@ -1,7 +1,7 @@
 schema_version: game-companion-catalog-contract/v1
 implementation_slice: V2.12
 implementation_status: implementation_complete_validation_deferred
-ordering: [smb3, stardew]
+ordering: [smb3, stardew, installed_experimental_by_adapter_id]
 adapters:
   - adapter_id: smb3
     game_id: smb3
@@ -13,9 +13,19 @@ adapters:
     provider: smb3_agent.stardew_companion.StardewCatalogProvider
     evidence_namespace: stardew
     standalone_surface: /stardew
+experimental_discovery:
+  provider: smb3_agent.experimental_adapters.ExperimentalCatalogProvider
+  root: local_application_support/Experimental Adapters
+  ordering: adapter_id
+  shared_core_game_id_branches: forbidden
+  required_label: Experimental
+  supported_promotion: forbidden
+  integrity_required: exact_manifest_hashes
+  invalid_provider_behavior: fail_closed
 shared_surface:
   root: /
   lab: /lab
+  onboarding: /onboarding
   switch_evidence_classification: catalog_switch
   responsive_widths: [desktop, 390]
 switch_contract:

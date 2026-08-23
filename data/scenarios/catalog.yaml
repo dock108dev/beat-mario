@@ -29,6 +29,8 @@ defaults:
   owner_participation_required: false
   may_count_toward_reliability: false
   may_count_toward_owner_acceptance: false
+  visible_live_proof: false
+  authoritative_game_outcome: false
   retry_policy:
     maximum_new_attempts: 1
     retryable_terminal_states: [failed, timed_out, process_lost]
@@ -390,22 +392,84 @@ scenarios:
     negative_expectations: [no adapter-state leakage, no cross-save action, no cross-adapter observation or authority reuse, no game-evidence promotion, no game-id branching in shared catalog or switching]
   - scenario_id: regression.unattended
     title: Unattended regression
+    version: "2"
+    game_id: provider_selected
+    adapter_id: provider_selected
+    adapter_version: provider_manifest_bound
     classification: unattended_regression
     evidence_classification: unattended_regression_result
     execution_classification: unattended_regression
-    capability_requirements: [local_event_store, unattended_runner]
-    capability_status: blocked_until_v2_13
+    capability_requirements: [local_event_store, unattended_runner, explicit_unattended_provider, rendered_pixel_display]
+    capability_status: implemented_validation_deferred
+    preconditions:
+      - exact source commit and dirty-state fingerprint are fresh
+      - selected adapter explicitly supports unattended regression
+      - local assets and dedicated fixtures pass identity and path checks
+      - exact regression-only acknowledgement is supplied for execution
+    required_fixtures: []
+    required_local_assets: []
+    automated_steps:
+      - step_id: isolated_runs
+        actor: system
+        action: launch bounded sequential fresh processes in isolated run directories through the selected adapter provider
+        may_send_input: true
+        safe_to_resume: false
+      - step_id: retain_and_compare
+        actor: system
+        action: retain classified per-run evidence and compare only exact compatible manifests
+        may_send_input: false
+        safe_to_resume: false
+    expected_events: [unattended_attempt_created, display_checked, process_started, classified_adapter_event, cleanup, unattended_repeatability_reported, evidence_reconciled]
+    expected_state_transitions: [defined, preflight_pending, ready, running, cleanup_pending, completed]
+    negative_expectations:
+      - no reliability, visible-live, review-only, authoritative, owner-usefulness, or owner-acceptance promotion
+      - no owner-required step or owner feedback population
+      - no primary Stardew save access and no ROM content in artifacts
+      - no accepted Mario evidence, fastest-run index, route profile, or learning mutation
+      - no final-campaign orchestration
+    timeout_seconds: 1200
+    cleanup_requirements: [stop input, terminate exact owned processes only, verify adapter cleanup and neutral handback, retain failed attempts]
+    artifact_requirements: [unattended manifest, invocation and environment manifests, per-run reports and classified events, stdout and stderr, display diagnostics, failure and cleanup records, repeatability report, integrity hashes, proof-limit statement]
+    affected_process_or_save: fresh provider-owned process and isolated workspace; dedicated regression fixture only
+    allowed_inputs: [adapter-declared ordinary regression inputs within protected-action policy]
+    protected_decisions: [owner data, primary saves, ROM content, purchases, sales, discards, gifts, consequential dialogue, story choices, sleep, save operations, accepted evidence]
+    stop_and_reclaim_behavior: stop input immediately; terminate only exact owned processes; neutralize and verify handback; retain the attempt
+    expected_duration: bounded by immutable per-run and aggregate timeouts
     result_can_prove: [regression-only technical repeatability]
-    result_cannot_prove: [owner usefulness, owner acceptance, visible live proof, authoritative game completion]
+    result_cannot_prove: [owner usefulness, owner acceptance, visible live proof, review-only Show evidence, route reliability, authoritative game completion, consolidated-campaign completion]
   - scenario_id: adapters.experimental_onboarding_removal
     title: Experimental-adapter onboarding and removal
+    version: "1"
     classification: visible_technical
     evidence_classification: technical_session_result
     execution_classification: visible_technical
     capability_requirements: [local_event_store, new_game_onboarding]
-    capability_status: blocked_until_v2_14
-    expected_events: [adapter_switched, cleanup, evidence_reconciled]
-    negative_expectations: [no core edits, no residual adapter state]
+    capability_status: implemented_validation_deferred
+    preconditions: [frozen release candidate, bounded empty scaffold and installation roots, fixture-only sample selected, no game process or active adapter authority]
+    required_fixtures: [data/experimental-adapters/fixture-quest/adapter.yaml, data/scenarios/fixtures.yaml]
+    automated_steps:
+      - step_id: validate_and_scaffold
+        actor: system
+        action: validate the versioned contract and generate the deterministic declarative scaffold twice in isolated roots for exact comparison
+        may_send_input: false
+        safe_to_resume: false
+      - step_id: conformance
+        actor: system
+        action: run the local fixture-only conformance matrix and retain its proof-limit statement
+        may_send_input: false
+        safe_to_resume: false
+      - step_id: install_discover_remove
+        actor: system
+        action: atomically install, discover as Experimental, inspect integrity, refuse modified removal, restore the isolated fixture, remove exact owned files, and prove zero active state
+        may_send_input: false
+        safe_to_resume: false
+    expected_events: [experimental_contract_validated, experimental_scaffold_created, experimental_conformance_reported, experimental_adapter_installed, experimental_provider_discovered, experimental_removal_refused, experimental_adapter_removed, cleanup, evidence_reconciled]
+    negative_expectations: [no shared-core game-id branch, no generated executable code, no network dependency, no built-in collision, no overwrite, no symlink or path escape, no support promotion, no evidence or history removal, no active process authority input or session, no residual manifest-owned adapter state]
+    artifact_requirements: [contract inspection, deterministic scaffold inventories and hashes, conformance report, installation manifest and hashes, discovery and catalog labels, refusal evidence, clean removal and zero-residual report, proof-limit statement]
+    result_can_prove: [contract conformance, deterministic scaffolding, installation integrity, Experimental discovery and labeling, safe exact removal in fixture conditions]
+    result_cannot_prove: [real-game compatibility, live observation correctness, effective input, reliability, authoritative completion, usefulness, owner acceptance, supported-catalog eligibility]
+    timeout_seconds: 300
+    cleanup_requirements: [remove only exact manifest-owned unmodified fixture files, prove zero process authority input and session state, preserve evidence and history]
   - scenario_id: campaign.final_owner_acceptance
     title: Final owner acceptance
     classification: final_campaign_orchestration
@@ -416,7 +480,7 @@ scenarios:
     owner_participation_required: true
     visible_execution_required: true
     may_count_toward_owner_acceptance: true
-    capability_status: blocked_until_v2_14_and_release_freeze
+    capability_status: blocked_until_release_freeze_and_campaign
     expected_events: [owner_usefulness_feedback, owner_acceptance_decision, evidence_reconciled]
     result_can_prove: [explicit owner usefulness and acceptance decisions for the frozen release candidate]
     result_cannot_prove: [route reliability unless the separate reliability scenarios pass, authoritative game completion without game-owned evidence]

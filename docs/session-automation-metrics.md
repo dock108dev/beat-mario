@@ -99,6 +99,14 @@ unattended execution cannot supply it.
 There is no combined success score because it would erase the distinction
 between operation, gameplay proof, usefulness, and owner acceptance.
 
+V2.13 stores unattended events in a dedicated `unattended_regression_result`
+series. Ingestion requires the immutable regression-only fields and rejects
+owner-feedback, owner-acceptance, fastest-run, candidate-review, or learning-
+promotion mutations. Summaries report unattended event/attempt counts
+separately and list route reliability, visible live counts, authoritative
+outcomes, player completion, usefulness, acceptance, fastest-run indexes, and
+learning promotion as excluded consumers. No blended score exists.
+
 ## Local storage, retention, recovery, and privacy
 
 Raw events are append-only JSONL with integrity hashes. Derived indexes are
@@ -137,6 +145,7 @@ Hooks cover malformed, duplicate, out-of-order, corrupt, unsupported, upgraded,
 missing, mismatched, ambiguous, post-handback, unattended-owner, cleanup,
 adapter-leakage, and incomplete-rebuild cases.
 
-These hooks are unexecuted. V2.8 does not implement Stardew behavior, combined
-games, unattended emulator execution, New Game Onboarding, historical backfill,
+These hooks are unexecuted. V2.13 now implements unattended emulator execution
+with validation deferred. V2.8 itself did not implement Stardew behavior,
+combined games, New Game Onboarding, historical backfill,
 candidate promotion/rollback execution, V2.9, an owner pilot, or acceptance.

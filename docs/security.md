@@ -37,6 +37,29 @@ requires fresh exact-process verification and explicit authorization.
 
 ## Implemented controls
 
+### V2.13 unattended regression
+
+Unattended regression is local-only and opt-in. It accepts only an explicit
+provider, eligible scenario, supported rendered-pixel display, bounded counts
+and timeouts, safe non-symlinked paths, and the exact regression-only
+acknowledgement. Invocation uses argument arrays with `shell=False`; inherited
+environment values are discarded unless allowlisted, and credential-like keys
+are rejected.
+
+Each run owns a fresh process group and isolated directory. Cancellation or
+failure may signal only that exact group. Broad cleanup targets, path escapes,
+symlinks, ambiguous data ownership, remote display/execution, network
+telemetry, and background upload are refused. Failures and incomplete cleanup
+are retained.
+
+The Mario ROM is read only to establish local identity and never copied into
+artifacts. Accepted evidence, routes, reliability, records, learning, and owner
+history are protected. Stardew requires a dedicated regression fixture whose
+real path cannot overlap an owner-save root; every run uses a new disposable
+copy and never opens, copies, inspects, resets, mutates, or deletes a primary
+save. Protected actions remain forbidden. See the
+[unattended operator guide](unattended-regression.md).
+
 Route Lab accepts only loopback bind addresses and loopback `Host` headers.
 Each server process generates an unpredictable CSRF token; every state-changing
 form must return that token. POST requests must use
@@ -149,3 +172,17 @@ ROM-free repository tests passed. The tracked secret/game-asset scan found zero
 candidates. Bandit found zero medium/high issues. `pip-audit` found no known
 vulnerabilities in the dependency graph exported from `uv.lock`; it skipped
 only this unpublished local package because it has no PyPI release to audit.
+
+## Experimental adapter onboarding
+
+Browser actions address adapter IDs only beneath fixed scaffold and installation
+roots. Contracts accept executable basenames, window-title fragments,
+declarative facts, and ordinary action tokens—not paths or commands. Reserved
+IDs, Mario/Stardew collisions, absolute or traversing paths, symlinks, unknown
+files, executable content, URLs/dependencies, collisions, and overwrites fail
+closed.
+
+Atomic installation retains exact hashes and manifest ownership. Uninstallation
+requires exact integrity plus zero active process, authority, input, and session
+state, removes only exact owned files, and preserves external evidence/history.
+Conformance and installation cannot grant Supported status or live proof.

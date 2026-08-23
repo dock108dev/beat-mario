@@ -1,0 +1,60 @@
+schema_version: game-companion-unattended-artifacts/v1
+classification: unattended_regression
+evidence_classification: unattended_regression_result
+execution_classification: unattended_regression
+immutable_proof_fields:
+  may_count_toward_reliability: false
+  may_count_toward_owner_acceptance: false
+  visible_live_proof: false
+  authoritative_game_outcome: false
+  network_access_allowed: false
+required_per_attempt:
+  - immutable manifest with integrity hash
+  - argument-vector invocation and sanitized environment manifest
+  - display identity, readiness, and continuity diagnostics
+  - one isolated directory and fresh process identity per run
+  - per-run report and raw classified adapter events
+  - stdout, stderr, exit status, and timing
+  - last-good milestone and first missing requirement
+  - failure classification and cleanup result
+  - aggregate repeatability report without a blended score
+  - artifact integrity inventory and hashes
+  - exact proof-limit statement
+failed_attempt_policy:
+  retain: true
+  retry_in_place: false
+  retry_creates_new_attempt_and_manifest: true
+  incomplete_cleanup_fails_closed: true
+  missing_evidence_fails_closed: true
+adapter_namespaces:
+  mario: artifacts/unattended-regression/<attempt-id>/workspaces/run_<number>/
+  stardew: artifacts/unattended-regression/<attempt-id>/workspaces/run_<number>/
+forbidden_artifact_content:
+  - ROM bytes or copied ROM files
+  - primary Stardew save content
+  - owner feedback or acceptance fields
+  - credentials, tokens, cookies, or unrelated personal files
+  - accepted Mario evidence or reliability artifacts
+repeatability_compatibility:
+  - adapter id and version
+  - scenario id and version
+  - goal, profile, and solution versions
+  - source dirty-state fingerprint
+  - fixture and asset identity
+  - display provider identity
+  - sanitized environment contract
+  - runner version
+  - evidence contract version
+correlation:
+  visible_reference_allowed: true
+  label: correlation_reference_only
+  equivalence: false
+  causation: false
+proof_limits:
+  - technical regression behavior and repeatability only
+  - not visible player proof
+  - not review-only Show evidence
+  - not route-reliability acceptance
+  - not authoritative game completion
+  - not owner usefulness or owner acceptance
+  - not a replacement for the consolidated campaign

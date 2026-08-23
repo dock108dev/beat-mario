@@ -7,6 +7,7 @@ import secrets
 import subprocess
 import threading
 import time
+import traceback
 from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
@@ -990,6 +991,30 @@ class LiveObservationManager:
             self._finalize("clean_stop")
             return accumulator.snapshot()
 
+    def invalidate_volatile_state(self) -> bool:
+        """Forget a stopped session without deleting its retained evidence."""
+        with self._lock:
+            accumulator = self._accumulator
+            controller = self._takeover_controller
+            thread = self._thread
+            if accumulator is not None and not accumulator.stopped:
+                return False
+            if controller is not None and controller.snapshot.owner is ControlOwner.AGENT:
+                return False
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=5)
+        with self._lock:
+            if thread is not None and thread.is_alive():
+                return False
+            self._accumulator = None
+            self._process = None
+            self._thread = None
+            self._detach_path = None
+            self._takeover_controller = None
+            self._game_file_sha256 = None
+            self._allow_takeover = False
+            return True
+
     def shutdown(self) -> None:
         with self._lock:
             if self._accumulator is not None and not self._accumulator.stopped:
@@ -1338,6 +1363,7 @@ class LiveObservationManager:
             return
         snapshot = self._accumulator.snapshot()
         converted: list[Path] = []
+        conversion_exception: dict[str, str] | None = None
         image_dir = self._accumulator.artifact_dir / "state-samples"
         try:
             converted = convert_gd_directory(
@@ -1350,8 +1376,13 @@ class LiveObservationManager:
                     self._accumulator.artifact_dir / "state-samples-contact-sheet.png",
                     columns=4,
                 )
-        except (OSError, ValueError):
+        except (OSError, ValueError) as exc:
             converted = []
+            conversion_exception = {
+                "type": type(exc).__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+            }
         self._write_json(
             "reconciliation.json",
             {
@@ -1364,6 +1395,7 @@ class LiveObservationManager:
                 "recoveries": self._accumulator.recoveries,
                 "events": len(self._accumulator.events),
                 "independently_readable_state_samples": [str(path) for path in converted],
+                "state_sample_conversion_exception": conversion_exception,
                 "last_sequence": self._accumulator.samples[-1].sequence
                 if self._accumulator.samples
                 else None,
