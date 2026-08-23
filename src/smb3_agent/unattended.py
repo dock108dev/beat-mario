@@ -39,7 +39,7 @@ PROOF_LIMITS = (
     "technical regression behavior and repeatability only",
     "not visible player proof",
     "not review-only Show evidence",
-    "not route-reliability acceptance",
+    "not route reliability acceptance",
     "not authoritative game completion",
     "not owner usefulness or owner acceptance",
     "not a replacement for the consolidated campaign",
@@ -780,7 +780,10 @@ class StardewUnattendedProvider:
         )
 
     def prepare_run(self, run_root: Path, plan: ProviderRunPlan) -> ProviderRunPlan:
-        assert plan.fixture is not None
+        if plan.fixture is None:
+            raise UnattendedError(
+                "Stardew unattended preparation requires a bound regression fixture"
+            )
         source = require_existing_safe_path(Path(plan.fixture.source_path), kind="Stardew regression fixture")
         target = require_safe_output_path(run_root / "disposable-save", kind="disposable regression save")
         reject_overlap(target, self.owner_save_roots, label="disposable regression save")
@@ -835,7 +838,7 @@ def eligibility_blockers(definition: ScenarioDefinition, *, requested_promotion:
     if definition.may_count_toward_reliability or definition.may_count_toward_owner_acceptance:
         blockers.append("scenario requests prohibited evidence promotion")
     if requested_promotion:
-        blockers.append("unattended output cannot be promoted to another evidence class")
+        blockers.append("unattended evidence promotion to another class is forbidden")
     if "final" in definition.execution_classification or definition.classification is ScenarioClassification.FINAL_CAMPAIGN:
         blockers.append("final-campaign orchestration cannot execute unattended")
     return tuple(blockers)
@@ -885,10 +888,14 @@ def repeatability_report(manifest: AttemptManifest, results: Sequence[RunResult]
     counts = {name: 0 for name in ("completed", "passed", "failed", "cancelled", "timed_out")}
     for result in results:
         counts["completed"] += 1
-        if result.lifecycle == "passed": counts["passed"] += 1
-        elif result.cancelled: counts["cancelled"] += 1
-        elif result.timed_out: counts["timed_out"] += 1
-        else: counts["failed"] += 1
+        if result.lifecycle == "passed":
+            counts["passed"] += 1
+        elif result.cancelled:
+            counts["cancelled"] += 1
+        elif result.timed_out:
+            counts["timed_out"] += 1
+        else:
+            counts["failed"] += 1
     event_hashes = [item.event_hash for item in results]
     outcome_hashes = [item.outcome_hash for item in results]
     first_missing = next((item.first_missing_requirement for item in results if item.first_missing_requirement), None)
@@ -968,13 +975,20 @@ def terminate_owned_process(process: subprocess.Popen[bytes]) -> None:
 
 
 def load_manifest(path: Path) -> AttemptManifest:
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    raw["assets"] = tuple(AssetIdentity(**item) for item in raw.get("assets", ()))
-    raw["fixture"] = FixtureIdentity(**raw["fixture"]) if raw.get("fixture") else None
-    raw["display"] = DisplayIdentity(**raw["display"])
-    for key in ("environment_allowlist", "arguments", "cleanup_policy", "protected_data", "protected_actions", "expected_milestones", "expected_outputs", "proof_limits"):
-        raw[key] = tuple(raw.get(key, ()))
-    return AttemptManifest(**raw)
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if raw.get("schema_version") != MANIFEST_SCHEMA:
+            raise UnattendedError("unsupported unattended manifest schema")
+        raw["assets"] = tuple(AssetIdentity(**item) for item in raw.get("assets", ()))
+        raw["fixture"] = FixtureIdentity(**raw["fixture"]) if raw.get("fixture") else None
+        raw["display"] = DisplayIdentity(**raw["display"])
+        for key in ("environment_allowlist", "arguments", "cleanup_policy", "protected_data", "protected_actions", "expected_milestones", "expected_outputs", "proof_limits"):
+            raw[key] = tuple(raw.get(key, ()))
+        return AttemptManifest(**raw)
+    except (KeyError, TypeError, ValueError) as exc:
+        if isinstance(exc, UnattendedError):
+            raise
+        raise UnattendedError(f"invalid unattended manifest: {exc}") from exc
 
 
 def artifact_integrity(root: Path, *, exclude: set[str]) -> dict[str, Any]:

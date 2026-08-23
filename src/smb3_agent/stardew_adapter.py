@@ -15,9 +15,11 @@ from typing import Any, Callable, Iterable, Mapping
 
 import yaml
 
+from smb3_agent.paths import repository_path
+
 
 STARDEW_SCHEMA_VERSION = "game-companion-stardew-operator/v1"
-ADAPTER_CONTRACT_PATH = Path("data/stardew/operator.yaml")
+ADAPTER_CONTRACT_PATH = repository_path("data/stardew/operator.yaml")
 DEFAULT_ARTIFACT_ROOT = Path("artifacts/stardew-operator")
 
 
@@ -789,7 +791,7 @@ class StardewOperator:
             first_unmet_requirement=(
                 detail
                 if neutralized
-                else f"input neutralization could not be verified: {neutralization_error}"
+                else f"input neutralization could not be verified; {recorded_detail}"
             ),
         )
         return self.failure

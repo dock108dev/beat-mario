@@ -25,6 +25,16 @@ control are unsupported.
 The ROM-free CI job runs on Linux and intentionally does not install or start
 either emulator.
 
+## Stardew is not publicly wired for live operation
+
+The Stardew copied-save, visible-window, observation, Tell/Show/Do, reclaim,
+reset, and evidence contracts have deterministic coverage. The public CLI and
+loopback server currently expose only capability inspection and a safe
+unconfigured render. They do not create a save copy, launch or attach to
+Stardew, configure ordinary input, or start a live controller. Live Stardew
+operation and owner proof therefore require a separate integration decision
+and the consolidated campaign; they cannot be inferred from the domain tests.
+
 ## Route Lab is local-only
 
 Route Lab accepts only loopback bind hosts. It is not designed for LAN,
@@ -36,20 +46,13 @@ guarantee. Local artifact files remain the source of its displayed state.
 ## No autonomous service operation
 
 There is no scheduler, queue, worker, daemon, retry service, telemetry backend,
-or alerting integration. Commands run synchronously under operator control.
-Failures are written into local reports where the command supports them; an
-engineer must inspect and respond to those reports.
+or alerting integration. CLI commands run under operator control. Route Lab may
+own bounded Show/live-observation threads and emulator child processes while
+the server is active; it is not an autonomous service. Failures are written
+into local reports where the operation supports them, and an engineer must
+inspect and respond to those reports.
 
-## Maintenance follow-ups
-
-- Splitting the large FCEUX Lua runner requires a loader/module design and live
-  regression evidence; line-count-only extraction is unsafe.
-- Extracting Route Lab's embedded HTML and CSS would improve maintainability,
-  but needs snapshot or browser-level coverage before changing its rendering
-  boundary.
-- A production web deployment, shared evidence store, or remote orchestration
-  model would require explicit product and security design. None should be
-  inferred from the local UI.
-- The CI dependency installation uses the declared version ranges rather than
-  the `uv.lock` resolution. Changing CI to enforce the lock is a separate build
-  reproducibility decision.
+A production web deployment, shared evidence store, or remote orchestration
+model would require explicit product and security design. None should be
+inferred from this local application. Repository-structure follow-ups and
+retained large-file rationale live in the [development guide](development.md).

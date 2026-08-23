@@ -27,11 +27,6 @@ RUN_WORLD_1_KING_RE = re.compile(
     re.IGNORECASE,
 )
 SHOW_ROUTE_RE = re.compile(r"^show\s+me\s+the\s+route(?:\s+at\s+(?P<speed>\d+(?:\.\d+)?)x)?$", re.IGNORECASE)
-REVIEW_LATEST_FAILED_RE = re.compile(r"^review\s+the\s+latest\s+failed\s+run$", re.IGNORECASE)
-CONTINUE_AFTER_LIFE_LOSS_RE = re.compile(
-    r"^continue\s+after\s+losing\s+a\s+life\s+if\s+the\s+route\s+allows\s+it$",
-    re.IGNORECASE,
-)
 
 
 class CommandParseError(ValueError):
@@ -47,7 +42,6 @@ class AgentCommand:
     run_mode: str | None = None
     validation_policy: str | None = None
     speed: float | None = None
-    recovery_policy: str | None = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), sort_keys=True)
@@ -67,8 +61,6 @@ class AgentCommand:
             lines.append(f"validation_policy={self.validation_policy}")
         if self.speed is not None:
             lines.append(f"speed={self.speed:g}")
-        if self.recovery_policy is not None:
-            lines.append(f"recovery_policy={self.recovery_policy}")
         return "\n".join(lines)
 
 
@@ -134,24 +126,6 @@ def parse_command(raw: str) -> AgentCommand:
             run_mode="watch",
             validation_policy="review_only",
             speed=speed,
-        )
-
-    if REVIEW_LATEST_FAILED_RE.match(normalized):
-        return AgentCommand(
-            action="review_latest_failed",
-            raw=normalized,
-            run_mode="review",
-            validation_policy="review_only",
-        )
-
-    if CONTINUE_AFTER_LIFE_LOSS_RE.match(normalized):
-        return AgentCommand(
-            action="set_recovery_policy",
-            raw=normalized,
-            goal=ACTIVE_PRODUCT_GOAL_ID,
-            run_mode="recovery",
-            validation_policy="contract_allows",
-            recovery_policy="continue_after_life_loss_if_allowed",
         )
 
     raise CommandParseError(f"Unsupported command: {raw}")

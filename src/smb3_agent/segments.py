@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 
 from smb3_agent.goals import GoalContract
+from smb3_agent.paths import repository_path
 
 
 SUPPORTED_SEGMENT_STATUSES = {"planned", "solved", "flaky", "bridged", "blocked"}
@@ -52,10 +53,11 @@ class SegmentCatalog:
 
 
 def load_segment_catalog(path: Path) -> SegmentCatalog:
-    if not path.is_file():
+    source_path = path if path.is_file() else repository_path(path)
+    if not source_path.is_file():
         raise SegmentValidationError(f"Segment catalog not found: {path}")
 
-    raw = yaml.safe_load(path.read_text()) or {}
+    raw = yaml.safe_load(source_path.read_text()) or {}
     if not isinstance(raw, dict):
         raise SegmentValidationError("Segment catalog must be a YAML mapping")
 

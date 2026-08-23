@@ -17,6 +17,7 @@ from smb3_agent.stardew_adapter import (
     PositionObservation,
     SaveIdentity,
     ScreenObservation,
+    StardewAdapterError,
     ToolObservation,
     WindowObservation,
     render_stardew_operator,
@@ -268,6 +269,35 @@ def test_do_rejects_stale_live_observation_and_neutralizes_before_failure(tmp_pa
     assert controller.active_attempt.first_unmet_requirement
 
 
+def test_do_preserves_send_and_neutralization_double_failure(tmp_path: Path) -> None:
+    controller = StardewCompanionController(save_identity(tmp_path))
+    initial = observation()
+    controller.authorize_do(
+        initial,
+        owner_confirmation=True,
+        input_driver=InputKind.KEYBOARD,
+        expires_at="2099-08-22T12:00:00+00:00",
+    )
+    broken = OrdinaryInputDriver(
+        keyboard=lambda _command: (_ for _ in ()).throw(RuntimeError("send lost")),
+        neutralizer=lambda: (_ for _ in ()).throw(OSError("neutral lost")),
+    )
+
+    with pytest.raises(StardewAdapterError, match=FailureCode.INPUT_REJECTED.value):
+        controller.perform_input(
+            InputCommand(InputKind.KEYBOARD, "w", "press", purpose="navigate"),
+            initial,
+            broken,
+            lambda: observation("never-used"),
+        )
+
+    attempt = controller.active_attempt
+    assert attempt is not None and attempt.status is StardewAttemptStatus.FAILED
+    assert not attempt.input_neutralized and not attempt.player_ownership_restored
+    assert "send lost" in (attempt.first_unmet_requirement or "")
+    assert "neutral lost" in (attempt.first_unmet_requirement or "")
+
+
 @pytest.mark.parametrize(
     "phase",
     ["authorized", "navigation", "watering", "refill", "return", "completion_pending"],
@@ -371,8 +401,11 @@ def test_reset_creates_fresh_copy_preserves_primary_and_invalidates_all_mode_sta
     manager = DisposableSaveManager()
     original = manager.create(primary, tmp_path / "attempt-1" / "Farm_123")
     controller = StardewCompanionController(original, manager=manager)
+    initial = replace(
+        observation(), save_tree_sha256=original.disposable_tree_sha256
+    )
     controller.authorize_do(
-        replace(observation(), save_tree_sha256=original.disposable_tree_sha256),
+        initial,
         owner_confirmation=True,
         input_driver=InputKind.KEYBOARD,
         expires_at="2099-08-22T12:00:00+00:00",

@@ -12,6 +12,8 @@ from smb3_agent.stardew_adapter import (
     InputCommand,
     InputKind,
     InputOwner,
+    OperatorLifecycle,
+    OrdinaryInputDriver,
     PositionObservation,
     SaveIdentity,
     ScreenObservation,
@@ -189,3 +191,31 @@ def test_failure_neutralizes_returns_safe_owner_and_renders_narrow_contract(tmp_
     assert 'data-testid="show-status"' in page
     assert 'data-testid="do-scope"' in page
     assert "@media(max-width:390px)" in page
+
+
+def test_input_and_neutralization_double_failure_stays_failed_closed(tmp_path: Path) -> None:
+    operator = StardewOperator(save_identity(tmp_path))
+    current = observation()
+    operator.attach_player_owned(current)
+    operator.establish_task(current)
+    operator.authorize_agent(
+        expires_at="2099-08-22T12:00:00+00:00", owner_confirmation=True
+    )
+    broken = OrdinaryInputDriver(
+        keyboard=lambda _command: (_ for _ in ()).throw(RuntimeError("send lost")),
+        neutralizer=lambda: (_ for _ in ()).throw(OSError("neutral lost")),
+    )
+
+    with pytest.raises(StardewAdapterError, match=FailureCode.INPUT_REJECTED.value):
+        operator.send_input(
+            InputCommand(InputKind.KEYBOARD, "w", "press", purpose="navigate"),
+            current,
+            broken,
+        )
+
+    assert operator.lifecycle is OperatorLifecycle.FAILED
+    assert operator.owner is InputOwner.NONE
+    assert not operator.input_neutralized
+    assert operator.failure is not None
+    assert "send lost" in operator.failure.detail
+    assert "neutral lost" in operator.failure.detail

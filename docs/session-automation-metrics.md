@@ -13,8 +13,9 @@ update, and owner-feedback-prompt event types. The V2.9 scenario hooks bind
 these to the existing observation, Tell, advice, Show, takeover, ownership,
 reclaim, handback, learning, recovery, and reconciliation events.
 
-These contracts are unexecuted. They do not populate owner usefulness or owner
-acceptance, and they cannot upgrade technical or review-only evidence.
+These contracts are exercised by ROM-free tests. They do not populate owner
+usefulness or owner acceptance, and they cannot upgrade technical or
+review-only evidence.
 
 ## Scenario and evidence classifications
 
@@ -126,10 +127,11 @@ cloud identifiers.
 
 ## Command and UI surfaces
 
-The CLI exposes scenario `list`, `status`, `plan`, `run`, `cancel`, and
+The CLI exposes scenario `list`, `status`, `plan`, and
 `final-campaign-readiness`, plus metrics `summarize`, `export`, `rebuild`,
-`schema`, and `status`. Run/cancel fail closed until the consolidated campaign
-provides an exact immutable attempt; they never simulate owner action.
+`schema`, and `status`. Generic scenario run/cancel entries are not supported;
+unattended regression uses its dedicated bounded runner, and the consolidated
+owner campaign must follow its explicit guide rather than a placeholder CLI.
 
 The player view shows recent classified local activity, ownership, freshness,
 suggestions, takeover/handback, run-library/learning changes, missing evidence,
@@ -145,7 +147,9 @@ Hooks cover malformed, duplicate, out-of-order, corrupt, unsupported, upgraded,
 missing, mismatched, ambiguous, post-handback, unattended-owner, cleanup,
 adapter-leakage, and incomplete-rebuild cases.
 
-These hooks are unexecuted. V2.13 now implements unattended emulator execution
-with validation deferred. V2.8 itself did not implement Stardew behavior,
-combined games, New Game Onboarding, historical backfill,
-candidate promotion/rollback execution, V2.9, an owner pilot, or acceptance.
+The deterministic and negative hooks are exercised by the ROM-free suite.
+V2.13 implements unattended emulator execution, but no live unattended attempt
+has run for the current candidate. Owner-pilot fields remain blank and the
+disabled final campaign has not run. Historical backfill and candidate
+promotion/rollback remain separate explicit operator actions rather than
+automatic scenario behavior.

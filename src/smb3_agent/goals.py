@@ -9,6 +9,7 @@ import yaml
 
 from smb3_agent.fceux_harness import BatchSummary, run_fceux_1_1
 from smb3_agent.presets import DIAGNOSTIC_PRESETS, EXECUTABLE_PRESETS, environment_for_preset
+from smb3_agent.paths import repository_path
 
 
 ACTIVE_PRODUCT_GOAL_ID = "world_8_double_whistle"
@@ -106,13 +107,14 @@ def resolve_goal_path(goal: str, goals_dir: Path = Path("data/goals")) -> Path:
 
 
 def load_goal_contract(path: Path, *, _seen: frozenset[Path] = frozenset()) -> GoalContract:
-    if not path.is_file():
+    source_path = path if path.is_file() else repository_path(path)
+    if not source_path.is_file():
         raise GoalValidationError(f"Goal contract not found: {path}")
-    resolved_path = path.resolve()
+    resolved_path = source_path.resolve()
     if resolved_path in _seen:
         raise GoalValidationError(f"Goal prefix cycle detected at: {path}")
 
-    raw = yaml.safe_load(path.read_text()) or {}
+    raw = yaml.safe_load(source_path.read_text()) or {}
     if not isinstance(raw, dict):
         raise GoalValidationError("Goal contract must be a YAML mapping")
 
@@ -263,6 +265,8 @@ def load_goal_contract(path: Path, *, _seen: frozenset[Path] = frozenset()) -> G
 
 
 def load_product_goal_contracts(goals_dir: Path = Path("data/goals")) -> tuple[GoalContract, ...]:
+    if not goals_dir.is_dir():
+        goals_dir = repository_path(goals_dir)
     contracts = tuple(
         load_goal_contract(path)
         for path in sorted(goals_dir.glob("*.yaml"))
@@ -313,7 +317,7 @@ def run_goal_contract(
     run_dir = artifacts_dir or _default_artifacts_dir(contract)
     summary = run_fceux_1_1(
         game_path=game_path,
-        script_path=Path(contract.runner["script"]),
+        script_path=repository_path(contract.runner["script"]),
         artifacts_dir=run_dir,
         attempts=attempts,
         capture_images=capture_images,

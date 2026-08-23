@@ -17,7 +17,7 @@ echo "== bash syntax =="
 bash -n scripts/validate_phase0.sh
 
 echo "== ruff lint =="
-"${python_bin}" -m ruff check src tests
+"${python_bin}" -m ruff check src tests scripts/security_check.py
 
 echo "== tracked generated-file guard =="
 tracked_generated="$(
@@ -49,6 +49,9 @@ if [[ -n "${tracked_generated}" ]]; then
   echo "${tracked_generated}"
   exit 1
 fi
+
+echo "== tracked credential and game-asset scan =="
+"${python_bin}" scripts/security_check.py
 
 echo "== ignored runtime artifact visibility =="
 git status --short --ignored

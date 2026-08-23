@@ -13,11 +13,13 @@ from typing import Any, Callable, Iterable, Mapping
 
 import yaml
 
+from smb3_agent.paths import repository_path
+
 
 SCENARIO_SCHEMA_VERSION = "game-companion-scenario/v1"
 PLAN_SCHEMA_VERSION = "game-companion-scenario-plan/v1"
 ATTEMPT_SCHEMA_VERSION = "game-companion-scenario-attempt/v1"
-DEFAULT_CATALOG = Path("data/scenarios/catalog.yaml")
+DEFAULT_CATALOG = repository_path("data/scenarios/catalog.yaml")
 DEFAULT_ATTEMPT_ROOT = Path("artifacts/scenarios")
 
 

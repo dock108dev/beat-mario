@@ -91,6 +91,52 @@ current-directory, repository-root, or filesystem-root target.
   command failing now raises and stops input execution before controls could be
   sent to an unintended application.
 
+## Control, handback, and process termination
+
+Show acknowledges `input_stopped` only after the owned process has exited.
+Bounded `SIGTERM` then `SIGKILL` escalation is retained, but a lost process
+handle, second timeout, or still-running process raises `ShowError`; the UI must
+not claim that control returned in that state.
+
+Stardew ordinary-input failures always enter the adapter's fail-closed terminal
+path. If both input dispatch and neutralization fail, the retained failure names
+both errors, clears authority, leaves the owner as `none`, and refuses confirmed
+player handback. The companion controller reuses that first adapter failure
+instead of neutralizing again and overwriting the original cause.
+
+## Scenario and unattended artifacts
+
+Scenario execution and cleanup boundaries deliberately catch ordinary
+exceptions so immutable attempts can reach `failed` or `retained_for_review`.
+Each caught failure now appends a structured record with phase, exception type,
+message, and traceback to `failure_details`; cleanup failure never becomes
+completion.
+
+Unattended regression runs use the same structured fields in per-run reports
+and aggregate `exceptions` and `cleanup_exceptions`. Process, environment,
+keyboard-interrupt, fixture, prelaunch, and cleanup failures remain
+regression-only retained evidence. Malformed manifests raise `UnattendedError`
+instead of leaking implementation exceptions such as `KeyError`.
+
+Live-observation state-sample image conversion remains non-fatal to clean
+observer detach, but `reconciliation.json` records
+`state_sample_conversion_exception` with type, message, and traceback. An empty
+converted-image list therefore cannot be mistaken for successful conversion.
+
+## Experimental adapter transactions
+
+Scaffolding and installation still roll back their bounded temporary directory
+when staging or atomic promotion fails. Cleanup errors are no longer ignored:
+the operation raises `ExperimentalAdapterError` containing both the original
+operation failure and cleanup failure and identifies the retained staging path
+for inspection. Symlink roots are rejected before directory creation.
+
+Tracked contracts, profiles, knowledge, and scripts resolve from the repository
+installation rather than the process working directory. Runtime artifacts and
+owner-selected files remain explicitly rooted by their owning operation. This
+keeps localhost request threads deterministic even if another local caller
+changes its working directory.
+
 ## Validation
 
 Run the unchanged repository gate from the repository root:

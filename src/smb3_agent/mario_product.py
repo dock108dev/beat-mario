@@ -27,12 +27,13 @@ from smb3_agent.companion_catalog import (
     CompanionCatalogError,
 )
 from smb3_agent.live_observation import ConnectionState, LiveObservationSnapshot
+from smb3_agent.paths import repository_path
 from smb3_agent.takeover import supported_solutions
 
 
 PRODUCT_SCHEMA_VERSION = "game-companion-mario-product/v1"
-PILOT_MANIFEST_PATH = Path("data/scenarios/mario-owner-pilot.yaml")
-ADAPTER_PRODUCT_PATH = Path("data/mario/product.yaml")
+PILOT_MANIFEST_PATH = repository_path("data/scenarios/mario-owner-pilot.yaml")
+ADAPTER_PRODUCT_PATH = repository_path("data/mario/product.yaml")
 DEFAULT_PRODUCT_ROOT = Path("artifacts/product-session")
 
 
@@ -611,16 +612,16 @@ def product_stage(
 ) -> ProductStage:
     if failure is not None:
         return ProductStage.FAILURE
-    if not setup.launch_ready:
-        return ProductStage.FIRST_USE
-    if starting:
-        return ProductStage.STARTING
     if snapshot.control_state == "neutralizing":
         return ProductStage.RECLAIM
     if snapshot.control_owner == "agent":
         return ProductStage.AGENT_CONTROLLING
     if snapshot.control_state == "returned":
         return ProductStage.HANDBACK
+    if not setup.launch_ready:
+        return ProductStage.FIRST_USE
+    if starting:
+        return ProductStage.STARTING
     if show_active:
         return ProductStage.SHOW_ACTIVE_SEPARATELY
     if snapshot.observation_active:

@@ -40,13 +40,14 @@ from smb3_agent.lab_ui import (
 from smb3_agent.companion_catalog import (
     CatalogPreferenceStore,
     CatalogPreferences,
-    CatalogRegistry,
     CatalogSession,
     CompanionCatalogError,
+    build_default_catalog_registry,
 )
 from smb3_agent.experimental_adapters import (
     ExperimentalAdapterError,
     default_install_root,
+    default_scaffold_root,
     discover_installed_providers,
     inspect_contract,
     install_adapter,
@@ -58,7 +59,6 @@ from smb3_agent.experimental_adapters import (
 )
 from smb3_agent.learning import LearningError, LocalLearningStore, backfill_run_library
 from smb3_agent.metrics import LocalMetricsStore, MetricsError, metric_definitions
-from smb3_agent.mario_product import MarioCatalogProvider
 from smb3_agent.run_library import LocalRunLibrary
 from smb3_agent.observe import ObserveError, run_observed_segment
 from smb3_agent.recovery import RecoveryError, simulate_recovery
@@ -86,12 +86,14 @@ from smb3_agent.segments import (
     validate_goal_segments,
 )
 from smb3_agent.scenarios import (
+    DEFAULT_CATALOG as DEFAULT_SCENARIO_CATALOG,
     ScenarioError,
     final_campaign_readiness,
     load_scenario_catalog,
     scenario_plan,
 )
 from smb3_agent.stardew_adapter import (
+    ADAPTER_CONTRACT_PATH,
     InputOwner,
     OperatorLifecycle,
     OperatorView,
@@ -99,7 +101,6 @@ from smb3_agent.stardew_adapter import (
     load_stardew_contract,
     render_stardew_operator,
 )
-from smb3_agent.stardew_companion import StardewCatalogProvider
 from smb3_agent.unattended import (
     ACKNOWLEDGEMENT,
     DeclaredDisplayProvider,
@@ -603,7 +604,7 @@ def build_parser() -> argparse.ArgumentParser:
     stardew_status = stardew_subparsers.add_parser(
         "status", help="Show adapter-owned capability truth without detecting or running the game"
     )
-    stardew_status.add_argument("--contract", default="data/stardew/operator.yaml")
+    stardew_status.add_argument("--contract", default=str(ADAPTER_CONTRACT_PATH))
 
     companion = subparsers.add_parser(
         "companion", help="Inspect the combined local Game Companion catalog"
@@ -626,7 +627,7 @@ def build_parser() -> argparse.ArgumentParser:
     adapter_scaffold = adapter_subparsers.add_parser("scaffold", help="Generate a deterministic non-executable scaffold")
     adapter_scaffold.add_argument("adapter_id")
     adapter_scaffold.add_argument("--display-name", required=True)
-    adapter_scaffold.add_argument("--root", default="experimental-adapters")
+    adapter_scaffold.add_argument("--root", default=str(default_scaffold_root()))
     adapter_inspect = adapter_subparsers.add_parser("inspect", help="Inspect declared truth and proof limits")
     adapter_inspect.add_argument("contract")
     adapter_conformance = adapter_subparsers.add_parser("conformance", help="Run deterministic fixture-only conformance")
@@ -651,16 +652,14 @@ def build_parser() -> argparse.ArgumentParser:
         ("list", "List classified scenario definitions and blockers"),
         ("status", "Show one scenario's implementation and capability status"),
         ("plan", "Show the dry execution plan without running it"),
-        ("run", "Reserved final-campaign execution surface; fail closed in V2.8"),
-        ("cancel", "Reserved safe cancellation surface; fail closed without an active attempt"),
     ):
         command = scenario_subparsers.add_parser(action, help=help_text)
         command.add_argument("scenario_id", nargs="?" if action == "list" else None)
-        command.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+        command.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
     readiness = scenario_subparsers.add_parser(
         "final-campaign-readiness", help="Report classified final-campaign blockers"
     )
-    readiness.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+    readiness.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
 
     unattended = subparsers.add_parser(
         "unattended", help="Inspect or run honestly labeled local unattended regression"
@@ -691,7 +690,7 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--artifact-root", default="artifacts/unattended-regression")
     for command in (unattended_plan, unattended_run):
         command.add_argument("--scenario", default="regression.unattended")
-        command.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+        command.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
         command.add_argument("--goal-version", required=True)
         command.add_argument("--profile-version", required=True)
         command.add_argument("--solution-version", required=True)
@@ -1221,8 +1220,10 @@ def main() -> None:
 
     if args.command == "stardew":
         try:
-            contract = load_stardew_contract(
-                Path(args.contract) if args.stardew_command == "status" else Path("data/stardew/operator.yaml")
+            contract = (
+                load_stardew_contract(Path(args.contract))
+                if args.stardew_command == "status"
+                else load_stardew_contract()
             )
             capabilities = {
                 str(item["id"]): str(item["status"])
@@ -1259,7 +1260,7 @@ def main() -> None:
 
     if args.command == "companion":
         try:
-            registry = CatalogRegistry((MarioCatalogProvider(), StardewCatalogProvider(), *discover_installed_providers()))
+            registry = build_default_catalog_registry()
             catalog = CatalogSession(registry, CatalogPreferenceStore())
             if args.companion_command == "catalog-status":
                 print(json.dumps(catalog.inspection_payload(), indent=2, sort_keys=True))

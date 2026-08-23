@@ -1,3 +1,5 @@
+import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -7,6 +9,7 @@ from smb3_agent.scenarios import (
     ScenarioError,
     ScenarioLifecycle,
     ScenarioRunner,
+    ScenarioStep,
     final_campaign_readiness,
     load_scenario_catalog,
     scenario_plan,
@@ -61,6 +64,39 @@ def test_terminal_attempt_cannot_be_rewritten_as_success(tmp_path: Path) -> None
         runner.transition(attempt, ScenarioLifecycle.COMPLETED)
 
 
+def test_execution_and_cleanup_failures_retain_traceback_records(tmp_path: Path) -> None:
+    source = next(
+        item for item in load_scenario_catalog(CATALOG)
+        if item.scenario_id == "regression.unattended"
+    )
+    scenario = replace(
+        source,
+        capability_status="available",
+        capability_requirements=(),
+        required_fixtures=(),
+        required_local_assets=(),
+        automated_steps=(ScenarioStep("explode", "system", "fixture"),),
+    )
+    runner = ScenarioRunner(tmp_path)
+    attempt = runner.create_attempt(scenario, {"source": "fixture"})
+
+    result = runner.execute(
+        scenario,
+        attempt,
+        capabilities=(),
+        step_executors={"explode": lambda: (_ for _ in ()).throw(RuntimeError("step boom"))},
+        cleanup_action=lambda: (_ for _ in ()).throw(OSError("cleanup boom")),
+    )
+
+    assert result.state is ScenarioLifecycle.RETAINED_FOR_REVIEW
+    assert [item["phase"] for item in result.failure_details] == ["execution", "cleanup"]
+    assert "RuntimeError: step boom" in result.failure_details[0]["traceback"]
+    persisted = json.loads(
+        (tmp_path / scenario.scenario_id / attempt.attempt_id / "attempt.json").read_text()
+    )
+    assert persisted["failure_details"][1]["type"] == "OSError"
+
+
 def test_final_campaign_readiness_marks_v2_12_ready_and_preserves_later_slice_blockers() -> None:
     readiness = final_campaign_readiness(load_scenario_catalog(CATALOG))
     assert readiness["ready_to_execute"] is False
@@ -68,5 +104,8 @@ def test_final_campaign_readiness_marks_v2_12_ready_and_preserves_later_slice_bl
     assert "stardew.takeover_reclaim@1" not in readiness["capability_blockers"]
     assert "stardew.show_review_only@1" not in readiness["capability_blockers"]
     assert "stardew.disposable_reset@1" not in readiness["capability_blockers"]
-    assert "adapters.mario_stardew_switching@1" not in readiness["capability_blockers"]
-    assert "regression.unattended@1" in readiness["capability_blockers"]
+    assert (
+        readiness["capability_blockers"]["adapters.mario_stardew_switching@1"]
+        == "implemented_validation_deferred"
+    )
+    assert "regression.unattended@2" in readiness["capability_blockers"]

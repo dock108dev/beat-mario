@@ -8,7 +8,7 @@ import json
 import os
 from pathlib import Path
 import secrets
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 
 EVENT_SCHEMA_VERSION = "game-companion-event/v1"

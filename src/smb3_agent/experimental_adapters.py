@@ -8,7 +8,7 @@ import shutil
 import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import yaml
 
@@ -69,6 +69,9 @@ ACTIVE_STATE_FILES = frozenset(
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 TOKEN_PATTERN = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
 HASH_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+MAX_CONTRACT_BYTES = 256 * 1024
+MAX_FIXTURE_BYTES = 1024 * 1024
+MAX_INSTALL_MANIFEST_BYTES = 256 * 1024
 
 
 class ExperimentalAdapterError(ValueError):
@@ -142,6 +145,21 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def _read_bounded_text(path: Path, *, limit: int, field: str) -> str:
+    if path.is_symlink() or not path.is_file():
+        raise ExperimentalAdapterError(f"{field} must be a regular non-symlinked file")
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        raise ExperimentalAdapterError(f"cannot inspect {field}: {exc}") from exc
+    if size > limit:
+        raise ExperimentalAdapterError(f"{field} exceeds the {limit}-byte limit")
+    try:
+        return path.read_text(encoding="utf-8", errors="strict")
+    except (OSError, UnicodeError) as exc:
+        raise ExperimentalAdapterError(f"cannot read {field}: {exc}") from exc
 
 
 def _require_string(value: object, field: str) -> str:
@@ -310,6 +328,10 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         if capability.get("state") not in {"declared", "unsupported"}:
             raise ExperimentalAdapterError("capabilities may be declared or unsupported before live proof")
         _require_string(capability.get("description"), "capability description")
+    if {"tell", "show", "do"} - capability_ids:
+        raise ExperimentalAdapterError(
+            "capabilities must explicitly declare Tell, Show, and Do"
+        )
 
     goals = _require_list(contract.get("goals"), "goals")
     goal_ids: set[str] = set()
@@ -377,9 +399,13 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def load_contract(path: Path) -> dict[str, Any]:
-    if path.is_symlink():
-        raise ExperimentalAdapterError("contract symlinks are refused")
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    raw = yaml.safe_load(
+        _read_bounded_text(
+            path,
+            limit=MAX_CONTRACT_BYTES,
+            field="adapter contract",
+        )
+    )
     if not isinstance(raw, dict):
         raise ExperimentalAdapterError("adapter contract must be a mapping")
     return validate_contract(raw)
@@ -441,7 +467,7 @@ def scaffold_payload(adapter_id: str, display_name: str) -> dict[str, Any]:
             {"id": "observe", "state": "declared", "description": "Fixture observation only."},
             {"id": "tell", "state": "declared", "description": "Fixture-grounded guidance only."},
             {"id": "show", "state": "unsupported", "description": "No executable solution is generated."},
-            {"id": "takeover", "state": "unsupported", "description": "No live input implementation is generated."},
+            {"id": "do", "state": "unsupported", "description": "No live input implementation is generated."},
         ],
         "goals": [{
             "id": "fixture-goal",
@@ -510,12 +536,12 @@ def _cleanup_failed_staging(
 
 def scaffold_adapter(root: Path, adapter_id: str, display_name: str) -> Path:
     payload = validate_contract(scaffold_payload(adapter_id, display_name))
+    if root.is_symlink():
+        raise ExperimentalAdapterError("scaffold root symlinks are refused")
     target = _bounded_child(root, adapter_id)
     if target.exists() or target.is_symlink():
         raise ExperimentalAdapterError("scaffold target already exists; overwrite refused")
     root.mkdir(parents=True, exist_ok=True)
-    if root.is_symlink():
-        raise ExperimentalAdapterError("scaffold root symlinks are refused")
     temporary = Path(tempfile.mkdtemp(prefix=f".{adapter_id}-", dir=root))
     try:
         (temporary / "fixtures").mkdir()
@@ -557,7 +583,17 @@ def run_conformance(source: Path) -> ConformanceReport:
     contract = load_contract(source / "adapter.yaml")
     inventory = _source_inventory(source)
     adapter_id = contract["identity"]["adapter_id"]
-    fixtures = {path: json.loads((source / path).read_text(encoding="utf-8")) for path in sorted(ALLOWED_FILES) if path.endswith(".json")}
+    fixtures = {
+        path: json.loads(
+            _read_bounded_text(
+                source / path,
+                limit=MAX_FIXTURE_BYTES,
+                field=f"adapter fixture {path}",
+            )
+        )
+        for path in sorted(ALLOWED_FILES)
+        if path.endswith(".json")
+    }
     checks = (
         ConformanceCheck("schema", True, "versioned contract and exact fields validate"),
         ConformanceCheck("provider_truth", contract["identity"]["status"] == EXPERIMENTAL_STATUS, "provider cannot self-promote"),
@@ -584,9 +620,9 @@ def install_adapter(source: Path, install_root: Path) -> Path:
     contract = load_contract(source / "adapter.yaml")
     adapter_id = contract["identity"]["adapter_id"]
     inventory = _source_inventory(source)
-    install_root.mkdir(parents=True, exist_ok=True)
     if install_root.is_symlink():
         raise InstallationRefused("installation root symlinks are refused")
+    install_root.mkdir(parents=True, exist_ok=True)
     target = _bounded_child(install_root, adapter_id)
     if target.exists() or target.is_symlink():
         raise InstallationRefused("installation collision; overwrite refused")
@@ -619,7 +655,13 @@ def load_install_manifest(target: Path) -> dict[str, Any]:
     path = target / ".installation.json"
     if target.is_symlink() or path.is_symlink():
         raise InstallationRefused("installed adapter or manifest symlink refused")
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw = json.loads(
+        _read_bounded_text(
+            path,
+            limit=MAX_INSTALL_MANIFEST_BYTES,
+            field="installation manifest",
+        )
+    )
     if raw.get("schema_version") != INSTALL_MANIFEST_VERSION or not isinstance(raw.get("files"), dict):
         raise InstallationRefused("invalid installation manifest")
     if set(raw) != {"schema_version", "adapter_id", "status", "contract_hash", "files", "owned_state_files", "preserved_namespaces"}:
@@ -697,7 +739,20 @@ class ExperimentalCatalogProvider:
     def catalog_entry(self) -> AdapterCatalogEntry:
         contract = self.contract
         identity = contract["identity"]
-        capabilities = tuple(CatalogCapability(item["id"], item["id"].replace("-", " ").title(), "implementation_validation_deferred" if item["state"] == "declared" else "unavailable", item["description"], None if item["state"] == "declared" else "Adapter declares this capability unsupported.") for item in contract["capabilities"])
+        capabilities = tuple(
+            CatalogCapability(
+                item["id"],
+                item["id"].replace("-", " ").title(),
+                "implementation_validation_deferred"
+                if item["state"] == "declared"
+                else "unavailable",
+                item["description"],
+                "Declared by an Experimental adapter; live validation is deferred."
+                if item["state"] == "declared"
+                else "Adapter declares this capability unsupported.",
+            )
+            for item in contract["capabilities"]
+        )
         goals = tuple(CatalogGoal(item["id"], item.get("label", item["id"]), "Experimental measurable goal; fixture conformance only.", tuple(profile["id"] for profile in contract["solution_profiles"] if profile["goal_id"] == item["id"])) for item in contract["goals"])
         profiles = tuple(CatalogProfile(item["id"], item["id"].replace("-", " ").title(), item["execution"], "Experimental profile; not live-proven or executable unless separately implemented and accepted.") for item in contract["solution_profiles"])
         scopes = tuple(CatalogScope(item["id"], item["id"].replace("-", " ").title(), tuple(item["stop_conditions"])) for item in contract["takeover_scopes"])

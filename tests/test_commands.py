@@ -130,18 +130,24 @@ def test_parse_show_route_command() -> None:
     assert command.validation_policy == "review_only"
 
 
-def test_parse_review_latest_failed_command() -> None:
-    command = parse_command("review the latest failed run")
+@pytest.mark.parametrize(
+    "removed_command",
+    (
+        "review the latest failed run",
+        "continue after losing a life if the route allows it",
+    ),
+)
+def test_removed_parse_only_commands_are_unsupported(removed_command: str) -> None:
+    with pytest.raises(CommandParseError, match="Unsupported command"):
+        parse_command(removed_command)
 
-    assert command.action == "review_latest_failed"
-    assert command.run_mode == "review"
 
-
-def test_parse_continue_after_life_loss_command() -> None:
-    command = parse_command("continue after losing a life if the route allows it")
-
-    assert command.action == "set_recovery_policy"
-    assert command.recovery_policy == "continue_after_life_loss_if_allowed"
+@pytest.mark.parametrize("removed_action", ("run", "cancel"))
+def test_removed_generic_scenario_actions_are_not_cli_paths(
+    removed_action: str,
+) -> None:
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["scenario", removed_action, "fixture"])
 
 
 def test_parse_unsupported_command() -> None:

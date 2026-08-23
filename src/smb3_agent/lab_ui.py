@@ -35,15 +35,14 @@ from smb3_agent.companion_catalog import (
     AdapterCatalogEntry,
     AdapterRuntimeState,
     CatalogPreferenceStore,
-    CatalogRegistry,
     CatalogSession,
     CompanionCatalogError,
+    build_default_catalog_registry,
 )
 from smb3_agent.experimental_adapters import (
     ExperimentalAdapterError,
     PROOF_LIMITS as EXPERIMENTAL_PROOF_LIMITS,
     default_install_root,
-    discover_installed_providers,
     inspect_contract,
     install_adapter,
     installation_status,
@@ -93,6 +92,7 @@ from smb3_agent.objective_profiles import (
     ObjectiveSessionManager,
     ObjectiveView,
 )
+from smb3_agent.paths import repository_path
 from smb3_agent.goals import (
     ACTIVE_PRODUCT_GOAL_ID,
     GoalContract,
@@ -137,12 +137,11 @@ from smb3_agent.run_library import LocalRunLibrary, RunLibraryError
 from smb3_agent.takeover import TakeoverError, supported_solutions
 from smb3_agent.scenarios import ScenarioError, final_campaign_readiness, load_scenario_catalog, scenario_plan
 from smb3_agent.stardew_adapter import InputOwner, OperatorLifecycle, OperatorView, load_stardew_contract, render_stardew_operator
-from smb3_agent.stardew_companion import StardewCatalogProvider
 
 
-WORLD_1_LOCATION_PATH = Path("data/worlds/world_1_locations.yaml")
+WORLD_1_LOCATION_PATH = repository_path("data/worlds/world_1_locations.yaml")
 LAST_COMMAND_PATH = Path("artifacts/ui/last_command.yaml")
-LOCAL_ASSET_DIR = Path("public/assets/local")
+LOCAL_ASSET_DIR = repository_path("public/assets/local")
 ARTIFACT_DIR = Path("artifacts")
 EXPERIMENTAL_SCAFFOLD_ROOT = Path("experimental-adapters")
 MAX_FORM_BYTES = 64 * 1024
@@ -373,23 +372,22 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
         retain=lambda: _retain_mario_catalog_state(server),
         invalidate=lambda: _invalidate_mario_catalog_state(server),
     )
-    base_providers = (mario_provider, StardewCatalogProvider())
-    setattr(server, "base_catalog_providers", base_providers)
-    registry = CatalogRegistry((*base_providers, *discover_installed_providers()))
+    setattr(server, "mario_catalog_provider", mario_provider)
+    registry = build_default_catalog_registry(mario_provider=mario_provider)
     setattr(server, "catalog_session", CatalogSession(registry, CatalogPreferenceStore()))
     return server
 
 
 def _refresh_catalog_registry(server: ThreadingHTTPServer) -> None:
-    base = getattr(server, "base_catalog_providers", None)
+    mario_provider = getattr(server, "mario_catalog_provider", None)
     current = getattr(server, "catalog_session", None)
-    if not isinstance(base, tuple) or not isinstance(current, CatalogSession):
+    if mario_provider is None or not isinstance(current, CatalogSession):
         raise RuntimeError("Game Companion server is missing catalog provider state")
     setattr(
         server,
         "catalog_session",
         CatalogSession(
-            CatalogRegistry((*base, *discover_installed_providers())),
+            build_default_catalog_registry(mario_provider=mario_provider),
             current.store,
         ),
     )
@@ -3516,17 +3514,6 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
     .safety-card {{ grid-column: span 7; }}
     .activity-card {{ grid-column: span 5; }}
     .game-name {{ font-size: 21px; font-weight: 850; margin-bottom: 4px; }}
-    .status-pill {{
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 3px 8px;
-      color: var(--muted);
-      background: var(--surface-alt);
-      font-size: 11px;
-      font-weight: 800;
-    }}
     .fact-grid, .handoff-list {{ margin: 0; display: grid; gap: 8px; }}
     .fact-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
     .fact-grid div, .handoff-list div {{

@@ -1,9 +1,9 @@
 # Game Companion Architecture
 
-The target system is a local game companion, not a pile of one-off route
-scripts. The current FCEUX runner is the first game adapter and accepted
-execution backend. V2 adds a shared player-session layer above it before adding
-the Stardew adapter.
+The system is a local game companion, not a pile of one-off route scripts. The
+FCEUX runner is the supported live Mario execution backend. The shared
+player-session layer now also contains Stardew domain contracts, a combined
+catalog, regression-only orchestration, and declarative Experimental adapters.
 
 ## Components
 
@@ -107,6 +107,11 @@ catalog. Adapter capability truth lives in `data/stardew/operator.yaml`;
 fixtures, evidence, and owner-pilot contracts remain separate under
 `data/stardew/` and `data/scenarios/`. V2.12 adds cross-game selection without
 changing Stardew's standalone contract. See the [Stardew companion guide](stardew-operator-guide.md).
+
+The live Stardew domain objects are not yet wired to a public configuration or
+start command. The CLI and `/stardew` route expose inspection and a safe
+unconfigured render only; constructing a copied-save controller, live window
+backend, and ordinary-input driver remains a separate integration slice.
 
 ## Combined catalog and switching
 

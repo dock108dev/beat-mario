@@ -1,6 +1,5 @@
 from dataclasses import replace
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 
 import pytest
@@ -70,7 +69,7 @@ def test_input_after_handback_remains_a_boundary_violation(tmp_path: Path) -> No
 
 def test_corrupt_raw_storage_fails_rebuild_without_hiding_line(tmp_path: Path) -> None:
     store = LocalMetricsStore(tmp_path)
-    store.root.mkdir(parents=True)
+    store.root.mkdir(parents=True, exist_ok=True)
     store.raw_path.write_text("not-json\n", encoding="utf-8")
     with pytest.raises(MetricsError, match="line 1"):
         store.rebuild()

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from smb3_agent.companion_catalog import CatalogRegistry
+from smb3_agent.companion_catalog import build_default_catalog_registry
 from smb3_agent.experimental_adapters import (
     ALLOWED_FILES,
     PROOF_LIMITS,
@@ -14,10 +14,8 @@ from smb3_agent.experimental_adapters import (
     ExperimentalCatalogProvider,
     InstallationRefused,
     RemovalRefused,
-    discover_installed_providers,
     install_adapter,
     installation_status,
-    load_contract,
     run_conformance,
     scaffold_adapter,
     scaffold_payload,
@@ -25,9 +23,7 @@ from smb3_agent.experimental_adapters import (
     validate_contract,
 )
 from smb3_agent.lab_ui import render_experimental_onboarding
-from smb3_agent.mario_product import MarioCatalogProvider
 from smb3_agent.scenarios import load_scenario_catalog
-from smb3_agent.stardew_companion import StardewCatalogProvider
 
 
 def _scaffold(tmp_path: Path, adapter_id: str = "fixture-game") -> Path:
@@ -114,6 +110,20 @@ def test_unknown_files_and_source_symlinks_are_refused(tmp_path: Path) -> None:
         run_conformance(source)
 
 
+def test_oversized_contract_and_fixture_are_refused_before_parsing(tmp_path: Path) -> None:
+    source = _scaffold(tmp_path)
+    contract = source / "adapter.yaml"
+    contract.write_text("#" * (256 * 1024 + 1), encoding="utf-8")
+    with pytest.raises(ExperimentalAdapterError, match="exceeds the .*byte limit"):
+        run_conformance(source)
+
+    source = scaffold_adapter(tmp_path / "second", "second-game", "Second Game")
+    fixture = source / "fixtures" / "observation-idle.json"
+    fixture.write_text(" " * (1024 * 1024 + 1), encoding="utf-8")
+    with pytest.raises(ExperimentalAdapterError, match="exceeds the .*byte limit"):
+        run_conformance(source)
+
+
 def test_conformance_covers_provider_safety_integrity_removal_and_proof_limits(tmp_path: Path) -> None:
     report = run_conformance(_scaffold(tmp_path))
     assert report.overall_pass is True
@@ -145,12 +155,34 @@ def test_install_rolls_back_when_atomic_promotion_fails(tmp_path: Path, monkeypa
     assert not (tmp_path / "installed" / "fixture-game").exists()
 
 
+def test_install_reports_staging_cleanup_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _scaffold(tmp_path)
+    import smb3_agent.experimental_adapters as adapters
+
+    monkeypatch.setattr(
+        adapters.os,
+        "replace",
+        lambda *_: (_ for _ in ()).throw(OSError("promotion failed")),
+    )
+    monkeypatch.setattr(
+        adapters.shutil,
+        "rmtree",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("cleanup failed")),
+    )
+
+    with pytest.raises(ExperimentalAdapterError, match="staging cleanup also failed"):
+        install_adapter(source, tmp_path / "installed")
+
+
 def test_provider_discovery_extends_catalog_without_game_id_branches_or_support_promotion(tmp_path: Path) -> None:
     install_adapter(_scaffold(tmp_path), tmp_path / "installed")
-    providers = discover_installed_providers(tmp_path / "installed")
-    registry = CatalogRegistry((MarioCatalogProvider(), StardewCatalogProvider(), *providers))
+    registry = build_default_catalog_registry(
+        experimental_install_root=tmp_path / "installed"
+    )
     entry = registry.entry("fixture-game")
-    assert isinstance(providers[0], ExperimentalCatalogProvider)
+    assert isinstance(registry.provider("fixture-game"), ExperimentalCatalogProvider)
     assert entry.implementation_status == "experimental_installed_live_unproven"
     assert entry.availability == "setup_required"
     assert "Experimental" in entry.description

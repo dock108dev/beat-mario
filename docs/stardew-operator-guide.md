@@ -6,9 +6,13 @@ operator for one bounded task:
 > Water every crop planted at the initial exact observation, then return to the
 > visibly confirmed farmhouse entrance.
 
-Implementation is complete and final validation is deferred. No Stardew game,
-save copy/reset, fixture, scenario, owner pilot, input, or presentation check
-ran while building this slice. This guide describes contracts, not acceptance.
+The domain implementation and deterministic tests are complete; live product
+integration and owner validation are deferred. The public `stardew` CLI and
+`/stardew` server route are inspection-only: they report capability truth and
+render a safe unconfigured surface. They do not select or copy a save, detect
+or launch Stardew, construct an ordinary-input driver, or operate the game.
+This guide describes the implemented controller contracts, not accepted live
+behavior.
 
 V2.12 exposes this unchanged standalone workspace at `/stardew` from the
 combined catalog at `/`. Stardew supplies its own catalog truth. A switch is
@@ -63,6 +67,9 @@ active epoch, restores player ownership, and preserves the partial Show or Do
 attempt. The same ordering applies to completion, timeout, cancellation,
 ambiguity, protected-action refusal, save mismatch, process/window loss,
 ordinary-input loss, evidence loss, and unexpected failure.
+If input dispatch and neutralization both fail, both causes remain in the
+failure record, authority is cleared, and player handback remains unconfirmed.
+Operational details are in [Error handling and operations](error-handling.md).
 
 Every stopped attempt records its mode/classification, before and after screen
 observations, actor-labeled inputs, crop/resource/position ledger, stop reason,
@@ -113,6 +120,10 @@ recovery. Controls remain disabled when their exact preconditions are absent.
 Desktop and 390-pixel standalone contracts are prepared. The V2.12 combined
 shell links this surface without weakening its adapter-owned controls.
 
+There is currently no public configuration/start action for these controls.
+They remain disabled in the supported surface because no live save, window,
+observation, or input driver is attached.
+
 These inspection commands do not detect, open, copy, reset, or operate Stardew:
 
 ```bash
@@ -122,21 +133,22 @@ These inspection commands do not detect, open, copy, reset, or operate Stardew:
 .venv/bin/python -m smb3_agent companion render --output /tmp/game-companion.html
 ```
 
-## Deferred evidence
+## Deterministic coverage and deferred evidence
 
-`data/stardew/fixtures.yaml`, `data/stardew/evidence-contract.yaml`, and
-`tests/test_stardew_companion.py` prepare Observe conversion/freshness, adapter
+`data/stardew/fixtures.yaml`, `data/stardew/evidence-contract.yaml`, and the
+Stardew test modules cover Observe conversion/freshness, adapter
 isolation, Tell provenance/refusal, Show classification/lifecycle, Do binding
 and per-input revalidation, reclaim across every phase, neutral handback,
 timeout/cancellation/continuity/input loss, protected actions, reset and stale
 authority, exact reconciliation, evidence hashes, first-unmet reporting,
 desktop/narrow presentation, and Mario contract preservation. They were not
-executed. V2.12 catalog/switching contracts and tests are likewise prepared and
-unexecuted.
+used with an owner save or live Stardew process. Catalog/switching and render
+contracts are also exercised by the ROM-free suite.
 
 The consolidated campaign must begin from a frozen cumulative release
 candidate with deterministic contracts, then produce visible Stardew technical
 proof and owner-pilot proof. The owner makes every authorization, reclaim,
 feedback, usefulness, and acceptance decision. V2.12 is
-implementation-complete with final validation deferred; V2.13 and V2.14 remain
-unstarted.
+implementation-complete with final validation deferred; V2.13 unattended
+regression and V2.14 Experimental onboarding are also implemented and
+ROM-free-tested, but neither supplies Stardew live or owner proof.

@@ -22,6 +22,7 @@ from smb3_agent.learning import (
     ProgressAnchor,
     process_attempt,
 )
+from smb3_agent.paths import repository_path
 from smb3_agent.run_library import (
     CompletionClassification,
     LocalRunLibrary,
@@ -40,9 +41,9 @@ from smb3_agent.takeover import (
 from smb3_agent.tell import ObservedFact
 
 
-LIVE_OBSERVER_SCRIPT = Path("scripts/fceux_live_observer.lua")
-LIVE_TAKEOVER_SCRIPT = Path("scripts/fceux_live_takeover.lua")
-AGENT_SCRIPT = Path("scripts/fceux_1_1_agent.lua")
+LIVE_OBSERVER_SCRIPT = repository_path("scripts/fceux_live_observer.lua")
+LIVE_TAKEOVER_SCRIPT = repository_path("scripts/fceux_live_takeover.lua")
+AGENT_SCRIPT = repository_path("scripts/fceux_1_1_agent.lua")
 LIVE_ARTIFACTS_ROOT = Path("artifacts/live-observation")
 BUTTONS = ("A", "B", "up", "down", "left", "right", "start", "select")
 ITEM_CODES = {
@@ -689,7 +690,10 @@ class LiveObservationManager:
             raise LiveObservationError("Mario accepted solution script is missing")
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
-                assert self._accumulator is not None
+                if self._accumulator is None:
+                    raise LiveObservationError(
+                        "Active observer thread is missing its session state"
+                    )
                 return self._accumulator.snapshot()
             session_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
             token = secrets.token_hex(16)
@@ -808,8 +812,10 @@ class LiveObservationManager:
                 raise LiveObservationError("Takeover requires a fresh current-state observation")
             if self._process.poll() is not None:
                 raise LiveObservationError("The observed emulator process is no longer running")
-            assert self._takeover_controller is not None
-            assert self._game_file_sha256 is not None
+            if self._takeover_controller is None or self._game_file_sha256 is None:
+                raise LiveObservationError(
+                    "Takeover authority is missing its bound controller or game identity"
+                )
             sample = self._accumulator.samples[-1]
             return self._takeover_controller.authorize(
                 session_id=self._accumulator.session_id,
@@ -867,7 +873,10 @@ class LiveObservationManager:
                 raise LiveObservationError("Takeover requires a fresh current-state observation")
             if self._process.poll() is not None or self._game_file_sha256 is None:
                 raise LiveObservationError("The observed emulator process is no longer running")
-            assert self._takeover_controller is not None
+            if self._takeover_controller is None:
+                raise LiveObservationError(
+                    "Takeover authority is missing its bound controller"
+                )
             sample = self._accumulator.samples[-1]
             fingerprint = state_fingerprint(
                 self._accumulator.session_id, self._process.pid, sample
@@ -1332,7 +1341,8 @@ class LiveObservationManager:
         )
 
     def _write_manifest(self, game_path: Path, *, allow_takeover: bool) -> None:
-        assert self._accumulator is not None
+        if self._accumulator is None:
+            raise LiveObservationError("Cannot write a manifest without an active session")
         self._write_json(
             "session_manifest.json",
             {
@@ -1447,13 +1457,15 @@ class LiveObservationManager:
         )
 
     def _append_jsonl(self, name: str, payload: dict[str, Any]) -> None:
-        assert self._accumulator is not None
+        if self._accumulator is None:
+            raise LiveObservationError("Cannot append evidence without an active session")
         path = self._accumulator.artifact_dir / name
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, sort_keys=True, default=_json_default) + "\n")
 
     def _write_json(self, name: str, payload: dict[str, Any]) -> None:
-        assert self._accumulator is not None
+        if self._accumulator is None:
+            raise LiveObservationError("Cannot write evidence without an active session")
         path = self._accumulator.artifact_dir / name
         path.write_text(
             json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",

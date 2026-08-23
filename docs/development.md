@@ -15,12 +15,12 @@ The project CLI is available through the environment interpreter:
 .venv/bin/python -m smb3_agent --help
 ```
 
-`SMB3_GAME_FILE` is the only operator-facing runtime environment variable and
-is an explicit override for live commands. The player Start button otherwise
-uses `game-file.nes` or `roms/smb3.nes` when either local ignored file exists;
-an explicit `--game-file` takes precedence. The validation script also accepts
-`PYTHON` solely to select its
-interpreter. Product preset variables are internal execution policy defined by
+`SMB3_GAME_FILE` is the live Mario game-file override. The player Start button
+otherwise uses `game-file.nes` or `roms/smb3.nes` when either local ignored
+file exists; an explicit `--game-file` takes precedence. The validation script also accepts
+`PYTHON` solely to select its interpreter. Experimental adapter commands also
+accept `GAME_COMPANION_EXPERIMENTAL_ROOT` as the local installation root.
+Product preset variables are internal execution policy defined by
 `src/smb3_agent/presets.py`; do not export route tuning variables for
 authoritative runs. Game Companion Lab binds to loopback by default. See
 [Runtime, configuration, and data](runtime-and-configuration.md)
@@ -48,6 +48,16 @@ local UI assets are ignored. Do not force-add them.
 - `python -m smb3_agent reliability ...`: authoritative fresh runs and
   review-only playback.
 - `python -m smb3_agent lab ...`: attempt review, Game Companion Lab, and route patches.
+- `python -m smb3_agent companion ...` and `stardew ...`: safe catalog and
+  unconfigured Stardew inspection/rendering.
+- `python -m smb3_agent learning ...`: inspect and maintain local learning
+  records and review candidates.
+- `python -m smb3_agent scenario ...` and `metrics ...`: inspect classified
+  scenarios and local product metrics without launching a game.
+- `python -m smb3_agent unattended ...`: explicitly acknowledged,
+  regression-only planning, execution, lifecycle, and comparison.
+- `python -m smb3_agent adapter ...`: validate, scaffold, install, inspect, and
+  remove declarative Experimental adapters.
 - `python -m smb3_agent task ...`: bounded low-level diagnostics.
 - `scripts/validate_phase0.sh`: canonical ROM-free repository gate.
 
@@ -73,35 +83,45 @@ and keep watchable playback separate from authoritative evidence.
 
 ## Source files over roughly 500 lines
 
-These files remain intentionally cohesive:
+Line count alone is not a safe extraction boundary for the current stateful
+runtime. These files were reviewed and retained:
 
-- `scripts/fceux_1_1_agent.lua`: one stateful FCEUX callback program. Its route
-  phases share emulator memory, controller cleanup, and ordered event state;
-  splitting it would require a loader/module system and live regression proof.
-- `src/smb3_agent/fceux_harness.py`: parser state machine and runner share one
-  log/event contract. A future split should follow a schema boundary, not line
-  count alone.
-- `src/smb3_agent/reliability.py`: profiles, inspection, and report generation
-  form the authoritative acceptance policy and are heavily cross-validated.
-- `src/smb3_agent/route_patch.py`: the transaction and its private integrity
-  helpers form one security boundary; partial extraction would increase the
-  mutation surface.
-- `src/smb3_agent/lab.py`: attempt-session persistence, notes, issues, and
-  proposal records share one on-disk schema.
-- `src/smb3_agent/companion_session.py`: adapter-neutral player-session state,
-  lifecycle, capabilities, safety boundary, outcome, and fail-closed handoff
-  validation.
-- `src/smb3_agent/lab_ui.py`: the dependency-free HTTP handler, HTML renderer,
-  player and Lab routing, state actions, and embedded CSS form one local
-  application. A template/static asset extraction should be a separately tested
-  UI refactor.
-- `src/smb3_agent/cli.py`: one parser and one dispatch entry point keep command
-  registration adjacent to behavior. Its obsolete compatibility branches have
-  been removed.
+- `scripts/fceux_1_1_agent.lua` (about 25,900 lines) is one stateful FCEUX
+  callback program. Route phases share emulator memory, controller cleanup, and
+  ordered events; splitting it requires a loader design and live regression.
+- `src/smb3_agent/lab_ui.py` (about 5,300 lines) keeps the dependency-free HTTP
+  handler, player/Lab rendering, actions, and embedded styles in one local-app
+  boundary. The duplicate shadowed status style was removed; extracting assets
+  still needs snapshot or browser-level coverage.
+- `learning.py`, `live_observation.py`, `unattended.py`,
+  `stardew_companion.py`, and `stardew_adapter.py` (about 960–1,770 lines each)
+  each implement a stateful lifecycle with its persistence or authority checks.
+  Their internal operations are tightly coupled to their fail-closed state.
+- `route_patch.py` (about 1,670 lines) is one reviewed mutation and integrity
+  transaction. Partial extraction would widen a security-sensitive boundary.
+- `fceux_harness.py` and `reliability.py` (about 1,250–1,440 lines) share, within
+  each module, one log/event or acceptance-report contract. A future split
+  should introduce a typed schema boundary first.
+- `lab.py` (about 1,220 lines) owns one on-disk attempt, note, issue, review, and
+  proposal schema.
+- `cli.py` (about 1,480 lines) keeps parser registration and dispatch together.
+  Separating command registration is reasonable only with a focused CLI API
+  compatibility test across every command group.
+- `experimental_adapters.py`, `mario_product.py`, `objective_profiles.py`,
+  `show.py`, `scenarios.py`, and `companion_catalog.py` (about 560–800 lines
+  each) each remain a single bounded contract or lifecycle. Their size is
+  moderate and extraction would currently add indirection without isolating a
+  reusable subsystem.
 
-The first sensible future extractions are generated/static Game Companion Lab assets and
-a typed route-patch record layer. Both deserve their own behavior-preserving
-slice rather than mechanical file splitting.
+Six focused test modules are also over roughly 500 lines:
+`test_reliability.py`, `test_fceux_harness.py`, `test_lab_ui.py`,
+`test_goals.py`, `test_live_observation.py`, and `test_route_patch.py`. They are
+organized around their matching production contract and retain shared fixtures
+and scenario matrices; splitting them would not improve test isolation.
+
+The first sensible future extractions are the Game Companion Lab presentation
+assets, a typed route-patch record layer, and CLI registration. Each needs its
+own behavior-preserving slice rather than a mechanical file split.
 
 ## Change boundaries
 

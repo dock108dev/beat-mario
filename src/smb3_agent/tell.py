@@ -7,12 +7,14 @@ from typing import Any
 
 import yaml
 
+from smb3_agent.paths import repository_path
+
 from smb3_agent.companion_session import Freshness, Observation, ObservationSource
 from smb3_agent.goals import GoalContract, load_product_goal_contracts
 from smb3_agent.segments import RouteSegment, load_segment_catalog, validate_goal_segments
 
 
-TELL_KNOWLEDGE_PATH = Path("data/tell/mario.yaml")
+TELL_KNOWLEDGE_PATH = repository_path("data/tell/mario.yaml")
 SUPPORTED_PROVENANCE_CLASSES = {
     "adapter_observation",
     "player_reported_fact",

@@ -16,12 +16,14 @@ from smb3_agent.unattended import (
     DeclaredDisplayProvider,
     NoDisplayProvider,
     UnattendedError,
-    UnattendedRunner,
     compare_attempts,
     eligibility_blockers,
+    exception_record,
     load_manifest,
     reject_overlap,
     sanitize_environment,
+    StardewUnattendedProvider,
+    ProviderRunPlan,
 )
 
 
@@ -73,6 +75,31 @@ def test_environment_sanitization_rejects_credentials_and_preserves_only_allowli
         sanitize_environment({"GITHUB_TOKEN": "secret"})
     result = sanitize_environment({"PATH": "/bin", "SMB3_GOAL_ID": "fixture", "UNRELATED": "drop"})
     assert result == {"PATH": "/bin", "SMB3_GOAL_ID": "fixture", "LANG": "C"}
+
+
+def test_stardew_preparation_fails_closed_without_bound_fixture(tmp_path: Path) -> None:
+    provider = StardewUnattendedProvider(
+        fixture_path=tmp_path / "fixture",
+        owner_save_roots=(tmp_path / "owner",),
+        executable=tmp_path / "game",
+    )
+    plan = ProviderRunPlan(
+        "stardew", "v1", "stardew", "game", (), (), None, {}, (), (), (), (), (),
+        "evidence/v1", "pixels", "ordinary", False,
+    )
+    with pytest.raises(UnattendedError, match="requires a bound regression fixture"):
+        provider.prepare_run(tmp_path / "run", plan)
+
+
+def test_unattended_exception_record_retains_phase_type_and_traceback() -> None:
+    try:
+        raise RuntimeError("runner boom")
+    except RuntimeError as exc:
+        record = exception_record(exc, phase="process_or_environment")
+
+    assert record["phase"] == "process_or_environment"
+    assert record["type"] == "RuntimeError"
+    assert "RuntimeError: runner boom" in record["traceback"]
 
 
 def test_owner_save_overlap_is_refused(tmp_path: Path) -> None:

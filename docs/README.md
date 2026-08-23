@@ -42,7 +42,7 @@ flows. The documents below provide implementation and operating detail.
 - [Stardew companion guide](stardew-operator-guide.md): V2.10 copied-save and
   visible operator foundations plus V2.11 Observe, grounded Tell, one-task
   review-only Show, same-session Do, reclaim/handback, reset, safety, and
-  deferred evidence.
+  deferred live wiring and evidence.
 - [Agent architecture](agent-architecture.md#combined-catalog-and-switching):
   V2.12 provider-owned catalog, explicit safe switching, bounded persistence,
   and adapter/evidence isolation.

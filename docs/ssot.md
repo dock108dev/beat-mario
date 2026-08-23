@@ -85,6 +85,99 @@ The static HTML renderer intentionally has no live CSRF token and is not an
 interactive server artifact. The hosted server injects one token into every
 POST form.
 
+## Catalog composition and switching
+
+Domain: built-in/Experimental provider order, catalog validation, local
+selection persistence, and safe switching.
+
+SSOT module/file: `src/smb3_agent/companion_catalog.py`.
+
+Why this is authoritative: `build_default_catalog_registry()` is the only
+production assembly of Mario, Stardew, and discovered Experimental providers.
+`CatalogRegistry` validates provider-owned truth, while `CatalogSession` owns
+selection, retention, invalidation, and switch evidence.
+
+Known callers: companion CLI status/render, Route Lab startup/refresh, and
+catalog tests
+
+Mario, Stardew, and Experimental modules own their individual declarations;
+callers do not reconstruct the combined provider tuple.
+
+## Mario observation, authority, and learning
+
+Domain: live Mario state, takeover authority, local run history, and learned
+candidate lifecycle.
+
+SSOT module/file: `src/smb3_agent/live_observation.py`,
+`src/smb3_agent/takeover.py`, `src/smb3_agent/run_library.py`, and
+`src/smb3_agent/learning.py`, respectively.
+
+Why this is authoritative: each module owns one non-overlapping state machine
+or persistence contract. Route Lab renders their snapshots and invokes their
+public operations; it does not infer ownership, fastest-run, or promotion
+state.
+
+Known callers: Mario product/session manager, Route Lab, learning CLI, metrics,
+and focused tests
+
+## Stardew copied-save operation
+
+Domain: copied-save identity, visible observation, ordinary input, ownership,
+reclaim, mode attempts, and reset.
+
+SSOT module/file: `src/smb3_agent/stardew_adapter.py` for low-level safety and
+`src/smb3_agent/stardew_companion.py` for Observe/Tell/Show/Do orchestration.
+
+Why this is authoritative: the adapter contract owns exact process/window/save
+validation and input safety; the companion controller owns mode lifecycle and
+evidence. The CLI and Route Lab use the loader's default tracked contract path
+instead of restating it.
+
+Known callers: Stardew CLI render/status, combined catalog, Route Lab, and
+Stardew tests
+
+## Scenario and metric classification
+
+Domain: scenario identity/lifecycle/evidence eligibility and classified local
+metrics.
+
+SSOT module/file: `src/smb3_agent/scenarios.py` plus
+`data/scenarios/catalog.yaml`; metric schemas and aggregation live in
+`src/smb3_agent/metrics.py`.
+
+Why this is authoritative: the scenario catalog defines what can run or prove;
+the runner enforces transitions. Metrics accept those classifications without
+inventing a blended success score. Generic scenario `run`/`cancel` CLI entries
+were removed because no supported dispatcher owned them.
+
+Known callers: scenario CLI list/status/plan/readiness, unattended eligibility,
+Route Lab, metrics CLI, and tests
+
+## Unattended regression
+
+Domain: unattended provider/display preflight, immutable manifests, isolated
+execution, cancellation, cleanup, and repeatability evidence.
+
+SSOT module/file: `src/smb3_agent/unattended.py`.
+
+Why this is authoritative: one runner owns the regression-only proof limits,
+process group, sanitized environment, paths, artifacts, and terminal records.
+
+Known callers: unattended CLI, Route Lab planning/status, and unattended tests
+
+## Experimental adapter lifecycle
+
+Domain: scaffold schema, conformance, installation, discovery, integrity, and
+removal.
+
+SSOT module/file: `src/smb3_agent/experimental_adapters.py`.
+
+Why this is authoritative: the versioned declarative contract and exact
+manifest inventory are validated once, and catalog assembly consumes only
+providers discovered through this module.
+
+Known callers: adapter CLI, Route Lab onboarding, catalog factory, and tests
+
 ## Retained supported paths
 
 - `goal run world_1_king` remains the explicit legacy diagnostic. Its duplicate
@@ -94,8 +187,9 @@ POST form.
   acceptance.
 - Mednafen remains a macOS-only diagnostic adapter. It is separate from the
   FCEUX product runner and fails explicitly on unsupported hosts.
-- User-command aliases remain supported input normalization; execution still
-  resolves to a goal contract and `run_goal_contract()`.
+- Supported user-command phrases remain input normalization; executable runs
+  still resolve to a goal contract and `run_goal_contract()`, while the Show
+  phrase routes through Attempt Lab's review-only path.
 
 ## Removed compatibility paths
 
@@ -103,6 +197,24 @@ POST form.
 - `lab run-variant`, `lab compare-variant`, and `lab promote-variant`; use the
   `lab patch` lifecycle.
 - `task fceux-world-1-king`; use `goal run world_1_king`.
+- Parse-only `review the latest failed run` and `continue after losing a life
+  if the route allows it`; use the supported `review log` and `recovery
+  simulate` entry points.
+- Generic scenario `run` and `cancel` parser entries. Use scenario
+  list/status/plan/readiness for inspection; executable unattended regression
+  has its own bounded runner, and owner campaign execution remains a separate
+  acceptance workflow.
+- Repeated Mario/Stardew/Experimental provider tuple construction in CLI and
+  Route Lab; both now call `build_default_catalog_registry()`.
 
 The canonical tests contain a static guard preventing these parser entries and
 lab functions from returning.
+
+## Enforcement
+
+`tests/test_ci_contract.py` guards the removed compatibility symbols and the
+single production catalog factory. Focused command, catalog, Experimental
+adapter, and CLI tests cover the routed behavior. The complete canonical
+ROM-free gate passed on 2026-08-23 with 650 tests plus the active-goal, segment,
+deterministic-status, player, Route Lab, and Stardew render contracts. The
+documentation-accuracy guard increased the current canonical total to 651.

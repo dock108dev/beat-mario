@@ -13,6 +13,7 @@ from smb3_agent.companion_catalog import (
     CatalogSession,
     CompanionCatalogError,
     SwitchRefused,
+    build_default_catalog_registry,
 )
 from smb3_agent.lab_ui import render_combined_catalog
 from smb3_agent.mario_product import MarioCatalogProvider
@@ -39,6 +40,18 @@ def test_exact_two_adapter_catalog_is_stable_and_provider_owned() -> None:
     assert registry.entry("smb3").safety != registry.entry("stardew").safety
     assert registry.entry("smb3").evidence.namespace == "mario"
     assert registry.entry("stardew").evidence.namespace == "stardew"
+
+
+def test_default_catalog_factory_is_the_authoritative_provider_assembly(
+    tmp_path: Path,
+) -> None:
+    registry = build_default_catalog_registry(experimental_install_root=tmp_path)
+
+    assert tuple(item.adapter_id for item in registry.entries) == ("smb3", "stardew")
+    assert tuple(item.game_id for item in registry.entries) == (
+        "smb3",
+        "stardew_valley",
+    )
 
 
 def test_duplicate_adapter_game_and_conflicting_provider_truth_fail_closed() -> None:

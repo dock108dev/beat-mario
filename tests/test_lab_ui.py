@@ -129,7 +129,7 @@ def test_server_catalog_switch_invalidates_mario_volatile_presentation_state(
         server.server_close()
 
 
-def test_player_start_uses_repo_local_game_file_when_env_is_unset(
+def test_player_start_rejects_unsupported_repo_local_game_file(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.chdir(tmp_path)
@@ -138,7 +138,7 @@ def test_player_start_uses_repo_local_game_file_when_env_is_unset(
     local_game.parent.mkdir()
     local_game.write_bytes(b"local fixture")
 
-    assert _configured_game_path() == local_game.resolve()
+    assert _configured_game_path() is None
 
 
 def test_default_player_shell_is_truthful_and_semantic() -> None:

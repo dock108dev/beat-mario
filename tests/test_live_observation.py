@@ -319,6 +319,26 @@ def test_clean_stop_retains_game_and_artifact_reconciliation(tmp_path: Path) -> 
     assert report["not_takeover"] is True
 
 
+def test_state_sample_conversion_failure_is_retained(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    accumulator = _accumulator(tmp_path)
+    accumulator.ingest(_sample())
+    manager = LiveObservationManager(artifacts_root=tmp_path)
+    manager._accumulator = accumulator
+    monkeypatch.setattr(
+        "smb3_agent.live_observation.convert_gd_directory",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("decoder unavailable")),
+    )
+
+    manager._finalize("clean_stop")
+
+    report = json.loads((tmp_path / "reconciliation.json").read_text())
+    assert report["independently_readable_state_samples"] == []
+    assert report["state_sample_conversion_exception"]["type"] == "OSError"
+    assert "decoder unavailable" in report["state_sample_conversion_exception"]["traceback"]
+
+
 def test_passive_lua_has_no_controller_or_game_write_path() -> None:
     source = Path("scripts/fceux_live_observer.lua").read_text()
 
@@ -463,7 +483,7 @@ def test_configured_separate_show_does_not_masquerade_as_live_observation(
 
     assert idle.observation.freshness is Freshness.UNKNOWN
     assert next(mode for mode in idle.modes if mode.mode == "show").available is False
-    assert "Use the separate Show panel below" in html
+    assert "Show uses a separate visible process" in html
     assert 'data-testid="show-start"' in html
 
 

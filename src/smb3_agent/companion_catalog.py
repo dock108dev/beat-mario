@@ -313,6 +313,21 @@ class CatalogRegistry:
             raise CompanionCatalogError(f"unknown evidence classification: {entry.adapter_id}")
 
 
+def build_default_catalog_registry(
+    *,
+    mario_provider: CatalogProvider | None = None,
+    experimental_install_root: Path | None = None,
+) -> CatalogRegistry:
+    """Build the supported catalog in its one authoritative provider order."""
+    from smb3_agent.experimental_adapters import discover_installed_providers
+    from smb3_agent.mario_product import MarioCatalogProvider
+    from smb3_agent.stardew_companion import StardewCatalogProvider
+
+    mario = mario_provider or MarioCatalogProvider()
+    experimental = discover_installed_providers(experimental_install_root)
+    return CatalogRegistry((mario, StardewCatalogProvider(), *experimental))
+
+
 @dataclass
 class CatalogPreferences:
     schema_version: str = PREFERENCES_SCHEMA_VERSION

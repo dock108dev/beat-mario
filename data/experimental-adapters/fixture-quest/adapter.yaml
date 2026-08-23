@@ -35,7 +35,7 @@ capabilities:
   - id: show
     state: unsupported
     description: No executable solution is included.
-  - id: takeover
+  - id: do
     state: unsupported
     description: No live input implementation is included.
 goals:

@@ -54,7 +54,7 @@ proof_limits:
   - technical regression behavior and repeatability only
   - not visible player proof
   - not review-only Show evidence
-  - not route-reliability acceptance
+  - not route reliability acceptance
   - not authoritative game completion
   - not owner usefulness or owner acceptance
   - not a replacement for the consolidated campaign

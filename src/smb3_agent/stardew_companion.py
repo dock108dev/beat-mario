@@ -643,7 +643,10 @@ class StardewCompanionController:
         if not owner_confirmation:
             raise StardewCompanionError("Do requires explicit owner authorization")
         self._start(StardewMode.DO, screen, input_driver, expires_at)
-        assert self.authorization is not None
+        if self.authorization is None:
+            raise StardewCompanionError(
+                "Do authorization failed closed because no bound authority was created"
+            )
         return self.authorization
 
     def _start(
@@ -670,9 +673,15 @@ class StardewCompanionController:
             input_driver=input_driver.value,
             stop_conditions=STARDEW_STOP_CONDITIONS,
         )
-        assert screen.window.process_id is not None
-        assert screen.window.process_started_at is not None
-        assert screen.window.window_id is not None
+        if (
+            screen.window.process_id is None
+            or screen.window.process_started_at is None
+            or screen.window.window_id is None
+        ):
+            self.operator.reclaim()
+            raise StardewCompanionError(
+                "Authorization requires an exact process, process-start, and window identity"
+            )
         self.authorization = StardewAuthorization(
             authorization_id=secrets.token_hex(16),
             epoch_id=epoch.epoch_id,
@@ -1016,11 +1025,13 @@ class StardewCompanionController:
         driver: OrdinaryInputDriver,
     ) -> StardewModeAttempt:
         attempt = self._require_active()
-        self.operator.fail(code, detail, driver=driver)
+        failure = self.operator.failure
+        if failure is None:
+            failure = self.operator.fail(code, detail, driver=driver)
         self.authorization = None
         attempt.status = StardewAttemptStatus.FAILED
-        attempt.stop_reason = code.value
-        attempt.first_unmet_requirement = detail
+        attempt.stop_reason = failure.code.value
+        attempt.first_unmet_requirement = failure.first_unmet_requirement
         attempt.input_neutralized = self.operator.input_neutralized
         attempt.player_ownership_restored = self.operator.owner is InputOwner.PLAYER
         try:

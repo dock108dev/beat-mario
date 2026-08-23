@@ -178,6 +178,32 @@ def test_timeout_stops_owned_process_and_retains_failure_artifacts(
     assert report["review_only"] is True and report["player_completion"] is False
 
 
+def test_unverified_process_termination_never_claims_input_stopped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class StuckProcess:
+        pid = 424243
+
+        @staticmethod
+        def poll() -> None:
+            return None
+
+        @staticmethod
+        def wait(timeout: float | None = None) -> int:
+            raise TimeoutError("still running")
+
+    controller = ShowProcessController()
+    controller.attach(StuckProcess())  # type: ignore[arg-type]
+    monkeypatch.setattr("smb3_agent.show.os.killpg", lambda pid, sig: None)
+    monkeypatch.setattr(
+        "smb3_agent.show.subprocess.TimeoutExpired", TimeoutError
+    )
+
+    with pytest.raises(ShowError, match="did not stop"):
+        controller.request_stop()
+    assert not controller.input_stopped.is_set()
+
+
 def test_lifecycle_invalid_transition_fails_closed(tmp_path: Path) -> None:
     definition = load_show_definition()
     session = ShowSession("s", _request(tmp_path), definition, cues=definition.cues)
@@ -253,7 +279,7 @@ def test_http_server_remains_responsive_during_active_show(tmp_path: Path) -> No
     manager.start(_request(tmp_path))
     try:
         connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=2)
-        connection.request("GET", "/")
+        connection.request("GET", "/mario")
         response = connection.getresponse()
         html = response.read().decode()
         connection.close()
@@ -273,9 +299,9 @@ def test_ui_renders_show_scope_controls_cues_and_truthful_outcome(tmp_path: Path
     outcome = ShowOutcome(False, input_stopped=True, process_relinquished=True, explanation="Stopped. Your game was not advanced.")
     session = ShowSession("s", request, definition, ShowLifecycle.TAKEN_OVER, definition.cues, activity=("Take Control requested.",), outcome=outcome, control_returned=True)
     html = render_companion_ui(default_companion_session(), show_session=session, show_request=request)
-    for hook in ("show-session", "show-scope", "show-cues", "current-show-cue", "show-activity", "show-start", "show-stop", "show-take-control", "show-outcome", "show-replay"):
+    for hook in ("show-session", "show-scope", "show-cues", "current-show-cue", "show-activity", "show-start", "show-stop", "show-outcome", "show-replay"):
         assert f'data-testid="{hook}"' in html
-    assert "This is a separate demonstration. It does not advance your game." in html
+    assert "Your game is unchanged" in html
     assert "Player completion: No" in html
     assert 'data-testid="mode-do" data-available="false"' in html
     assert 'data-testid="tell-request"' in html

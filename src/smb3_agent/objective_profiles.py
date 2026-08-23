@@ -9,9 +9,11 @@ from typing import Any
 
 import yaml
 
+from smb3_agent.paths import repository_path
 
-PROFILE_PATH = Path("data/profiles/mario.yaml")
-REFERENCE_PATH = Path("data/profiles/mario_references.yaml")
+
+PROFILE_PATH = repository_path("data/profiles/mario.yaml")
+REFERENCE_PATH = repository_path("data/profiles/mario_references.yaml")
 
 
 class ObjectiveProfileError(ValueError):

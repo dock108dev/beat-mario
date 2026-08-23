@@ -35,6 +35,8 @@ isolated evidence, proof limits, installation ownership, and exact removal.
 The contract rejects reserved IDs, Mario/Stardew collisions, absolute paths,
 traversal, symlink escapes, unknown fields and files, overwrite attempts,
 arbitrary commands, generated executable code, and network dependencies.
+Contract and installation-manifest reads are limited to 256 KiB per file, and
+fixture JSON reads are limited to 1 MiB per file before parsing.
 
 ## Contributor flow
 
@@ -87,6 +89,11 @@ Only after all hashes and zero-residual conditions agree does it unlink the
 manifest-owned files, manifest, empty fixture directories, and adapter
 directory. Evidence and history live outside the install tree and are
 preserved.
+
+Failed scaffold or installation staging is removed before the original error is
+returned. If that bounded cleanup also fails, the operation fails explicitly
+and reports the retained staging path; it never silently claims rollback. See
+[Error handling and operations](error-handling.md).
 
 Final acceptance remains deferred. The first next action is to freeze the
 cumulative release candidate and begin deterministic contract validation.

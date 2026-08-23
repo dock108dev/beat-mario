@@ -3,7 +3,9 @@
 Game Companion V2.13 implements an optional local regression runner for an
 adapter that explicitly declares unattended support. It is an engineering
 surface, not a player play mode. Implementation is complete and final
-validation is deferred; no unattended attempt was run while V2.13 was built.
+validation is deferred. Deterministic provider, manifest, lifecycle,
+cancellation, cleanup, and comparison tests pass; no live unattended emulator
+or Stardew attempt has been run for the current release candidate.
 
 ## What its results mean
 
@@ -91,6 +93,10 @@ A retry is a new attempt and cannot overwrite its predecessor. Cancellation
 targets one attempt: the running owner stops input, terminates only its process
 group, performs bounded provider cleanup, and retains all evidence. Process,
 display, input, timeout, missing-evidence, or cleanup loss fails closed.
+Per-run and aggregate reports retain phase, exception type, message, and local
+traceback for caught orchestration and cleanup failures. See
+[Error handling and operations](error-handling.md) for incident order and
+privacy boundaries.
 
 ## Adapter boundaries
 
@@ -124,6 +130,7 @@ Reports keep requested/completed/passed/failed/cancelled/timed-out counts,
 hashes, milestone/outcome agreement, resource/state deltas, failures,
 artifact/cleanup completeness, and unknowns. There is no blended score.
 
-Prepared tests and final-campaign hooks have not run. After V2.14 implementation,
-freeze one cumulative release candidate and begin deterministic contract
-validation before any live or owner proof.
+The prepared contracts and final-campaign hooks are covered by the ROM-free
+suite, but the campaign and live unattended attempts remain unexecuted. Freeze
+one cumulative release candidate and rerun deterministic validation before any
+live or owner proof.

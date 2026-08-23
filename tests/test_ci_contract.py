@@ -15,7 +15,14 @@ GATE_PATH = REPOSITORY_ROOT / "scripts/validate_phase0.sh"
 PYPROJECT_PATH = REPOSITORY_ROOT / "pyproject.toml"
 CLI_PATH = REPOSITORY_ROOT / "src/smb3_agent/cli.py"
 LAB_PATH = REPOSITORY_ROOT / "src/smb3_agent/lab.py"
+COMMANDS_PATH = REPOSITORY_ROOT / "src/smb3_agent/commands.py"
+CATALOG_PATH = REPOSITORY_ROOT / "src/smb3_agent/companion_catalog.py"
+LAB_UI_PATH = REPOSITORY_ROOT / "src/smb3_agent/lab_ui.py"
+EXPERIMENTAL_ADAPTERS_PATH = REPOSITORY_ROOT / "src/smb3_agent/experimental_adapters.py"
 README_PATH = REPOSITORY_ROOT / "README.md"
+RUNTIME_DOC_PATH = REPOSITORY_ROOT / "docs/runtime-and-configuration.md"
+STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
+FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
 MACOS_MODULES = (
@@ -38,7 +45,8 @@ def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> Non
     assert "runs-on: ubuntu-latest" in workflow
     assert "macos-latest" not in workflow
     assert "self-hosted" not in workflow
-    assert "PYTHON=python scripts/validate_phase0.sh" in workflow
+    assert "PYTHON=.venv/bin/python scripts/validate_phase0.sh" in workflow
+    assert "uv sync --locked --all-extras" in workflow
 
 
 def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
@@ -51,7 +59,8 @@ def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
     assert 'CI: "true"' in workflow
     assert "python-version: \"3.11\"" in workflow
     assert "cache: pip" in workflow
-    assert "cache-dependency-path: pyproject.toml" in workflow
+    assert "cache-dependency-path: uv.lock" in workflow
+    assert "python -m pip install uv==0.9.10" in workflow
     assert CHECKOUT_PIN in action_refs
     assert SETUP_PYTHON_PIN in action_refs
     assert action_refs
@@ -81,7 +90,8 @@ def test_canonical_gate_covers_complete_rom_free_surface() -> None:
         "git diff --check",
         "git diff --cached --check",
         "bash -n scripts/validate_phase0.sh",
-        '"${python_bin}" -m ruff check src tests',
+        '"${python_bin}" -m ruff check src tests scripts/security_check.py',
+        '"${python_bin}" scripts/security_check.py',
         '"${python_bin}" -m pytest -q',
         "goal validate data/goals/world_8_double_whistle.yaml",
         "segment validate",
@@ -104,6 +114,9 @@ def test_canonical_gate_covers_complete_rom_free_surface() -> None:
 def test_removed_legacy_ssot_paths_do_not_return() -> None:
     cli = CLI_PATH.read_text(encoding="utf-8")
     lab = LAB_PATH.read_text(encoding="utf-8")
+    commands = COMMANDS_PATH.read_text(encoding="utf-8")
+    catalog = CATALOG_PATH.read_text(encoding="utf-8")
+    lab_ui = LAB_UI_PATH.read_text(encoding="utf-8")
 
     for command in (
         '"fceux-world-1-' + 'king"',
@@ -120,6 +133,17 @@ def test_removed_legacy_ssot_paths_do_not_return() -> None:
         "def promote_variant(",
     ):
         assert symbol not in lab
+    for symbol in (
+        "REVIEW_LATEST_FAILED_RE",
+        "CONTINUE_AFTER_LIFE_LOSS_RE",
+        'action="review_latest_failed"',
+        'action="set_recovery_policy"',
+        "recovery_policy: str | None",
+    ):
+        assert symbol not in commands
+    assert 'build_default_catalog_registry(' in catalog
+    assert 'CatalogRegistry((MarioCatalogProvider()' not in cli
+    assert 'CatalogRegistry((*base' not in lab_ui
 
 
 def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
@@ -150,6 +174,38 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
             if not (source.parent / target).resolve().exists():
                 missing_links.append((source, target))
     assert missing_links == []
+
+
+def test_runtime_docs_match_configuration_persistence_and_public_stardew_boundary() -> None:
+    runtime = RUNTIME_DOC_PATH.read_text(encoding="utf-8")
+    stardew = STARDEW_GUIDE_PATH.read_text(encoding="utf-8")
+    experimental = EXPERIMENTAL_ADAPTERS_PATH.read_text(encoding="utf-8")
+    final_campaign = FINAL_CAMPAIGN_PATH.read_text(encoding="utf-8")
+
+    assert 'os.environ.get("GAME_COMPANION_EXPERIMENTAL_ROOT")' in experimental
+    for setting in (
+        "SMB3_GAME_FILE",
+        "GAME_COMPANION_EXPERIMENTAL_ROOT",
+        "PYTHON",
+        "STARDEW_REGRESSION_SAVE",
+    ):
+        assert setting in runtime
+    for path in (
+        "artifacts/live-observation/",
+        "artifacts/run-library/",
+        "artifacts/learning/",
+        "artifacts/product-session/",
+        "artifacts/companion/",
+        "artifacts/stardew-operator/",
+        "artifacts/scenarios/",
+        "artifacts/session-metrics/",
+        "artifacts/unattended-regression/",
+    ):
+        assert path in runtime
+    assert "inspection-only" in stardew
+    assert "do not select or copy a save" in stardew.lower()
+    assert "execution_enabled: false" in final_campaign
+    assert "not a deployed job or generic CLI runner" in runtime
 
 
 def test_gate_forbids_generated_evidence_game_assets_caches_and_metadata() -> None:

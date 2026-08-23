@@ -33,10 +33,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: uv.lock
 
-      - name: Install development dependencies
-        run: python -m pip install -e '.[dev]'
+      - name: Install locked development dependencies
+        run: |
+          python -m pip install uv==0.9.10
+          uv sync --locked --all-extras
 
       - name: Run canonical ROM-free gate
-        run: PYTHON=python scripts/validate_phase0.sh
+        run: PYTHON=.venv/bin/python scripts/validate_phase0.sh

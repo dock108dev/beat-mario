@@ -1,7 +1,8 @@
 # Security model and hardening
 
-Beat Mario is a single-operator, local game-automation tool. It has no user
-accounts, sessions, database, cloud service, webhook, or third-party callback.
+Game Companion is a single-operator, local game-assistance and automation tool.
+It has no user accounts, authenticated web sessions, database, cloud service,
+webhook, or third-party callback.
 Its important trust boundaries are the local Route Lab HTTP server, ignored
 gameplay artifacts, emulator subprocesses, and reviewed route-patch workflow.
 
@@ -36,6 +37,14 @@ requires fresh exact-process verification and explicit authorization.
   worktree. Promotion and rollback are exact, confirmation-gated, and atomic.
 
 ## Implemented controls
+
+### Runtime authority invariants
+
+Mario takeover, Show execution, Stardew Do authorization, and unattended
+Stardew fixture preparation fail with explicit domain errors when their bound
+session, controller, process identity, window identity, game identity, or
+fixture is absent. These safety decisions do not use Python `assert`, so
+optimized execution cannot remove them.
 
 ### V2.13 unattended regression
 
@@ -90,6 +99,7 @@ type but do not log form bodies or the CSRF token.
 | Cross-site mutation and DNS-rebinding exposure | Authorization | Route Lab HTTP actions | Medium | High | A malicious web page could submit localhost forms that mutate review state or attempt a reviewed patch promotion. | The server accepted POSTs without an origin-bound secret and accepted any `Host`. | Per-process CSRF token on every POST plus loopback bind and `Host` enforcement. **Fixed.** |
 | Active artifact content | Content handling / XSS | Route Lab artifact responses | Medium | High | A generated or imported HTML/SVG artifact could execute with Route Lab's same-origin authority when an operator opened it. | Response type came from unrestricted MIME guessing for every file below the artifact root. | Extension/content-type allowlist, HTML served as plain text, SVG and unknown types refused. **Fixed.** |
 | Concurrent privileged actions | Integrity / race condition | Route Lab mutation and patch actions | Medium | High | Overlapping validation, promotion, rollback, or note writes could race against shared files and produce inconsistent state. | A threaded HTTP server dispatched every POST without shared action coordination. | Non-blocking per-server mutation lock with HTTP 409 on overlap. **Fixed.** |
+| Optimized-away authority invariants | Authorization / fail-closed behavior | Mario takeover, Show, Stardew Do, unattended Stardew | Medium | High | Running Python with optimization could remove `assert` checks that guarded controller, session, process/window identity, or fixture state. A corrupted or incomplete runtime state could then proceed past its intended refusal boundary or fail without a classified domain error. | Safety-relevant runtime invariants in these paths used `assert`. | Explicit domain checks now remain active under normal and optimized Python execution. **Fixed.** |
 | Unsafe redirect parameter construction | HTTP response integrity | Route Lab `Location` responses | Low | High | Control characters or delimiters in a selected identifier could create an ambiguous or malformed response header. | Query values were HTML-escaped rather than URL-encoded before use in `Location`. | Standards-based percent encoding. **Fixed.** |
 
 ## Hardening opportunities
@@ -98,6 +108,7 @@ type but do not log form bodies or the CSRF token.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Missing browser isolation policy | Browser security | All Route Lab responses | Low | High | Framing, MIME sniffing, caching, referrer disclosure, and browser features unnecessarily widened impact if another content defect existed. | The handler emitted no explicit browser security policy. | CSP, frame denial, no-sniff, no-store, no-referrer, cross-origin isolation, permissions policy, and noindex headers. **Fixed.** |
 | Unbounded artifact reads | Resource exhaustion | Route Lab artifact responses | Low | High | A very large ignored artifact could consume substantial memory because the server read the entire file before responding. | Artifact size was not checked before `read_bytes`. | 50 MiB response ceiling with HTTP 413. **Fixed.** |
+| Unbounded Experimental descriptor parsing | Resource exhaustion / input validation | Experimental contract, fixture, and installation-manifest reads | Low | High | A very large local descriptor reachable through an onboarding action could consume excessive memory during parsing. | The onboarding loaders read entire YAML and JSON files without byte limits. | Regular non-symlinked UTF-8 files are required; contracts/manifests are capped at 256 KiB and fixtures at 1 MiB before parsing. **Fixed.** |
 | Ambiguous POST parser input | Input validation | Route Lab form parser | Low | High | Non-form bodies reached a parser designed for one encoding, making request behavior less predictable. | The parser did not require its supported media type. | Strict `application/x-www-form-urlencoded` enforcement with HTTP 415. **Fixed.** |
 
 No tracked credential, private-key marker, ROM, or savestate was found during
@@ -121,8 +132,10 @@ stored as YAML data and HTML-escaped at render time. YAML reads use
 The static scan's low-severity PATH/subprocess notices are accepted. Executable
 selection from the invoking operator's PATH is part of the local CLI contract;
 all arguments are discrete, no shell is used, and browser-selected test actions
-map to internal command tuples. Two password warnings on `False`-valued report
-fields are false positives. Status: **accepted**, confidence: **high**.
+map to internal command tuples. Its one medium, low-confidence SQL-injection
+notice is also a false positive: the cited expression constructs fixed HTML
+`<option>` strings and does not interact with a database. Status: **accepted**,
+confidence: **high**.
 
 ## Manual verification outside the repository
 
@@ -138,19 +151,19 @@ fields are false positives. Status: **accepted**, confidence: **high**.
 
 ## Deferred roadmap
 
-1. Make hosted CI install exactly from `uv.lock` and add a pinned dependency
-   vulnerability audit. The current workflow pins GitHub Actions and has
-   read-only repository permission, but `pip install -e '.[dev]'` resolves
-   lower-bounded dependencies at run time.
-2. Add a repeatable secret scanner with a reviewed rule set to the canonical
-   gate. The present generated-file guard prevents tracked ROMs and state, but
-   the review's credential scan is manual.
-3. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
+1. Add a pinned dependency-vulnerability audit to hosted CI. CI now installs
+   the exact `uv.lock` graph with a pinned `uv` version, but advisory results
+   are still gathered explicitly during security reviews rather than on every
+   pull request.
+2. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
    execution if the tool begins consuming untrusted ROMs, Lua scripts, or
    externally supplied patches.
-4. Define retention and deletion policy for ignored screenshots, traces, and
+3. Define retention and deletion policy for ignored screenshots, traces, and
    session evidence if the workstation becomes shared or those artifacts gain
    sensitive annotations.
+4. Expand the canonical high-confidence credential scanner only with reviewed
+   patterns or a pinned dedicated scanner; broad entropy checks need an
+   allowlist policy to avoid hiding real failures in fixture noise.
 
 ## Verification
 
@@ -167,11 +180,14 @@ server. Confirm that normal forms work, a copied POST without its token receives
 document security headers. No live FCEUX proof is required for these HTTP-only
 changes.
 
-For the 2026-08-20 hardening review, 44 focused HTTP/patch tests and all 272
-ROM-free repository tests passed. The tracked secret/game-asset scan found zero
-candidates. Bandit found zero medium/high issues. `pip-audit` found no known
-vulnerabilities in the dependency graph exported from `uv.lock`; it skipped
-only this unpublished local package because it has no PyPI release to audit.
+For the 2026-08-23 hardening review, 203 focused security/CI-relevant tests and
+all 647 tests in the complete ROM-free repository gate passed. The canonical
+high-confidence tracked credential/game-asset scan found zero candidates.
+Bandit found zero high-confidence medium/high issues; its single medium,
+low-confidence HTML false positive is documented above. `pip-audit` found no
+known vulnerabilities in the dependency graph exported from `uv.lock`; it
+skipped only this unpublished local package because it has no PyPI release to
+audit.
 
 ## Experimental adapter onboarding
 
@@ -186,3 +202,7 @@ Atomic installation retains exact hashes and manifest ownership. Uninstallation
 requires exact integrity plus zero active process, authority, input, and session
 state, removes only exact owned files, and preserves external evidence/history.
 Conformance and installation cannot grant Supported status or live proof.
+
+Contracts, fixtures, and installation manifests must be regular non-symlinked
+UTF-8 files. Contracts and manifests are limited to 256 KiB; each JSON fixture
+is limited to 1 MiB. Oversized content is refused before YAML or JSON parsing.

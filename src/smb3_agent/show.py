@@ -19,14 +19,15 @@ from smb3_agent.companion_session import Observation, ObservationSource
 from smb3_agent.fceux_images import convert_gd_directory, write_contact_sheet
 from smb3_agent.goals import load_goal_contract, resolve_goal_path
 from smb3_agent.observe import build_state_trace, write_state_trace
+from smb3_agent.paths import repository_path
 from smb3_agent.review import LogEvent, parse_log_events
 from smb3_agent.segments import load_segment_catalog, validate_goal_segments
 from smb3_agent.tell import ProvenanceReference, load_tell_knowledge
 
 
-SHOW_DEFINITIONS_PATH = Path("data/show/mario.yaml")
+SHOW_DEFINITIONS_PATH = repository_path("data/show/mario.yaml")
 SHOW_ARTIFACTS_ROOT = Path("artifacts/show/world_1_1_clear")
-SHOW_SCRIPT_PATH = Path("scripts/fceux_1_1_agent.lua")
+SHOW_SCRIPT_PATH = repository_path("scripts/fceux_1_1_agent.lua")
 SUPPORTED_SHOW_SEGMENT = "world_1_1_clear"
 SHOW_EVENT_IDS = {
     "attempt_1_fresh_start",
@@ -522,7 +523,12 @@ class ShowSessionManager:
         request.validate()
         selected = definition or load_show_definition()
         with self._lock:
-            if self._thread is not None and self._thread.is_alive():
+            if self._session is not None and self._session.lifecycle in {
+                ShowLifecycle.STARTING,
+                ShowLifecycle.ACTIVE,
+                ShowLifecycle.STOP_REQUESTED,
+                ShowLifecycle.INPUT_STOPPED,
+            }:
                 raise ShowError("Another Show session is already active")
             session_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
             artifacts_dir = self._artifacts_root / session_id
@@ -601,11 +607,25 @@ class ShowSessionManager:
     def _run(self) -> None:
         with self._lock:
             session, controller = self._session, self._controller
-        assert session is not None and controller is not None and session.artifacts_dir is not None
+        if session is None or controller is None or session.artifacts_dir is None:
+            with self._lock:
+                if self._session is not None and self._session.lifecycle in {
+                    ShowLifecycle.STARTING,
+                    ShowLifecycle.ACTIVE,
+                    ShowLifecycle.STOP_REQUESTED,
+                }:
+                    self._session = self._session.transition(
+                        ShowLifecycle.FAILED,
+                        activity="Show failed closed before execution.",
+                        error="Show execution state was incomplete.",
+                        control_returned=False,
+                    )
+            return
         try:
             outcome = self._runner(session.request, session.definition, session.artifacts_dir, controller, self._progress)
             with self._lock:
-                assert self._session is not None
+                if self._session is None:
+                    raise ShowError("Show session state disappeared during execution")
                 current = self._session
                 if current.lifecycle is ShowLifecycle.STOP_REQUESTED:
                     current = current.transition(ShowLifecycle.INPUT_STOPPED, activity="Automation input stopped.")

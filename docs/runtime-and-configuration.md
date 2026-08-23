@@ -1,34 +1,50 @@
 # Runtime, configuration, and data
 
-This repository is a local Python command-line application with two emulator
-adapters and a loopback-only review UI. It has no database, migrations,
-long-running worker, scheduler, cloud API, or production deployment target.
+This repository is a local Python command-line application with a loopback-only
+player and engineering UI. Mario uses FCEUX for supported live execution and
+retains a separate Mednafen diagnostic path. Stardew currently provides a
+copied-save/domain implementation and a safe unconfigured surface; its public
+CLI and server do not launch or operate Stardew. Experimental adapters are
+declarative, fixture-only catalog entries. There is no database, migration,
+cloud API, or production deployment target.
 
 ## Runtime components
 
 The `smb3_agent` CLI in `src/smb3_agent/cli.py` is the public entry point. Its
-commands call five main parts:
+commands and the loopback UI route into these current subsystems:
 
 1. Goal and segment loaders read tracked YAML contracts under `data/goals/`
    and `data/segments/`.
 2. Reliability and goal runs launch a new FCEUX process with
    `scripts/fceux_1_1_agent.lua`, then parse its event log and write an
    inspection report.
-3. Attempt Lab records runs, notes, reviews, issue ledgers, and task packets as
-   local files.
-4. Route Lab serves the same records through Python's threaded HTTP server.
-   It binds only to `127.0.0.1`, `::1`, or `localhost` and runs until stopped.
-5. Route-patch commands use Git and detached temporary worktrees to preview,
+3. Mario observation, Show, takeover, product-session, run-library, learning,
+   and coaching modules keep their state and authority boundaries separate.
+4. Stardew modules define disposable-copy safety, visible-window observation,
+   exact task accounting, and Observe/Tell/Show/Do controllers. Only
+   inspection and safe rendering are wired into the public entry points.
+5. Attempt Lab records runs, notes, reviews, issue ledgers, and task packets as
+   local files. Route Lab serves those records and the player/catalog surfaces
+   through Python's threaded HTTP server.
+   The server binds only to `127.0.0.1`, `::1`, or `localhost` and runs until
+   stopped.
+6. Route-patch commands use Git and detached temporary worktrees to preview,
    validate, compare, promote, reject, or roll back an exact reviewed change.
+7. Scenario, metric, and unattended modules keep deterministic, regression,
+   reliability, visible, and owner evidence classifications distinct.
+8. Experimental onboarding validates, scaffolds, installs, discovers, inspects,
+   and removes bounded data-only adapters.
 
 The legacy Mednafen adapter is a separate macOS diagnostic path. It starts the
 local `mednafen` executable, uses AppleScript to focus it, Quartz to locate and
 capture its window, and `pyautogui` for input. It is not used by the product
 reliability gate.
 
-There are no background jobs. An operator starts each CLI, emulator, or Route
-Lab process directly. Stopping Route Lab stops the only persistent server
-process.
+There is no independent scheduler, queue, worker service, or daemon. An
+operator starts each CLI, emulator, or Route Lab process directly. While Route
+Lab is running, it owns bounded Show/live-observation threads and child
+processes; server shutdown asks those managers to stop and closes the only
+persistent server process.
 
 ## Operator configuration
 
@@ -37,7 +53,8 @@ There are no credentials or network service endpoints to configure.
 
 | Setting | Used by | Behavior |
 | --- | --- | --- |
-| `SMB3_GAME_FILE` | Live goal, reliability, task, and Route Lab actions | Absolute or repository-relative path to the operator's local game file. An explicit `--game-file` wins where the command exposes that option. |
+| `SMB3_GAME_FILE` | Live Mario goal, reliability, task, command, observation, and Route Lab actions | Absolute or repository-relative path to the operator's local game file. An explicit `--game-file` wins where the command exposes that option. |
+| `GAME_COMPANION_EXPERIMENTAL_ROOT` | Experimental adapter installation, discovery, status, and removal | Optional local installation root. The default is `~/Library/Application Support/Game Companion/Experimental Adapters`. |
 | `PYTHON` | `scripts/validate_phase0.sh` | Interpreter used by the repository gate; defaults to `python`. This is a development-script setting, not application configuration. |
 
 Authoritative reliability runs sanitize inherited variables whose names begin
@@ -48,13 +65,24 @@ supported production configuration API. Low-level diagnostic commands may
 accept explicit `--set-env NAME=VALUE` overrides; their output is not accepted
 product reliability evidence.
 
+`STARDEW_REGRESSION_SAVE` is also internal: the unattended Stardew provider
+sets it to a fresh attempt-owned fixture copy. It is not an operator setting
+and must never point to an owner save.
+
 Other behavior is selected through CLI arguments and tracked configuration:
 
 - goal composition and run policy: `data/goals/*.yaml`;
 - segment acceptance events: `data/segments/*.yaml`;
 - executable preset environment: `src/smb3_agent/presets.py`;
 - structured diagnostic input: `data/routes/scripts/*.yaml`;
-- Route Lab location labels: `data/worlds/world_1_locations.yaml`.
+- Route Lab location labels: `data/worlds/world_1_locations.yaml`;
+- Mario product, profile, Tell, and Show declarations: `data/mario/`,
+  `data/profiles/`, `data/tell/`, and `data/show/`;
+- Stardew safety/evidence declarations: `data/stardew/`;
+- catalog, scenario, metric, campaign, and unattended contracts:
+  `data/companion/` and `data/scenarios/`;
+- Experimental adapter schema, fixture, and artifact contract:
+  `data/experimental-adapters/`.
 
 Use `python -m smb3_agent COMMAND --help` and subcommand help for current CLI
 arguments. Goal identifiers can be passed in place of paths to goal commands.
@@ -67,13 +95,16 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 - Mednafen, AppleScript, Accessibility permission, screen-capture permission,
   and a visible desktop session are required only by the optional macOS
   diagnostic adapter.
+- The macOS Stardew backend can inspect one visible foreground window and
+  capture its pixels using Quartz and `mss`, but no public command currently
+  constructs a live Stardew controller or ordinary-input driver.
 - The standard-library web server and optional default-browser launch are the
   only Route Lab integrations. Route Lab makes no cloud or external HTTP calls.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions
-installs the declared development extra on Python 3.11 and runs the ROM-free
-gate.
+installs the exact locked development graph on Python 3.11 and runs the
+ROM-free gate.
 
 ## Persistence and data ownership
 
@@ -90,7 +121,18 @@ Generated state is filesystem-only and ignored by Git:
 | `artifacts/sessions/` | Attempt Lab sessions; `latest.txt` points to the latest local session. |
 | `artifacts/route-patches/<patch-id>/` | Imported patch contract, state, diffs, validation output, comparison evidence, and audit records. |
 | `artifacts/ui/last_command.yaml` | Most recent Route Lab command result for local display. |
+| `artifacts/live-observation/` and `artifacts/show/` | Bounded Mario live-observation and review-only demonstration sessions. |
+| `artifacts/run-library/` and `artifacts/learning/` | Local run/profile history and append-only learning/review records. |
+| `artifacts/product-session/` | Mario first-use choices, appropriate preferences, and local product history. |
+| `artifacts/companion/` | Bounded catalog selection/preferences and separately classified switch events. |
+| `artifacts/stardew-operator/` | Stardew copied-save attempt evidence when a controller is explicitly constructed. |
+| `artifacts/scenarios/` and `artifacts/session-metrics/` | Classified scenario attempts, events, indexes, summaries, and exports. |
+| `artifacts/unattended-regression/` | Immutable regression-only manifests, run directories, reports, cleanup evidence, and comparisons. |
 | `public/assets/local/` | Optional ignored local artwork used by Route Lab. |
+
+Experimental scaffolds default to repository-local `experimental-adapters/`.
+Installed Experimental adapters live under the configured installation root,
+outside `artifacts/`; each installation is bounded by its manifest and hashes.
 
 Treat `artifacts/` as local evidence, not as a durable shared store. Back it up
 separately if a run must be retained. Never commit game files, savestates,
@@ -110,3 +152,8 @@ live route change, also run the selected goal's authoritative reliability
 profile and a separate watch playback as described in
 [World 8 reliability gates](reliability-gate.md). Preserve the resulting local
 evidence directory and record its exact path when reporting acceptance.
+
+The final campaign is not a deployed job or generic CLI runner:
+`data/scenarios/final-campaign.yaml` has `execution_enabled: false`. It is a
+manual, frozen-candidate workflow with explicit owner pauses described in the
+[consolidated final campaign](final-campaign-guide.md).

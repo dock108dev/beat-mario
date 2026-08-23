@@ -186,8 +186,8 @@ The player product now covers first use, adapter-owned capability truth,
 Observe, Tell, coaching, separate Show, same-session Do, persistent reclaim,
 safe handback, History, learning clarity, failure/recovery, safe persistence,
 and local evidence status. The disabled owner-pilot manifest and consolidated
-campaign hooks are prepared. No product, UI, live, regression, scenario, or
-owner validation is claimed. See the [Mario Player Guide](mario-player-guide.md)
+campaign hooks are prepared. ROM-free product, UI, regression, and scenario
+contracts pass; live and owner validation remain deferred. See the [Mario Player Guide](mario-player-guide.md)
 and [Consolidated Final Campaign](final-campaign-guide.md).
 
 ## Slice V2.10 — Visible Stardew operator and observation
@@ -200,13 +200,13 @@ screen-only crop/resource/position observations, ordinary keyboard/mouse/
 controller input ports, fresh player/agent ownership, the bounded watering
 ledger, protected-action refusal, failure recovery, append-only evidence, and a
 standalone desktop/narrow operator surface. Fixture, scenario, artifact, and
-blank owner-pilot hooks are prepared but have not run. See the
+blank owner-pilot hooks are covered by deterministic tests. See the
 [Stardew Visible Operator Guide](stardew-operator-guide.md).
 
 Acceptance remains in the consolidated campaign: a visible owner-provided
 copied-save task, negative cases, exact evidence reconciliation, presentation,
-owner usefulness, and explicit owner acceptance. No live or fixture execution
-is inferred from implementation.
+owner usefulness, and explicit owner acceptance. No live execution is inferred
+from implementation or deterministic fixtures.
 
 ## Slice V2.11 — Stardew companion modes
 
@@ -222,10 +222,11 @@ preserves the old attempt, reverifies the primary, creates a fresh destination,
 and invalidates all previous mode state and authority. See the [Stardew
 Companion Guide](stardew-operator-guide.md).
 
-Prepared tests, fixtures, presentation contracts, scenario hooks, and owner
-pilot placeholders have not run. Acceptance remains the frozen-release-
-candidate deterministic phase followed by visible Stardew and owner-pilot
-proof in the consolidated campaign.
+Tests, fixtures, presentation contracts, and scenario hooks run in the ROM-free
+suite. The public surface remains unconfigured and inspection-only; no live
+Stardew process, owner save, input, or owner pilot has run. Acceptance remains
+the frozen-release-candidate deterministic phase followed by visible Stardew
+and owner-pilot proof in the consolidated campaign.
 
 ## V2.12 — implementation complete / final validation deferred
 
@@ -247,8 +248,8 @@ returns to the catalog with no selection and no authority.
 The Mario workspace remains at `/mario`, the standalone Stardew workspace at
 `/stardew`, and the engineering Lab at `/lab`; `/` is the combined player root.
 Implementation-only catalog inspection/render commands, contracts, fixtures,
-scenario hooks, artifact requirements, and unexecuted desktop/390-pixel tests
-are prepared. No validation or live activity ran.
+scenario hooks, artifact requirements, and desktop/390-pixel checks run in the
+ROM-free suite. No live game activity or owner validation ran.
 
 ## V2.13 — implementation complete / final validation deferred
 
@@ -264,9 +265,10 @@ cleanup, and evidence.
 
 The CLI and Lab expose truthful capability, planning, manifest, lifecycle,
 cancellation, cleanup, retained-artifact, failure, and comparison surfaces.
-Prepared contracts, tests, and campaign hooks have not run. No unattended
-output can count as visible, Show, reliability, authoritative, usefulness,
-acceptance, or campaign proof. See the
+Prepared contracts, tests, and campaign hooks pass ROM-free validation. No live
+unattended attempt has run for the current candidate, and no unattended output
+can count as visible, Show, reliability, authoritative, usefulness, acceptance,
+or campaign proof. See the
 [operator guide](unattended-regression.md).
 
 ## V2.14 — implementation complete / final validation deferred
@@ -275,14 +277,15 @@ New Game Onboarding now has the versioned Experimental contract, deterministic
 data-only scaffold, fixture sample, provider discovery without shared-core
 game-ID branches, atomic manifest/hash installation and rollback, integrity
 inspection, fail-closed exact removal, CLI/Lab/onboarding surfaces, desktop and
-390-pixel presentation contract, prepared comprehensive tests, evidence rules,
+390-pixel presentation contract, comprehensive tests, evidence rules,
 and deferred campaign hooks. Mario and Stardew remain explicit trusted
 built-ins. Experimental entries remain live-unproven and cannot self-promote.
 
-No V2.14 validation, rendering, conformance execution, scaffold/install/remove
-operation, live game activity, or owner acceptance has run. The next action is
-to freeze the cumulative release candidate and begin deterministic contract
-validation.
+ROM-free tests exercise rendering, conformance, deterministic scaffolding, and
+temporary-root install/status/removal behavior. No persistent operator adapter
+installation, live game activity, or owner acceptance has run. The next action
+is to freeze the cumulative release candidate and rerun deterministic contract
+validation against that exact identity.
 
 ## V2 completion
 
