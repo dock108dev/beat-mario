@@ -5,6 +5,20 @@ accounts, sessions, database, cloud service, webhook, or third-party callback.
 Its important trust boundaries are the local Route Lab HTTP server, ignored
 gameplay artifacts, emulator subprocesses, and reviewed route-patch workflow.
 
+## V2.9 first use and product persistence
+
+Mario setup remains loopback-only, CSRF-protected, form-encoded, body-limited,
+escaped, and serialized by the privileged-action lock. Automatic detection and
+the explicit macOS picker inspect only local supported paths. Identity checks
+read the NES header and SHA-256 fingerprint; the product does not copy, expose,
+or upload ROM contents.
+
+The product preference file may retain the selected local path, fingerprint,
+input-readiness confirmation, session choice, coaching/detail preferences, and
+timestamps. It never persists or restores authorization, nonce, control epoch,
+process ownership, reclaim state, or write capability. Every takeover still
+requires fresh exact-process verification and explicit authorization.
+
 ## Trust boundaries
 
 - Route Lab is an administrative surface even though it is local. It reads

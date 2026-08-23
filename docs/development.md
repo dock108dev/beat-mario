@@ -15,13 +15,15 @@ The project CLI is available through the environment interpreter:
 .venv/bin/python -m smb3_agent --help
 ```
 
-`SMB3_GAME_FILE` is the only operator-facing runtime environment variable. It
-points to a local game file for live commands; an explicit `--game-file` takes
-precedence. The validation script also accepts `PYTHON` solely to select its
+`SMB3_GAME_FILE` is the only operator-facing runtime environment variable and
+is an explicit override for live commands. The player Start button otherwise
+uses `game-file.nes` or `roms/smb3.nes` when either local ignored file exists;
+an explicit `--game-file` takes precedence. The validation script also accepts
+`PYTHON` solely to select its
 interpreter. Product preset variables are internal execution policy defined by
 `src/smb3_agent/presets.py`; do not export route tuning variables for
-authoritative runs. Route Lab needs no configuration and binds to loopback by
-default. See [Runtime, configuration, and data](runtime-and-configuration.md)
+authoritative runs. Game Companion Lab binds to loopback by default. See
+[Runtime, configuration, and data](runtime-and-configuration.md)
 for the complete boundary.
 
 ## Repository layout
@@ -45,7 +47,7 @@ local UI assets are ignored. Do not force-add them.
 - `python -m smb3_agent goal ...`: validate, inspect, or run goal contracts.
 - `python -m smb3_agent reliability ...`: authoritative fresh runs and
   review-only playback.
-- `python -m smb3_agent lab ...`: attempt review, Route Lab, and route patches.
+- `python -m smb3_agent lab ...`: attempt review, Game Companion Lab, and route patches.
 - `python -m smb3_agent task ...`: bounded low-level diagnostics.
 - `scripts/validate_phase0.sh`: canonical ROM-free repository gate.
 
@@ -86,14 +88,18 @@ These files remain intentionally cohesive:
   mutation surface.
 - `src/smb3_agent/lab.py`: attempt-session persistence, notes, issues, and
   proposal records share one on-disk schema.
+- `src/smb3_agent/companion_session.py`: adapter-neutral player-session state,
+  lifecycle, capabilities, safety boundary, outcome, and fail-closed handoff
+  validation.
 - `src/smb3_agent/lab_ui.py`: the dependency-free HTTP handler, HTML renderer,
-  state actions, and embedded CSS form one local application. A template/static
-  asset extraction should be a separately tested UI refactor.
+  player and Lab routing, state actions, and embedded CSS form one local
+  application. A template/static asset extraction should be a separately tested
+  UI refactor.
 - `src/smb3_agent/cli.py`: one parser and one dispatch entry point keep command
   registration adjacent to behavior. Its obsolete compatibility branches have
   been removed.
 
-The first sensible future extractions are generated/static Route Lab assets and
+The first sensible future extractions are generated/static Game Companion Lab assets and
 a typed route-patch record layer. Both deserve their own behavior-preserving
 slice rather than mechanical file splitting.
 

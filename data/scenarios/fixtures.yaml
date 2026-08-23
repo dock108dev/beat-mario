@@ -1,0 +1,89 @@
+schema_version: game-companion-scenario-fixtures/v1
+implementation_only: true
+execution_deferred: true
+fixture_sets:
+  first_use: [automatic_detection, manual_selection, missing_game_file, invalid_game_file, emulator_missing, input_not_confirmed, launch_failure, duplicate_session, retry_preserves_error]
+  product_session: [first_use, idle, starting, player_observing, tell_coaching, show_active_separately, do_preflight, do_authorized, agent_controlling, reclaim, handback, failure, recovery, stopped, historical_review]
+  capability_truth: [available, game_file_missing, emulator_missing, read_only_session, stale_observation, unsupported_level, unknown_checkpoint, no_compatible_profile, no_accepted_reference, no_executable_solution, protected_resource_conflict, active_show, active_takeover, process_lost, candidate_not_validated, validation_deferred]
+  observation: [fresh, stale, unsupported, disconnect, recovery, unknown_fact]
+  ownership: [player, authorized_agent, reclaim, neutralized_handback, ambiguous]
+  help: [tell_request, proactive_policy, emitted, suppressed, accepted, dismissed, ignored, corrected, unverifiable]
+  comparison: [faster_compatible, slower_compatible, incompatible]
+  learning: [candidate_derived, review, rejection, validation_failure, promotion_preparation, rollback_preparation]
+  takeover: [authorization, transfer, reclaim, timeout, cancellation, process_loss, cleanup_failure]
+  adapters: [mario, stardew_companion, experimental_planned, safe_initial_selection, switching_isolation, successful_neutral_handoff, every_active_or_ambiguous_refusal, volatile_state_invalidation, corrupt_stale_persistence, cross_adapter_reference_refusal]
+  stardew_save: [disposable_creation, exact_identity, primary_isolation, mismatch, source_change, symlink_refusal]
+  stardew_window: [visible_windowed, occluded, missing, process_loss, process_restart]
+  stardew_crops: [exact_initial_set, exact_progress, unknown, occluded, added, removed, final_reconciliation]
+  stardew_resources: [energy, watering_can, tool_use, refill, position, farmhouse_entrance]
+  stardew_safety: [protected_action_refusal, ambiguous_ownership, expired_authorization, clean_stop, evidence_retention]
+  stardew_modes: [observe_conversion, tell_grounding, stale_refusal, show_review_only, do_authorization, per_input_revalidation, reclaim_each_phase, neutral_handback]
+  stardew_reset: [fresh_destination, primary_before_after, prior_attempt_preserved, stale_authority, existing_nested_symlink_alias_refusal]
+  evidence: [complete, missing_artifact, integrity_failure, classification_mismatch, incomplete_rebuild]
+  layout: [desktop_compact_workspace, narrow_390, keyboard_order, focus_retention, in_place_refresh]
+  owner_pilot: [manifest_complete, release_candidate_placeholders, feedback_blank, acceptance_blank, first_unmet_requirement]
+negative_cases:
+  - malformed_event
+  - duplicate_event
+  - out_of_order_event
+  - corrupt_storage
+  - unsupported_schema
+  - classification_upgrade
+  - missing_artifact
+  - actor_mismatch
+  - ownership_ambiguity
+  - input_after_handback
+  - owner_required_launched_unattended
+  - cleanup_failure
+  - adapter_state_leakage
+  - metrics_rebuilt_from_incomplete_evidence
+  - expired_authorization_restored
+  - stale_process_ownership_restored
+  - reclaim_state_restored
+  - retry_duplicates_active_session
+  - active_reclaim_hidden
+  - show_stop_labeled_as_live_reclaim
+  - owner_feedback_prepopulated
+  - stardew_primary_save_changed
+  - stardew_copy_identity_mismatch
+  - stardew_unknown_crop_treated_as_watered
+  - stardew_occluded_crop_ignored
+  - stardew_process_restarted_with_same_pid
+  - stardew_input_after_process_loss
+  - stardew_protected_action_sent
+  - stardew_tell_without_provenance
+  - stardew_show_called_player_completion
+  - stardew_do_authority_reused_or_restored
+  - stardew_progress_without_fresh_postcondition
+  - stardew_reclaim_without_neutralization
+  - stardew_reset_reuses_destination_or_authority
+  - adapter_switch_during_active_agent_input
+  - adapter_switch_during_show_or_do
+  - adapter_switch_during_reclaim_or_neutralization
+  - adapter_switch_with_unconfirmed_handback
+  - adapter_switch_with_ambiguous_owner_or_continuity
+  - adapter_switch_with_incomplete_failure_retention
+  - adapter_switch_with_unsafe_save_transition
+  - cross_adapter_goal_profile_scope_or_evidence_reference
+  - stale_or_aliased_adapter_selection_restored
+assertions:
+  owner_feedback_is_never_simulated: true
+  unattended_is_regression_only: true
+  technical_success_is_not_acceptance: true
+  unknowns_remain_visible: true
+  failed_artifacts_are_retained: true
+  retries_create_new_attempts: true
+  observation_only_has_no_write_path: true
+  active_control_is_never_persisted: true
+  reclaim_is_persistent_during_do: true
+  in_place_update_preserves_focus_scroll_and_open_details: true
+  owner_pilot_fields_start_empty: true
+  stardew_primary_save_is_never_a_write_target: true
+  stardew_state_is_screen_observed_only: true
+  stardew_crop_completion_requires_exact_reconciliation: true
+  stardew_owner_pilot_fields_start_empty: true
+  stardew_show_is_review_only: true
+  stardew_reset_invalidates_all_prior_mode_state: true
+  adapter_catalog_is_provider_owned: true
+  successful_switch_requires_new_adapter_observation: true
+  corrupt_catalog_preferences_fail_closed: true

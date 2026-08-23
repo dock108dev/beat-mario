@@ -1,0 +1,26 @@
+schema: game-companion-show/v1
+game: smb3
+
+definitions:
+  - game_id: smb3
+    goal_id: world_8_double_whistle
+    segment_id: world_1_1_clear
+    tell_segment_id: world_1_1_clear
+    starting_state_event: attempt_1_fresh_start
+    success_event: attempt_1_success_course_clear
+    failure_events: [attempt_1_bad_state]
+    stop_event: show_input_stopped
+    replay_roles: [starting_state, course_progress, game_owned_success]
+    cues:
+      - cue_id: opening
+        instruction: Move right and use short jumps over the opening enemies.
+        expected_visual_cue: Mario is in World 1-1 and the opening terrain moves left.
+        trigger_event: attempt_1_fresh_start
+      - cue_id: final_run
+        instruction: Keep forward momentum through the final staircase and goal area.
+        expected_visual_cue: The end of the stage and goal-card area are visible.
+        trigger_event: attempt_1_reached_end_x
+      - cue_id: course_clear
+        instruction: Watch for the goal card and course-clear transition.
+        expected_visual_cue: The game begins its course-clear card animation.
+        trigger_event: attempt_1_success_course_clear

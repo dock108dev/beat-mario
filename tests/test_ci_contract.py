@@ -240,6 +240,8 @@ print(f"macos_modules_loaded={{str(loaded).lower()}}")
         ],
         ["goal", "status", "world_8_double_whistle"],
         ["lab", "ui-render", "--output", "{output}"],
+        ["companion", "catalog-status"],
+        ["companion", "render", "--output", "{output}"],
     ),
 )
 def test_rom_free_cli_commands_do_not_load_macos_backend(

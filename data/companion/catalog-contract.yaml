@@ -1,0 +1,70 @@
+schema_version: game-companion-catalog-contract/v1
+implementation_slice: V2.12
+implementation_status: implementation_complete_validation_deferred
+ordering: [smb3, stardew]
+adapters:
+  - adapter_id: smb3
+    game_id: smb3
+    provider: smb3_agent.mario_product.MarioCatalogProvider
+    evidence_namespace: mario
+    standalone_surface: /mario
+  - adapter_id: stardew
+    game_id: stardew_valley
+    provider: smb3_agent.stardew_companion.StardewCatalogProvider
+    evidence_namespace: stardew
+    standalone_surface: /stardew
+shared_surface:
+  root: /
+  lab: /lab
+  switch_evidence_classification: catalog_switch
+  responsive_widths: [desktop, 390]
+switch_contract:
+  explicit_player_action: true
+  refuse_while:
+    - active_agent_input
+    - active_show
+    - active_do_authorization
+    - pending_reclaim
+    - pending_neutralization
+    - unconfirmed_handback
+    - ambiguous_input_ownership
+    - incomplete_failure_retention
+    - unsafe_save_or_reset_transition
+    - unknown_process_or_window_continuity
+  successful_switch_requires:
+    - current_mode_stopped
+    - input_neutralized
+    - player_handback_confirmed
+    - attempt_and_evidence_retained
+    - volatile_authority_and_observation_invalidated
+    - catalog_switch_event_recorded
+    - new_adapter_selected
+    - new_adapter_observation_required
+persistence:
+  schema_version: game-companion-catalog-preferences/v1
+  local_only: true
+  atomic: true
+  bounded_fields: [selected_adapter_id, display, adapters]
+  adapter_fields: [last_goal_id, last_profile_id, sections]
+  forbidden:
+    - live_observations
+    - process_window_or_emulator_identity
+    - save_copy_authorization
+    - ownership_epoch
+    - show_or_do_authority
+    - reclaim_or_held_input
+    - unfinished_completion_claim
+    - player_report_as_adapter_fact
+isolation:
+  never_transfer:
+    - observation_envelopes_or_adapter_facts
+    - tell_cards
+    - show_sessions
+    - do_authorizations
+    - ownership_epochs_or_held_inputs
+    - goals_checkpoints_or_solution_compatibility
+    - process_window_emulator_or_save_identity
+    - crop_ledgers_or_mario_route_state
+    - evidence_classification_or_recovery_state
+    - completion_or_acceptance_claims
+validation_status: not_run

@@ -1,0 +1,71 @@
+schema_version: game-companion-final-campaign/v1
+status: implementation_hooks_only
+execution_enabled: false
+release_candidate_required: true
+catalog: data/scenarios/catalog.yaml
+event_schema: data/scenarios/event-schema.json
+metrics_schema: data/scenarios/metrics-schema.json
+fixtures: data/scenarios/fixtures.yaml
+artifact_contract: data/scenarios/artifact-contract.yaml
+mario_owner_pilot: data/scenarios/mario-owner-pilot.yaml
+stardew_owner_pilot: data/scenarios/stardew-owner-pilot.yaml
+phases:
+  - id: deterministic_contracts
+    classifications: [deterministic_only]
+    owner_required: false
+  - id: visible_technical
+    classifications: [visible_technical, review_only]
+    owner_required: false
+  - id: route_reliability
+    classifications: [reliability]
+    owner_required: false
+  - id: owner_sessions
+    classifications: [owner_required]
+    owner_required: true
+    pause_at_every_owner_boundary: true
+    mario_pilot_manifest_required: true
+    stardew_pilot_manifest_required: true
+  - id: unattended_regression
+    classifications: [unattended_regression]
+    regression_only: true
+  - id: final_owner_decision
+    classifications: [final_campaign_orchestration]
+    owner_required: true
+    explicit_usefulness_feedback_required: true
+    explicit_acceptance_decision_required: true
+aggregation:
+  preserve_labels: true
+  blended_success_score: forbidden
+  technical_success_implies_owner_acceptance: false
+  unattended_implies_owner_acceptance: false
+  authoritative_game_outcome_requires_game_owned_evidence: true
+failure_rules:
+  fail_closed: true
+  retain_failed_attempts: true
+  retry_creates_new_attempt: true
+  cleanup_every_safe_terminal_path: true
+  missing_or_unknown_evidence_remains_visible: true
+  no_patching_during_attempt: true
+  first_unmet_requirement_reporting: true
+  owner_feedback_fields_must_start_empty: true
+  stardew_primary_save_must_remain_unchanged: true
+  stardew_disposable_save_required: true
+  stardew_visible_screen_evidence_required: true
+  stardew_unknown_or_occluded_crop_fails_closed: true
+  stardew_observe_tell_show_do_contracts_required: true
+  stardew_show_review_only_classification_required: true
+  stardew_same_live_session_do_required: true
+  stardew_reclaim_every_active_phase_required: true
+  stardew_neutral_handback_required: true
+  stardew_disposable_reset_primary_preservation_required: true
+  stardew_stale_authority_after_reset_required: true
+  stardew_protected_action_matrix_required: true
+  exact_two_adapter_catalog_required: true
+  adapter_owned_catalog_truth_required: true
+  every_unsafe_switch_state_refused: true
+  neutral_handoff_before_switch_required: true
+  volatile_cross_adapter_state_invalidated: true
+  catalog_switch_evidence_separate: true
+  corrupt_stale_catalog_persistence_fails_closed: true
+  root_mario_stardew_and_lab_surfaces_required: true
+  mario_contract_regression_required: true

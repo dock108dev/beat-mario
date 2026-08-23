@@ -1,0 +1,65 @@
+schema_version: game-companion-stardew-evidence/v1
+classification: implementation_hooks_only
+execution_enabled: false
+required_per_attempt:
+  - attempt.json
+  - save-identity.json
+  - primary-before.sha256
+  - primary-after.sha256
+  - copied-save-before.sha256
+  - process-window.jsonl
+  - ownership.jsonl
+  - observations.jsonl
+  - crop-ledger.jsonl
+  - resources.jsonl
+  - inputs.jsonl
+  - failures.jsonl
+  - screenshots/initial-farm-sweep.png
+  - screenshots/final-crop-reconciliation.png
+  - screenshots/farmhouse-entrance.png
+  - cleanup.json
+  - artifact-reconciliation.json
+  - report.json
+  - companion-observations.jsonl
+  - tell-cards.jsonl
+  - mode-authorizations.jsonl
+  - mode-attempts.jsonl
+  - evidence-hashes.json
+required_report_fields:
+  - immutable attempt, adapter, game, copied-save, process-start, and window identities
+  - initial exact planted and watered crop ids and counts
+  - every confirmed watering transition and its before/after screen evidence
+  - remaining crop count after every confirmed transition
+  - initial, current, spent, and final energy
+  - watering-can selection, units, capacity, uses, and refills
+  - exact final location and farmhouse-entrance result
+  - complete player/agent/neutral ownership timeline
+  - all unknowns, occlusions, mismatches, refusals, and process losses
+  - primary-save unchanged result
+  - clean stop, neutralization, player handback, and retained-evidence result
+  - Observe conversion identity, freshness, exact confidence, crop coverage, and typed fact provenance
+  - Tell factual provenance and explicit no-input/no-authority classification
+  - Show review-only, non-player, non-authoritative, non-owner-acceptance classification
+  - Do authorization binding for task, copy, process start, window, observation, expiry, driver, and stop conditions
+  - before and after screen observations for every agent input and its expected postcondition
+  - first unmet requirement and safe recovery for every failed or stopped attempt
+  - reset source and fresh destination identities, primary before/after hashes, invalidated epochs, and preserved prior attempt
+integrity:
+  append_only_events: true
+  screenshots_hash_required: true
+  final_manifest_hash_required: true
+  every_referenced_evidence_file_hash_required: true
+  missing_artifact_fails: true
+  failed_attempt_retained: true
+  retry_reuses_attempt: false
+proof_limits:
+  fixtures_can_prove: [schema and reconciliation behavior]
+  fixtures_cannot_prove: [visible game behavior, task completion, owner usefulness, owner acceptance]
+  owner_pilot_required_for: [visible Observe behavior, Tell usefulness, Show clarity, live Do behavior, reclaim and handback clarity, reset trust, acceptance]
+classification_separation:
+  show_review_only: true
+  show_player_completion: false
+  show_authoritative_evidence: false
+  show_owner_acceptance: false
+  do_implementation_is_acceptance: false
+  fixture_result_is_owner_proof: false

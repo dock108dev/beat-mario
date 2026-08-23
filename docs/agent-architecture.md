@@ -1,13 +1,16 @@
-# Agent Architecture
+# Game Companion Architecture
 
-The target system is a live game-agent workbench, not a pile of one-off route
-scripts. The current FCEUX runner is the first emulator adapter and execution
-backend.
+The target system is a local game companion, not a pile of one-off route
+scripts. The current FCEUX runner is the first game adapter and accepted
+execution backend. V2 adds a shared player-session layer above it before adding
+the Stardew adapter.
 
 ## Components
 
 ```text
-User Directive
+Player Session (Tell / Show / Do)
+  -> Authorization and Safety Contract
+  -> Game Adapter Capabilities
   -> Goal Contract
   -> Route Planner
   -> Segment Runner
@@ -21,7 +24,170 @@ User Directive
   -> Route Patch Manager
   -> Codex Task Builder
   -> Knowledge Store
+  -> Local Learning and Candidate Review
+  -> Handoff and Local Metrics
 ```
+
+## Shared Companion Core
+
+The cross-game core owns session lifecycle, authorization, mode selection,
+protected decisions, cancellation/takeover, evidence references, handoff, and
+local product metrics. It must not branch on a Mario or Stardew identifier.
+
+A game adapter owns executable/window detection, observations and confidence,
+supported inputs, game-specific goals and knowledge, protected actions,
+recovery rules, success/failure predicates, and evidence capture. Capabilities
+are declared and validated; unavailable capabilities are not inferred.
+
+The shared lifecycle is:
+
+```text
+observe
+-> offer supported help
+-> authorize scope and stop point
+-> tell, show, or do
+-> verify game-owned outcome
+-> stop input
+-> hand back
+```
+
+See the [V2 roadmap](v2-roadmap.md) for the slice order and acceptance gates.
+The [live-observation contract](live-observation.md) documents V2.4's exact
+visible FCEUX connection, direct player-input source, read-only boundary,
+continuity rules, and retained local evidence.
+
+## Stardew companion adapter
+
+V2.10 adds `stardew_adapter.py` beside, not inside, the Mario implementation.
+V2.11 adds `stardew_companion.py` above that operator. Its adapter-owned
+pipeline is:
+
+```text
+owner primary-save selection
+-> verified attempt-owned disposable copy
+-> visible process/window identity
+-> complete screen-only farm sweep
+-> exact crop/resource/position ledger
+-> adapter-neutral observation envelope with opaque Stardew facts
+-> grounded Tell or one fresh-copy review-only Show
+-> player-owned boundary
+-> explicit same-live-session Do authorization bound to task/copy/process/window/observation/expiry/driver
+-> ordinary input plus fresh screen-confirmed postcondition
+-> neutral stop and player handback
+-> primary-save and artifact reconciliation
+-> optional fresh-destination disposable reset that invalidates all old state
+```
+
+`DisposableSaveManager` refuses existing destinations, nesting, real-path
+aliasing, symlinks, empty saves, copy mismatch, and source mutation during the
+copy. `ScreenObservation` accepts only visible screen evidence bound to one
+copied-save and process/window identity. It requires exact crops, energy,
+watering-can state, tool uses, refills, and position. `WateringLedger` freezes
+the initial planted set, keeps already-watered crops, and refuses additions,
+removals, contradictions, or non-monotonic resource facts.
+
+`CompanionObservationEnvelope` carries only shared identity, freshness,
+confidence, evidence, ownership, and opaque adapter facts. The Stardew provider
+alone interprets crops, resources, position, and watering safety, so Mario
+records gain no Stardew fields and shared contracts require no game-id branch.
+
+`StardewOperator` owns the bounded watering state machine and fresh ownership
+epoch. `OrdinaryInputDriver` accepts explicitly configured OS-visible keyboard,
+mouse, or controller emitters; it provides no hidden input path. Protected
+action terms and task-purpose allowlists reject purchases, sales, discards,
+gifts, consequential dialogue, story outcomes, sleep, and save operations.
+Every failure neutralizes before retaining evidence and requires a fresh attempt
+instead of restoring authority. `StardewCompanionController` separately owns
+Tell's no-input contract, Show's review-only classification, Do's live
+authorization and per-input revalidation, immediate reclaim, verified neutral
+handback, completion evidence hashes, and reset invalidation.
+
+The responsive renderer is a standalone Stardew surface, not a shared game
+catalog. Adapter capability truth lives in `data/stardew/operator.yaml`;
+fixtures, evidence, and owner-pilot contracts remain separate under
+`data/stardew/` and `data/scenarios/`. V2.12 adds cross-game selection without
+changing Stardew's standalone contract. See the [Stardew companion guide](stardew-operator-guide.md).
+
+## Combined catalog and switching
+
+`companion_catalog.py` defines the adapter-neutral catalog registry, bounded
+local preferences, runtime switch guard, and separately classified switch
+event. `MarioCatalogProvider` and `StardewCatalogProvider` own their complete
+entries and runtime hooks. Registry validation refuses duplicate identities,
+missing declarations, unknown statuses, unsupported goal/profile/scope links,
+version or provider disagreement, and missing safety/evidence policy.
+
+The shared coordinator calls provider hooks rather than branching on game id.
+It refuses switching during input, Show, Do authority, reclaim,
+neutralization, ambiguous ownership, unconfirmed handback, incomplete failure
+retention, unsafe save/reset transitions, or unknown continuity. A successful
+switch retains the attempt, invalidates volatile state, records a
+`catalog_switch` event, selects the target, and leaves active modes disabled
+until a new target-owned observation exists.
+
+## Local learning and candidate review
+
+The V2.6 run library remains the immutable observed-run source. V2.7 wraps each
+run in an adapter-neutral `AttemptContract` with the additional compatibility
+and evidence-integrity fields needed for honest comparison. The learning core
+owns compatible sets, comparisons, progress anchors, trouble patterns,
+successful tactics, objective deltas, candidate tactics and solutions,
+provenance, lifecycle decisions, preferences, manifests, and checksum-bound
+local persistence. Adapters supply observations and policy; the shared core
+does not branch on game identity.
+
+Learning feeds evidence-classified statements into coaching and Tell. It cannot
+send input. A candidate becomes reviewable without changing goal contracts,
+accepted route order, reliability profiles, fastest-observed indexes, or
+takeover capabilities. Owner review permits later replay validation only. The
+existing Route Lab patch manager remains the sole exact-diff application and
+rollback mechanism, while the learning registry binds candidate hash, replay
+evidence, affected reliability evidence, prior solution, promotion, and atomic
+registry restoration. See [adaptive assistance and solution learning](learning.md).
+
+## Grounded Tell
+
+Tell is the advisory-only path through the shared companion core. A request
+contains the game and goal identities, a stable segment checkpoint, explicit
+observation source and freshness, bounded observed facts, spoiler preference,
+and protected decisions. Adapter observations require current evidence;
+player-reported observations remain labeled as such and can authorize only
+Tell.
+
+Mario player guidance lives in `data/tell/mario.yaml`, keyed by stable segment
+IDs. The loader cross-validates it against supported product goal contracts and
+the segment catalog: coverage must exactly match solved normal-gameplay scope,
+with no missing, duplicate, orphaned, planned, bridged, or unsupported record.
+Goal contracts continue to own route identity and order; segment contracts own
+start, success, failure, and accepted evidence. The Tell catalog adds only
+actions, cues, risks, recovery, protected-action declarations, spoiler-sized
+detail, and source references.
+
+Every factual card item carries typed provenance identifying the current
+adapter observation or player report, goal contract, segment contract,
+accepted knowledge record, and accepted evidence record. Missing or
+contradictory checkpoint facts, stale state, game mismatch, incomplete
+provenance, or protected-action conflict fails closed. A Tell card cannot
+create a session outcome, send input, or construct a completion handoff.
+
+## Review-only Show
+
+Show uses an adapter-neutral request, capability, cue, lifecycle, session,
+outcome, and artifact-reference contract. Mario V2.3 supports exactly
+`world_1_1_clear`. Its definition in `data/show/mario.yaml` is cross-validated
+against the selected goal, solved normal-gameplay segment, Tell knowledge, and
+exact observer events.
+
+The local server owns at most one background Show controller. It launches one
+fresh visible FCEUX process without savestates or retries, stops after 1-1,
+streams cue activity from parsed events, and remains responsive to Stop
+Demonstration and Take Control. Both controls stop only the exact owned process
+and retain partial evidence. Successful reconciliation requires ordered cue
+events, the game-owned course-clear event, stopped input, process
+relinquishment, converted images, an ordered replay manifest, and a contact
+sheet. Every outcome remains review-only, non-promotable, excluded from
+reliability, and explicitly denies player completion and authoritative
+acceptance.
 
 ## Goal Contract
 
@@ -232,3 +398,38 @@ Examples:
   World 8 arrival."
 
 This can start as YAML/Markdown and later move into structured storage.
+
+## Dynamic Run Library and Takeover Controller
+
+`run_library.py` owns append-safe local profile/run records and deterministic
+fastest-observed indexes. Comparison compatibility includes game and level
+identity, profile version, start/end boundaries, timing units, emulator
+assumptions, and required evidence. Evidence keys make repeated processing
+idempotent while preserving all distinct attempts.
+
+`takeover.py` owns authorization, exclusive player/agent ownership, control
+epochs, nonce replay protection, neutralization, terminal reasons, and
+handback reconciliation. It does not invent game tactics. Adapter capability
+data supplies replay-safe accepted solutions and scopes. The Mario live manager
+binds this state machine to the opt-in Lua wrapper and the same FCEUX process;
+the original passive observer remains a separate no-write path.
+
+## Mario Product Session
+
+`mario_product.py` is the V2.9 adapter-owned presentation and product-session
+boundary. It reads `data/mario/product.yaml` for supported identity and
+capability contracts, detects the local game file and FCEUX, persists only safe
+local player preferences/history, maps runtime observation and takeover state
+to player lifecycle stages, and supplies plain-language unavailable and
+recovery reasons.
+
+The product manager never persists or restores authorization, control epochs,
+process ownership, reclaim state, or write capability. `lab_ui.py` composes this
+with the V2.4–V2.8 observation, objective, Show, takeover, run-library,
+learning, scenario, and metrics views. The main page is player-first; `/lab`
+exposes capability snapshots, first-use state, process/input ownership,
+scenario readiness, missing final evidence, pilot manifest, and recovery state.
+
+`data/scenarios/mario-owner-pilot.yaml` is the prepared, disabled owner-pilot
+contract. It cannot populate feedback or acceptance and cannot upgrade
+technical evidence.

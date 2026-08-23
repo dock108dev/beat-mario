@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "game-companion-event/v1",
+  "type": "object",
+  "required": ["event_id", "schema_version", "event_type", "session_id", "scenario_id", "scenario_version", "attempt_id", "correlation_id", "game_id", "adapter_id", "adapter_version", "objective_version", "profile_version", "actor", "input_owner", "control_epoch", "lifecycle_state", "source", "provenance", "evidence_classification", "monotonic_sequence", "wall_clock_time", "payload", "artifact_references", "integrity_hash"],
+  "properties": {
+    "schema_version": {"const": "game-companion-event/v1"},
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "minLength": 1},
+    "session_id": {"type": "string", "minLength": 1},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "scenario_version": {"type": "string", "minLength": 1},
+    "attempt_id": {"type": "string", "minLength": 1},
+    "correlation_id": {"type": "string", "minLength": 1},
+    "causation_id": {"type": ["string", "null"]},
+    "game_id": {"type": "string"}, "adapter_id": {"type": "string"}, "adapter_version": {"type": "string"},
+    "objective_version": {"type": "string"}, "profile_version": {"type": "string"}, "solution_version": {"type": ["string", "null"]},
+    "actor": {"enum": ["player", "agent", "owner", "adapter", "system", "unknown"]},
+    "input_owner": {"enum": ["player", "agent", "none", "ambiguous", "unknown"]},
+    "control_epoch": {"type": "integer", "minimum": 0}, "monotonic_sequence": {"type": "integer", "minimum": 0},
+    "lifecycle_state": {"type": "string"}, "source": {"type": "string"}, "provenance": {"type": "array", "items": {"type": "string"}},
+    "evidence_classification": {"type": "string"}, "emulator_frame": {"type": ["integer", "null"]},
+    "wall_clock_time": {"type": "string", "format": "date-time"}, "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "payload": {"type": "object"}, "artifact_references": {"type": "array", "items": {"type": "string"}},
+    "integrity_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

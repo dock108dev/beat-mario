@@ -18,7 +18,8 @@ flows. The documents below provide implementation and operating detail.
 
 - [World 8 reliability gates](reliability-gate.md): authoritative and watchable
   runs, evidence, and failure behavior.
-- [Mario Route Lab](mario-route-lab.md): local review UI and attempt workflow.
+- [Game Companion Lab](mario-route-lab.md): player-session routing plus the
+  local Mario review and attempt workflow.
 - [FCEUX harness](fceux-harness.md): low-level emulator runner and diagnostics.
 - [Error handling and operations](error-handling.md): failure artifacts,
   response behavior, and incident checks.
@@ -26,13 +27,34 @@ flows. The documents below provide implementation and operating detail.
 ## Product and evidence
 
 - [Product direction](product-direction.md): current product boundary.
+- [Game Companion V2 roadmap](v2-roadmap.md): ordered Mario companion,
+  metrics, Stardew, combined-catalog, and contributor-onboarding slices.
+- [Live Mario observation](live-observation.md): V2.4 player-session connection,
+  read-only input/state evidence, freshness, and stop behavior.
+- [Objective profiles and live coaching](objective-profiles.md): V2.5 measurable
+  profiles, compatible references, comparison, coaching, and Tell behavior.
+- [Adaptive assistance and solution learning](learning.md): V2.7 compatible
+  evidence, review candidates, local preferences, promotion, and rollback.
+- [Session automation and local product metrics](session-automation-metrics.md):
+  V2.8 scenarios, classified events and metrics, retention, and campaign hooks.
+- [Mario player guide](mario-player-guide.md): V2.9 first use, compact player
+  workspace, Observe/Tell/Show/Do, reclaim, History, and recovery.
+- [Stardew companion guide](stardew-operator-guide.md): V2.10 copied-save and
+  visible operator foundations plus V2.11 Observe, grounded Tell, one-task
+  review-only Show, same-session Do, reclaim/handback, reset, safety, and
+  deferred evidence.
+- [Agent architecture](agent-architecture.md#combined-catalog-and-switching):
+  V2.12 provider-owned catalog, explicit safe switching, bounded persistence,
+  and adapter/evidence isolation.
+- [Consolidated final campaign](final-campaign-guide.md): frozen owner-pilot
+  manifest, evidence rules, failure retention, and explicit acceptance boundary.
 - [Route status](route-status.md): accepted route and evidence history.
 
 ## Security and local data
 
 - [Security model](security.md): trust boundaries, implemented controls, and
   deferred security work.
-- [Local Route Lab assets](local-assets.md): optional ignored UI images.
+- [Local Game Companion Lab assets](local-assets.md): optional ignored UI images.
 - [Known limitations](known-limitations.md): intentionally unsupported flows
   and validation boundaries.
 

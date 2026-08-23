@@ -1,0 +1,175 @@
+schema_version: game-companion-stardew-fixtures/v1
+implementation_only: true
+execution_enabled: false
+identity_token: fixture-save-sha256
+window:
+  process_id: 4242
+  process_started_at: "2026-08-22T12:00:00+00:00"
+  window_id: fixture-window-1
+  title: Stardew Valley
+  bounds: [100, 80, 1280, 720]
+  visible: true
+  windowed: true
+  foreground: true
+base_observation:
+  observation_id: initial-complete-sweep
+  observed_at: "2026-08-22T12:00:01+00:00"
+  save_tree_sha256: fixture-save-sha256
+  energy: 270
+  energy_maximum: 270
+  tool: {selected_tool: watering_can, watering_can_units: 40, watering_can_capacity: 40, refill_count: 0, tool_uses: 0}
+  position: {location: Farm, tile_x: 64, tile_y: 15, at_farmhouse_entrance: false, confidence: 1.0}
+  screenshot_references: [fixtures/screens/initial-complete-sweep.png]
+  source: screen
+  scene_complete: true
+  unknown_regions: []
+  crops:
+    - {crop_id: farm-61-18, tile_x: 61, tile_y: 18, planted: true, watered: false, occluded: false, confidence: 1.0, evidence_reference: fixtures/screens/initial-complete-sweep.png}
+    - {crop_id: farm-62-18, tile_x: 62, tile_y: 18, planted: true, watered: true, occluded: false, confidence: 1.0, evidence_reference: fixtures/screens/initial-complete-sweep.png}
+fixture_sets:
+  disposable_save:
+    - successful_copy_and_identity
+    - source_changed_during_copy
+    - destination_exists
+    - symlink_in_source
+    - primary_copy_same_real_path
+    - copy_hash_mismatch
+    - primary_changed_at_stop
+  detection:
+    - game_missing
+    - process_found_window_missing
+    - visible_windowed_foreground
+    - fullscreen_refused
+    - window_occluded
+    - process_restarted_same_pid
+    - process_lost
+  observation:
+    - shared_companion_conversion
+    - adapter_identity_isolation_no_mario_fields
+    - freshness_preserves_exact_confidence_and_provenance
+    - stale_on_save_copy_change
+    - stale_on_process_start_change
+    - stale_on_window_change
+    - initial_complete_sweep
+    - exact_water_transition
+    - energy_change
+    - can_unit_change
+    - refill_confirmed
+    - farmhouse_entrance_confirmed
+    - unknown_crop
+    - occluded_crop
+    - incomplete_sweep
+    - crop_set_added
+    - crop_set_removed
+    - confidence_below_exact
+    - screenshot_missing
+  tell:
+    - next_confirmed_unwatered_crop
+    - watering_can_selection_needed
+    - safe_refill_needed
+    - return_to_farmhouse_entrance
+    - exact_reconciliation_stop
+    - every_fact_has_typed_provenance
+    - unknown_state_refused
+    - stale_state_refused
+    - no_input_or_authority_grant
+  show:
+    - fresh_copy_and_exact_observation_required
+    - one_watering_task_only
+    - review_only_classification
+    - before_after_observations_retained
+    - actor_labeled_inputs_retained
+    - completion_stop
+    - reclaim_stop
+    - timeout_stop
+    - ambiguity_stop
+    - process_window_save_and_driver_loss_stop
+    - neutral_handback_on_every_terminal_path
+    - no_authority_epoch_transfer_to_do
+  do_takeover:
+    - exact_task_save_process_window_observation_expiry_and_driver_binding
+    - persisted_authority_refused
+    - per_input_authorization_revalidation
+    - per_input_visible_continuity_revalidation
+    - progress_only_after_fresh_postcondition
+    - reclaim_during_authorized
+    - reclaim_during_navigation
+    - reclaim_during_selection
+    - reclaim_during_watering
+    - reclaim_during_refill
+    - reclaim_during_return
+    - reclaim_during_completion
+    - timeout_cancellation_process_window_and_input_loss
+    - partial_attempt_retained
+  ownership:
+    - player_owned
+    - fresh_agent_authorization
+    - expired_authorization
+    - ambiguous_owner
+    - immediate_reclaim
+    - neutral_handback
+    - persisted_authority_refused
+  protected_actions:
+    - purchase_refused
+    - sale_refused
+    - discard_refused
+    - gift_refused
+    - consequential_dialogue_refused
+    - story_choice_refused
+    - sleep_refused
+    - primary_overwrite_refused
+  task:
+    - all_initially_unwatered_crops_confirmed
+    - initially_watered_crop_not_double_counted
+    - can_empty_before_completion
+    - safe_refill
+    - refill_location_unknown
+    - energy_insufficient_or_unknown
+    - exact_final_reconciliation
+    - wrong_final_position
+    - clean_stop
+    - all_initial_crop_ids_remain_exact
+    - tool_use_and_can_unit_transition_exact
+    - energy_transition_retained
+    - refill_transition_exact
+    - neutral_input_and_player_owner_required
+    - primary_unchanged_required
+    - required_evidence_hashed
+  reset:
+    - previous_attempt_preserved
+    - primary_verified_before_and_after
+    - only_disposable_copy_reset
+    - existing_destination_refused
+    - symlink_nested_alias_and_mismatch_refused
+    - fresh_destination_and_nonce_required
+    - observation_tell_show_do_and_authority_invalidated
+    - retry_in_place_refused
+  presentation:
+    - desktop_1040
+    - narrow_390
+    - unknowns_visible
+    - failure_and_recovery_visible
+    - input_owner_always_visible
+    - controls_disabled_until_ready
+    - current_mode_and_availability_reason
+    - observation_freshness_and_evidence
+    - contextual_tell_card
+    - show_start_stop_status_review_label
+    - do_scope_and_expiry
+    - immediate_reclaim
+    - neutralization_and_handback
+    - reset_status
+    - crop_energy_can_refill_position_reconciliation
+    - protected_action_refusal
+    - first_failure_and_safe_recovery
+  adapter_isolation:
+    - mario_companion_records_unchanged
+    - mario_tell_show_takeover_contracts_preserved
+    - no_shared_game_id_branching
+    - standalone_stardew_presentation_only
+  evidence:
+    - all_required_retained
+    - failed_attempt_retained
+    - missing_artifact
+    - integrity_mismatch
+    - retry_new_identity

@@ -1,6 +1,6 @@
-# Local Route Lab Assets
+# Local Game Companion Lab Assets
 
-Mario Route Lab can use local-only images from:
+Game Companion Lab can use local-only images from:
 
 ```text
 public/assets/local/
@@ -23,5 +23,5 @@ Supported optional filenames:
 - `spade_icon.png`
 - `hammer_bro_icon.png`
 
-If a file is missing, Mario Route Lab renders a CSS text fallback and remains
+If a file is missing, Game Companion Lab renders a CSS text fallback and remains
 fully usable.

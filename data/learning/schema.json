@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "game-companion-learning/v1",
+  "title": "Game Companion local learning event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "record_id", "payload", "content_sha256"],
+  "properties": {
+    "schema_version": {"const": "game-companion-learning/v1"},
+    "kind": {
+      "enum": [
+        "attempt", "pattern", "tactic", "candidate", "candidate_transition",
+        "review", "rejection", "promotion", "rollback", "preference"
+      ]
+    },
+    "record_id": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
+

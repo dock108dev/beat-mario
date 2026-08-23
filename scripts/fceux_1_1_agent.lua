@@ -1004,6 +1004,19 @@ end
 local held = {}
 
 local function advance_frame()
+  local takeover_reclaim_path = os.getenv("SMB3_TAKEOVER_RECLAIM_PATH")
+  if rawget(_G, "SMB3_EMBEDDED_TAKEOVER") and takeover_reclaim_path ~= nil then
+    local reclaim = io.open(takeover_reclaim_path, "r")
+    if reclaim ~= nil then
+      reclaim:close()
+      joypad.set(1, {})
+      error("GAME_COMPANION_RECLAIM_REQUESTED")
+    end
+  end
+  local takeover_frame_callback = rawget(_G, "SMB3_TAKEOVER_FRAME_CALLBACK")
+  if takeover_frame_callback ~= nil then
+    takeover_frame_callback(held)
+  end
   FCEU.frameadvance()
   if frame_sleep_seconds > 0 then
     os.execute("sleep " .. tostring(frame_sleep_seconds))
@@ -25890,13 +25903,18 @@ if discovery_resume_slot ~= nil then
   return
 end
 
+local embedded_takeover = rawget(_G, "SMB3_EMBEDDED_TAKEOVER") == true
+local embedded_policy = rawget(_G, "SMB3_EMBEDDED_TAKEOVER_POLICY")
+if embedded_takeover and embedded_policy == "world_1_1_remainder_v1" then
+  bootstrap_to_level = function() end
+end
 bootstrap_to_level()
 if attempts == 1 then
   -- A single-attempt acceptance replay runs straight from the power-on boot.
   -- Checkpoints remain available only for explicitly requested retry batches.
   advance(10, "attempt_1_fresh_start")
   local success = run_agent(1)
-  if success then
+  if success and not (embedded_takeover and embedded_policy == "world_1_1_remainder_v1") then
     run_post_1_1_probe()
   end
 else
@@ -25913,4 +25931,7 @@ else
 end
 
 log:close()
+if embedded_takeover then
+  return
+end
 emu.exit()

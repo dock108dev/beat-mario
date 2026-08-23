@@ -1,0 +1,60 @@
+schema_version: game-companion-learning-campaign/v1
+derivation_version: game-companion-learning-derivation/v1
+minimum_repeated_attempts: 3
+cases:
+  - id: compatible_player_agent_comparison
+    fixture_kind: attempt_set
+    expected: comparable
+    covers: [player_best, agent_best, fastest_locally_observed, timing_delta]
+  - id: incompatible_profile_version
+    fixture_kind: attempt_set
+    mutate: {objective_version: 2}
+    expected: visible_but_excluded
+  - id: incomplete_timing_interval
+    fixture_kind: attempt
+    mutate: {complete_timing_interval: false}
+    expected: visible_but_excluded
+  - id: repeated_anchor_with_counterexample
+    fixture_kind: attempt_set
+    supporting_attempts: 3
+    counterexamples: 1
+    expected: derived_pattern_with_exact_sources
+  - id: one_failure_is_not_repeated
+    fixture_kind: attempt_set
+    supporting_attempts: 1
+    expected: insufficient_evidence
+  - id: candidate_review_and_rejection
+    fixture_kind: candidate
+    expected: retained_rejection_reason
+  - id: review_does_not_execute
+    fixture_kind: candidate
+    transition: approved_for_validation
+    expected: executable_false
+  - id: replay_failure
+    fixture_kind: candidate
+    transition: validation_failed
+    expected: executable_false
+  - id: exact_diff_promotion_and_rollback
+    fixture_kind: candidate
+    required: [compatible_replay, route_patch_id, exact_diff, affected_reliability]
+    expected: atomic_prior_solution_restore
+  - id: duplicate_processing
+    fixture_kind: attempt
+    repetitions: 2
+    expected: one_raw_attempt_and_one_candidate
+  - id: corrupted_derived_index
+    fixture_kind: persistence
+    expected: rebuild_from_checksum_verified_event_log
+  - id: corrupted_event_log
+    fixture_kind: persistence
+    expected: explicit_failure_without_raw_run_rewrite
+  - id: preference_edit_and_reset
+    fixture_kind: preference
+    expected: local_scoped_inspectable_default_restore
+  - id: advice_provenance
+    fixture_kind: advice
+    expected: classification_and_evidence_visible
+  - id: v2_6_takeover_isolation
+    fixture_kind: capability
+    expected: candidate_never_exposed_as_executable_solution
+

@@ -1,0 +1,57 @@
+schema: game-companion-objective-profiles/v1
+game_id: smb3
+profiles:
+  - profile_id: smb3.world-1-1.fastest-accepted-clear
+    version: 1
+    level_id: world_1_1
+    segment_id: world_1_1_clear
+    name: Fastest accepted World 1-1 clear
+    description: Clear World 1-1 from the first supported gameplay frame to the game-owned map return, compared only with accepted like-for-like evidence.
+    classification: accepted_agent_best
+    start_condition: {fact: level_identity, operator: equals, value: world_1_1}
+    terminal_condition: {fact: course_clear, operator: equals, value: "true"}
+    timing: {boundary: first_supported_level_frame_to_course_clear, units: emulator_frames, pauses: emulator_frames_do_not_advance}
+    required_events:
+      - {requirement_id: clear, name: Clear World 1-1, fact: course_clear, operator: equals, value: "true", irreversible_after_x: null}
+    optional_events: []
+    allowed_techniques: [ordinary_player_controller_input]
+    prohibited_techniques: [savestate, memory_write, reset_during_attempt, agent_input]
+    allowed_resources: [starting_form, level_powerups]
+    required_resources: []
+    protected_resources: []
+    supported_observation_facts: [level_identity, mario_x, course_clear, deaths, resources, emulator_frame, freshness]
+    outcome_states: [success, incomplete, missed, failed, cancelled, unverifiable]
+    evidence_required: [ordered_observations, measurable_start, game_owned_course_clear, timing_boundary, input_ownership, reconciliation]
+    capabilities: {comparison: true, hints: true, show: true, future_takeover: false}
+  - profile_id: smb3.world-1-1.observable-progress-checklist
+    version: 1
+    level_id: world_1_1
+    segment_id: world_1_1_clear
+    name: World 1-1 observable progress checklist
+    description: Complete the finite milestones the passive observer can prove; this is not a collectible or destruction-completion profile.
+    classification: accepted_safe_reference_run
+    start_condition: {fact: level_identity, operator: equals, value: world_1_1}
+    terminal_condition: {fact: course_clear, operator: equals, value: "true"}
+    timing: {boundary: first_supported_level_frame_to_course_clear, units: emulator_frames, pauses: emulator_frames_do_not_advance}
+    required_events:
+      - {requirement_id: midpoint, name: Reach x=1000, fact: mario_x, operator: at_least, value: 1000, irreversible_after_x: null}
+      - {requirement_id: late_level, name: Reach x=2000, fact: mario_x, operator: at_least, value: 2000, irreversible_after_x: null}
+      - {requirement_id: clear, name: Clear World 1-1, fact: course_clear, operator: equals, value: "true", irreversible_after_x: null}
+    optional_events:
+      - {requirement_id: keep_life, name: Finish without a death, fact: deaths, operator: equals, value: 0, irreversible_after_x: null}
+    allowed_techniques: [ordinary_player_controller_input]
+    prohibited_techniques: [savestate, memory_write, reset_during_attempt, agent_input]
+    allowed_resources: [starting_form, level_powerups]
+    required_resources: []
+    protected_resources: []
+    supported_observation_facts: [level_identity, mario_x, course_clear, deaths, resources, emulator_frame, freshness]
+    outcome_states: [success, incomplete, missed, failed, cancelled, unverifiable]
+    evidence_required: [ordered_observations, measurable_start, game_owned_course_clear, input_ownership, reconciliation]
+    capabilities: {comparison: false, hints: true, show: true, future_takeover: false}
+unsupported_examples:
+  world_3_2:
+    reason: Level identity and exact entry/clear boundaries are not exposed by the accepted passive observer.
+    missing_facts: [stable_world_3_2_identity, exact_level_entry, exact_course_clear]
+  world_4_1:
+    reason: The observer cannot enumerate or identify every coin, enemy, block, power-up, or hidden object, so no finite full-completion universe can be reconciled.
+    missing_facts: [stable_world_4_1_identity, object_identity, object_universe, collection_or_destruction_state, scroll_irreversibility]

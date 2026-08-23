@@ -1,0 +1,83 @@
+schema_version: game-companion-stardew-owner-pilot/v1
+status: blank_unexecuted_manifest
+execution_enabled: false
+release_candidate:
+  source_commit: null
+  source_tree_sha256: null
+  adapter_version: stardew-companion/v1
+  contract_sha256: null
+owner_provided:
+  primary_save_path: null
+  disposable_copy_authorized: null
+  visible_windowed_play_confirmed: null
+attempt:
+  attempt_id: null
+  disposable_save_identity: null
+  process_start_identity: null
+  window_identity: null
+  started_at: null
+  ended_at: null
+owner_boundaries:
+  - owner chooses the local primary save to copy
+  - owner confirms the game is opened on the disposable copy
+  - owner establishes player ownership
+  - owner explicitly authorizes the bounded watering task
+  - owner may reclaim immediately at any time
+  - owner confirms returned control after neutral handback
+required_flow:
+  - verify primary and disposable save isolation
+  - detect one visible windowed Stardew process
+  - complete a screen-only initial farm sweep
+  - reconcile exact planted and already-watered crop ids
+  - establish player ownership and fresh task-bound agent authorization
+  - water every remaining initial crop with after-action screen confirmation
+  - track energy, can units, tool uses, and refills
+  - return to the visibly confirmed farmhouse entrance
+  - neutralize input and return player ownership
+  - reverify primary save and reconcile all required evidence
+  - inspect the shared Observe conversion and freshness reasons
+  - request contextual Tell and inspect typed provenance without agent input
+  - start and stop one fresh-copy Show with review-only labeling
+  - explicitly authorize Do in the same currently observed live session
+  - exercise immediate reclaim during an active phase and verify neutral handback
+  - complete a separate exact Do attempt without reusing Show authority
+  - reset only the disposable copy into a fresh attempt-owned destination
+  - verify reset invalidated all old observations, Tell cards, mode sessions, and authority
+failure_cases_required:
+  - unknown or occluded crop
+  - process or window loss
+  - save mismatch or primary-save risk
+  - ambiguous or expired ownership
+  - protected-action refusal
+  - missing evidence
+  - clean stopped recovery with failed attempt retained
+  - stale Tell Show and Do refusal
+  - reclaim during each active task phase
+  - timeout cancellation and ordinary-input-driver loss
+  - stale authority after copied-save reset
+presentation_required: [desktop, narrow_390, current mode, availability reason, observation evidence, Tell card, Show review label, Do scope and expiry, visible input owner, reclaim, neutral handback, reset status, reconciliation, protected refusal, first failure, visible unknowns, visible recovery]
+owner_feedback:
+  watering_result_correct: null
+  control_was_clear: null
+  save_protection_was_trustworthy: null
+  recovery_was_clear: null
+  observe_was_trustworthy: null
+  tell_was_useful: null
+  show_classification_was_clear: null
+  do_scope_was_clear: null
+  reclaim_and_handback_were_immediate: null
+  disposable_reset_was_trustworthy: null
+  useful: null
+  comments: null
+owner_acceptance:
+  decision: null
+  decided_at: null
+  rationale: null
+rules:
+  no_patching_during_attempt: true
+  owner_selects_every_response_and_control_action: true
+  fixture_or_automation_cannot_fill_feedback: true
+  missing_field_fails_closed: true
+  first_unmet_requirement_required: true
+  failed_attempt_retained: true
+  retry_creates_new_attempt: true

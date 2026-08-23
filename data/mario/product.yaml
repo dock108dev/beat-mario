@@ -1,0 +1,64 @@
+schema_version: game-companion-mario-product/v1
+adapter_id: smb3
+adapter_version: smb3-live-observer/v1
+game_id: smb3
+game_name: Super Mario Bros. 3
+automatic_game_file_locations:
+  - game-file.nes
+  - roms/smb3.nes
+supported_game_sha256:
+  - 4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579
+identity_policy:
+  hash_only: true
+  copy_contents: false
+  expose_contents: false
+  local_only: true
+capabilities:
+  - id: observation
+    label: Observe
+    summary: You play; Companion watches and tracks.
+    contract_references: [scripts/fceux_live_observer.lua, src/smb3_agent/live_observation.py]
+  - id: tell
+    label: Tell
+    summary: Give me advice from current observed state and accepted knowledge.
+    contract_references: [data/tell/mario.yaml, src/smb3_agent/tell.py]
+  - id: coaching
+    label: Coaching
+    summary: Quiet, On-request, or Proactive help for the selected measurable profile.
+    contract_references: [data/profiles/mario.yaml, src/smb3_agent/objective_profiles.py]
+  - id: show
+    label: Show
+    summary: Demonstrate separately; your game is unchanged.
+    contract_references: [data/show/mario.yaml, src/smb3_agent/show.py]
+  - id: dynamic_profiles
+    label: Automatic run profiles
+    summary: Create measurable local normal-clear profiles from reconciled completions.
+    contract_references: [src/smb3_agent/run_library.py]
+  - id: comparison
+    label: Comparison
+    summary: Compare compatible player, agent, mixed, and accepted-reference runs.
+    contract_references: [data/profiles/mario_references.yaml, src/smb3_agent/objective_profiles.py]
+  - id: learning
+    label: Learning
+    summary: Derive reviewable patterns and tactics from compatible local evidence.
+    contract_references: [data/learning/schema.json, src/smb3_agent/learning.py]
+  - id: candidate_review
+    label: Candidate review
+    summary: Approve for later validation or reject with a reason; never auto-promote.
+    contract_references: [src/smb3_agent/learning_promotion.py]
+  - id: takeover
+    label: Do
+    summary: Take over the current game only for an explicitly authorized supported goal.
+    contract_references: [scripts/fceux_live_takeover.lua, src/smb3_agent/takeover.py]
+  - id: reclaim
+    label: Take Control Now
+    summary: Immediately stop agent input, neutralize, and return player control.
+    contract_references: [src/smb3_agent/takeover.py]
+  - id: full_game_route
+    label: Full-game route
+    summary: Use the accepted replay-safe Mario route only from its exact supported start.
+    contract_references: [data/goals/world_8_finish_game.yaml]
+  - id: history_evidence
+    label: History
+    summary: Review sessions, runs, records, recovery, learning, and evidence status locally.
+    contract_references: [src/smb3_agent/run_library.py, src/smb3_agent/metrics.py]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import http.client
 import logging
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,10 +11,23 @@ import pytest
 import yaml
 
 from smb3_agent.fceux_harness import AttemptSummary, BatchSummary
+from smb3_agent.companion_session import (
+    AdapterIdentity,
+    CompanionSession,
+    CompanionSessionError,
+    Freshness,
+    GoalIdentity,
+    ModeCapability,
+    Observation,
+    SafetyBoundary,
+    SessionLifecycle,
+    SessionOutcome,
+)
 from smb3_agent.goals import GoalRunResult, load_goal_contract
 from smb3_agent.lab import add_batch_notes_to_latest, build_issue_ledger_latest, start_session
 from smb3_agent.lab_ui import (
     _Handler,
+    _configured_game_path,
     _lab_ui_url,
     _location_url,
     _new_lab_ui_server,
@@ -21,9 +35,387 @@ from smb3_agent.lab_ui import (
     _update_issue_latest,
     _update_observation_latest,
     build_control_panel_summary,
+    default_companion_session,
+    render_companion_ui,
     render_lab_ui,
     run_lab_ui_server,
 )
+
+
+def test_server_routes_player_shell_and_secondary_lab() -> None:
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/")
+        catalog_response = connection.getresponse()
+        catalog = catalog_response.read().decode("utf-8")
+        connection.close()
+
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/mario")
+        player_response = connection.getresponse()
+        player = player_response.read().decode("utf-8")
+        connection.close()
+
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/assets/player-workspace.js")
+        script_response = connection.getresponse()
+        script = script_response.read().decode("utf-8")
+        script_content_type = script_response.getheader("Content-Type")
+        connection.close()
+
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/lab")
+        lab_response = connection.getresponse()
+        lab = lab_response.read().decode("utf-8")
+        connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert catalog_response.status == 200
+    assert 'data-testid="combined-companion-catalog"' in catalog
+    assert 'data-adapter-id="smb3"' in catalog
+    assert 'data-adapter-id="stardew"' in catalog
+    assert player_response.status == 200
+    assert 'data-testid="companion-shell"' in player
+    assert "Open Game Companion Lab" in player
+    assert '<script src="/assets/player-workspace.js" defer></script>' in player
+    assert script_response.status == 200
+    assert script_content_type == "text/javascript; charset=utf-8"
+    assert 'fetch("/api/player-workspace"' in script
+    assert "event.preventDefault()" in script
+    assert "window.setInterval" in script
+    assert "live-action-error" in script
+    assert "if (!response.ok)" in script
+    assert lab_response.status == 200
+    assert "Game Companion Lab" in lab
+    assert "Run World 8 Route" in lab
+
+
+def test_player_start_uses_repo_local_game_file_when_env_is_unset(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("SMB3_GAME_FILE", raising=False)
+    local_game = tmp_path / "roms" / "smb3.nes"
+    local_game.parent.mkdir()
+    local_game.write_bytes(b"local fixture")
+
+    assert _configured_game_path() == local_game.resolve()
+
+
+def test_default_player_shell_is_truthful_and_semantic() -> None:
+    html = render_companion_ui(default_companion_session())
+
+    for hook in (
+        "companion-shell",
+        "game-identity",
+        "observed-state",
+        "mode-tell",
+        "mode-show",
+        "mode-do",
+        "protected-decisions",
+        "stop-point",
+        "activity",
+        "take-control",
+        "handoff",
+        "lab-navigation",
+        "tell-request",
+        "spoiler-selection",
+        "observation-source",
+        "tell-unavailable-reason",
+    ):
+        assert f'data-testid="{hook}"' in html
+    assert "Unknown — refresh required" in html
+    assert 'data-testid="mode-do" data-available="false"' in html
+    assert "No game-owned outcome" in html
+    assert "@media (max-width: 760px)" in html
+
+
+def test_player_reported_tell_post_renders_grounded_card_and_keeps_show_do_unavailable() -> None:
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        body = (
+            f"csrf_token={getattr(server, 'csrf_token')}"
+            "&goal_id=world_8_finish_game"
+            "&checkpoint_id=world_8_bowser_castle_finish"
+            "&spoiler_level=guided&checkpoint_confirmed=true"
+        )
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+        connection.request(
+            "POST",
+            "/tell",
+            body=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        response = connection.getresponse()
+        html = response.read().decode("utf-8")
+        connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert response.status == 200
+    for hook in (
+        "tell-card",
+        "tell-step",
+        "expected-cue",
+        "risk-warning",
+        "recovery-guidance",
+        "protected-decision-acknowledgement",
+        "provenance-reference",
+        "uncertainty",
+        "refresh-requirement",
+    ):
+        assert f'data-testid="{hook}"' in html
+    assert "Player Reported" in html
+    assert 'data-testid="mode-tell" data-available="true"' in html
+    assert 'data-testid="mode-show" data-available="false"' in html
+    assert 'data-testid="mode-do" data-available="false"' in html
+    assert "no game input was sent" in html
+
+
+def test_player_tell_rejects_unconfirmed_and_protected_conflict_without_traceback() -> None:
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        body = (
+            f"csrf_token={getattr(server, 'csrf_token')}"
+            "&goal_id=world_8_finish_game"
+            "&checkpoint_id=world_8_battleships_clear"
+            "&spoiler_level=guided&checkpoint_confirmed=true"
+            "&p_wing_available=true"
+            "&protected_decisions=preserve_p_wing"
+        )
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+        connection.request("POST", "/tell", body=body, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        response = connection.getresponse()
+        html = response.read().decode("utf-8")
+        connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert response.status == 400
+    assert "protected decision conflicts" in html
+    assert "Traceback" not in html
+    assert 'data-testid="tell-unavailable-reason"' in html
+
+
+def test_checkpoint_options_come_from_selected_goal_contract() -> None:
+    html = render_companion_ui(default_companion_session("world_8_double_whistle"))
+    goal = load_goal_contract(Path("data/goals/world_8_double_whistle.yaml"))
+
+    assert html.count('<option value="') >= len(goal.segments) + 3
+    assert 'value="world_8_map_arrival"' in html
+    assert 'value="world_8_bowser_castle_finish"' not in html
+    assert 'data-testid="observed-facts"' in html
+
+
+def test_player_tell_missing_inventory_fact_fails_closed() -> None:
+    data = {
+        "goal_id": ["world_8_finish_game"],
+        "checkpoint_id": ["world_8_battleships_clear"],
+        "spoiler_level": ["guided"],
+        "checkpoint_confirmed": ["true"],
+    }
+    with pytest.raises(ValueError, match="p_wing_available"):
+        from smb3_agent.lab_ui import _player_tell_from_form
+
+        _player_tell_from_form(data)
+
+
+def test_known_checkpoint_renders_capabilities_and_unavailable_reason() -> None:
+    session = _companion_fixture(
+        modes=(
+            _mode("tell"),
+            _mode("show"),
+            _mode("do", available=False, reason="Do is not proven for this checkpoint."),
+        )
+    )
+
+    html = render_companion_ui(session)
+
+    assert "World 8 map at Bowser&#x27;s Castle" in html
+    assert 'data-testid="mode-tell" data-available="true"' in html
+    assert 'data-testid="mode-show" data-available="true"' in html
+    assert 'data-testid="mode-do" data-available="false"' in html
+    assert "Do is not proven for this checkpoint." in html
+
+
+def test_unknown_or_stale_observation_rejects_execution_capability() -> None:
+    stale_observation = Observation(
+        checkpoint="World 8 map",
+        observed_at=datetime(2026, 8, 21, tzinfo=timezone.utc),
+        freshness=Freshness.STALE,
+        confidence=0.9,
+    )
+    safe_stale = _companion_fixture(
+        observation=stale_observation,
+        modes=(
+            _mode("tell"),
+            _mode("show", available=False, reason="Refresh required."),
+            _mode("do", available=False, reason="Refresh required."),
+        ),
+    )
+    html = render_companion_ui(safe_stale)
+    assert 'data-testid="mode-show" data-available="false"' in html
+    assert 'data-testid="mode-do" data-available="false"' in html
+
+    unsafe_stale = _companion_fixture(
+        observation=stale_observation,
+        modes=(_mode("tell"), _mode("show"), _mode("do")),
+    )
+
+    with pytest.raises(CompanionSessionError, match="Show and Do"):
+        render_companion_ui(unsafe_stale)
+
+
+def test_take_control_is_idle_disabled_and_active_enabled() -> None:
+    idle_html = render_companion_ui(_companion_fixture())
+    active_html = render_companion_ui(
+        _companion_fixture(lifecycle=SessionLifecycle.ACTIVE)
+    )
+
+    assert 'data-testid="take-control" disabled' in idle_html
+    assert 'data-testid="take-control" disabled' not in active_html
+    assert 'data-session-state="active"' in active_html
+
+
+@pytest.mark.parametrize(
+    "lifecycle",
+    (
+        SessionLifecycle.FAILED,
+        SessionLifecycle.CANCELLED,
+        SessionLifecycle.TAKEN_OVER,
+    ),
+)
+def test_terminal_handoffs_render_distinctly(lifecycle: SessionLifecycle) -> None:
+    html = render_companion_ui(
+        _companion_fixture(
+            lifecycle=lifecycle,
+            outcome=_outcome(game_owned=False),
+            input_stopped=True,
+            control_returned=True,
+        )
+    )
+
+    assert f'data-session-state="{lifecycle.value}"' in html
+    assert f"state-{lifecycle.value}" in html
+    assert "Attempted the bounded section" in html
+
+
+def test_completed_handoff_requires_game_owned_outcome_and_safe_handback() -> None:
+    base = dict(
+        lifecycle=SessionLifecycle.COMPLETED,
+        outcome=_outcome(),
+        input_stopped=True,
+        control_returned=True,
+    )
+    completed = render_companion_ui(_companion_fixture(**base))
+    assert 'data-session-state="completed"' in completed
+    assert "Verified game-owned checkpoint" in completed
+
+    with pytest.raises(CompanionSessionError, match="game-owned outcome"):
+        render_companion_ui(
+            _companion_fixture(**{**base, "outcome": _outcome(game_owned=False)})
+        )
+    with pytest.raises(CompanionSessionError, match="input to be stopped"):
+        render_companion_ui(_companion_fixture(**{**base, "input_stopped": False}))
+    with pytest.raises(CompanionSessionError, match="control to be returned"):
+        render_companion_ui(_companion_fixture(**{**base, "control_returned": False}))
+    with pytest.raises(CompanionSessionError, match="known final observation"):
+        render_companion_ui(
+            _companion_fixture(
+                **{
+                    **base,
+                    "outcome": _outcome(
+                        final_observation=Observation(
+                            checkpoint=None,
+                            observed_at=None,
+                            freshness=Freshness.UNKNOWN,
+                            confidence=None,
+                        )
+                    ),
+                }
+            )
+        )
+
+
+def _mode(mode: str, available: bool = True, reason: str | None = None) -> ModeCapability:
+    return ModeCapability(mode, available, f"{mode.title()} explanation.", reason)
+
+
+def _known_observation() -> Observation:
+    return Observation(
+        checkpoint="World 8 map at Bowser's Castle",
+        observed_at=datetime(2026, 8, 21, 12, 0, tzinfo=timezone.utc),
+        freshness=Freshness.FRESH,
+        confidence=0.98,
+        evidence_references=("evidence/start.png",),
+    )
+
+
+def _outcome(
+    *,
+    game_owned: bool = True,
+    final_observation: Observation | None = None,
+) -> SessionOutcome:
+    return SessionOutcome(
+        game_owned=game_owned,
+        attempted="Attempted the bounded section.",
+        changed="Mario reached the declared checkpoint.",
+        resources_consumed="No items consumed.",
+        verified_outcome="Verified game-owned checkpoint.",
+        unresolved_uncertainty="None.",
+        final_observation=final_observation or _known_observation(),
+        evidence_references=("evidence/final.png",),
+    )
+
+
+def _companion_fixture(
+    *,
+    observation: Observation | None = None,
+    modes: tuple[ModeCapability, ...] | None = None,
+    lifecycle: SessionLifecycle = SessionLifecycle.IDLE,
+    outcome: SessionOutcome | None = None,
+    input_stopped: bool = False,
+    control_returned: bool = False,
+) -> CompanionSession:
+    return CompanionSession(
+        adapter=AdapterIdentity("smb3", "Super Mario Bros. 3", "Mario adapter", "Ready"),
+        goal=GoalIdentity("world_8_finish_game", "Finish game", "Reach the stable ending."),
+        observation=observation or _known_observation(),
+        modes=modes or (_mode("tell"), _mode("show"), _mode("do")),
+        safety=SafetyBoundary(
+            authorized=True,
+            stop_point="Stable game-owned ending",
+            protected_decisions=("No route bypass",),
+            recovery_boundary="Stop on mismatch.",
+        ),
+        lifecycle=lifecycle,
+        activity=("Observation verified.",),
+        outcome=outcome,
+        input_stopped=input_stopped,
+        control_returned=control_returned,
+    )
 
 
 @pytest.mark.parametrize(
@@ -97,7 +489,7 @@ def test_route_lab_returns_generic_500_and_logs_unexpected_traceback(
         thread.join(timeout=5)
 
     assert response.status == 500
-    assert "Unexpected Route Lab failure" in body
+    assert "Unexpected Game Companion Lab failure" in body
     assert "private unexpected detail" not in body
     assert "RuntimeError: private unexpected detail" in caplog.text
 
@@ -136,7 +528,7 @@ def test_route_lab_rejects_untrusted_host_and_missing_csrf() -> None:
 
     assert host_response.status == 403
     assert csrf_response.status == 403
-    assert "Invalid or missing Route Lab CSRF token" in csrf_body
+    assert "Invalid or missing Game Companion Lab CSRF token" in csrf_body
 
 
 def test_route_lab_sets_security_headers_and_renders_csrf_token() -> None:
@@ -166,6 +558,8 @@ def test_route_lab_sets_security_headers_and_renders_csrf_token() -> None:
 
     assert response.status == 200
     assert headers["Content-Security-Policy"].startswith("default-src 'none'")
+    assert "connect-src 'self'" in headers["Content-Security-Policy"]
+    assert "script-src 'self'" in headers["Content-Security-Policy"]
     assert headers["Cache-Control"] == "no-store"
     assert headers["X-Content-Type-Options"] == "nosniff"
     assert headers["X-Frame-Options"] == "DENY"
@@ -223,7 +617,7 @@ def test_route_lab_rejects_overlapping_state_change() -> None:
         thread.join(timeout=5)
 
     assert response.status == 409
-    assert "Another Route Lab action is already running" in body
+    assert "Another Game Companion Lab action is already running" in body
 
 
 def test_route_lab_serves_html_as_text_and_blocks_unsafe_artifact_type(
@@ -318,12 +712,13 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
 
     html = render_lab_ui()
 
-    assert "Mario Route Lab" in html
+    assert "Game Companion Lab" in html
+    assert "Mario adapter" in html
     assert "Run World 8 Route" in html
     assert "World 2-first double-whistle route to World 8" in html
     assert "Route" in html
     assert "Evidence" in html
-    assert "Teach Mario" in html
+    assert "Help &amp; Learn" in html
     assert "Active Problems" in html
     assert "Observation History" in html
     assert "Fix Issue" in html
@@ -341,7 +736,7 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
     assert "1-4" not in html
     assert "Unit Tests" in html
     assert "Phase Gate" in html
-    assert 'href="/?location=world_1_fortress"' in html
+    assert 'href="/lab?location=world_1_fortress"' in html
     assert html.count('class="primary-button"') == 1
     assert "secondary-button" in html
     assert "segmented-control" in html
@@ -461,7 +856,7 @@ def test_route_lab_surfaces_big_tanks_without_changing_the_default_goal() -> Non
     assert len(big_tanks["locations"]) == 16
     assert big_tanks["locations"][-1]["label"] == "World 8 Big Tanks"
     assert "World 8 Big Tanks" in html
-    assert 'href="/?goal=world_8_big_tanks&amp;location=world_8_big_tanks"' in html
+    assert 'href="/lab?goal=world_8_big_tanks&amp;location=world_8_big_tanks"' in html
     assert "World 2-first double-whistle route through World 8 Big Tanks" in html
 
 
@@ -476,7 +871,7 @@ def test_route_lab_renders_and_switches_to_battleships() -> None:
     assert battleships["goal_id"] == "world_8_battleships"
     assert len(battleships["locations"]) == 17
     assert battleships["locations"][-1]["label"] == "World 8-Battleships"
-    assert 'href="/?goal=world_8_battleships&amp;location=world_8_battleships"' in html
+    assert 'href="/lab?goal=world_8_battleships&amp;location=world_8_battleships"' in html
     assert "World 2-first double-whistle route through World 8-Battleships" in html
 
 
@@ -496,7 +891,7 @@ def test_route_lab_renders_exactly_21_hand_traps_jet_locations() -> None:
     assert "World 8 Center Hand Trap" in html
     assert "World 8 Left Hand Trap" in html
     assert "World 8-Jet" in html
-    assert 'href="/?goal=world_8_hand_traps_jet&amp;location=world_8_jet"' in html
+    assert 'href="/lab?goal=world_8_hand_traps_jet&amp;location=world_8_jet"' in html
 
 
 def test_route_lab_renders_and_switches_to_exactly_23_world_8_8_2_locations() -> None:
@@ -512,7 +907,7 @@ def test_route_lab_renders_and_switches_to_exactly_23_world_8_8_2_locations() ->
     assert "World 8-1" in html
     assert "World 8-2" in html
     assert "World 2-first double-whistle route through World 8-2 and Fortress access" in html
-    assert 'href="/?goal=world_8_8_2&amp;location=world_8_2"' in html
+    assert 'href="/lab?goal=world_8_8_2&amp;location=world_8_2"' in html
 
 
 def test_route_lab_renders_exactly_25_world_8_super_tanks_locations() -> None:
@@ -529,7 +924,7 @@ def test_route_lab_renders_exactly_25_world_8_super_tanks_locations() -> None:
     assert "World 8-Super Tanks" in html
     assert "through Super Tanks and Bowser&#x27;s Castle access" in html
     assert (
-        'href="/?goal=world_8_super_tanks&amp;location=world_8_super_tanks"'
+        'href="/lab?goal=world_8_super_tanks&amp;location=world_8_super_tanks"'
         in html
     )
 
@@ -544,7 +939,7 @@ def test_route_lab_renders_exactly_26_finish_game_locations() -> None:
     assert "World 8-Bowser&#x27;s Castle and Ending" in html
     assert "Princess rescue, credits, and ending" in html
     assert (
-        'href="/?goal=world_8_finish_game&amp;location=world_8_bowser_castle"'
+        'href="/lab?goal=world_8_finish_game&amp;location=world_8_bowser_castle"'
         in html
     )
 

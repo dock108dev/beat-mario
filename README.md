@@ -1,10 +1,45 @@
-# SMB3 Route Agent
+# Game Companion — Mario Adapter
 
-Local, evidence-first automation and review tooling for a Super Mario Bros. 3
-route. The accepted cumulative route starts from power-on, collects both World
-1 Warp Whistles, reaches World 2, uses both whistles, completes World 8, defeats
+Game Companion is a local, evidence-first game assistance workbench. Its player
+contract is to understand the current situation, then **Tell**, **Show**, or
+**Do** one bounded objective before returning control with a truthful handoff.
+
+This repository contains the first adapter and accepted reliability proof: a
+Super Mario Bros. 3 route that starts from power-on, collects both World 1 Warp
+Whistles, reaches World 2, uses both whistles, completes World 8, defeats
 Bowser, observes the Princess rescue and credits, and stops at the stable final
 screen.
+
+The local root now presents the combined Mario and Stardew catalog, then opens
+the selected adapter's existing player workspace. Each adapter owns its
+capabilities, observation trust boundary, goals, profiles, takeover scopes,
+safety, evidence, and recovery truth. Switching is explicit and fails closed
+until active modes stop and neutral player handback is known. See the [Mario
+Player Guide](docs/mario-player-guide.md) and [Game Companion V2 roadmap](docs/v2-roadmap.md).
+
+V2.4 live observation launches one visible player-controlled FCEUX session with
+a read-only observer, keeps Show separate, and leaves takeover unavailable. See
+[Live Mario observation](docs/live-observation.md) for the exact connection and
+evidence contract.
+
+V2.7 adaptive assistance derives only from compatible local evidence, exposes
+its provenance and classification, and requires owner review, later compatible
+replay, the existing exact-diff route-patch workflow, and affected reliability
+gates before promotion. See [Adaptive assistance and solution learning](docs/learning.md).
+
+V2.6–V2.12 are implementation-complete with final validation deferred. The
+prepared [consolidated final campaign](docs/final-campaign-guide.md) has not run
+and no owner acceptance is claimed.
+
+V2.11 now implements standalone Stardew Observe, contextual grounded Tell, one
+fresh-copy review-only Show, and explicit same-live-session Do/Takeover above
+the V2.10 visible operator. Immediate reclaim neutralizes ordinary input and
+invalidates authority before player handback. Disposable reset creates a fresh
+attempt-owned copy while preserving prior attempts and reverifying the primary
+save. V2.12 adds the combined provider-owned catalog, safe switching, bounded
+local presentation persistence, and evidence isolation. See the [Stardew
+Companion Guide](docs/stardew-operator-guide.md). No validation or game activity
+was run for V2.12.
 
 The repository contains no game file. ROMs, savestates, screenshots, logs, and
 generated evidence remain ignored and local-only.
@@ -48,7 +83,11 @@ Useful focused commands:
 .venv/bin/python -m pytest -q
 .venv/bin/python -m smb3_agent goal validate world_8_finish_game
 .venv/bin/python -m smb3_agent goal status world_8_finish_game
-.venv/bin/python -m smb3_agent lab ui-render --output /tmp/beat-mario-route-lab.html
+.venv/bin/python -m smb3_agent lab ui-render --output /tmp/game-companion.html
+.venv/bin/python -m smb3_agent stardew status
+.venv/bin/python -m smb3_agent stardew operator-render --output /tmp/stardew-operator.html
+.venv/bin/python -m smb3_agent companion catalog-status
+.venv/bin/python -m smb3_agent companion render --output /tmp/combined-game-companion.html
 ```
 
 ## Supported flows
@@ -83,17 +122,32 @@ Review playback never counts as authoritative reliability evidence. See
 [World 8 reliability gates](docs/reliability-gate.md) for exact pass rules and
 artifact layout.
 
-## Mario Route Lab
+## Game Companion and Lab
 
-Route Lab is a loopback-only operator surface for route evidence, notes,
-issues, and reviewed route patches:
+The loopback-only server opens the combined player catalog at `/`, the preserved
+Mario workspace at `/mario`, the standalone Stardew workspace at `/stardew`,
+and the engineering Game Companion Lab at `/lab`. Route evidence, notes,
+issues, advanced route execution, and reviewed route patches remain in the Lab:
 
 ```bash
 .venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
 ```
 
-It is not designed for network exposure. See [Mario Route Lab](docs/mario-route-lab.md),
+It is not designed for network exposure. See [Game Companion Lab](docs/mario-route-lab.md),
 [security](docs/security.md), and [error handling](docs/error-handling.md).
+
+Mario first use checks `SMB3_GAME_FILE`, a saved local selection,
+`game-file.nes`, and `roms/smb3.nes`, then offers a native macOS picker and
+manual local-path selection. It verifies the supported fingerprint without
+copying ROM contents and detects FCEUX before starting either a structurally
+read-only session or a takeover-capable session with zero agent input before
+fresh explicit authorization. This also enables
+the supported `world_1_1_clear` Show card. Show
+opens a separate visible emulator process, runs one fresh attempt with a
+positive playback delay, and retains local cue/replay evidence. **Stop
+Demonstration** ends automation in that process and is distinct from live
+**Take Control Now**; Show never advances the player's game or counts as
+reliability evidence.
 
 Executable route changes use only the normalized route-patch lifecycle:
 
@@ -119,6 +173,10 @@ Start with [the documentation index](docs/README.md). Key references are:
 - [Route patch schema](docs/route-patch-schema.md)
 - [Agent architecture](docs/agent-architecture.md)
 - [Known limitations](docs/known-limitations.md)
+- [Session automation and local product metrics](docs/session-automation-metrics.md)
+- [Mario player guide](docs/mario-player-guide.md)
+- [Consolidated final campaign](docs/final-campaign-guide.md)
+- [Stardew companion guide](docs/stardew-operator-guide.md)
 
 ## Working rules
 

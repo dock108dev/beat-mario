@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "smb3-route-agent"
 version = "0.1.0"
-description = "Local SMB3 route automation harness"
+description = "Game Companion Mario adapter and reliability harness"
 requires-python = ">=3.11"
 dependencies = [
   "mss>=10.2.0; sys_platform == 'darwin'",

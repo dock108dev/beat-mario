@@ -1,0 +1,65 @@
+schema_version: game-companion-scenario-artifacts/v1
+required_per_attempt:
+  - immutable attempt manifest bound to source, game, adapter, profile, solution, and scenario versions
+  - append-only raw event stream
+  - execution plan
+  - classified terminal report
+  - cleanup record
+  - artifact reconciliation with integrity hashes
+  - product-session state transition record
+  - adapter-owned capability snapshot with unavailable reasons
+  - recovery record when the attempt does not complete normally
+required_for_mario_owner_pilot:
+  - frozen release-candidate identity
+  - first-use and configuration milestone events
+  - visible process and exact input-owner timeline
+  - objective progress, timing, comparison, records, advice, and History updates
+  - separate Show identity and review-only classification
+  - Do preflight, authorization, control epoch, reclaim, neutralization, and handback
+  - final state and game-owned outcome evidence when completion is claimed
+  - owner feedback prompts and explicit responses
+  - explicit owner acceptance decision
+required_for_stardew_owner_pilot:
+  - frozen release-candidate and stardew-companion/v1 identity
+  - primary and disposable save real paths and before/after integrity hashes
+  - visible process-start and window identity timeline
+  - complete screen-only initial crop sweep and final crop reconciliation
+  - planted, initially watered, confirmed watered, and remaining crop ids and counts
+  - energy, watering-can units/capacity, tool uses, and refill timeline
+  - exact final farmhouse-entrance observation
+  - player/agent/neutral ownership timeline and fresh authorization identity
+  - protected-action refusals and all unknown/occlusion/mismatch/process-loss failures
+  - cleanup, neutral handback, retained evidence, and first unmet requirement
+  - shared Observe conversion, freshness reasons, exact confidence, and typed fact provenance
+  - contextual Tell card with screen, watering-ledger, and Stardew-policy provenance
+  - fresh-copy Show identity and explicit review-only non-player non-authoritative classification
+  - Do task, copy, process-start, window, observation, expiry, driver, and stop-condition authorization
+  - every actor-labeled input with fresh before/after observation and expected postcondition
+  - reclaim during every active phase and verified neutral handback or explicit handback failure
+  - reset primary before/after hashes, fresh destination/nonce, preserved prior attempt, and invalidated authority
+  - owner feedback prompts and explicit responses
+  - explicit owner acceptance decision
+required_for_combined_catalog_switching:
+  - exact ordered adapter and game identities with provider versions
+  - adapter-owned capability, observation, goal, profile, scope, safety, and evidence declarations
+  - pre-switch input owner, active mode, continuity, neutralization, and handback state
+  - retained current-attempt and evidence references without copying game evidence
+  - volatile observation and authority invalidation record
+  - catalog-switch event in the separate catalog_switch classification
+  - selected target adapter and explicit new-observation-required state
+  - corrupt and stale preference recovery to player-owned catalog-only state
+failure_policy:
+  retain_failed_attempt: true
+  retry_creates_new_attempt: true
+  overwrite_failed_attempt: false
+  retain_corrupt_input_in_quarantine: true
+  preserve_first_unmet_requirement: true
+classification_policy:
+  upgrade_after_execution: forbidden
+  technical_counts_as_reliability: false
+  technical_counts_as_owner_acceptance: false
+  unattended_counts_as_owner_acceptance: false
+  review_only_counts_as_authoritative: false
+privacy:
+  local_only: true
+  forbidden: [credentials, ROM content, primary Stardew save content, unnecessary personal data, cloud identifiers]

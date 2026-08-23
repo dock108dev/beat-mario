@@ -1,6 +1,8 @@
-# Mario Route Lab
+# Game Companion Lab — Mario
 
-Mario Route Lab is the local evidence-first route review surface. It answers:
+Game Companion Lab is the local evidence-first Mario route review surface. It
+is the current engineering view beneath the planned player-facing companion
+session. It answers:
 
 - Where is Mario in the selected route?
 - What is proved, bridged, planned, or failing?
@@ -80,7 +82,7 @@ The established layout remains:
 - top run strip;
 - Route index;
 - Evidence viewer;
-- Teach Mario panel;
+- Help & Learn panel;
 - Latest Attempt, Active Problems, and Observation History.
 
 The route correction changes content and source-of-truth plumbing, not the page
@@ -162,6 +164,7 @@ Render once:
 
 ```bash
 python -m smb3_agent lab ui-render \
+  --view lab \
   --output artifacts/ui/world_8_double_whistle.html
 ```
 
@@ -170,6 +173,10 @@ Serve locally:
 ```bash
 python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
 ```
+
+The player-facing Game Companion session is at `/`; this engineering surface
+is at `/lab`. The navigation links preserve that separation. Omitting `--view
+lab` from `ui-render` renders the player session.
 
 The server logs completed requests, expected request failures, subprocess
 timeouts, and unexpected handler tracebacks. Browser responses distinguish

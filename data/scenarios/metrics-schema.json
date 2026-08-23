@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "game-companion-metrics-summary/v1",
+  "type": "object",
+  "required": ["schema_version", "filters", "event_count", "session_count", "event_type_counts", "classification_counts", "boundary_violation_count", "boundary_violation_required_value", "unknown_count", "metric_definitions", "combined_success_score", "recent_sessions"],
+  "properties": {
+    "schema_version": {"const": "game-companion-metrics-summary/v1"},
+    "filters": {"type": "object"},
+    "event_count": {"type": "integer", "minimum": 0},
+    "session_count": {"type": "integer", "minimum": 0},
+    "event_type_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "classification_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "boundary_violation_count": {"type": "integer", "minimum": 0},
+    "boundary_violation_required_value": {"const": 0},
+    "unknown_count": {"type": "integer", "minimum": 0},
+    "metric_definitions": {"type": "array", "items": {"type": "object"}},
+    "combined_success_score": {"type": "null"},
+    "recent_sessions": {"type": "array", "items": {"type": "object"}}
+  }
+}

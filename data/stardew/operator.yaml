@@ -1,0 +1,109 @@
+schema_version: game-companion-stardew-operator/v1
+adapter_id: stardew
+adapter_version: stardew-companion/v1
+game_id: stardew_valley
+game_name: Stardew Valley
+implementation_slice: V2.11
+local_only: true
+operation:
+  visible_window_required: true
+  fullscreen_refused: true
+  observation_source: screen_only
+  hidden_game_api: forbidden
+  process_memory: forbidden
+  primary_save_write: forbidden
+  task: water every crop planted at the initial reconciled observation, then return to the farmhouse entrance
+save_policy:
+  owner_provided_primary: true
+  disposable_copy_required: true
+  primary_and_copy_real_paths_must_differ: true
+  symlinked_save_content: refused
+  existing_copy_destination: refused
+  source_and_copy_tree_hash_must_match_at_creation: true
+  primary_reverification_required_at_stop: true
+ordinary_input:
+  keyboard: [up, down, left, right, w, a, s, d, x, c, escape, shift]
+  mouse: [move, left_button, right_button]
+  controller: [left_stick, dpad_up, dpad_down, dpad_left, dpad_right, action, use_tool, menu, cancel]
+refill_locations: [Farm, FarmCaveExterior]
+protected_action_terms:
+  - purchase
+  - sell
+  - discard
+  - trash
+  - gift
+  - dialogue
+  - story
+  - choose
+  - sleep
+  - bed
+  - save overwrite
+  - primary save
+capabilities:
+  - id: disposable_save
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py]
+  - id: visible_window_detection
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py]
+  - id: screen_observation
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py, data/stardew/fixtures.yaml]
+  - id: explicit_input_ownership
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py]
+  - id: bounded_watering_operator
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py]
+  - id: exact_task_accounting
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_adapter.py, data/stardew/evidence-contract.yaml]
+  - id: tell
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/tell.py]
+  - id: show
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py]
+  - id: do_takeover_mode
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/takeover.py]
+  - id: immediate_reclaim_and_neutral_handback
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/stardew_adapter.py]
+  - id: disposable_save_reset
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/stardew_adapter.py]
+  - id: stardew_safety_policy
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/stardew_companion.py, data/stardew/operator.yaml]
+  - id: combined_catalog
+    status: implemented_validation_deferred
+    contract_references: [src/smb3_agent/companion_catalog.py, data/companion/catalog-contract.yaml]
+fail_closed_on:
+  - unknown or stale visible state
+  - incomplete farm sweep
+  - unknown or occluded crops
+  - non-exact crop confidence
+  - crop-set mutation or reconciliation mismatch
+  - missing energy, watering-can, tool-use, refill, or position facts
+  - missing screenshot or event evidence
+  - save identity or real-path mismatch
+  - primary-save change
+  - ambiguous, expired, or restored input ownership
+  - process, process-start, window, or foreground loss
+  - protected-action risk
+  - ordinary-input driver loss
+stop_contract:
+  neutralize_first: true
+  return_player_ownership: true
+  retain_complete_attempt: true
+  retry_creates_fresh_attempt: true
+  never_resume_authority: true
+  success_requires:
+    - exact final planted count equals exact final watered count
+    - every initial crop id remains reconciled
+    - farmhouse entrance is observed with exact position confidence
+    - energy, tool uses, can units, and refills reconcile
+    - input is neutral and player ownership is restored
+    - primary save is unchanged
+    - required evidence is retained and hashed

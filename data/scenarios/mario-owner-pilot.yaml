@@ -1,0 +1,116 @@
+schema_version: game-companion-mario-owner-pilot/v1
+pilot_version: "2.9-rc1"
+status: prepared_not_run
+execution_enabled: false
+release_candidate:
+  git_commit: OWNER_PILOT_RELEASE_CANDIDATE_COMMIT
+  worktree_fingerprint: OWNER_PILOT_RELEASE_CANDIDATE_WORKTREE_SHA256
+  product_manifest_sha256: OWNER_PILOT_PRODUCT_MANIFEST_SHA256
+  frozen_at: OWNER_PILOT_FREEZE_TIME
+preconditions:
+  - V2.6 through V2.9 implementation is frozen with validation still deferred
+  - the owner supplies the supported local Mario game file; the product does not provide or copy it
+  - FCEUX is locally installed and launches visibly
+  - keyboard or controller input is ready and the owner can reclaim directly in FCEUX
+  - loopback Game Companion is the only product server and no conflicting Mario product session is active
+  - all prior failed attempts and evidence remain retained
+owner_instructions:
+  - choose every gameplay action, support response, authorization, reclaim, retry, and acceptance response
+  - use the player workspace for ordinary operation and open Lab only when technical inspection is desired
+  - stop immediately if input ownership, the visible process, or the safe next action is unclear
+  - do not patch code, edit fixtures, promote learning, rebuild storage, or alter evidence during an attempt
+required_owner_choices:
+  - choose Observe only or Observe with the option to allow Do later
+  - choose coaching policy and Tell detail
+  - choose if and when to start and stop a separate Show
+  - choose each Do goal, scope, stop point, timeout, protection, and explicit authorization
+  - choose if and when to use Take Control Now
+  - review or reject candidates and provide reasons in the product
+  - provide usefulness and control-clarity feedback only after the frozen pilot flow
+  - make the exact final acceptance decision
+expected_product_states:
+  - first_use
+  - idle
+  - starting
+  - player_observing
+  - tell_coaching
+  - show_active_separately
+  - do_preflight
+  - do_authorized
+  - agent_controlling
+  - reclaim
+  - handback
+  - failure
+  - recovery
+  - stopped
+  - historical_review
+coverage:
+  - first-use setup and capability truth
+  - read-only observation and normal player control
+  - takeover-capable observation with zero agent input before authorization
+  - automatic profile and level-run creation
+  - compatible comparison and History
+  - Tell at Minimal, Guided, and Full detail
+  - Quiet, On-request, and Proactive coaching
+  - separate review-only Show with Your game is unchanged
+  - current-session Do preflight and explicit goal authorization
+  - goal-bounded agent control and persistent Take Control Now
+  - immediate reclaim, neutralization, safe handback, and resumed observation
+  - timeout, failure, cancellation, and process-loss recovery
+  - candidate review, rejection, learning clarity, and non-executable candidate wording
+  - full-game takeover from the exact accepted compatible start
+  - owner usefulness, trust, input-ownership clarity, and control clarity
+  - exact final owner decision for the frozen release candidate
+required_evidence:
+  - immutable pilot manifest bound to the frozen release candidate
+  - one immutable manifest per attempt and fresh identity for every retry
+  - visible process identity and product-session identity
+  - first-use milestones and configuration failures
+  - observation freshness, state, input ownership, and player/agent input counts
+  - objective, progress, remaining requirements, timing, comparison, and record updates
+  - Tell, advice, coaching policy, Show, learning-review, and owner-feedback prompt events
+  - Do authorization manifest, ownership transfer, reclaim, neutralization, and handback events
+  - terminal outcome with game-owned proof when completion is claimed
+  - failure and recovery record with retained evidence status
+  - artifact reconciliation with exact integrity hashes and classification
+  - explicit owner usefulness responses
+  - explicit owner acceptance decision
+failure_retention_rules:
+  fail_closed: true
+  retain_complete_failed_attempt: true
+  retry_creates_fresh_attempt: true
+  preserve_error_context_until_owner_retry: true
+  preserve_unknown_and_incompatible_evidence: true
+  never_upgrade_evidence_classification_after_execution: true
+  report_first_unmet_requirement: true
+attempt_rules:
+  patching_during_attempt: forbidden
+  fixture_or_manifest_edit_during_attempt: forbidden
+  learning_promotion_or_rollback_during_attempt: forbidden
+  historical_backfill_during_attempt: forbidden
+  owner_actions_may_not_be_simulated: true
+  silence_is_not_feedback: true
+artifact_reconciliation:
+  required: true
+  source_identity_exact: true
+  event_sequence_monotonic: true
+  required_artifacts_present: true
+  hashes_match: true
+  classifications_match_manifest: true
+  game_owned_outcome_required_for_completion: true
+  technical_success_cannot_supply_owner_feedback: true
+first_unmet_requirement:
+  field: OWNER_PILOT_FIRST_UNMET_REQUIREMENT
+  allowed_empty_only_when_all_requirements_reconcile: true
+owner_feedback:
+  usefulness: OWNER_TO_COMPLETE
+  trust: OWNER_TO_COMPLETE
+  input_ownership_clarity: OWNER_TO_COMPLETE
+  reclaim_clarity: OWNER_TO_COMPLETE
+  recovery_clarity: OWNER_TO_COMPLETE
+  notes: OWNER_TO_COMPLETE
+owner_acceptance:
+  decision: OWNER_TO_COMPLETE
+  accepted_release_candidate: OWNER_TO_COMPLETE
+  decided_at: OWNER_TO_COMPLETE
+  exact_reason: OWNER_TO_COMPLETE

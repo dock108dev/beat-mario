@@ -1,7 +1,7 @@
 # Route Patch Schema
 
 Rank 33 adds `beat-mario.route-patch/v1`, the only executable route-change
-contract accepted by the CLI and Mario Route Lab. Descriptive variant proposals
+contract accepted by the CLI and Game Companion Lab. Descriptive variant proposals
 remain review aids; they cannot validate or promote themselves.
 
 ## Contract

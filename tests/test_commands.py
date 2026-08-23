@@ -8,6 +8,18 @@ from smb3_agent.fceux_harness import AttemptSummary, BatchSummary
 from smb3_agent.goals import GoalRunResult
 
 
+def test_combined_catalog_cli_surfaces_are_additive_and_safe() -> None:
+    status = build_parser().parse_args(["companion", "catalog-status"])
+    render = build_parser().parse_args(
+        ["companion", "render", "--output", "/tmp/game-companion.html"]
+    )
+    assert status.command == "companion"
+    assert status.companion_command == "catalog-status"
+    assert render.command == "companion"
+    assert render.companion_command == "render"
+    assert render.output == "/tmp/game-companion.html"
+
+
 def test_parse_world_8_double_whistle_goal_command() -> None:
     command = parse_command("run world 8 double whistle arrival 3 times")
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 import sys
@@ -26,7 +27,25 @@ from smb3_agent.lab import (
     write_codex_task_latest,
     write_ui_summary_latest,
 )
-from smb3_agent.lab_ui import LabUiError, render_lab_ui, run_lab_ui_server
+from smb3_agent.lab_ui import (
+    LabUiError,
+    default_companion_session,
+    render_companion_ui,
+    render_combined_catalog,
+    render_lab_ui,
+    run_lab_ui_server,
+)
+from smb3_agent.companion_catalog import (
+    CatalogPreferenceStore,
+    CatalogPreferences,
+    CatalogRegistry,
+    CatalogSession,
+    CompanionCatalogError,
+)
+from smb3_agent.learning import LearningError, LocalLearningStore, backfill_run_library
+from smb3_agent.metrics import LocalMetricsStore, MetricsError, metric_definitions
+from smb3_agent.mario_product import MarioCatalogProvider
+from smb3_agent.run_library import LocalRunLibrary
 from smb3_agent.observe import ObserveError, run_observed_segment
 from smb3_agent.recovery import RecoveryError, simulate_recovery
 from smb3_agent.route_patch import (
@@ -52,10 +71,28 @@ from smb3_agent.segments import (
     render_goal_status,
     validate_goal_segments,
 )
+from smb3_agent.scenarios import (
+    ScenarioError,
+    final_campaign_readiness,
+    load_scenario_catalog,
+    scenario_plan,
+)
+from smb3_agent.stardew_adapter import (
+    InputOwner,
+    OperatorLifecycle,
+    OperatorView,
+    StardewAdapterError,
+    load_stardew_contract,
+    render_stardew_operator,
+)
+from smb3_agent.stardew_companion import StardewCatalogProvider
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="smb3_agent")
+    parser = argparse.ArgumentParser(
+        prog="smb3_agent",
+        description="Game Companion Mario adapter and reliability tools",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     probe = subparsers.add_parser("probe", help="Run backend readiness probes")
@@ -486,13 +523,109 @@ def build_parser() -> argparse.ArgumentParser:
     patch_reject.add_argument("patch_id")
     patch_reject.add_argument("--reason", required=True)
 
-    lab_ui = lab_subparsers.add_parser("ui", help="Serve the local Mario Route Lab UI")
+    lab_ui = lab_subparsers.add_parser("ui", help="Serve the local Game Companion UI")
     lab_ui.add_argument("--host", default="127.0.0.1")
     lab_ui.add_argument("--port", type=int, default=8765)
     lab_ui.add_argument("--open", action="store_true", help="Open the UI in the default browser")
 
-    lab_ui_render = lab_subparsers.add_parser("ui-render", help="Render the lab UI HTML once")
+    lab_ui_render = lab_subparsers.add_parser("ui-render", help="Render Game Companion HTML once")
     lab_ui_render.add_argument("--output", default="artifacts/ui/latest.html")
+    lab_ui_render.add_argument(
+        "--view", choices=("player", "lab"), default="player"
+    )
+
+    learning = subparsers.add_parser(
+        "learning", help="Inspect and review local adaptive-assistance evidence"
+    )
+    learning_subparsers = learning.add_subparsers(dest="learning_command", required=True)
+    learning_status = learning_subparsers.add_parser(
+        "status", help="Show evidence classes and candidate lifecycle states"
+    )
+    learning_status.add_argument("--root", default="artifacts/learning")
+    learning_recover = learning_subparsers.add_parser(
+        "recover-index", help="Rebuild the derived index without rewriting raw evidence"
+    )
+    learning_recover.add_argument("--root", default="artifacts/learning")
+    learning_export = learning_subparsers.add_parser(
+        "export", help="Export a hash-bound candidate review packet"
+    )
+    learning_export.add_argument("candidate_id")
+    learning_export.add_argument("--root", default="artifacts/learning")
+    learning_review = learning_subparsers.add_parser(
+        "review", help="Approve a candidate for validation or reject it"
+    )
+    learning_review.add_argument("candidate_id")
+    learning_review.add_argument("decision", choices=("approve", "reject"))
+    learning_review.add_argument("--reason", required=True)
+    learning_review.add_argument("--root", default="artifacts/learning")
+    learning_backfill = learning_subparsers.add_parser(
+        "backfill-run-library",
+        help="Idempotently wrap existing V2.6 runs as learning evidence",
+    )
+    learning_backfill.add_argument("--root", default="artifacts/learning")
+    learning_backfill.add_argument("--run-library-root", default="artifacts/run-library")
+
+    stardew = subparsers.add_parser(
+        "stardew", help="Inspect the standalone Stardew companion implementation"
+    )
+    stardew_subparsers = stardew.add_subparsers(dest="stardew_command", required=True)
+    stardew_render = stardew_subparsers.add_parser(
+        "operator-render", help="Render the safe unconfigured companion surface without running Stardew"
+    )
+    stardew_render.add_argument("--output", default="artifacts/stardew-operator/operator.html")
+    stardew_status = stardew_subparsers.add_parser(
+        "status", help="Show adapter-owned capability truth without detecting or running the game"
+    )
+    stardew_status.add_argument("--contract", default="data/stardew/operator.yaml")
+
+    companion = subparsers.add_parser(
+        "companion", help="Inspect the combined local Game Companion catalog"
+    )
+    companion_subparsers = companion.add_subparsers(dest="companion_command", required=True)
+    companion_subparsers.add_parser(
+        "catalog-status", help="Show provider-owned catalog truth without detecting or running a game"
+    )
+    companion_render = companion_subparsers.add_parser(
+        "render", help="Render the safe unconfigured combined player surface"
+    )
+    companion_render.add_argument("--output", default="artifacts/companion/catalog.html")
+
+    scenario = subparsers.add_parser(
+        "scenario", help="Inspect versioned local session-automation scenarios"
+    )
+    scenario_subparsers = scenario.add_subparsers(dest="scenario_command", required=True)
+    for action, help_text in (
+        ("list", "List classified scenario definitions and blockers"),
+        ("status", "Show one scenario's implementation and capability status"),
+        ("plan", "Show the dry execution plan without running it"),
+        ("run", "Reserved final-campaign execution surface; fail closed in V2.8"),
+        ("cancel", "Reserved safe cancellation surface; fail closed without an active attempt"),
+    ):
+        command = scenario_subparsers.add_parser(action, help=help_text)
+        command.add_argument("scenario_id", nargs="?" if action == "list" else None)
+        command.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+    readiness = scenario_subparsers.add_parser(
+        "final-campaign-readiness", help="Report classified final-campaign blockers"
+    )
+    readiness.add_argument("--catalog", default="data/scenarios/catalog.yaml")
+
+    metrics = subparsers.add_parser(
+        "metrics", help="Inspect and maintain local classified product metrics"
+    )
+    metrics_subparsers = metrics.add_subparsers(dest="metrics_command", required=True)
+    for action, help_text in (
+        ("summarize", "Summarize exact local metrics without a blended score"),
+        ("status", "Show schema, storage, corruption, and recovery status"),
+        ("schema", "Show metric definitions, labels, numerators, and denominators"),
+        ("rebuild", "Atomically rebuild derived indexes from raw local events"),
+    ):
+        command = metrics_subparsers.add_parser(action, help=help_text)
+        command.add_argument("--root", default="artifacts/session-metrics")
+    metrics_export = metrics_subparsers.add_parser(
+        "export", help="Export local events with provenance and classification"
+    )
+    metrics_export.add_argument("output")
+    metrics_export.add_argument("--root", default="artifacts/session-metrics")
 
     return parser
 
@@ -918,11 +1051,195 @@ def main() -> None:
         try:
             output = Path(args.output)
             output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(render_lab_ui(), encoding="utf-8")
+            rendered = (
+                render_lab_ui()
+                if args.view == "lab"
+                else render_companion_ui(default_companion_session())
+            )
+            output.write_text(rendered, encoding="utf-8")
         except (LabError, LabUiError) as exc:
             parser.error(str(exc))
         print(f"html={output}")
         return
+
+    if args.command == "learning":
+        store = LocalLearningStore(Path(args.root))
+        try:
+            if args.learning_command == "status":
+                snapshot = store.snapshot()
+                print(
+                    json.dumps(
+                        {
+                            "schema_version": "game-companion-learning-status/v1",
+                            "attempts": len(snapshot.attempts),
+                            "patterns": len(snapshot.patterns),
+                            "tactics": len(snapshot.tactics),
+                            "candidate_states": {
+                                item.candidate_id: item.lifecycle.value
+                                for item in snapshot.candidates
+                            },
+                            "preferences": len(snapshot.preferences),
+                            "accepted_executable_changes": len(snapshot.promotions),
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+                return
+            if args.learning_command == "recover-index":
+                print(json.dumps(store.recover_index(), indent=2, sort_keys=True))
+                return
+            if args.learning_command == "export":
+                print(f"review_packet={store.export_review_packet(args.candidate_id)}")
+                return
+            if args.learning_command == "review":
+                result = store.review(
+                    args.candidate_id,
+                    approve=args.decision == "approve",
+                    reason=args.reason,
+                    reviewer="local-owner-cli",
+                )
+                print(f"candidate_id={result.candidate_id}")
+                print(f"decision={result.decision}")
+                print("executable=false")
+                return
+            if args.learning_command == "backfill-run-library":
+                sessions = backfill_run_library(
+                    store,
+                    LocalRunLibrary(Path(args.run_library_root)),
+                    adapter_id="smb3",
+                    adapter_version="smb3-live-observer/v1",
+                )
+                print(f"processed={len(sessions)}")
+                print("automatic_promotion=false")
+                return
+        except LearningError as exc:
+            parser.error(str(exc))
+
+    if args.command == "stardew":
+        try:
+            contract = load_stardew_contract(
+                Path(args.contract) if args.stardew_command == "status" else Path("data/stardew/operator.yaml")
+            )
+            capabilities = {
+                str(item["id"]): str(item["status"])
+                for item in contract.get("capabilities", ())
+            }
+            if args.stardew_command == "status":
+                print(json.dumps({
+                    "adapter_id": contract["adapter_id"],
+                    "adapter_version": contract["adapter_version"],
+                    "implementation_slice": contract["implementation_slice"],
+                    "capabilities": capabilities,
+                    "live_activity_run": False,
+                }, indent=2, sort_keys=True))
+                return
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(render_stardew_operator(OperatorView(
+                lifecycle=OperatorLifecycle.UNCONFIGURED,
+                save=None,
+                window=None,
+                input_owner=InputOwner.NONE,
+                ledger=None,
+                energy=None,
+                can_units=None,
+                failure=None,
+                evidence_status="not started",
+                capability_status=capabilities,
+            )), encoding="utf-8")
+            print(f"operator={output}")
+            print("live_activity_run=false")
+            return
+        except StardewAdapterError as exc:
+            parser.error(str(exc))
+
+    if args.command == "companion":
+        try:
+            registry = CatalogRegistry((MarioCatalogProvider(), StardewCatalogProvider()))
+            catalog = CatalogSession(registry, CatalogPreferenceStore())
+            if args.companion_command == "catalog-status":
+                print(json.dumps(catalog.inspection_payload(), indent=2, sort_keys=True))
+                return
+            catalog.preferences = CatalogPreferences()
+            catalog.store.recovery_reason = None
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(render_combined_catalog(catalog), encoding="utf-8")
+            print(f"catalog={output}")
+            print("selected_adapter_id=none")
+            print("live_activity_run=false")
+            return
+        except CompanionCatalogError as exc:
+            parser.error(str(exc))
+
+    if args.command == "scenario":
+        try:
+            catalog = load_scenario_catalog(Path(args.catalog))
+            selected = next(
+                (item for item in catalog if item.scenario_id == getattr(args, "scenario_id", None)),
+                None,
+            )
+            if args.scenario_command == "list":
+                print(json.dumps([
+                    {
+                        "scenario_id": item.scenario_id,
+                        "version": item.version,
+                        "classification": item.classification.value,
+                        "evidence_classification": item.evidence_classification.value,
+                        "capability_status": item.capability_status,
+                    }
+                    for item in catalog
+                ], indent=2, sort_keys=True))
+                return
+            if args.scenario_command == "final-campaign-readiness":
+                print(json.dumps(final_campaign_readiness(catalog), indent=2, sort_keys=True))
+                return
+            if selected is None:
+                parser.error(f"unknown scenario: {args.scenario_id}")
+            if args.scenario_command == "plan":
+                print(json.dumps(scenario_plan(selected).to_dict(), indent=2, sort_keys=True))
+                return
+            if args.scenario_command == "status":
+                print(json.dumps({
+                    "scenario_id": selected.scenario_id,
+                    "version": selected.version,
+                    "implementation": "defined",
+                    "capability_status": selected.capability_status,
+                    "owner_participation_required": selected.owner_participation_required,
+                    "execution_deferred": True,
+                }, indent=2, sort_keys=True))
+                return
+            parser.error(
+                f"scenario {args.scenario_command} is fail-closed until the consolidated "
+                "campaign activates execution and supplies an exact immutable attempt"
+            )
+        except ScenarioError as exc:
+            parser.error(str(exc))
+
+    if args.command == "metrics":
+        store = LocalMetricsStore(Path(args.root))
+        try:
+            if args.metrics_command == "summarize":
+                print(json.dumps(store.summarize(), indent=2, sort_keys=True))
+                return
+            if args.metrics_command == "status":
+                print(json.dumps(store.status(), indent=2, sort_keys=True))
+                return
+            if args.metrics_command == "schema":
+                print(json.dumps([
+                    definition.__dict__ | {"label": definition.label.value}
+                    for definition in metric_definitions()
+                ], indent=2, sort_keys=True))
+                return
+            if args.metrics_command == "rebuild":
+                print(json.dumps(store.rebuild(), indent=2, sort_keys=True))
+                return
+            if args.metrics_command == "export":
+                print(f"metrics_export={store.export(Path(args.output))}")
+                return
+        except MetricsError as exc:
+            parser.error(str(exc))
 
     parser.error("Unsupported command")
 

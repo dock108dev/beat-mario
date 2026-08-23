@@ -1,0 +1,25 @@
+schema: game-companion-reference-runs/v1
+references:
+  - reference_id: accepted-world-1-1-route-20260821
+    profile_id: smb3.world-1-1.fastest-accepted-clear
+    profile_version: 1
+    classification: accepted_agent_best
+    game_id: smb3
+    level_id: world_1_1
+    timing_boundary: first_supported_level_frame_to_course_clear
+    timing_units: emulator_frames
+    start_frame: 916
+    terminal_frame: 2976
+    elapsed: 2060
+    deaths: 0
+    complete_intervals: true
+    provenance:
+      - artifacts/reliability/world_8_finish_game/20260821T013757.568299Z_reliability/reliability_report.json
+      - artifacts/reliability/world_8_finish_game/20260821T013757.568299Z_reliability/run_01/fceux_1_1.log
+    evidence: [attempt_1_fresh_start, attempt_1_success_course_clear, accepted_3_of_3_byte_identical]
+    anchors:
+      - {anchor_id: start, fact: mario_x, value: 24, elapsed: 0}
+      - {anchor_id: midpoint, fact: mario_x, value: 1019, elapsed: 605}
+      - {anchor_id: late_level, fact: mario_x, value: 2010, elapsed: 1370}
+      - {anchor_id: end_approach, fact: mario_x, value: 2501, elapsed: 1616}
+      - {anchor_id: clear, fact: course_clear, value: "true", elapsed: 2060}

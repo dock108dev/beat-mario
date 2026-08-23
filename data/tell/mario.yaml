@@ -1,0 +1,206 @@
+schema: game-companion-tell/v1
+game: smb3
+
+# Goal contracts own order and identity; this file only adds accepted player guidance.
+defaults: &defaults
+  game_id: smb3
+  required_facts: {checkpoint_confirmed: "true"}
+  protected_actions: []
+
+records:
+  - <<: *defaults
+    segment_id: fresh_start_to_1_1
+    actions: [Start a fresh one-player game, Move Mario onto the 1-1 node, Press A to enter 1-1]
+    cues: [The World 1 map appears with Mario at the starting path, The 1-1 tile is selected, The 1-1 opening screen appears]
+    risks: [Do not continue from a save or a different map]
+    recovery: [Return to the title screen and reconfirm a fresh start if the map differs]
+    evidence_references: [live_fceux_2026-08-09_fresh_route]
+  - <<: *defaults
+    segment_id: world_1_1_clear
+    actions: [Move right and use short jumps over the first enemies, Keep forward momentum through the pipe and pit section, Touch the goal card at the end]
+    cues: [The opening Goombas and first pipe move off the left edge, The long ground section and final staircase appear, The course-clear card animation begins]
+    risks: [Early Goombas and the open pits can cost a life]
+    recovery: [If Mario dies or the screen is unfamiliar, stop and reconfirm the checkpoint]
+    evidence_references: [fceux_1_1_reliability_gate]
+  - <<: *defaults
+    segment_id: world_1_2_clear
+    actions: [Enter 1-2 from its map node, Advance right while jumping onto safe platforms, Touch the goal card]
+    cues: [The World 1-2 opening terrain appears, The scrolling terrain advances toward the exit, The course-clear card animation begins]
+    risks: [Moving platforms and pits punish blind forward movement]
+    recovery: [Pause on safe ground and reconfirm the stage before continuing]
+    evidence_references: [live_fceux_2026-08-09_fresh_route]
+  - <<: *defaults
+    segment_id: world_1_3_whistle
+    actions: [Enter 1-3 and reach the white block, Crouch on the white block until Mario drops behind the scenery, Run behind the goal into the hidden Toad House and collect the whistle]
+    cues: [The white block appears before the end section, Mario moves behind the foreground, The hidden room awards a Warp Whistle]
+    risks: [Passing the white block or ending the level normally misses the whistle]
+    recovery: [If Mario remains in front of the scenery, do not finish; retry the white-block crouch]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_1_fortress_whistle
+    actions: [Enter the World 1 Fortress with flight available, Build speed and fly above the ceiling near the first door area, Move right to the hidden room and collect the second whistle]
+    cues: [The Fortress opening hall appears, Mario rises above the visible ceiling, The hidden chest awards a Warp Whistle]
+    risks: [Losing the flight-capable form removes the validated whistle path]
+    recovery: [Stop if flight setup fails; do not present a normal fortress clear as whistle completion]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_1_5_water_path
+    actions: [Enter 1-5 from the opened map path, Follow the lower water route while avoiding enemies, Reach and touch the goal card]
+    cues: [The 1-5 opening slope appears, The water section scrolls toward the exit, The course-clear card animation begins]
+    risks: [The lower route has enemies and gaps that can break continuous movement]
+    recovery: [Wait on stable ground and reconfirm the route if Mario is displaced]
+    evidence_references: [live_fceux_2026-08-09_world_1_5_clear_with_two_whistles]
+  - <<: *defaults
+    segment_id: world_1_6_clear
+    actions: [Enter 1-6, Cross the moving-platform sections with deliberate jumps, Touch the goal card]
+    cues: [The 1-6 platform layout appears, The final platform sequence comes into view, The course-clear card animation begins]
+    risks: [Platform timing errors can drop Mario into a pit]
+    recovery: [Stop on a stable platform and wait for the next safe alignment]
+    evidence_references: [live_fceux_2026-08-09_1_6_fresh_playback]
+  - <<: *defaults
+    segment_id: world_1_airship_to_king
+    actions: [Enter the World 1 castle to board the Airship, Traverse the scrolling deck and enter the final pipe, Defeat Boom Boom and collect the wand]
+    cues: [The Airship autoscroller begins, The boss room appears after the pipe, The King restoration scene follows the wand pickup]
+    risks: [Autoscroll edges and cannon fire can force a death]
+    recovery: [If Mario dies or the boss transition is unclear, stop rather than claiming the King was restored]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_2_map_arrival_with_two_whistles
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "2"}
+    actions: [Let the World 2 transition finish, Wait for Mario to settle on the map, Confirm two Warp Whistles remain in inventory]
+    cues: [The desert World 2 map is visible, Mario is stationary on the starting node, Inventory shows two whistles]
+    risks: [Opening inventory before the transition settles can obscure the actual map state]
+    recovery: [Close inventory and reconfirm World 2 plus the two-whistle count]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_2_first_whistle_use
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "2"}
+    actions: [Open inventory on the settled World 2 map, Select one Warp Whistle, Use it]
+    cues: [The inventory cursor highlights a whistle, The whistle count drops from two to one, The Warp Zone appears]
+    risks: [Using an unrelated item changes inventory without advancing the route]
+    recovery: [If the count or destination differs, stop and reconfirm inventory and map]
+    protected_actions: [preserve_warp_whistles]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: warp_zone_5_6_7_tier
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "1"}
+    actions: [Wait for the Warp Zone transition to settle, Confirm the visible pipes are labeled 5 6 and 7, Stay on this tier without entering a numbered pipe]
+    cues: [The 5/6/7 tier is fully visible, Mario can move between the numbered pipes, No world-entry transition begins]
+    risks: [Entering a numbered pipe leaves the validated two-whistle route]
+    recovery: [Do not press A at a pipe; reconfirm the tier before using the second whistle]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: warp_zone_second_whistle_use
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "1"}
+    actions: [Open inventory while still on the 5/6/7 tier, Select the remaining Warp Whistle, Use it before entering any pipe]
+    cues: [One whistle is visible before use, The whistle count drops to zero, The Warp Zone changes to the World 8 tier]
+    risks: [A numbered-pipe entry before whistle use selects the wrong world]
+    recovery: [If the screen has begun a world transition, stop; the validated checkpoint no longer applies]
+    protected_actions: [preserve_warp_whistles]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: warp_zone_world_8_tier
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "0"}
+    actions: [Wait for the second whistle transition to finish, Confirm the single World 8 pipe is visible, Move onto that pipe]
+    cues: [The World 8 label and pipe appear, Mario reaches the pipe position, The pipe remains selected without entry]
+    risks: [Acting during the transition can make the visible state ambiguous]
+    recovery: [Wait until the tier is stable and reconfirm the World 8 label]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_8_pipe_entry
+    required_facts: {checkpoint_confirmed: "true", warp_whistle_count: "0"}
+    actions: [Stand on the World 8 pipe, Press A once to enter, Wait for the map transition]
+    cues: [The World 8 pipe is selected, The entry transition begins, The dark World 8 map appears]
+    risks: [Repeated input during transition can move past the intended observation boundary]
+    recovery: [Release input and wait for a stable map before doing anything else]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_8_map_arrival
+    actions: [Wait for World 8 to finish loading, Confirm the dark map and starting node, Move down and right toward Big Tanks]
+    cues: [The genuine World 8 map is stable, Mario follows the opening map path, Big Tanks becomes the next stage]
+    risks: [A Warp Zone screen is historical context and does not prove current World 8 arrival]
+    recovery: [Reconfirm the dark World 8 map before entering any stage]
+    evidence_references: [live_fceux_2026-08-09_world_8_fresh_playback_x3]
+  - <<: *defaults
+    segment_id: world_8_big_tanks_clear
+    actions: [Enter Big Tanks from the opening World 8 map, Traverse the autoscrolling vehicles and enter the final pipe, Defeat the Boomerang Brother and collect the chest reward]
+    cues: [The tank autoscroller begins, The final enemy room appears, The stable map returns at the post-clear node]
+    risks: [Autoscroll gaps and projectiles can kill Mario]
+    recovery: [If Mario dies or the map return is missing, stop and do not infer a clear]
+    evidence_references: [bounded_live_fceux_2026-08-10_normal_entry_and_clear]
+  - <<: *defaults
+    segment_id: world_8_battleships_clear
+    required_facts: {checkpoint_confirmed: "true", p_wing_available: "true"}
+    actions: [Use the accepted P-Wing and enter Battleships, Traverse the fleet and enter the final pipe, Defeat Boom Boom and wait for the stable map return]
+    cues: [The Battleships autoscroller begins, Boom Boom appears in the final room, Mario returns to the map before a Hand Trap]
+    risks: [This validated path consumes the P-Wing and includes autoscroll hazards]
+    recovery: [If P-Wing inventory is absent or the wrong stage opens, stop and reconfirm]
+    protected_actions: [preserve_p_wing]
+    evidence_references: [bounded_live_fceux_2026-08-10_normal_entry_boss_clear_and_map_return]
+  - <<: *defaults
+    segment_id: world_8_hand_trap_right_clear
+    actions: [Move deliberately to the right Hand Trap and enter it, Defeat the four Brother enemies, Center under the orange ceiling pipe and exit]
+    cues: [The enemy-arena Hand Trap appears, The last Brother is defeated, The map returns and awards one Super Leaf]
+    risks: [Entering another trap invalidates this checkpoint and the enemy sequence is hazardous]
+    recovery: [If the reward or right-trap identity is unclear, stop without claiming completion]
+    evidence_references: [bounded_live_fceux_2026-08-10_right_hand_trap]
+  - <<: *defaults
+    segment_id: world_8_hand_trap_center_clear
+    actions: [Select and enter the center Hand Trap, Cross the lava platforms using the Podoboo rhythm, Center under the orange ceiling pipe and exit]
+    cues: [The lava-platform trap appears, The exit pipe becomes reachable, The map returns and awards one Super Leaf]
+    risks: [Podoboos and lava punish mistimed jumps]
+    recovery: [Wait for a readable hazard cycle; stop after any death or wrong-trap entry]
+    evidence_references: [bounded_live_fceux_2026-08-10_center_hand_trap]
+  - <<: *defaults
+    segment_id: world_8_hand_trap_left_clear
+    actions: [Select and enter the left Hand Trap, Cross the broken lava bridge while avoiding Cheep-Cheeps, Reach the orange ceiling pipe and exit]
+    cues: [The broken-bridge trap appears, The far side of the bridge comes into view, The map returns and awards one Super Leaf]
+    risks: [Lava gaps and jumping Cheep-Cheeps can interrupt the crossing]
+    recovery: [Pause on safe footing and stop if the trap identity or reward is uncertain]
+    evidence_references: [bounded_live_fceux_2026-08-10_left_hand_trap]
+  - <<: *defaults
+    segment_id: world_8_jet_clear
+    actions: [Enter World 8-Jet, Advance between Rocket Engine flame cycles and enter the final pipe, Defeat flying Boom Boom and follow the tunnel to the map]
+    cues: [The fast Jet autoscroller begins, Flying Boom Boom appears, World 8-1 is visible and unentered]
+    risks: [Rocket Engine flames and disappearing footing make blind rushing unsafe]
+    recovery: [Wait for each flame cycle; stop if Mario dies or 8-1 opens without a verified boss clear]
+    evidence_references: [bounded_live_fceux_2026-08-10_jet_flying_boom_boom_and_map_return]
+  - <<: *defaults
+    segment_id: world_8_1_clear
+    required_facts: {checkpoint_confirmed: "true", super_leaf_available: "true"}
+    actions: [Use an accepted Super Leaf and enter World 8-1, Traverse the dark hazards and low passage, Touch the goal card and wait for the map]
+    cues: [World 8-1 opens with dark terrain, The final goal area appears, The course-clear card animation returns Mario to the map]
+    risks: [This validated path consumes a Super Leaf and crosses launcher pits]
+    recovery: [If the item is absent or Mario dies, stop rather than treating map movement as a clear]
+    protected_actions: [preserve_super_leaf]
+    evidence_references: [bounded_live_fceux_2026-08-11_world_8_1_goal_card_and_map_return]
+  - <<: *defaults
+    segment_id: world_8_2_clear
+    actions: [Enter World 8-2 and walk into the first sandfall, Take the chamber's right pipe and bonus-room exit, Cross the remaining hazards and touch the goal card]
+    cues: [The first sandfall carries Mario below, The bonus-room exit bypasses the Angry Sun section, The map returns with the Fortress accessible]
+    risks: [The remaining fire traps pits and final chasm still require deliberate movement]
+    recovery: [If the shortcut exit or goal-card state is unclear, stop before the Fortress]
+    evidence_references: [bounded_live_fceux_2026-08-11_world_8_2_goal_card_and_fortress_access]
+  - <<: *defaults
+    segment_id: world_8_fortress_clear
+    required_facts: {checkpoint_confirmed: "true", super_mushroom_available: "true"}
+    actions: [Use the accepted Super Mushroom and enter the Fortress, Follow the fifth-door and Switch Block route to reveal the hidden door, Defeat Boom Boom and collect the Magic Ball]
+    cues: [Large Mario can open the brick-gated route, The Switch Block exposes the hidden path, The map returns with Super Tanks accessible]
+    risks: [This validated route consumes a Super Mushroom and a wrong door can loop the rooms]
+    recovery: [Stop on a wrong room or lost large form; do not improvise an unvalidated door path]
+    protected_actions: [preserve_super_mushroom]
+    evidence_references: [bounded_live_fceux_2026-08-12_world_8_fortress_boom_boom_magic_ball_and_map_return]
+  - <<: *defaults
+    segment_id: world_8_super_tanks_clear
+    actions: [Allow the automatic Super Tanks entry, Advance with the moving convoy and cross the overhead-airship section, Enter the final pipe defeat flying Boom Boom and collect the Magic Ball]
+    cues: [The convoy autoscroller begins, The final boss room appears, The map returns with Bowser's Castle accessible and unentered]
+    risks: [Scroll failure or a missed vehicle edge can kill Mario]
+    recovery: [Stop after death or a missing Magic Ball; Castle access alone is not proof of this clear]
+    evidence_references: [bounded_live_fceux_2026-08-12_world_8_super_tanks_boom_boom_magic_ball_and_bowser_castle_access]
+  - <<: *defaults
+    segment_id: world_8_bowser_castle_finish
+    actions: [Enter Bowser's Castle from the stable page-3 node, Follow the validated castle route to the boss room and bait Bowser's floor slams, Keep Mario alive while Bowser breaks through the floor then observe rescue credits and the stable ending]
+    cues: [The Castle opening room appears, Live Bowser repeatedly slams and breaks floor blocks, The Princess sequence credits and final THE END screen appear in order]
+    risks: [Wrong doors death or Bowser disappearance without the live floor-break sequence are not completion]
+    recovery: [Stop on death or an uncertain boss transition; never infer the rescue or ending from historical evidence]
+    evidence_references: [game_owned_bowser_defeat_princess_rescue_credits_and_stable_ending]
