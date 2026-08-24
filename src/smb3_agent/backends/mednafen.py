@@ -50,7 +50,7 @@ class CaptureResult:
 class MednafenProcess:
     def __init__(self, game_path: Path) -> None:
         if not game_path.exists():
-            raise FileNotFoundError(f"game file not found: {game_path}")
+            raise FileNotFoundError("local game file not found")
         self.game_path = game_path
         self.process: subprocess.Popen[str] | None = None
         self.output = ""
@@ -78,12 +78,17 @@ class MednafenProcess:
         if self.process.poll() is None:
             self.process.terminate()
             try:
-                self.output, _ = self.process.communicate(timeout=5)
+                output, _ = self.process.communicate(timeout=5)
             except subprocess.TimeoutExpired:
                 self.process.kill()
-                self.output, _ = self.process.communicate(timeout=5)
+                output, _ = self.process.communicate(timeout=5)
         else:
-            self.output, _ = self.process.communicate(timeout=5)
+            output, _ = self.process.communicate(timeout=5)
+        self.output = (
+            f"mednafen output captured ({len(output)} characters; content redacted)"
+            if output
+            else ""
+        )
 
 
 def focus_mednafen() -> None:

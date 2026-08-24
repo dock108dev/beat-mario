@@ -38,7 +38,7 @@ def run_1_1_script_task(
     sample_interval_seconds: float = 0.1,
 ) -> None:
     if not game_path.exists():
-        raise SystemExit(f"game file not found: {game_path}")
+        raise SystemExit("local game file not found")
     if not script_path.exists():
         raise SystemExit(f"Input script not found: {script_path}")
     if not is_accessibility_trusted():
@@ -126,7 +126,7 @@ def run_1_1_script_task(
     result = {
         "task": "run-1-1-script",
         "backend": "mednafen",
-        "game_file": str(game_path),
+        "game_file": "<redacted-local-game-file>",
         "script": str(script_path),
         "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,

@@ -24,7 +24,7 @@ def run_mednafen_probe(
     after_start_seconds: float,
 ) -> None:
     if not game_path.exists():
-        raise SystemExit(f"game file not found: {game_path}")
+        raise SystemExit("local game file not found")
 
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -46,7 +46,7 @@ def run_mednafen_probe(
 
     result = {
         "backend": "mednafen",
-        "game_file": str(game_path),
+        "game_file": "<redacted-local-game-file>",
         "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "window_bounds_before": asdict(bounds),
@@ -57,7 +57,7 @@ def run_mednafen_probe(
             "after_window": asdict(after_window),
             "after_game": asdict(after_game),
         },
-        "mednafen_output_tail": emulator.output[-2000:],
+        "mednafen_output_captured": bool(emulator.output),
     }
     metadata_path = artifacts_dir / f"{stamp}_probe.json"
     metadata_path.write_text(json.dumps(result, indent=2), encoding="utf-8")

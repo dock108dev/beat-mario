@@ -27,6 +27,9 @@ requires fresh exact-process verification and explicit authorization.
   promote or roll back an approved route patch.
 - The CLI runs with the invoking operator's filesystem permissions. Paths
   supplied directly on the CLI are trusted operator choices, not remote input.
+  Route-patch imports are narrower: the patch document must be a regular,
+  non-symlinked file beneath the repository so the same backend remains safe
+  when reached from Route Lab.
 - ROMs, savestates, screenshots, traces, and generated session records are
   local-only data. Repository and CI guards keep them out of tracked source.
 - Emulator processes use fixed argument vectors rather than a shell. Product
@@ -35,6 +38,11 @@ requires fresh exact-process verification and explicit authorization.
 - Route patches are untrusted until schema, repository-base, allowlist,
   preimage, and postimage checks pass. Validation runs in a detached candidate
   worktree. Promotion and rollback are exact, confirmation-gated, and atomic.
+- Browser-derived goal, issue, session, adapter, validation-output, and patch
+  identifiers use real-path normalization plus controlled-root prefix checks
+  before filesystem access. Temporary adapter directories use fixed prefixes.
+- Legacy Mednafen diagnostics retain whether process output existed and its
+  length, but not raw emulator output or the private local game-file path.
 
 ## Implemented controls
 
@@ -91,6 +99,9 @@ Expected request failures produce explicit 400, 403, 404, 409, 413, 415, or
 504 responses. Unexpected failures produce a generic 500 without exposing a
 traceback to the browser. Server logs retain request path, status, and failure
 type but do not log form bodies or the CSRF token.
+
+CSRF-field injection and note artifact-path extraction use bounded linear
+string scans rather than regular expressions over browser-controlled text.
 
 ## Confirmed vulnerabilities
 

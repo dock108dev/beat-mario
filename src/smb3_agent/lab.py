@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -216,13 +217,13 @@ def start_session(
 
     requested_speed = _requested_speed(command)
     run_mode = command.run_mode or "gate"
-    session_id = _new_session_id(command.goal)
+    contract = load_goal_contract(resolve_goal_path(command.goal))
+    session_id = _new_session_id(contract.id)
     session_dir = artifacts_root / session_id
     goal_dir = session_dir / "goal"
     started_at = _now()
     run_settings = _run_settings_for_speed(requested_speed, run_mode, capture_images, capture_ticks)
 
-    contract = load_goal_contract(resolve_goal_path(command.goal))
     attempts_requested = attempts if attempts > 0 else command.attempts or 1
     goal_result = run_goal_contract(
         contract,
@@ -447,7 +448,7 @@ def propose_variants(session_dir: Path) -> MultiVariantProposalResult:
         },
     )
     for proposal in proposals:
-        _write_yaml(Path("data/variants") / f"{proposal['variant_id']}.yaml", proposal)
+        _write_yaml(_variant_path(str(proposal["variant_id"])), proposal)
     return MultiVariantProposalResult(
         session_id=str(manifest["session_id"]),
         proposals_path=proposals_path,
@@ -534,12 +535,24 @@ def write_codex_task(session_dir: Path, issue_id: str) -> CodexTaskResult:
     issue = next((item for item in issues if isinstance(item, dict) and item.get("id") == issue_id), None)
     if issue is None:
         raise LabError(f"Issue not found in latest session: {issue_id}")
+    if not re.fullmatch(r"[a-z0-9_]{3,160}", issue_id):
+        raise LabError(f"Invalid issue id: {issue_id!r}")
     notes = [note for note in _load_notes(session_dir) if note.get("id") in set(issue.get("source_notes", []))]
     route_log = _route_log_path(session_dir, manifest)
-    excerpt_path = session_dir / "excerpts" / f"{issue_id}.log"
+    session_root = os.path.realpath(os.fspath(session_dir))
+    excerpt_real = os.path.realpath(
+        os.path.join(session_root, "excerpts", f"{issue_id}.log")
+    )
+    task_real = os.path.realpath(
+        os.path.join(session_root, "codex_tasks", f"{issue_id}.yaml")
+    )
+    safe_prefix = session_root.rstrip(os.sep) + os.sep
+    if not excerpt_real.startswith(safe_prefix) or not task_real.startswith(safe_prefix):
+        raise LabError("Codex task paths escape the selected lab session")
+    excerpt_path = Path(excerpt_real)
     excerpt_path.parent.mkdir(parents=True, exist_ok=True)
     excerpt_path.write_text(_route_log_excerpt(route_log, issue), encoding="utf-8")
-    task_path = session_dir / "codex_tasks" / f"{issue_id}.yaml"
+    task_path = Path(task_real)
     task = {
         "task_id": f"codex_{issue_id}",
         "created_at": _now(),
@@ -722,7 +735,13 @@ def _write_latest_session(session_dir: Path) -> None:
 def _latest_session_dir() -> Path:
     if not LATEST_SESSION_PATH.is_file():
         raise LabError("No latest lab session exists")
-    session_dir = Path(LATEST_SESSION_PATH.read_text(encoding="utf-8").strip())
+    sessions_root = os.path.realpath("artifacts/sessions")
+    session_real = os.path.realpath(
+        LATEST_SESSION_PATH.read_text(encoding="utf-8").strip()
+    )
+    if not session_real.startswith(sessions_root.rstrip(os.sep) + os.sep):
+        raise LabError("Latest session path escapes the lab artifact root")
+    session_dir = Path(session_real)
     if not session_dir.is_dir():
         raise LabError(f"Latest session directory does not exist: {session_dir}")
     return session_dir
@@ -742,7 +761,11 @@ def _load_notes(session_dir: Path) -> list[dict[str, Any]]:
 
 def _route_log_path(session_dir: Path, manifest: dict[str, Any]) -> Path:
     route_log = manifest.get("outputs", {}).get("route_log", "goal/fceux_1_1.log")
-    return session_dir / str(route_log)
+    session_root = os.path.realpath(os.fspath(session_dir))
+    route_log_real = os.path.realpath(os.path.join(session_root, str(route_log)))
+    if not route_log_real.startswith(session_root.rstrip(os.sep) + os.sep):
+        raise LabError("Route log path escapes the selected lab session")
+    return Path(route_log_real)
 
 
 def _next_note_id(notes: list[Any]) -> str:
@@ -796,12 +819,16 @@ def _coerce_anchor_value(value: str | int | float | None) -> str | int | float |
 
 
 def _artifact_paths(text: str) -> list[str]:
-    matches = re.findall(
-        r"(?<![A-Za-z0-9_])((?:/[^\s]+|artifacts/[^\s]+)\.(?:png|jpg|jpeg|gif|gd|log|jsonl|yaml))",
-        text,
-        re.I,
-    )
-    return list(dict.fromkeys(match.rstrip(".,;:)") for match in matches))
+    suffixes = (".png", ".jpg", ".jpeg", ".gif", ".gd", ".log", ".jsonl", ".yaml")
+    matches: list[str] = []
+    for token in text.split():
+        starts = [index for marker in ("artifacts/", "/") if (index := token.find(marker)) >= 0]
+        if not starts:
+            continue
+        candidate = token[min(starts) :].rstrip(".,;:)")
+        if candidate.lower().endswith(suffixes):
+            matches.append(candidate)
+    return list(dict.fromkeys(matches))
 
 
 def _expected_change(text: str) -> str:
@@ -1149,10 +1176,20 @@ def _variant_id_from_issue(issue: dict[str, Any]) -> str:
     base = f"{segment}_{suffix}{anchor_part}_a"
     candidate = base
     index = 1
-    while (Path("data/variants") / f"{candidate}.yaml").exists():
+    while _variant_path(candidate).exists():
         index += 1
         candidate = f"{base[:-1]}{chr(96 + min(index, 26))}"
     return candidate
+
+
+def _variant_path(variant_id: str) -> Path:
+    variants_root = os.path.realpath("data/variants")
+    variant_real = os.path.realpath(
+        os.path.join(variants_root, f"{variant_id}.yaml")
+    )
+    if not variant_real.startswith(variants_root.rstrip(os.sep) + os.sep):
+        raise LabError("Variant path escapes the variant artifact root")
+    return Path(variant_real)
 
 
 def _first_numeric_anchor(issue: dict[str, Any]) -> int | None:

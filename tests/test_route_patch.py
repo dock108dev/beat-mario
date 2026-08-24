@@ -189,10 +189,14 @@ def test_import_rejects_symlinked_patch_document_and_external_artifact_root(
     tmp_path: Path,
 ) -> None:
     repo, patch_path, _ = _patch_fixture(tmp_path)
-    linked_patch = tmp_path / "linked-patch.yaml"
+    linked_patch = repo / "artifacts/intake/linked-patch.yaml"
     linked_patch.symlink_to(patch_path)
-    with pytest.raises(RoutePatchError, match="regular non-symlink"):
+    with pytest.raises(RoutePatchError, match="must not be a symlink"):
         import_route_patch(linked_patch, repo_root=repo)
+    external_patch = tmp_path / "external-patch.yaml"
+    external_patch.write_bytes(patch_path.read_bytes())
+    with pytest.raises(RoutePatchError, match="patch document escapes"):
+        import_route_patch(external_patch, repo_root=repo)
     with pytest.raises(RoutePatchError, match="inside the repository"):
         import_route_patch(patch_path, repo_root=repo, artifacts_root=tmp_path / "outside")
 
@@ -623,7 +627,8 @@ def _patch_fixture(
         "timestamps": {"created_at": "2026-08-10T00:00:00+00:00"},
         "provenance": {"producer": "rank-33-test-fixture", "owner_selected": True},
     }
-    patch_path = tmp_path / "fixture-patch.yaml"
+    patch_path = repo / "artifacts/intake/fixture-patch.yaml"
+    patch_path.parent.mkdir(parents=True, exist_ok=True)
     patch_path.write_text(yaml.safe_dump(patch, sort_keys=False), encoding="utf-8")
     return repo, patch_path, original
 

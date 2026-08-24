@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +34,7 @@ SUPPORTED_SUMMARY_FIELDS = {
     "post_probe_clear",
     "post_probe_last_event",
 }
+GOAL_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_]{2,79}$")
 SUPPORTED_RECOVERY_ACTIONS = {
     "capture_artifacts_and_stop",
     "correct_known_state_or_stop",
@@ -100,10 +103,17 @@ class GoalRunResult:
 
 
 def resolve_goal_path(goal: str, goals_dir: Path = Path("data/goals")) -> Path:
-    candidate = Path(goal)
-    if candidate.exists():
-        return candidate
-    return goals_dir / f"{goal}.yaml"
+    root = os.path.realpath(os.fspath(repository_path(goals_dir)))
+    if GOAL_ID_PATTERN.fullmatch(goal):
+        candidate = os.path.realpath(os.path.join(root, f"{goal}.yaml"))
+    else:
+        candidate = os.path.realpath(os.fspath(repository_path(goal)))
+    if (
+        not candidate.startswith(root.rstrip(os.sep) + os.sep)
+        or not candidate.endswith(".yaml")
+    ):
+        raise GoalValidationError(f"Invalid goal id or catalog path: {goal!r}")
+    return Path(candidate)
 
 
 def load_goal_contract(path: Path, *, _seen: frozenset[Path] = frozenset()) -> GoalContract:

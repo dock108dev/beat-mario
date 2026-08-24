@@ -396,11 +396,11 @@ def _refresh_catalog_registry(server: ThreadingHTTPServer) -> None:
 def _experimental_source(adapter_id: str) -> Path:
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", adapter_id):
         raise ExperimentalAdapterError("invalid Experimental adapter id")
-    root = EXPERIMENTAL_SCAFFOLD_ROOT.resolve(strict=False)
-    source = (EXPERIMENTAL_SCAFFOLD_ROOT / adapter_id).resolve(strict=False)
-    if source.parent != root:
+    root = os.path.realpath(os.fspath(EXPERIMENTAL_SCAFFOLD_ROOT))
+    source = os.path.realpath(os.path.join(root, adapter_id))
+    if not source.startswith(root.rstrip(os.sep) + os.sep):
         raise ExperimentalAdapterError("Experimental adapter source escapes the bounded root")
-    return source
+    return Path(source)
 
 
 def _mario_catalog_availability(
@@ -3356,11 +3356,7 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
             '<input type="hidden" name="csrf_token" '
             f'value="{_esc(csrf_token)}">'
         )
-        body = re.sub(
-            r'(<form\s+method="post"[^>]*>)',
-            lambda match: match.group(1) + csrf_field,
-            body,
-        )
+        body = _inject_csrf_fields(body, csrf_field)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -3991,6 +3987,27 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
 </head>
 <body>{body}</body>
 </html>"""
+
+
+def _inject_csrf_fields(body: str, csrf_field: str) -> str:
+    parts: list[str] = []
+    cursor = 0
+    while True:
+        start = body.find("<form", cursor)
+        if start < 0:
+            parts.append(body[cursor:])
+            return "".join(parts)
+        end = body.find(">", start + 5)
+        if end < 0:
+            parts.append(body[cursor:])
+            return "".join(parts)
+        parts.append(body[cursor : end + 1])
+        opening_tag = body[start : end + 1]
+        close = body.find("</form>", end + 1)
+        form_body = body[end + 1 : close] if close >= 0 else ""
+        if 'method="post"' in opening_tag and 'name="csrf_token"' not in form_body:
+            parts.append(csrf_field)
+        cursor = end + 1
 
 
 def render_error(message: str) -> str:

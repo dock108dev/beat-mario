@@ -509,12 +509,12 @@ def _fixture_payloads(adapter_id: str) -> dict[str, Mapping[str, Any]]:
 
 
 def _bounded_child(root: Path, child: str) -> Path:
-    root_resolved = root.resolve(strict=False)
-    target = root / child
-    target_resolved = target.resolve(strict=False)
-    if target_resolved.parent != root_resolved:
+    root_real = os.path.realpath(os.fspath(root))
+    target_real = os.path.realpath(os.path.join(root_real, child))
+    safe_prefix = root_real.rstrip(os.sep) + os.sep
+    if not target_real.startswith(safe_prefix):
         raise ExperimentalAdapterError("adapter target escapes the bounded root")
-    return target
+    return Path(target_real)
 
 
 def _cleanup_failed_staging(
@@ -542,7 +542,7 @@ def scaffold_adapter(root: Path, adapter_id: str, display_name: str) -> Path:
     if target.exists() or target.is_symlink():
         raise ExperimentalAdapterError("scaffold target already exists; overwrite refused")
     root.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=f".{adapter_id}-", dir=root))
+    temporary = Path(tempfile.mkdtemp(prefix=".adapter-scaffold-", dir=root))
     try:
         (temporary / "fixtures").mkdir()
         (temporary / "adapter.yaml").write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -626,7 +626,7 @@ def install_adapter(source: Path, install_root: Path) -> Path:
     target = _bounded_child(install_root, adapter_id)
     if target.exists() or target.is_symlink():
         raise InstallationRefused("installation collision; overwrite refused")
-    temporary = Path(tempfile.mkdtemp(prefix=f".{adapter_id}-install-", dir=install_root))
+    temporary = Path(tempfile.mkdtemp(prefix=".adapter-install-", dir=install_root))
     try:
         for relative in sorted(inventory):
             destination = temporary / relative

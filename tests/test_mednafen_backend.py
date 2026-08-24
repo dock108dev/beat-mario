@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -43,3 +44,29 @@ def test_focus_mednafen_requires_both_automation_commands(
 
     assert len(calls) == 2
     assert all(call[:2] == ["osascript", "-e"] for call in calls)
+
+
+def test_process_output_does_not_retain_private_game_path(tmp_path: Path) -> None:
+    mednafen = importlib.import_module("smb3_agent.backends.mednafen")
+    game_path = tmp_path / "private-game-file.nes"
+    game_path.write_bytes(b"fixture")
+    emulator = mednafen.MednafenProcess(game_path)
+
+    class FinishedProcess:
+        returncode = 0
+
+        @staticmethod
+        def poll() -> int:
+            return 0
+
+        @staticmethod
+        def communicate(timeout: int) -> tuple[str, None]:
+            return f"opened {game_path} with private diagnostics", None
+
+    emulator.process = FinishedProcess()
+    emulator.close()
+
+    assert str(game_path) not in emulator.output
+    assert emulator.output == "mednafen output captured (" + str(
+        len(f"opened {game_path} with private diagnostics")
+    ) + " characters; content redacted)"

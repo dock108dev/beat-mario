@@ -9,6 +9,7 @@ import yaml
 from smb3_agent.fceux_harness import AttemptSummary, BatchSummary
 from smb3_agent.goals import GoalRunResult
 from smb3_agent.lab import (
+    LabError,
     add_note_to_latest,
     build_issue_ledger_latest,
     propose_variants_from_latest,
@@ -57,6 +58,19 @@ def test_lab_note_latest_preserves_raw_text_and_infers_anchor(
     assert result.note["anchor"] == {"type": "in_game_timer", "value": 320}
     notes = yaml.safe_load(result.notes_path.read_text())
     assert notes["notes"][0]["text"] == text
+
+
+def test_latest_session_pointer_cannot_escape_artifact_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _prepare_lab(monkeypatch, tmp_path)
+    outside = tmp_path / "outside-session"
+    outside.mkdir()
+    latest = tmp_path / "artifacts/sessions/latest.txt"
+    latest.write_text(str(outside), encoding="utf-8")
+
+    with pytest.raises(LabError, match="escapes the lab artifact root"):
+        add_note_to_latest("must fail before reading outside session data")
 
 
 def test_lab_note_extracts_artifact_evidence_without_creating_actionable_issue(

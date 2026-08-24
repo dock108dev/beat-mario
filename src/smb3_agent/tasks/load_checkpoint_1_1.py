@@ -28,7 +28,7 @@ def run_load_checkpoint_1_1_task(
     slot: int,
 ) -> None:
     if not game_path.exists():
-        raise SystemExit(f"game file not found: {game_path}")
+        raise SystemExit("local game file not found")
     if not is_accessibility_trusted():
         raise SystemExit(accessibility_help())
 
@@ -55,7 +55,7 @@ def run_load_checkpoint_1_1_task(
     result = {
         "task": "load-checkpoint-1-1",
         "backend": "mednafen",
-        "game_file": str(game_path),
+        "game_file": "<redacted-local-game-file>",
         "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "startup_seconds": startup_seconds,

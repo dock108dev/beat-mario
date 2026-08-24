@@ -153,7 +153,13 @@ def test_goal_success_metrics_reject_fortress_whistle_bridge() -> None:
 
 
 def test_resolve_goal_path_accepts_id() -> None:
-    assert resolve_goal_path("world_1_king") == Path("data/goals/world_1_king.yaml")
+    assert resolve_goal_path("world_1_king") == Path("data/goals/world_1_king.yaml").resolve()
+
+
+@pytest.mark.parametrize("goal_id", ("../world_1_king", "/tmp/goal", "world-1-king"))
+def test_resolve_goal_path_rejects_non_catalog_identifiers(goal_id: str) -> None:
+    with pytest.raises(GoalValidationError, match="Invalid goal id"):
+        resolve_goal_path(goal_id)
 
 
 def test_active_product_goal_is_world_2_first_double_whistle_world_8_arrival() -> None:
@@ -397,7 +403,7 @@ def test_world_8_8_2_metrics_require_both_levels_and_reject_fortress_entry() -> 
         post_probe_events=required + ("post_probe_world_8_fortress_entered",),
     )
 
-    assert resolve_goal_path("world_8_8_2") == Path("data/goals/world_8_8_2.yaml")
+    assert resolve_goal_path("world_8_8_2") == Path("data/goals/world_8_8_2.yaml").resolve()
     assert evaluate_success_metrics(contract, accepted) is True
     assert evaluate_success_metrics(contract, missing_world_8_1_goal) is False
     assert evaluate_success_metrics(contract, fortress_entered) is False
@@ -503,7 +509,7 @@ def test_world_8_super_tanks_metrics_require_both_magic_balls_and_reject_castle(
 
     assert resolve_goal_path("world_8_super_tanks") == Path(
         "data/goals/world_8_super_tanks.yaml"
-    )
+    ).resolve()
     assert evaluate_success_metrics(contract, accepted) is True
     assert evaluate_success_metrics(contract, missing_fortress_ball) is False
     assert evaluate_success_metrics(contract, castle_entered) is False

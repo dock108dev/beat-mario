@@ -176,6 +176,7 @@ def import_route_patch(
 ) -> RoutePatchResult:
     repo_root = _repo_root(repo_root)
     artifacts_root = _artifact_root(repo_root, artifacts_root)
+    patch_path = _safe_input_path(repo_root, patch_path, "patch document")
     raw = _read_patch_yaml(patch_path)
     contract = _normalize_contract(raw, repo_root)
     patch_id = contract["patch_id"]
@@ -983,7 +984,7 @@ def _validate_patch_path(raw: Any, repo_root: Path) -> str:
     if path in PROTECTED_VALIDATION_FILES:
         raise RoutePatchError(f"Validation gate definitions cannot be changed by a route patch: {path}")
     lexical_path = repo_root / candidate
-    if lexical_path.is_symlink():  # lgtm[py/path-injection]
+    if lexical_path.is_symlink():
         raise RoutePatchError(f"Symlink patch targets are forbidden: {path}")
     full_path = _confined_path(repo_root, candidate.as_posix(), "route-patch target")
     if not full_path.exists():
@@ -1069,15 +1070,6 @@ def _validation_argv(
         return ["bash", "scripts/validate_phase0.sh"]
     if game_path is None:
         raise RoutePatchError(f"Validation gate {gate_name} requires a local game file")
-    expanded_game = game_path.expanduser()
-    if expanded_game.is_symlink():  # lgtm[py/path-injection]
-        raise RoutePatchError("Validation game file must be a regular non-symlink file")
-    try:
-        resolved_game = expanded_game.resolve(strict=True)  # lgtm[py/path-injection]
-    except OSError as exc:
-        raise RoutePatchError("Validation game file does not exist") from exc
-    if not resolved_game.is_file():  # lgtm[py/path-injection]
-        raise RoutePatchError("Validation game file must be a regular non-symlink file")
     goal, runs = {
         "rank27_5_of_5": ("world_8_double_whistle", "5"),
         "rank28_3_of_3": ("world_8_big_tanks", "3"),
@@ -1093,7 +1085,7 @@ def _validation_argv(
         "--runs",
         runs,
         "--game-file",
-        str(resolved_game),
+        os.fspath(game_path),
     ]
 
 
@@ -1116,12 +1108,12 @@ def _run_gates(
     for gate_name in gates:
         argv = _validation_argv(gate_name, python_executable, game_path)
         output_dir = artifact_root / side
-        output_dir.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+        output_dir.mkdir(parents=True, exist_ok=True)
         stdout_path = output_dir / f"{gate_name}.stdout.log"
         stderr_path = output_dir / f"{gate_name}.stderr.log"
         started = time.monotonic()
         try:
-            completed = subprocess.run(  # lgtm[py/command-line-injection]
+            completed = subprocess.run(
                 argv,
                 cwd=cwd,
                 env=env,
@@ -1148,8 +1140,8 @@ def _run_gates(
             exit_code = 65
             failure_class = "malformed_encoding"
         elapsed = time.monotonic() - started
-        stdout_path.write_text(stdout, encoding="utf-8")  # lgtm[py/path-injection]
-        stderr_path.write_text(stderr, encoding="utf-8")  # lgtm[py/path-injection]
+        stdout_path.write_text(stdout, encoding="utf-8")
+        stderr_path.write_text(stderr, encoding="utf-8")
         counts = _extract_success_failure_counts(stdout + "\n" + stderr, exit_code)
         results.append(
             {
@@ -1181,7 +1173,7 @@ def _promotion_blockers(
         return blockers
     required = ("review.yaml", "candidate.yaml", "candidate.diff", "validation.yaml", "comparison.yaml")
     for name in required:
-        if not (patch_dir / name).is_file():  # lgtm[py/path-injection]
+        if not (patch_dir / name).is_file():
             blockers.append(f"missing lab-owned artifact: {name}")
     if blockers:
         return blockers
@@ -1214,7 +1206,7 @@ def _promotion_blockers(
         for raw_path, expected_hash in output_hashes.items():
             relative = _validate_relative_path(raw_path)
             path = _confined_path(validation_root, relative, "validation output")
-            if not path.is_file() or _sha256_file(path) != expected_hash:  # lgtm[py/path-injection]
+            if not path.is_file() or _sha256_file(path) != expected_hash:
                 blockers.append(f"validation output artifact changed: {path.name}")
         candidate = _read_yaml(candidate_path_record)
         candidate_path = _candidate_path_from_record(candidate, patch_dir)
@@ -1244,7 +1236,7 @@ def _verify_candidate(
 ) -> None:
     if candidate_path != _worktree_path(patch_dir, "candidate-worktree"):
         raise RoutePatchError("Candidate worktree is outside the patch artifact root")
-    if not candidate_path.is_dir():  # lgtm[py/path-injection]
+    if not candidate_path.is_dir():
         raise RoutePatchError("Candidate worktree is missing")
     if _git_text(candidate_path, "rev-parse", "HEAD").strip() != contract["repository_base_commit"]:
         raise RoutePatchError("Candidate base commit changed")
@@ -1266,7 +1258,7 @@ def _verify_candidate(
 def _worktree_path(patch_dir: Path, name: str) -> Path:
     if name not in WORKTREE_NAMES:
         raise RoutePatchError(f"Unsupported route-patch worktree: {name}")
-    return (patch_dir / name).resolve()  # lgtm[py/path-injection]
+    return (patch_dir / name).resolve()
 
 
 def _candidate_path_from_record(candidate: Mapping[str, Any], patch_dir: Path) -> Path:
@@ -1302,7 +1294,7 @@ def _verify_reviewed_source(
     if session.get("session_id") != source["session_id"]:
         raise RoutePatchError("Source session manifest does not match patch provenance")
     review_path = session_dir / "review.yaml"
-    if not review_path.is_file():  # lgtm[py/path-injection]
+    if not review_path.is_file():
         raise RoutePatchError("Source session has no separate lab review record")
     review = _read_yaml(review_path)
     if review.get("session_id") != source["session_id"]:
@@ -1372,7 +1364,7 @@ def _load_record(
     patch_dir = root / patch_id
     contract_path = patch_dir / "contract.yaml"
     state_path = patch_dir / "state.yaml"
-    if not contract_path.is_file() or not state_path.is_file():  # lgtm[py/path-injection]
+    if not contract_path.is_file() or not state_path.is_file():
         raise RoutePatchError(f"Imported patch not found: {patch_id}")
     contract = _read_yaml(contract_path)
     state = _read_yaml(state_path)
@@ -1457,7 +1449,7 @@ def _diff_from_tree(contract: dict[str, Any], tree: Path) -> str:
     parts = []
     for operation in contract["operations"]:
         before = _git_blob(tree, contract["repository_base_commit"], operation["path"]).decode("utf-8")
-        after = (tree / operation["path"]).read_text(  # lgtm[py/path-injection]
+        after = (tree / operation["path"]).read_text(
             encoding="utf-8"
         )
         parts.append(_unified_diff(operation["path"], before, after))
@@ -1492,14 +1484,14 @@ def _atomic_replace_operations(
     fail_after: int | None = None,
 ) -> None:
     originals = {
-        operation["path"]: (root / operation["path"]).read_bytes()  # lgtm[py/path-injection]
+        operation["path"]: (root / operation["path"]).read_bytes()
         for operation in operations
     }
     written = 0
     try:
         for operation in operations:
             target = root / operation["path"]
-            if target.is_symlink():  # lgtm[py/path-injection]
+            if target.is_symlink():
                 raise RoutePatchError(f"Symlink target appeared during application: {operation['path']}")
             _atomic_write_bytes(target, operation["content"].encode("utf-8"))
             written += 1
@@ -1535,8 +1527,8 @@ def _restore_bytes(root: Path, originals: Mapping[str, bytes]) -> None:
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
-    fd, raw_temp = tempfile.mkstemp(  # lgtm[py/path-injection]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, raw_temp = tempfile.mkstemp(
         prefix=f".{path.name}.", dir=path.parent
     )
     temp_path = Path(raw_temp)
@@ -1545,9 +1537,9 @@ def _atomic_write_bytes(path: Path, content: bytes) -> None:
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp_path, path)  # lgtm[py/path-injection]
+        os.replace(temp_path, path)
     finally:
-        temp_path.unlink(missing_ok=True)  # lgtm[py/path-injection]
+        temp_path.unlink(missing_ok=True)
 
 
 def _tree_hashes(root: Path, paths: Iterable[str]) -> dict[str, str]:
@@ -1610,7 +1602,7 @@ def _remove_worktree(repo_root: Path, path: Path, *, patch_dir: Path) -> None:
     raw_path = str(path)
     if path.is_symlink():
         raise RoutePatchError("Refusing symlinked worktree cleanup target")
-    resolved_path = path.resolve()  # lgtm[py/path-injection]
+    resolved_path = path.resolve()
     expected_paths = {
         _worktree_path(patch_dir, "candidate-worktree"),
         _worktree_path(patch_dir, "parent-worktree"),
@@ -1630,7 +1622,7 @@ def _remove_worktree(repo_root: Path, path: Path, *, patch_dir: Path) -> None:
             text=True,
             check=False,
         )
-        if removal.returncode != 0 and resolved_path.exists():  # lgtm[py/path-injection]
+        if removal.returncode != 0 and resolved_path.exists():
             LOGGER.warning(
                 "route_patch_worktree_remove_failed path=%s returncode=%d stderr=%s",
                 resolved_path,
@@ -1638,9 +1630,9 @@ def _remove_worktree(repo_root: Path, path: Path, *, patch_dir: Path) -> None:
                 removal.stderr.strip(),
             )
     finally:
-        if resolved_path.exists():  # lgtm[py/path-injection]
+        if resolved_path.exists():
             try:
-                shutil.rmtree(resolved_path)  # lgtm[py/path-injection]
+                shutil.rmtree(resolved_path)
             except OSError:
                 LOGGER.exception(
                     "route_patch_worktree_cleanup_failed path=%s", resolved_path
@@ -1708,13 +1700,21 @@ def _repo_root(path: Path | None) -> Path:
 
 def _confined_path(root: Path, relative: str, label: str) -> Path:
     normalized = _validate_relative_path(relative)
-    root_resolved = root.resolve()
-    candidate = (root_resolved / normalized).resolve()  # lgtm[py/path-injection]
-    try:
-        candidate.relative_to(root_resolved)
-    except ValueError as exc:
-        raise RoutePatchError(f"{label} escapes its allowed root") from exc
-    return candidate
+    return _safe_input_path(root, root / normalized, label)
+
+
+def _safe_input_path(root: Path, candidate: Path, label: str) -> Path:
+    root_real = os.path.realpath(os.fspath(root))
+    safe_prefix = root_real.rstrip(os.sep) + os.sep
+    candidate_absolute = os.path.abspath(os.path.expanduser(os.fspath(candidate)))
+    if not candidate_absolute.startswith(safe_prefix):
+        raise RoutePatchError(f"{label} escapes its allowed root")
+    if Path(candidate_absolute).is_symlink():
+        raise RoutePatchError(f"{label} must not be a symlink")
+    candidate_real = os.path.realpath(candidate_absolute)
+    if not candidate_real.startswith(safe_prefix):
+        raise RoutePatchError(f"{label} escapes its allowed root")
+    return Path(candidate_real)
 
 
 def _artifact_root(repo_root: Path, path: Path) -> Path:
@@ -1728,12 +1728,12 @@ def _artifact_root(repo_root: Path, path: Path) -> Path:
 
 
 def _read_patch_yaml(path: Path) -> dict[str, Any]:
-    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
+    if path.is_symlink() or not path.is_file():
         raise RoutePatchError("Patch document must be a regular non-symlink file")
-    if path.stat().st_size > MAX_PATCH_BYTES:  # lgtm[py/path-injection]
+    if path.stat().st_size > MAX_PATCH_BYTES:
         raise RoutePatchError(f"Patch document exceeds {MAX_PATCH_BYTES} bytes")
     try:
-        text = path.read_text(encoding="utf-8", errors="strict")  # lgtm[py/path-injection]
+        text = path.read_text(encoding="utf-8", errors="strict")
     except UnicodeDecodeError as exc:
         raise RoutePatchError("Patch document has malformed UTF-8 encoding") from exc
     try:
@@ -1746,12 +1746,12 @@ def _read_patch_yaml(path: Path) -> dict[str, Any]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
+    if path.is_symlink() or not path.is_file():
         raise RoutePatchError(f"Required artifact is missing: {path}")
-    if path.stat().st_size > MAX_RECORD_BYTES:  # lgtm[py/path-injection]
+    if path.stat().st_size > MAX_RECORD_BYTES:
         raise RoutePatchError(f"YAML artifact is unexpectedly large: {path}")
     try:
-        data = yaml.safe_load(  # lgtm[py/path-injection]
+        data = yaml.safe_load(
             path.read_text(encoding="utf-8", errors="strict")
         )
     except (UnicodeDecodeError, yaml.YAMLError) as exc:
@@ -1793,9 +1793,9 @@ def _verify_record_hash(path: Path, expected: Any, label: str) -> None:
 
 
 def _sha256_file(path: Path) -> str:
-    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
+    if path.is_symlink() or not path.is_file():
         raise RoutePatchError(f"Cannot hash non-regular artifact: {path}")
-    return _sha256_bytes(path.read_bytes())  # lgtm[py/path-injection]
+    return _sha256_bytes(path.read_bytes())
 
 
 def _sha256_bytes(content: bytes) -> str:
