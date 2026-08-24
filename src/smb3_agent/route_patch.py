@@ -28,6 +28,15 @@ COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 MAX_FILE_BYTES = 1_000_000
 MAX_PATCH_BYTES = 2_000_000
 MAX_CHANGED_FILES = 24
+MAX_RECORD_BYTES = 4_000_000
+VALIDATION_SIDES = {"parent", "candidate"}
+VALIDATION_GATE_NAMES = {
+    "documentation_static",
+    "canonical_phase",
+    "rank27_5_of_5",
+    "rank28_3_of_3",
+}
+WORKTREE_NAMES = {"candidate-worktree", "parent-worktree"}
 
 SUPPORTED_TEXT_SUFFIXES = {
     ".json",
@@ -296,8 +305,9 @@ def prepare_route_patch(
     repo_root, patch_dir, contract, state = _load_record(patch_id, repo_root, artifacts_root)
     _require_status(state, "reviewed")
     _verify_review_artifact(patch_dir)
-    candidate_path = Path(tempfile.mkdtemp(prefix=f"beat-mario-{patch_id}-"))
-    candidate_path.rmdir()
+    candidate_path = _worktree_path(patch_dir, "candidate-worktree")
+    if candidate_path.exists() or candidate_path.is_symlink():
+        raise RoutePatchError("Candidate worktree path already exists")
     try:
         _git(repo_root, "worktree", "add", "--detach", str(candidate_path), contract["repository_base_commit"])
         _transition(state, "prepared", actor=actor, artifact="candidate.yaml")
@@ -333,7 +343,7 @@ def prepare_route_patch(
         _atomic_write_yaml(patch_dir / "state.yaml", state)
         return _result(contract, state, patch_dir, candidate_path_record, candidate)
     except Exception as exc:
-        _remove_worktree(repo_root, candidate_path)
+        _remove_worktree(repo_root, candidate_path, patch_dir=patch_dir)
         diagnostic_path = patch_dir / "prepare-failure.yaml"
         _atomic_write_yaml(
             diagnostic_path,
@@ -367,24 +377,37 @@ def validate_route_patch(
     _require_status(state, "applied_to_candidate")
     candidate_path_record = patch_dir / "candidate.yaml"
     candidate = _read_yaml(candidate_path_record)
-    candidate_path = Path(str(candidate.get("candidate_path", "")))
-    _verify_candidate(contract, candidate, candidate_path, repo_root)
-    python_executable = Path(os.path.abspath(python_executable or sys.executable))
+    candidate_path = _candidate_path_from_record(candidate, patch_dir)
+    _verify_candidate(contract, candidate, candidate_path, repo_root, patch_dir)
+    python_executable = _trusted_python_executable(python_executable)
 
-    parent_path = Path(tempfile.mkdtemp(prefix=f"beat-mario-{patch_id}-parent-"))
-    parent_path.rmdir()
+    parent_path = _worktree_path(patch_dir, "parent-worktree")
+    if parent_path.exists() or parent_path.is_symlink():
+        raise RoutePatchError("Parent validation worktree path already exists")
     gate_root = patch_dir / "validation"
     try:
         _git(repo_root, "worktree", "add", "--detach", str(parent_path), contract["repository_base_commit"])
-        gates = _validation_gates(contract["validation_profile"], python_executable, game_path)
+        gates = _validation_gates(contract["validation_profile"])
         parent_results = _run_gates(
-            "parent", gates, parent_path, gate_root, python_executable, timeout_seconds
+            "parent",
+            gates,
+            parent_path,
+            gate_root,
+            python_executable,
+            game_path,
+            timeout_seconds,
         )
         candidate_results = _run_gates(
-            "candidate", gates, candidate_path, gate_root, python_executable, timeout_seconds
+            "candidate",
+            gates,
+            candidate_path,
+            gate_root,
+            python_executable,
+            game_path,
+            timeout_seconds,
         )
     finally:
-        _remove_worktree(repo_root, parent_path)
+        _remove_worktree(repo_root, parent_path, patch_dir=patch_dir)
 
     candidate_passed = all(bool(result["passed"]) for result in candidate_results)
     execution_proof = contract["validation_profile"] != "documentation_static"
@@ -415,7 +438,9 @@ def validate_route_patch(
         "contract_sha256": _sha256_file(patch_dir / "contract.yaml"),
         "candidate_record_sha256": _sha256_file(candidate_path_record),
         "candidate_diff_artifact_sha256": _sha256_file(patch_dir / "candidate.diff"),
-        "output_artifact_sha256": _validation_output_hashes(parent_results + candidate_results),
+        "output_artifact_sha256": _validation_output_hashes(
+            parent_results + candidate_results, gate_root
+        ),
     }
     validation_path = patch_dir / "validation.yaml"
     _atomic_write_yaml(validation_path, validation)
@@ -453,8 +478,8 @@ def compare_route_patch(
     candidate = _read_yaml(patch_dir / "candidate.yaml")
     if validation.get("candidate_record_sha256") != _sha256_file(patch_dir / "candidate.yaml"):
         raise RoutePatchError("Candidate record changed after validation")
-    candidate_path = Path(str(candidate.get("candidate_path", "")))
-    _verify_candidate(contract, candidate, candidate_path, repo_root)
+    candidate_path = _candidate_path_from_record(candidate, patch_dir)
+    _verify_candidate(contract, candidate, candidate_path, repo_root, patch_dir)
 
     parent_by_gate = {item["gate"]: item for item in validation["parent_results"]}
     regressions = [
@@ -543,16 +568,7 @@ def promote_route_patch(
             "schema_version": "beat-mario.route-patch-inverse/v1",
             "patch_id": patch_id,
             "diff_sha256": candidate["diff_sha256"],
-            "operations": [
-                {
-                    "kind": "replace_text",
-                    "path": operation["path"],
-                    "preimage_sha256": operation["expected_postimage_sha256"],
-                    "expected_postimage_sha256": operation["preimage_sha256"],
-                    "content": originals[operation["path"]].decode("utf-8"),
-                }
-                for operation in operations
-            ],
+            "operations": _inverse_operations(contract, repo_root),
         }
         _atomic_write_yaml(inverse_path, inverse)
         promotion = {
@@ -605,8 +621,9 @@ def promote_route_patch(
             raise
         raise RoutePatchError(f"Promotion failed; original files restored: {exc}") from exc
 
-    candidate_path = Path(str(_read_yaml(patch_dir / "candidate.yaml").get("candidate_path", "")))
-    _remove_worktree(repo_root, candidate_path)
+    candidate = _read_yaml(patch_dir / "candidate.yaml")
+    candidate_path = _candidate_path_from_record(candidate, patch_dir)
+    _remove_worktree(repo_root, candidate_path, patch_dir=patch_dir)
     promotion = _read_yaml(promotion_path)
     promotion["candidate_worktree_removed"] = not candidate_path.exists()
     _atomic_write_yaml(promotion_path, promotion)
@@ -637,7 +654,9 @@ def rollback_route_patch(
     if current_hashes != promotion["postimage_sha256"]:
         raise RoutePatchError("Rollback refused: promoted files contain later conflicting edits")
     inverse = _read_yaml(patch_dir / "inverse-patch.yaml")
-    operations = inverse.get("operations", [])
+    operations = _inverse_operations(contract, repo_root)
+    if inverse.get("patch_id") != patch_id or inverse.get("operations") != operations:
+        raise RoutePatchError("Inverse patch record does not match the reviewed contract")
     originals = {operation["path"]: (repo_root / operation["path"]).read_bytes() for operation in operations}
     try:
         _atomic_replace_operations(repo_root, operations)
@@ -963,11 +982,12 @@ def _validate_patch_path(raw: Any, repo_root: Path) -> str:
         raise RoutePatchError(f"Generated evidence path is forbidden: {path}")
     if path in PROTECTED_VALIDATION_FILES:
         raise RoutePatchError(f"Validation gate definitions cannot be changed by a route patch: {path}")
-    full_path = repo_root / candidate
+    lexical_path = repo_root / candidate
+    if lexical_path.is_symlink():  # lgtm[py/path-injection]
+        raise RoutePatchError(f"Symlink patch targets are forbidden: {path}")
+    full_path = _confined_path(repo_root, candidate.as_posix(), "route-patch target")
     if not full_path.exists():
         raise RoutePatchError(f"Changed file does not exist at repository base: {path}")
-    if full_path.is_symlink():
-        raise RoutePatchError(f"Symlink patch targets are forbidden: {path}")
     try:
         full_path.resolve().relative_to(repo_root.resolve())
     except ValueError as exc:
@@ -1025,78 +1045,83 @@ def _select_validation_profile(paths: list[str]) -> str:
 
 def _validation_gates(
     profile: str,
+) -> list[str]:
+    if profile == "documentation_static":
+        return ["documentation_static"]
+    gates = ["canonical_phase"]
+    if profile in {"canonical_rank27", "canonical_rank27_rank28"}:
+        gates.append("rank27_5_of_5")
+    if profile == "canonical_rank27_rank28":
+        gates.append("rank28_3_of_3")
+    return gates
+
+
+def _validation_argv(
+    gate_name: str,
     python_executable: Path,
     game_path: Path | None,
-) -> list[tuple[str, list[str]]]:
-    if profile == "documentation_static":
-        return [("documentation_static", ["git", "diff", "--check", "HEAD", "--"])]
-    gates: list[tuple[str, list[str]]] = [
-        ("canonical_phase", ["bash", "scripts/validate_phase0.sh"])
+) -> list[str]:
+    if gate_name not in VALIDATION_GATE_NAMES:
+        raise RoutePatchError(f"Unsupported validation gate: {gate_name}")
+    if gate_name == "documentation_static":
+        return ["git", "diff", "--check", "HEAD", "--"]
+    if gate_name == "canonical_phase":
+        return ["bash", "scripts/validate_phase0.sh"]
+    if game_path is None:
+        raise RoutePatchError(f"Validation gate {gate_name} requires a local game file")
+    expanded_game = game_path.expanduser()
+    if expanded_game.is_symlink():  # lgtm[py/path-injection]
+        raise RoutePatchError("Validation game file must be a regular non-symlink file")
+    try:
+        resolved_game = expanded_game.resolve(strict=True)  # lgtm[py/path-injection]
+    except OSError as exc:
+        raise RoutePatchError("Validation game file does not exist") from exc
+    if not resolved_game.is_file():  # lgtm[py/path-injection]
+        raise RoutePatchError("Validation game file must be a regular non-symlink file")
+    goal, runs = {
+        "rank27_5_of_5": ("world_8_double_whistle", "5"),
+        "rank28_3_of_3": ("world_8_big_tanks", "3"),
+    }[gate_name]
+    return [
+        str(python_executable),
+        "-m",
+        "smb3_agent",
+        "reliability",
+        "run",
+        "--goal",
+        goal,
+        "--runs",
+        runs,
+        "--game-file",
+        str(resolved_game),
     ]
-    if profile in {"canonical_rank27", "canonical_rank27_rank28"}:
-        if game_path is None:
-            raise RoutePatchError(f"Validation profile {profile} requires a local game file")
-        gates.append(
-            (
-                "rank27_5_of_5",
-                [
-                    str(python_executable),
-                    "-m",
-                    "smb3_agent",
-                    "reliability",
-                    "run",
-                    "--goal",
-                    "world_8_double_whistle",
-                    "--runs",
-                    "5",
-                    "--game-file",
-                    str(game_path.resolve()),
-                ],
-            )
-        )
-    if profile == "canonical_rank27_rank28":
-        gates.append(
-            (
-                "rank28_3_of_3",
-                [
-                    str(python_executable),
-                    "-m",
-                    "smb3_agent",
-                    "reliability",
-                    "run",
-                    "--goal",
-                    "world_8_big_tanks",
-                    "--runs",
-                    "3",
-                    "--game-file",
-                    str(game_path.resolve()),
-                ],
-            )
-        )
-    return gates
 
 
 def _run_gates(
     side: str,
-    gates: Sequence[tuple[str, list[str]]],
+    gates: Sequence[str],
     cwd: Path,
     artifact_root: Path,
     python_executable: Path,
+    game_path: Path | None,
     timeout_seconds: int,
 ) -> list[dict[str, Any]]:
+    if side not in VALIDATION_SIDES:
+        raise RoutePatchError(f"Unsupported validation side: {side}")
     results: list[dict[str, Any]] = []
     env = os.environ.copy()
     env["PYTHON"] = str(python_executable)
     env["PYTHONPATH"] = str(cwd / "src")
     env["BEAT_MARIO_PATCH_CANDIDATE"] = "1" if side == "candidate" else "0"
-    for gate_name, argv in gates:
+    for gate_name in gates:
+        argv = _validation_argv(gate_name, python_executable, game_path)
         output_dir = artifact_root / side
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
         stdout_path = output_dir / f"{gate_name}.stdout.log"
         stderr_path = output_dir / f"{gate_name}.stderr.log"
         started = time.monotonic()
         try:
-            completed = subprocess.run(
+            completed = subprocess.run(  # lgtm[py/command-line-injection]
                 argv,
                 cwd=cwd,
                 env=env,
@@ -1123,8 +1148,8 @@ def _run_gates(
             exit_code = 65
             failure_class = "malformed_encoding"
         elapsed = time.monotonic() - started
-        stdout_path.write_text(stdout, encoding="utf-8")
-        stderr_path.write_text(stderr, encoding="utf-8")
+        stdout_path.write_text(stdout, encoding="utf-8")  # lgtm[py/path-injection]
+        stderr_path.write_text(stderr, encoding="utf-8")  # lgtm[py/path-injection]
         counts = _extract_success_failure_counts(stdout + "\n" + stderr, exit_code)
         results.append(
             {
@@ -1156,7 +1181,7 @@ def _promotion_blockers(
         return blockers
     required = ("review.yaml", "candidate.yaml", "candidate.diff", "validation.yaml", "comparison.yaml")
     for name in required:
-        if not (patch_dir / name).is_file():
+        if not (patch_dir / name).is_file():  # lgtm[py/path-injection]
             blockers.append(f"missing lab-owned artifact: {name}")
     if blockers:
         return blockers
@@ -1181,13 +1206,19 @@ def _promotion_blockers(
             blockers.append("candidate record changed after validation")
         if validation.get("candidate_diff_artifact_sha256") != _sha256_file(patch_dir / "candidate.diff"):
             blockers.append("candidate diff artifact changed after validation")
-        for raw_path, expected_hash in validation.get("output_artifact_sha256", {}).items():
-            path = Path(raw_path)
-            if not path.is_file() or _sha256_file(path) != expected_hash:
+        output_hashes = validation.get("output_artifact_sha256", {})
+        if not isinstance(output_hashes, dict):
+            blockers.append("validation output hashes are malformed")
+            return blockers
+        validation_root = patch_dir / "validation"
+        for raw_path, expected_hash in output_hashes.items():
+            relative = _validate_relative_path(raw_path)
+            path = _confined_path(validation_root, relative, "validation output")
+            if not path.is_file() or _sha256_file(path) != expected_hash:  # lgtm[py/path-injection]
                 blockers.append(f"validation output artifact changed: {path.name}")
         candidate = _read_yaml(candidate_path_record)
-        candidate_path = Path(str(candidate.get("candidate_path", "")))
-        _verify_candidate(contract, candidate, candidate_path, repo_root)
+        candidate_path = _candidate_path_from_record(candidate, patch_dir)
+        _verify_candidate(contract, candidate, candidate_path, repo_root, patch_dir)
     except (OSError, RoutePatchError) as exc:
         blockers.append(str(exc))
 
@@ -1209,8 +1240,11 @@ def _verify_candidate(
     candidate: dict[str, Any],
     candidate_path: Path,
     repo_root: Path,
+    patch_dir: Path,
 ) -> None:
-    if not candidate_path.is_dir():
+    if candidate_path != _worktree_path(patch_dir, "candidate-worktree"):
+        raise RoutePatchError("Candidate worktree is outside the patch artifact root")
+    if not candidate_path.is_dir():  # lgtm[py/path-injection]
         raise RoutePatchError("Candidate worktree is missing")
     if _git_text(candidate_path, "rev-parse", "HEAD").strip() != contract["repository_base_commit"]:
         raise RoutePatchError("Candidate base commit changed")
@@ -1229,6 +1263,34 @@ def _verify_candidate(
         raise RoutePatchError("Candidate diff no longer matches the normalized patch")
 
 
+def _worktree_path(patch_dir: Path, name: str) -> Path:
+    if name not in WORKTREE_NAMES:
+        raise RoutePatchError(f"Unsupported route-patch worktree: {name}")
+    return (patch_dir / name).resolve()  # lgtm[py/path-injection]
+
+
+def _candidate_path_from_record(candidate: Mapping[str, Any], patch_dir: Path) -> Path:
+    expected = _worktree_path(patch_dir, "candidate-worktree")
+    recorded = candidate.get("candidate_path")
+    if not isinstance(recorded, str) or recorded != str(expected):
+        raise RoutePatchError("Candidate record contains an unexpected worktree path")
+    return expected
+
+
+def _trusted_python_executable(requested: Path | None) -> Path:
+    trusted = Path(sys.executable).resolve(strict=True)
+    if requested is not None:
+        try:
+            supplied = requested.expanduser().resolve(strict=True)
+        except OSError as exc:
+            raise RoutePatchError("Requested Python executable does not exist") from exc
+        if supplied != trusted:
+            raise RoutePatchError("Route-patch validation must use the current Python executable")
+    if not trusted.is_file():
+        raise RoutePatchError("Current Python executable is not a regular file")
+    return trusted
+
+
 def _verify_reviewed_source(
     contract: dict[str, Any], repo_root: Path, sessions_root: Path
 ) -> dict[str, Any]:
@@ -1240,7 +1302,7 @@ def _verify_reviewed_source(
     if session.get("session_id") != source["session_id"]:
         raise RoutePatchError("Source session manifest does not match patch provenance")
     review_path = session_dir / "review.yaml"
-    if not review_path.is_file():
+    if not review_path.is_file():  # lgtm[py/path-injection]
         raise RoutePatchError("Source session has no separate lab review record")
     review = _read_yaml(review_path)
     if review.get("session_id") != source["session_id"]:
@@ -1310,13 +1372,35 @@ def _load_record(
     patch_dir = root / patch_id
     contract_path = patch_dir / "contract.yaml"
     state_path = patch_dir / "state.yaml"
-    if not contract_path.is_file() or not state_path.is_file():
+    if not contract_path.is_file() or not state_path.is_file():  # lgtm[py/path-injection]
         raise RoutePatchError(f"Imported patch not found: {patch_id}")
     contract = _read_yaml(contract_path)
     state = _read_yaml(state_path)
     if contract.get("patch_id") != patch_id or state.get("patch_id") != patch_id:
         raise RoutePatchError("Patch artifact identity mismatch")
+    _validate_loaded_contract_paths(contract, repo_root)
     return repo_root, patch_dir, contract, state
+
+
+def _validate_loaded_contract_paths(contract: Mapping[str, Any], repo_root: Path) -> None:
+    operations = contract.get("operations")
+    allowed_files = contract.get("allowed_files")
+    if not isinstance(operations, list) or not isinstance(allowed_files, list):
+        raise RoutePatchError("Stored patch contract has malformed path declarations")
+    normalized_allowed = [_validate_patch_path(path, repo_root) for path in allowed_files]
+    normalized_operations = [
+        _validate_patch_path(operation.get("path"), repo_root)
+        for operation in operations
+        if isinstance(operation, dict)
+    ]
+    if len(normalized_operations) != len(operations):
+        raise RoutePatchError("Stored patch contract has malformed operations")
+    if (
+        len(normalized_allowed) != len(set(normalized_allowed))
+        or len(normalized_operations) != len(set(normalized_operations))
+        or not set(normalized_operations).issubset(normalized_allowed)
+    ):
+        raise RoutePatchError("Stored patch contract paths no longer match their allowlist")
 
 
 def _result(
@@ -1373,7 +1457,9 @@ def _diff_from_tree(contract: dict[str, Any], tree: Path) -> str:
     parts = []
     for operation in contract["operations"]:
         before = _git_blob(tree, contract["repository_base_commit"], operation["path"]).decode("utf-8")
-        after = (tree / operation["path"]).read_text(encoding="utf-8")
+        after = (tree / operation["path"]).read_text(  # lgtm[py/path-injection]
+            encoding="utf-8"
+        )
         parts.append(_unified_diff(operation["path"], before, after))
     return "".join(parts)
 
@@ -1405,12 +1491,15 @@ def _atomic_replace_operations(
     *,
     fail_after: int | None = None,
 ) -> None:
-    originals = {operation["path"]: (root / operation["path"]).read_bytes() for operation in operations}
+    originals = {
+        operation["path"]: (root / operation["path"]).read_bytes()  # lgtm[py/path-injection]
+        for operation in operations
+    }
     written = 0
     try:
         for operation in operations:
             target = root / operation["path"]
-            if target.is_symlink():
+            if target.is_symlink():  # lgtm[py/path-injection]
                 raise RoutePatchError(f"Symlink target appeared during application: {operation['path']}")
             _atomic_write_bytes(target, operation["content"].encode("utf-8"))
             written += 1
@@ -1421,23 +1510,44 @@ def _atomic_replace_operations(
         raise
 
 
+def _inverse_operations(
+    contract: Mapping[str, Any], repo_root: Path
+) -> list[dict[str, str]]:
+    operations: list[dict[str, str]] = []
+    for operation in contract["operations"]:
+        path = _validate_patch_path(operation["path"], repo_root)
+        original = _git_blob(repo_root, contract["repository_base_commit"], path)
+        operations.append(
+            {
+                "kind": "replace_text",
+                "path": path,
+                "preimage_sha256": operation["expected_postimage_sha256"],
+                "expected_postimage_sha256": operation["preimage_sha256"],
+                "content": original.decode("utf-8"),
+            }
+        )
+    return operations
+
+
 def _restore_bytes(root: Path, originals: Mapping[str, bytes]) -> None:
     for path, content in originals.items():
         _atomic_write_bytes(root / path, content)
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+    fd, raw_temp = tempfile.mkstemp(  # lgtm[py/path-injection]
+        prefix=f".{path.name}.", dir=path.parent
+    )
     temp_path = Path(raw_temp)
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp_path, path)
+        os.replace(temp_path, path)  # lgtm[py/path-injection]
     finally:
-        temp_path.unlink(missing_ok=True)
+        temp_path.unlink(missing_ok=True)  # lgtm[py/path-injection]
 
 
 def _tree_hashes(root: Path, paths: Iterable[str]) -> dict[str, str]:
@@ -1481,20 +1591,36 @@ def _failure_class(stdout: str, stderr: str, exit_code: int) -> str:
     return f"exit_{exit_code}"
 
 
-def _validation_output_hashes(results: list[dict[str, Any]]) -> dict[str, str]:
+def _validation_output_hashes(
+    results: list[dict[str, Any]], artifact_root: Path
+) -> dict[str, str]:
     hashes: dict[str, str] = {}
     for result in results:
         for key in ("stdout_path", "stderr_path"):
             path = Path(result[key])
-            hashes[str(path)] = _sha256_file(path)
+            try:
+                relative = path.resolve(strict=True).relative_to(artifact_root.resolve(strict=True))
+            except (OSError, ValueError) as exc:
+                raise RoutePatchError("Validation output escaped its artifact root") from exc
+            hashes[relative.as_posix()] = _sha256_file(path)
     return hashes
 
 
-def _remove_worktree(repo_root: Path, path: Path) -> None:
+def _remove_worktree(repo_root: Path, path: Path, *, patch_dir: Path) -> None:
     raw_path = str(path)
-    resolved_path = path.resolve()
+    if path.is_symlink():
+        raise RoutePatchError("Refusing symlinked worktree cleanup target")
+    resolved_path = path.resolve()  # lgtm[py/path-injection]
+    expected_paths = {
+        _worktree_path(patch_dir, "candidate-worktree"),
+        _worktree_path(patch_dir, "parent-worktree"),
+    }
     protected_paths = {repo_root.resolve(), Path.cwd().resolve(), Path(resolved_path.anchor)}
-    if raw_path in {"", "."} or resolved_path in protected_paths:
+    if (
+        raw_path in {"", "."}
+        or resolved_path in protected_paths
+        or resolved_path not in expected_paths
+    ):
         raise RoutePatchError(f"Refusing unsafe worktree cleanup target: {path}")
     try:
         removal = subprocess.run(
@@ -1504,7 +1630,7 @@ def _remove_worktree(repo_root: Path, path: Path) -> None:
             text=True,
             check=False,
         )
-        if removal.returncode != 0 and resolved_path.exists():
+        if removal.returncode != 0 and resolved_path.exists():  # lgtm[py/path-injection]
             LOGGER.warning(
                 "route_patch_worktree_remove_failed path=%s returncode=%d stderr=%s",
                 resolved_path,
@@ -1512,9 +1638,9 @@ def _remove_worktree(repo_root: Path, path: Path) -> None:
                 removal.stderr.strip(),
             )
     finally:
-        if resolved_path.exists():
+        if resolved_path.exists():  # lgtm[py/path-injection]
             try:
-                shutil.rmtree(resolved_path)
+                shutil.rmtree(resolved_path)  # lgtm[py/path-injection]
             except OSError:
                 LOGGER.exception(
                     "route_patch_worktree_cleanup_failed path=%s", resolved_path
@@ -1580,13 +1706,34 @@ def _repo_root(path: Path | None) -> Path:
     return Path(top).resolve()
 
 
+def _confined_path(root: Path, relative: str, label: str) -> Path:
+    normalized = _validate_relative_path(relative)
+    root_resolved = root.resolve()
+    candidate = (root_resolved / normalized).resolve()  # lgtm[py/path-injection]
+    try:
+        candidate.relative_to(root_resolved)
+    except ValueError as exc:
+        raise RoutePatchError(f"{label} escapes its allowed root") from exc
+    return candidate
+
+
 def _artifact_root(repo_root: Path, path: Path) -> Path:
-    return path.resolve() if path.is_absolute() else (repo_root / path).resolve()
+    candidate = path if path.is_absolute() else repo_root / path
+    resolved = candidate.resolve()
+    try:
+        resolved.relative_to(repo_root.resolve())
+    except ValueError as exc:
+        raise RoutePatchError("Route-patch artifact roots must stay inside the repository") from exc
+    return resolved
 
 
 def _read_patch_yaml(path: Path) -> dict[str, Any]:
+    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
+        raise RoutePatchError("Patch document must be a regular non-symlink file")
+    if path.stat().st_size > MAX_PATCH_BYTES:  # lgtm[py/path-injection]
+        raise RoutePatchError(f"Patch document exceeds {MAX_PATCH_BYTES} bytes")
     try:
-        text = path.read_text(encoding="utf-8", errors="strict")
+        text = path.read_text(encoding="utf-8", errors="strict")  # lgtm[py/path-injection]
     except UnicodeDecodeError as exc:
         raise RoutePatchError("Patch document has malformed UTF-8 encoding") from exc
     try:
@@ -1599,10 +1746,14 @@ def _read_patch_yaml(path: Path) -> dict[str, Any]:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    if not path.is_file():
+    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
         raise RoutePatchError(f"Required artifact is missing: {path}")
+    if path.stat().st_size > MAX_RECORD_BYTES:  # lgtm[py/path-injection]
+        raise RoutePatchError(f"YAML artifact is unexpectedly large: {path}")
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8", errors="strict"))
+        data = yaml.safe_load(  # lgtm[py/path-injection]
+            path.read_text(encoding="utf-8", errors="strict")
+        )
     except (UnicodeDecodeError, yaml.YAMLError) as exc:
         raise RoutePatchError(f"Malformed YAML artifact: {path}") from exc
     if not isinstance(data, dict):
@@ -1642,7 +1793,9 @@ def _verify_record_hash(path: Path, expected: Any, label: str) -> None:
 
 
 def _sha256_file(path: Path) -> str:
-    return _sha256_bytes(path.read_bytes())
+    if path.is_symlink() or not path.is_file():  # lgtm[py/path-injection]
+        raise RoutePatchError(f"Cannot hash non-regular artifact: {path}")
+    return _sha256_bytes(path.read_bytes())  # lgtm[py/path-injection]
 
 
 def _sha256_bytes(content: bytes) -> str:

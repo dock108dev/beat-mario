@@ -48,9 +48,10 @@ def test_corrupt_patch_record_is_skipped_with_actionable_warning(
 
 def test_worktree_cleanup_refuses_current_directory(tmp_path: Path) -> None:
     repo, _, _ = _patch_fixture(tmp_path)
+    patch_dir = repo / "artifacts/route-patches/fixture-patch-001"
 
     with pytest.raises(RoutePatchError, match="unsafe worktree cleanup target"):
-        _remove_worktree(repo, Path("."))
+        _remove_worktree(repo, Path("."), patch_dir=patch_dir)
 
 
 def test_disposable_patch_executes_candidate_promotes_and_rolls_back(tmp_path: Path) -> None:
@@ -120,6 +121,80 @@ def test_candidate_validation_refuses_removed_patch_instead_of_running_parent(tm
 
     with pytest.raises(RoutePatchError, match="Candidate contains unreviewed or missing"):
         validate_route_patch(patch_id, repo_root=repo)
+
+
+def test_candidate_record_cannot_redirect_validation_or_cleanup(tmp_path: Path) -> None:
+    repo, patch_path, _ = _patch_fixture(tmp_path)
+    patch_id = import_route_patch(patch_path, repo_root=repo).patch_id
+    review_route_patch(patch_id, repo_root=repo)
+    prepared = prepare_route_patch(patch_id, repo_root=repo)
+    candidate_record = prepared.artifact_path
+    candidate = yaml.safe_load(candidate_record.read_text())
+    candidate["candidate_path"] = str(repo)
+    candidate_record.write_text(yaml.safe_dump(candidate, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(RoutePatchError, match="unexpected worktree path"):
+        validate_route_patch(patch_id, repo_root=repo)
+    assert repo.is_dir()
+
+
+def test_validation_record_cannot_redirect_output_hashing(tmp_path: Path) -> None:
+    repo, patch_path, _ = _patch_fixture(tmp_path)
+    patch_id = _validated_patch(repo, patch_path)
+    compare_route_patch(patch_id, repo_root=repo)
+    patch_dir = repo / "artifacts/route-patches" / patch_id
+    validation_path = patch_dir / "validation.yaml"
+    validation = yaml.safe_load(validation_path.read_text())
+    validation["output_artifact_sha256"] = {"../../outside.txt": "0" * 64}
+    validation_path.write_text(yaml.safe_dump(validation, sort_keys=False), encoding="utf-8")
+    state_path = patch_dir / "state.yaml"
+    state = yaml.safe_load(state_path.read_text())
+    state["validation_record_sha256"] = _sha(validation_path.read_bytes())
+    state_path.write_text(yaml.safe_dump(state, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(RoutePatchError, match="Path traversal"):
+        promote_route_patch(patch_id, confirm_patch_id=patch_id, repo_root=repo)
+
+
+def test_validation_rejects_substitute_python_executable(tmp_path: Path) -> None:
+    repo, patch_path, _ = _patch_fixture(tmp_path)
+    patch_id = import_route_patch(patch_path, repo_root=repo).patch_id
+    review_route_patch(patch_id, repo_root=repo)
+    prepare_route_patch(patch_id, repo_root=repo)
+
+    with pytest.raises(RoutePatchError, match="current Python executable"):
+        validate_route_patch(patch_id, repo_root=repo, python_executable=Path("/bin/sh"))
+
+
+def test_rollback_rejects_tampered_inverse_paths(tmp_path: Path) -> None:
+    repo, patch_path, _ = _patch_fixture(tmp_path)
+    patch_id = _validated_patch(repo, patch_path)
+    compare_route_patch(patch_id, repo_root=repo)
+    promote_route_patch(patch_id, confirm_patch_id=patch_id, repo_root=repo)
+    inverse_path = repo / "artifacts/route-patches" / patch_id / "inverse-patch.yaml"
+    inverse = yaml.safe_load(inverse_path.read_text())
+    inverse["operations"][0]["path"] = "../outside.py"
+    inverse_path.write_text(yaml.safe_dump(inverse, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(RoutePatchError, match="does not match the reviewed contract"):
+        rollback_route_patch(
+            patch_id,
+            confirm_patch_id=patch_id,
+            reason="tampered inverse must fail closed",
+            repo_root=repo,
+        )
+
+
+def test_import_rejects_symlinked_patch_document_and_external_artifact_root(
+    tmp_path: Path,
+) -> None:
+    repo, patch_path, _ = _patch_fixture(tmp_path)
+    linked_patch = tmp_path / "linked-patch.yaml"
+    linked_patch.symlink_to(patch_path)
+    with pytest.raises(RoutePatchError, match="regular non-symlink"):
+        import_route_patch(linked_patch, repo_root=repo)
+    with pytest.raises(RoutePatchError, match="inside the repository"):
+        import_route_patch(patch_path, repo_root=repo, artifacts_root=tmp_path / "outside")
 
 
 def test_unreviewed_patch_cannot_prepare_or_promote(tmp_path: Path) -> None:
