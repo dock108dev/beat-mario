@@ -43,7 +43,7 @@ jobs:
       - name: Install locked development dependencies
         run: uv sync --locked --all-extras
 
-      - name: Run canonical ROM-free gate
+      - name: Run canonical repository gate
         run: PYTHON=.venv/bin/python scripts/validate_phase0.sh
 
   dependency-review:

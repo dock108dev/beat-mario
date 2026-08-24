@@ -1472,4 +1472,6 @@ def _resolve_review_log(path: Path) -> Path:
 
 def _require_macos_mednafen(parser: argparse.ArgumentParser, command: str) -> None:
     if sys.platform != "darwin":
-        parser.error(f"{command} is supported only on macOS; Linux CI validates ROM-free commands only")
+        parser.error(
+            f"{command} is supported only on macOS; Linux CI validates non-live commands only"
+        )

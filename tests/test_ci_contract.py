@@ -11,7 +11,7 @@ import pytest
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/rom-free-ci.yml"
+WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/ci.yml"
 DEPENDABOT_PATH = REPOSITORY_ROOT / ".github/dependabot.yml"
 GATE_PATH = REPOSITORY_ROOT / "scripts/validate_phase0.sh"
 PYPROJECT_PATH = REPOSITORY_ROOT / "pyproject.toml"
@@ -52,6 +52,7 @@ LEGACY_MEDNAFEN_RESULT_MODULES = (
 
 
 def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> None:
+    assert WORKFLOW_PATH.is_file(), f"canonical CI workflow is missing: {WORKFLOW_PATH}"
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
     assert "pull_request:" in workflow
