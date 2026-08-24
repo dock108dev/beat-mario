@@ -128,7 +128,6 @@ def run_1_1_script_task(
         "backend": "mednafen",
         "game_file": "<redacted-local-game-file>",
         "script": str(script_path),
-        "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "startup_seconds": startup_seconds,
         "sample_interval_seconds": sample_interval_seconds,

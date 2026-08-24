@@ -1,69 +1,77 @@
 # Documentation index
 
-Use the root [README](../README.md) to install, validate, and start the supported
-flows. The documents below provide implementation and operating detail.
+The root [README](../README.md) is the verified first-use path: install the
+locked environment, run the non-live gate, inspect the command surface, and
+start the local UI. Use this index to find the next task-specific guide.
 
-## Develop and modify
+## Understand the system
 
-- [Development and repository structure](development.md): layout, entry points,
-  environment, validation, and intentionally large files.
-- [Runtime, configuration, and data](runtime-and-configuration.md): process
-  model, settings, integrations, persistence, and deployment boundary.
-- [Single sources of truth](ssot.md): authoritative modules and retained paths.
-- [Agent architecture](agent-architecture.md): component responsibilities.
-- [Goal contracts](goal-contract.md): route composition and execution contract.
-- [Route patch schema](route-patch-schema.md): reviewed change lifecycle.
+- [Product direction](product-direction.md) defines Tell, Show, Do, player
+  ownership, the adapter boundary, and the current Mario/Stardew product scope.
+- [Architecture](agent-architecture.md) maps the CLI, adapters, session model,
+  local UI, evidence stores, catalog, and switching lifecycle.
+- [Runtime, configuration, and data](runtime-and-configuration.md) lists the
+  actual settings, local executables, artifact roots, and deployment boundary.
+- [Single sources of truth](ssot.md) identifies the authoritative module or
+  contract for each behavior and the compatibility surfaces intentionally kept.
 
-## Run and operate
+## Set up, change, and test the repository
 
-- [World 8 reliability gates](reliability-gate.md): authoritative and watchable
-  runs, evidence, and failure behavior.
-- [Game Companion Lab](mario-route-lab.md): player-session routing plus the
-  local Mario review and attempt workflow.
-- [FCEUX harness](fceux-harness.md): low-level emulator runner and diagnostics.
-- [Error handling and operations](error-handling.md): failure artifacts,
-  response behavior, and incident checks.
+- [Development and repository structure](development.md) covers the locked
+  environment, layout, public entry points, validation workflow, and change
+  boundaries.
+- [Security model](security.md) documents local trust boundaries, implemented
+  controls, accepted local-only decisions, and security follow-ups.
+- [Known limitations](known-limitations.md) states what the repository and
+  non-live gate intentionally cannot prove or operate.
+- [Error handling and operations](error-handling.md) explains retained failure
+  evidence, process cleanup, recovery, and incident inspection.
 
-## Product and evidence
+There is no separate build, formatter, type-check, deployment, database,
+migration, scheduler, or worker guide because the repository has none of those
+surfaces. The canonical check is `scripts/validate_phase0.sh`; CI runs it on the
+locked Python 3.11 environment.
 
-- [Product direction](product-direction.md): current product boundary.
-- [Game Companion V2 roadmap](v2-roadmap.md): ordered Mario companion,
-  metrics, Stardew, combined-catalog, and contributor-onboarding slices.
-- [Live Mario observation](live-observation.md): V2.4 player-session connection,
-  read-only input/state evidence, freshness, and stop behavior.
-- [Objective profiles and live coaching](objective-profiles.md): V2.5 measurable
-  profiles, compatible references, comparison, coaching, and Tell behavior.
-- [Adaptive assistance and solution learning](learning.md): V2.7 compatible
-  evidence, review candidates, local preferences, promotion, and rollback.
-- [Session automation and local product metrics](session-automation-metrics.md):
-  V2.8 scenarios, classified events and metrics, retention, and campaign hooks.
-- [Mario player guide](mario-player-guide.md): V2.9 first use, compact player
-  workspace, Observe/Tell/Show/Do, reclaim, History, and recovery.
-- [Stardew companion guide](stardew-operator-guide.md): V2.10 copied-save and
-  visible operator foundations plus V2.11 Observe, grounded Tell, one-task
-  review-only Show, same-session Do, reclaim/handback, reset, safety, and
-  deferred live wiring and evidence.
-- [Agent architecture](agent-architecture.md#combined-catalog-and-switching):
-  V2.12 provider-owned catalog, explicit safe switching, bounded persistence,
-  and adapter/evidence isolation.
-- [Unattended regression operator guide](unattended-regression.md): V2.13
-  provider, display, isolation, cancellation, artifact, repeatability,
-  proof-limit, and owner-data boundaries.
-- [New Game Onboarding and Experimental adapter contributor guide](new-game-onboarding.md):
-  V2.14 contract, state labels, deterministic scaffold, conformance, provider
-  discovery, atomic installation, fail-closed removal, and proof limits.
-- [Consolidated final campaign](final-campaign-guide.md): frozen owner-pilot
-  manifest, evidence rules, failure retention, and explicit acceptance boundary.
-- [Route status](route-status.md): accepted route and evidence history.
+## Use or modify the Mario adapter
 
-## Security and local data
+- [Mario player guide](mario-player-guide.md): player first use, Observe, Tell,
+  Show, Do, reclaim, History, and failure recovery.
+- [Game Companion Lab](mario-route-lab.md): engineering UI, attempt sessions,
+  notes, issue ledgers, and route work.
+- [Goal contracts](goal-contract.md): route composition, runner policy, and
+  success evidence.
+- [World 8 reliability gates](reliability-gate.md): fresh authoritative runs,
+  watchable review, and promotion boundaries.
+- [FCEUX harness](fceux-harness.md): low-level process, log, image, and
+  diagnostic behavior.
+- [Live observation](live-observation.md), [objective profiles](objective-profiles.md),
+  and [learning](learning.md): observation trust, coaching/comparison, and
+  reviewable local learning.
+- [Route patch schema](route-patch-schema.md): isolated review, validation,
+  promotion, rollback, and rejection.
+- [Route status](route-status.md): historical accepted Mario route evidence.
 
-- [Security model](security.md): trust boundaries, implemented controls, and
-  deferred security work.
-- [Local Game Companion Lab assets](local-assets.md): optional ignored UI images.
-- [Known limitations](known-limitations.md): intentionally unsupported flows
-  and validation boundaries.
+## Work with other adapters and shared product surfaces
 
-Historical build plans and duplicated validation checklists are intentionally
-not retained. Current contracts, tests, source modules, and the canonical gate
-describe how the repository works today.
+- [Stardew companion guide](stardew-operator-guide.md) describes the implemented
+  copied-save and controller contract and the current inspection-only public
+  boundary.
+- [Session automation and metrics](session-automation-metrics.md) documents
+  scenario classification, local product metrics, and proof limits.
+- [Unattended regression](unattended-regression.md) covers opt-in isolated
+  engineering runs that can never become player or acceptance evidence.
+- [New Game Onboarding](new-game-onboarding.md) covers data-only Experimental
+  scaffolds, fixture conformance, installation, discovery, and safe removal.
+
+## Release-candidate and historical planning material
+
+- [Consolidated final campaign](final-campaign-guide.md) is the still-unrun
+  release-candidate, live-game, and owner-proof workflow. The tracked campaign
+  remains disabled until a candidate is frozen.
+- [Game Companion V2 roadmap](v2-roadmap.md) records slice status through V2.14.
+  It is a status/evidence document, not the setup guide.
+- [Local UI assets](local-assets.md) explains optional ignored artwork.
+
+Implementation, deterministic validation, historical live evidence, current
+release-candidate proof, usefulness feedback, and owner acceptance are separate
+claims throughout these documents.

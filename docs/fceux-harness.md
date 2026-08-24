@@ -88,7 +88,7 @@ Use the operator-facing product gate instead of a multi-attempt low-level
 invocation:
 
 ```bash
-export SMB3_GAME_FILE=/path/to/local-game-file.nes
+export SMB3_GAME_FILE=/path/to/configured-mario-source
 .venv/bin/python -m smb3_agent reliability run
 ```
 

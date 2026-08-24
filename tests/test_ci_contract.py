@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 import sys
@@ -24,6 +25,7 @@ README_PATH = REPOSITORY_ROOT / "README.md"
 RUNTIME_DOC_PATH = REPOSITORY_ROOT / "docs/runtime-and-configuration.md"
 STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
 FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
+ROADMAP_PATH = REPOSITORY_ROOT / "docs/v2-roadmap.md"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
 SETUP_UV_PIN = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
@@ -38,6 +40,14 @@ MACOS_MODULES = (
     "smb3_agent.tasks.load_checkpoint_1_1",
     "smb3_agent.tasks.run_1_1_script",
     "smb3_agent.tasks.start_game",
+)
+LEGACY_MEDNAFEN_RESULT_MODULES = (
+    REPOSITORY_ROOT / "src/smb3_agent/probes/mednafen_probe.py",
+    REPOSITORY_ROOT / "src/smb3_agent/tasks/checkpoint_1_1.py",
+    REPOSITORY_ROOT / "src/smb3_agent/tasks/enter_1_1.py",
+    REPOSITORY_ROOT / "src/smb3_agent/tasks/load_checkpoint_1_1.py",
+    REPOSITORY_ROOT / "src/smb3_agent/tasks/run_1_1_script.py",
+    REPOSITORY_ROOT / "src/smb3_agent/tasks/start_game.py",
 )
 
 
@@ -195,6 +205,37 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
     assert missing_links == []
 
 
+def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
+    readme = README_PATH.read_text(encoding="utf-8")
+    final_campaign = FINAL_CAMPAIGN_PATH.read_text(encoding="utf-8")
+    roadmap = ROADMAP_PATH.read_text(encoding="utf-8")
+
+    for required in (
+        "# Game Companion",
+        "uv sync --locked --all-extras",
+        "PYTHON=.venv/bin/python scripts/validate_phase0.sh",
+        "GAME_COMPANION_EXPERIMENTAL_ROOT",
+        "inspection-only",
+        "http://127.0.0.1:8765/",
+        "`/mario`",
+        "`/stardew`",
+        "`/onboarding`",
+        "`/lab`",
+    ):
+        assert required in readme
+    assert "# Game Companion — Mario Adapter" not in readme
+    assert "execution_enabled: false" in final_campaign
+    assert "Status: **in progress" not in roadmap
+
+
+def test_public_documentation_omits_legacy_game_acquisition_language() -> None:
+    markdown_files = (README_PATH, *sorted((REPOSITORY_ROOT / "docs").glob("*.md")))
+    forbidden = re.compile(r"\b(?:rom|roms|snes)\b|\.nes\b", flags=re.IGNORECASE)
+
+    for source in markdown_files:
+        assert forbidden.search(source.read_text(encoding="utf-8")) is None, source
+
+
 def test_runtime_docs_match_configuration_persistence_and_public_stardew_boundary() -> None:
     runtime = RUNTIME_DOC_PATH.read_text(encoding="utf-8")
     stardew = STARDEW_GUIDE_PATH.read_text(encoding="utf-8")
@@ -248,6 +289,19 @@ def test_gate_forbids_generated_evidence_game_assets_caches_and_metadata() -> No
         "*.egg-info/*",
     ):
         assert token in gate
+
+
+def test_legacy_mednafen_results_do_not_persist_or_log_accessibility_permission() -> None:
+    for module_path in LEGACY_MEDNAFEN_RESULT_MODULES:
+        tree = ast.parse(module_path.read_text(encoding="utf-8"))
+        persisted_keys = {
+            key.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Dict)
+            for key in node.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        assert "accessibility_trusted" not in persisted_keys
 
 
 def test_linux_dependency_surface_excludes_darwin_only_packages() -> None:

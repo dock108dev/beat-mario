@@ -215,6 +215,7 @@ lab functions from returning.
 `tests/test_ci_contract.py` guards the removed compatibility symbols and the
 single production catalog factory. Focused command, catalog, Experimental
 adapter, and CLI tests cover the routed behavior. The complete canonical
-ROM-free gate passed on 2026-08-23 with 650 tests plus the active-goal, segment,
-deterministic-status, player, Route Lab, and Stardew render contracts. The
-documentation-accuracy guard increased the current canonical total to 651.
+Non-live gate passed on 2026-08-23 with the complete test suite plus the
+active-goal, segment, deterministic-status, player, Route Lab, and Stardew
+render contracts. Current gate output, rather than a copied test count, is the
+authoritative validation record.

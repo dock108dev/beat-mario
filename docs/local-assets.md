@@ -6,9 +6,8 @@ Game Companion Lab can use local-only images from:
 public/assets/local/
 ```
 
-Files in that directory are ignored by git except `.gitkeep`. This keeps the
-public repo free of copyrighted game assets while allowing the local route lab
-to use personal reference art.
+Files in that directory are ignored by git except `.gitkeep`, allowing the
+local route lab to use personal reference art without tracking it.
 
 Supported optional filenames:
 
@@ -28,10 +27,9 @@ fully usable.
 
 ## Unattended regression assets
 
-V2.13 does not place protected game assets in this directory or any other
-artifact namespace. The Mario provider records only the owner-configured ROM's
-local path, byte count, and SHA-256 identity; it does not copy, track, embed,
-export, or upload ROM content. Stardew uses only a dedicated regression fixture
+V2.13 does not place protected runtime inputs in this directory or any other
+artifact namespace. The Mario provider records only a local identity; it does
+not copy, track, embed, export, or upload source content. Stardew uses only a dedicated regression fixture
 proven disjoint from every configured owner-save root, then creates a fresh
 disposable copy inside the exact run directory.
 
@@ -41,13 +39,13 @@ and primary saves. Symlinked assets/fixtures and path escapes are refused.
 
 ## Experimental adapter assets
 
-Experimental scaffolds are declarative contributor material, not game assets.
+Experimental scaffolds are declarative contributor material, not runtime inputs.
 Only `adapter.yaml`, `README.md`, and the five named JSON fixtures may exist in
-the bounded scaffold/install inventory. ROMs, saves, owner-game screenshots,
+the bounded scaffold/install inventory. Saves, owner-game screenshots,
 executables, scripts, dependencies, credentials, URLs, and personal data are
 refused. The tracked `Fixture Quest` sample contains synthetic JSON only.
 
 Installed manifests live below the local Game Companion application-support
 root. Adapter evidence and history use separate namespaces so exact removal can
-preserve them. Neither scaffolding nor conformance reads a ROM, save, window, or
+preserve them. Neither scaffolding nor conformance reads a save, window, or
 live game process.

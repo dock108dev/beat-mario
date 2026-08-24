@@ -82,7 +82,6 @@ def run_enter_1_1_task(
         "task": "enter-1-1",
         "backend": "mednafen",
         "game_file": "<redacted-local-game-file>",
-        "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "startup_seconds": startup_seconds,
         "sequence": ENTER_1_1_SEQUENCE,

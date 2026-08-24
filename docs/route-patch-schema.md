@@ -57,7 +57,7 @@ artifact hashes.
 ## Isolation and validation
 
 `prepare` creates a detached temporary Git worktree at the reviewed commit.
-Git materializes tracked files only, so ignored ROMs and generated artifacts
+Git materializes tracked files only, so ignored local runtime inputs and generated artifacts
 are not copied into the candidate. Application is atomic and changes exactly
 the reviewed files. The accepted working tree remains untouched.
 
@@ -68,7 +68,7 @@ internal profile map and are passed to `subprocess` as argv arrays with
 
 Profiles fail closed:
 
-- `canonical_phase`: ROM-free route-data and Route Lab changes;
+- `canonical_phase`: non-live route-data and Route Lab changes;
 - `canonical_rank27`: canonical gate plus the 5/5 World 8 arrival regression;
 - `canonical_rank27_rank28`: canonical gate plus Rank 27 5/5 and Big Tanks
   3/3;
@@ -97,7 +97,7 @@ such as the current directory, repository root, or filesystem root. See
 ## Security boundary
 
 Import rejects absolute and traversal paths, symlink targets, files outside the
-reviewed task allowlist, ROMs, savestates, images, logs, archives, generated
+reviewed task allowlist, local runtime inputs, savestates, images, logs, archives, generated
 evidence, caches, unsupported extensions, binary or malformed UTF-8 content,
 stale bases or preimages, missing hashes, duplicate operations, no-op/already
 applied content, excessive sizes, protected gate files, command declarations,

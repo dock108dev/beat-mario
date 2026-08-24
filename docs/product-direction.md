@@ -55,7 +55,7 @@ Existing compatibility remains deliberate:
 - Game Companion is the user-facing product and shared cross-game contract;
 - Mario becomes one adapter behind that contract.
 
-## Next proof: Stardew Valley
+## Implemented second adapter; live proof pending: Stardew Valley
 
 The first modern-game proof uses the visible, windowed game, ordinary player
 input, and a disposable copy of an owner-provided local save. The first bounded

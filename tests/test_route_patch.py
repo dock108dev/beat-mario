@@ -46,6 +46,33 @@ def test_corrupt_patch_record_is_skipped_with_actionable_warning(
     assert str(corrupt) in caplog.text
 
 
+def test_route_lab_patch_validation_ignores_injected_game_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    captured: dict[str, object] = {}
+    expected = object()
+
+    def fake_validate_route_patch(patch_id: str, **kwargs: object) -> object:
+        captured.update({"patch_id": patch_id, **kwargs})
+        return expected
+
+    monkeypatch.delenv("SMB3_GAME_FILE", raising=False)
+    monkeypatch.setattr("smb3_agent.lab_ui.validate_route_patch", fake_validate_route_patch)
+
+    result = run_patch_ui_action(
+        {
+            "action": ["validate"],
+            "patch_id": ["fixture-patch-001"],
+            "game_file": ["/tmp/browser-controlled.nes"],
+        },
+        repo_root=tmp_path,
+    )
+
+    assert result is expected
+    assert captured["patch_id"] == "fixture-patch-001"
+    assert captured["game_path"] is None
+
+
 def test_worktree_cleanup_refuses_current_directory(tmp_path: Path) -> None:
     repo, _, _ = _patch_fixture(tmp_path)
     patch_dir = repo / "artifacts/route-patches/fixture-patch-001"

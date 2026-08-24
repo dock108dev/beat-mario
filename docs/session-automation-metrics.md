@@ -13,7 +13,7 @@ update, and owner-feedback-prompt event types. The V2.9 scenario hooks bind
 these to the existing observation, Tell, advice, Show, takeover, ownership,
 reclaim, handback, learning, recovery, and reconciliation events.
 
-These contracts are exercised by ROM-free tests. They do not populate owner
+These contracts are exercised by non-live tests. They do not populate owner
 usefulness or owner acceptance, and they cannot upgrade technical or
 review-only evidence.
 
@@ -122,7 +122,7 @@ artifacts, and owner acceptance. Exports retain provenance, classification,
 raw events, metric definitions, failures, and unknowns.
 
 The pipeline is local-only. It has no network telemetry, dashboard, pixel,
-background upload, credentials, ROM content, unnecessary personal data, or
+background upload, credentials, unnecessary personal data, or
 cloud identifiers.
 
 ## Command and UI surfaces
@@ -147,7 +147,7 @@ Hooks cover malformed, duplicate, out-of-order, corrupt, unsupported, upgraded,
 missing, mismatched, ambiguous, post-handback, unattended-owner, cleanup,
 adapter-leakage, and incomplete-rebuild cases.
 
-The deterministic and negative hooks are exercised by the ROM-free suite.
+The deterministic and negative hooks are exercised by the non-live suite.
 V2.13 implements unattended emulator execution, but no live unattended attempt
 has run for the current candidate. Owner-pilot fields remain blank and the
 disabled final campaign has not run. Historical backfill and candidate

@@ -45,7 +45,7 @@ the selected adapter cannot prove.
 
 ## Slice V2.0 — Rebrand and product contract
 
-Status: **complete / ROM-free accepted**.
+Status: **complete / non-live validated**.
 
 Rename the user-facing product and workbench to Game Companion, document Mario
 as the first adapter, preserve existing technical identifiers, and make this
@@ -58,11 +58,11 @@ Acceptance:
 - existing `smb3_agent` imports, commands, goal ids, presets, and artifact paths
   remain compatible;
 - no gameplay or accepted evidence changes;
-- focused UI checks and the canonical ROM-free gate pass.
+- focused UI checks and the canonical non-live gate pass.
 
 ## Slice V2.1 — Mario companion shell
 
-Status: **complete / ROM-free accepted**.
+Status: **complete / non-live validated**.
 
 Build the player session above the existing Mario contracts. The default view
 contains game, observed state, selected objective, supported modes, declared
@@ -81,7 +81,7 @@ Acceptance scenarios:
 
 ## Slice V2.2 — Grounded Tell
 
-Status: **complete / ROM-free accepted**.
+Status: **complete / non-live validated**.
 
 Generate a short state-specific instruction card using observed facts, the
 selected goal, and accepted segment knowledge. Add spoiler preference and a
@@ -135,7 +135,7 @@ mechanism and retained evidence.
 
 ## Slice V2.5 — Goal-aware live coaching and comparison
 
-Status: **in progress / live owner-play proof required**.
+Status: **implementation complete / final validation deferred**.
 
 Add versioned, adapter-neutral objective profiles and exact like-for-like
 reference compatibility. The first honest pilot supports a fastest accepted
@@ -145,7 +145,8 @@ Tell preserves Minimal, Guided, and Full detail and separates live facts,
 profile requirements, reference facts, inferences, and unknowns. See the
 [objective-profile contract](objective-profiles.md).
 
-V2.5 requires a bounded owner-played session. Fixtures cannot prove coaching
+The implementation is present, but V2.5 still requires a bounded owner-played
+session in the consolidated campaign. Fixtures cannot prove coaching
 timing, truthful stale/disconnect behavior, or player usefulness. Agent input
 must remain exactly zero.
 
@@ -186,7 +187,7 @@ The player product now covers first use, adapter-owned capability truth,
 Observe, Tell, coaching, separate Show, same-session Do, persistent reclaim,
 safe handback, History, learning clarity, failure/recovery, safe persistence,
 and local evidence status. The disabled owner-pilot manifest and consolidated
-campaign hooks are prepared. ROM-free product, UI, regression, and scenario
+campaign hooks are prepared. Non-live product, UI, regression, and scenario
 contracts pass; live and owner validation remain deferred. See the [Mario Player Guide](mario-player-guide.md)
 and [Consolidated Final Campaign](final-campaign-guide.md).
 
@@ -222,7 +223,7 @@ preserves the old attempt, reverifies the primary, creates a fresh destination,
 and invalidates all previous mode state and authority. See the [Stardew
 Companion Guide](stardew-operator-guide.md).
 
-Tests, fixtures, presentation contracts, and scenario hooks run in the ROM-free
+Tests, fixtures, presentation contracts, and scenario hooks run in the non-live
 suite. The public surface remains unconfigured and inspection-only; no live
 Stardew process, owner save, input, or owner pilot has run. Acceptance remains
 the frozen-release-candidate deterministic phase followed by visible Stardew
@@ -249,7 +250,7 @@ The Mario workspace remains at `/mario`, the standalone Stardew workspace at
 `/stardew`, and the engineering Lab at `/lab`; `/` is the combined player root.
 Implementation-only catalog inspection/render commands, contracts, fixtures,
 scenario hooks, artifact requirements, and desktop/390-pixel checks run in the
-ROM-free suite. No live game activity or owner validation ran.
+Non-live suite. No live game activity or owner validation ran.
 
 ## V2.13 — implementation complete / final validation deferred
 
@@ -265,7 +266,7 @@ cleanup, and evidence.
 
 The CLI and Lab expose truthful capability, planning, manifest, lifecycle,
 cancellation, cleanup, retained-artifact, failure, and comparison surfaces.
-Prepared contracts, tests, and campaign hooks pass ROM-free validation. No live
+Prepared contracts, tests, and campaign hooks pass non-live validation. No live
 unattended attempt has run for the current candidate, and no unattended output
 can count as visible, Show, reliability, authoritative, usefulness, acceptance,
 or campaign proof. See the
@@ -281,7 +282,7 @@ inspection, fail-closed exact removal, CLI/Lab/onboarding surfaces, desktop and
 and deferred campaign hooks. Mario and Stardew remain explicit trusted
 built-ins. Experimental entries remain live-unproven and cannot self-promote.
 
-ROM-free tests exercise rendering, conformance, deterministic scaffolding, and
+Non-live tests exercise rendering, conformance, deterministic scaffolding, and
 temporary-root install/status/removal behavior. No persistent operator adapter
 installation, live game activity, or owner acceptance has run. The next action
 is to freeze the cumulative release candidate and rerun deterministic contract

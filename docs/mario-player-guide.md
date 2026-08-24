@@ -11,11 +11,9 @@ or evidence classification transfers to another adapter.
 
 ## First use
 
-Game Companion does not provide or copy the game file. It checks the configured
-`SMB3_GAME_FILE`, a previously selected local path, `game-file.nes`, and
-`roms/smb3.nes`. If none matches the supported Mario identity, choose the local
-file with the macOS picker or enter its absolute path. Verification reads the
-NES header and SHA-256 fingerprint; ROM contents are not displayed or stored.
+Game Companion uses the existing local Mario configuration and verifies a
+supported identity before starting. The player can select a configured local
+path through the first-use screen when needed.
 
 FCEUX must be available locally. Confirm that its normal keyboard or controller
 mapping is ready, then choose one session:
@@ -62,8 +60,8 @@ only an explicit response changes a learned preference.
 
 “Fastest locally observed” is not a world record. A candidate is not
 executable. Approval means approved for later validation. Only a separately
-promoted, replay-safe accepted solution can drive Do. V2.6–V2.9 validation is
-deferred to the consolidated campaign.
+promoted, replay-safe accepted solution can drive Do. The cumulative V2.5–V2.14
+release-candidate validation remains deferred to the consolidated campaign.
 
 ## Failure and recovery
 

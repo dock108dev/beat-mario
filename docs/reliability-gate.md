@@ -12,7 +12,7 @@ segments and stops on accessible World 8-1 without entering it.
 From the repository root:
 
 ```bash
-export SMB3_GAME_FILE=/path/to/local-game-file.nes
+export SMB3_GAME_FILE=/path/to/configured-mario-source
 .venv/bin/python -m smb3_agent reliability run
 ```
 

@@ -6,7 +6,7 @@ Use Python 3.11 or newer and create the locked environment from the repository
 root:
 
 ```bash
-uv sync --locked --extra dev
+uv sync --locked --all-extras
 ```
 
 The project CLI is available through the environment interpreter:
@@ -15,9 +15,12 @@ The project CLI is available through the environment interpreter:
 .venv/bin/python -m smb3_agent --help
 ```
 
-`SMB3_GAME_FILE` is the live Mario game-file override. The player Start button
-otherwise uses `game-file.nes` or `roms/smb3.nes` when either local ignored
-file exists; an explicit `--game-file` takes precedence. The validation script also accepts
+This is the same locked dependency installation used by CI. The project does
+not define a separate build step; installation creates the editable package and
+the `smb3-agent` console command in `.venv/bin/`.
+
+`SMB3_GAME_FILE` selects the configured local Mario source; an explicit
+`--game-file` takes precedence where available. The validation script also accepts
 `PYTHON` solely to select its interpreter. Experimental adapter commands also
 accept `GAME_COMPANION_EXPERIMENTAL_ROOT` as the local installation root.
 Product preset variables are internal execution policy defined by
@@ -32,14 +35,18 @@ for the complete boundary.
 data/goals/             Goal contracts and composition
 data/segments/          Route catalog and acceptance events
 data/routes/scripts/    Structured route inputs
+data/companion/         Shared catalog contract
+data/mario/             Mario product declaration
+data/stardew/           Stardew safety and evidence contracts
+data/scenarios/         Scenario, metrics, unattended, and campaign contracts
 docs/                   Engineering and operating documentation
 scripts/                Canonical gate and FCEUX Lua runner
 src/smb3_agent/         Python package and CLI
-tests/                  ROM-free unit and integration tests
+tests/                  non-live unit and integration tests
 artifacts/              Ignored local execution evidence
 ```
 
-Generated sessions, screenshots, emulator output, ROMs, savestates, caches, and
+Generated sessions, screenshots, emulator output, runtime state, caches, and
 local UI assets are ignored. Do not force-add them.
 
 ## Entry points
@@ -59,7 +66,7 @@ local UI assets are ignored. Do not force-add them.
 - `python -m smb3_agent adapter ...`: validate, scaffold, install, inspect, and
   remove declarative Experimental adapters.
 - `python -m smb3_agent task ...`: bounded low-level diagnostics.
-- `scripts/validate_phase0.sh`: canonical ROM-free repository gate.
+- `scripts/validate_phase0.sh`: canonical non-live repository gate.
 
 Use `python -m smb3_agent COMMAND --help` for the current command surface. Do
 not copy old command inventories into documentation.
@@ -73,14 +80,14 @@ Run a focused test while editing, then the full canonical gate:
 PYTHON=.venv/bin/python scripts/validate_phase0.sh
 ```
 
-Ruff is the configured Python linter. The repository has no separate formatter
-or static type-checker configuration. GitHub Actions runs the canonical gate on
-Python 3.11 without a game file or emulator. Pull requests also receive a
+Ruff is the configured Python linter. The repository has no separate formatter,
+type-checker, package build, or browser-test command. GitHub Actions runs the
+canonical gate on Python 3.11 without a game file or emulator. Pull requests also receive a
 dependency-review check that rejects newly introduced dependencies with known
 moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
 Actions dependency surfaces weekly.
 
-For live route changes, ROM-free validation is necessary but insufficient.
+For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
 and keep watchable playback separate from authoritative evidence.
 

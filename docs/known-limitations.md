@@ -5,11 +5,10 @@ they are not unverified product promises.
 
 ## Live validation requires local assets
 
-The repository does not contain or download a game file. ROM-free tests verify
-contracts, parsers, reports, security controls, and deterministic rendering,
-but they cannot prove emulator startup, route timing, gameplay success, or the
-game-owned ending. That proof requires an operator-supplied game file, FCEUX,
-and the goal-specific fresh-run gate.
+Non-live tests verify contracts, parsers, reports, security controls, and
+deterministic rendering, but they cannot prove emulator startup, route timing,
+gameplay success, or the game-owned ending. That proof requires the configured
+local environment, FCEUX, and the goal-specific fresh-run gate.
 
 Ignored gameplay artifacts are local-only. They are neither uploaded nor
 replicated, so another checkout cannot reproduce an acceptance claim without
@@ -22,7 +21,7 @@ adapter is macOS-only and depends on a visible desktop plus Accessibility and
 screen-capture permissions. Headless Mednafen operation and non-macOS Mednafen
 control are unsupported.
 
-The ROM-free CI job runs on Linux and intentionally does not install or start
+The non-live CI job runs on Linux and intentionally does not install or start
 either emulator.
 
 ## Stardew is not publicly wired for live operation

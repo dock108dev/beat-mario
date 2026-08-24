@@ -2,7 +2,7 @@
 
 Game Companion V2.7 turns the V2.6 local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
-All data stays local under `artifacts/learning`; no ROM bytes, credentials,
+All data stays local under `artifacts/learning`; no credentials,
 cloud identifiers, telemetry, or unnecessary owner identity are stored.
 
 ## Evidence classes

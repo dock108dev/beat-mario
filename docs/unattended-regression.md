@@ -57,17 +57,7 @@ game. Planning produces a manifest preview without creating an attempt.
 
 ```bash
 .venv/bin/python -m smb3_agent unattended capabilities --adapter smb3
-.venv/bin/python -m smb3_agent unattended plan \
-  --adapter smb3 \
-  --display-provider local-desktop \
-  --display-backend normal_desktop \
-  --display-identity WINDOW_SERVER_ID \
-  --display-probe-executable /absolute/path/to/local-display-probe \
-  --rom /absolute/owner/path/to/smb3.nes \
-  --fceux /absolute/path/to/fceux \
-  --goal-version GOAL_VERSION \
-  --profile-version PROFILE_VERSION \
-  --solution-version SOLUTION_VERSION
+.venv/bin/python -m smb3_agent unattended plan --help
 ```
 
 Stardew planning additionally requires a dedicated regression fixture, the
@@ -100,8 +90,8 @@ privacy boundaries.
 
 ## Adapter boundaries
 
-The Mario provider references an owner-configured ROM by local path, size, and
-hash but never copies or exports ROM bytes. It launches fresh FCEUX processes
+The Mario provider references a configured local identity but never copies or
+exports source contents. It launches fresh FCEUX processes
 through the existing route/controller path, leaves gameplay observers and
 contracts unchanged, and writes only below the unattended attempt. It cannot
 mutate accepted evidence, reliability aggregates, routes, fastest-run indexes,
@@ -130,7 +120,7 @@ Reports keep requested/completed/passed/failed/cancelled/timed-out counts,
 hashes, milestone/outcome agreement, resource/state deltas, failures,
 artifact/cleanup completeness, and unknowns. There is no blended score.
 
-The prepared contracts and final-campaign hooks are covered by the ROM-free
+The prepared contracts and final-campaign hooks are covered by the non-live
 suite, but the campaign and live unattended attempts remain unexecuted. Freeze
 one cumulative release candidate and rerun deterministic validation before any
 live or owner proof.

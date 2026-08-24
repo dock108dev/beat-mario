@@ -78,7 +78,6 @@ def run_start_game_task(
         "task": "start-game",
         "backend": "mednafen",
         "game_file": "<redacted-local-game-file>",
-        "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "startup_seconds": startup_seconds,
         "sequence": START_SEQUENCE,

@@ -150,7 +150,7 @@ integrity, local metrics, and compatible repeatability reports.
 Adapter providers own executable/argument vectors, assets and fixtures,
 ordinary input and observation paths, protected data/actions, milestones,
 success/failure predicates, cleanup, and evidence. Mario references but never
-copies the local ROM, uses fresh FCEUX processes and the existing gameplay
+copies the configured local source, uses fresh FCEUX processes and the existing gameplay
 path, and cannot mutate accepted evidence, reliability, routes, records, or
 learning. Stardew accepts only a dedicated non-owner regression fixture,
 creates a fresh disposable run copy, uses visible pixels and ordinary protected

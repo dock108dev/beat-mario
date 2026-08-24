@@ -36,7 +36,7 @@ The authoritative command passed 3/3:
 ```bash
 .venv/bin/python -m smb3_agent reliability run \
   --goal world_8_big_tanks \
-  --game-file roms/smb3.nes
+  --game-file "$SMB3_GAME_FILE"
 ```
 
 Accepted aggregate:
@@ -251,7 +251,7 @@ artifacts/reliability/world_8_hand_traps_jet/20260811T222848.457322Z_reliability
 The authoritative command passed 5/5:
 
 ```bash
-.venv/bin/python -m smb3_agent reliability run --game-file roms/smb3.nes
+.venv/bin/python -m smb3_agent reliability run --game-file "$SMB3_GAME_FILE"
 ```
 
 Accepted aggregate:
@@ -272,7 +272,7 @@ processes exited zero. The five route-log SHA-256 values are identical:
 The separate watchable command passed:
 
 ```bash
-.venv/bin/python -m smb3_agent reliability watch --game-file roms/smb3.nes
+.venv/bin/python -m smb3_agent reliability watch --game-file "$SMB3_GAME_FILE"
 ```
 
 Review-only artifacts:
@@ -286,11 +286,11 @@ The report is labeled `review_only`, `promotable=false`, and
 images, a 621-line state/tick trace, and `review/contact_sheet.png`.
 
 Two fail-closed classifications were observed before final acceptance. A broken
-`game-file.nes` symlink was classified `preflight` with zero executions. The
-first live batch recorded 4/5 because FCEUX 2.6.6 received SIGSEGV during raw
+local configuration was classified `preflight` with zero executions. The first
+live batch recorded 4/5 because FCEUX 2.6.6 received SIGSEGV during raw
 `os.exit()` Qt teardown after run 5 had already written a complete,
 byte-identical passing route log. That process remained failed. The route script
-was changed to FCEUX's supported `emu.exit()` API, covered by a ROM-free test,
+was changed to FCEUX's supported `emu.exit()` API, covered by a non-live test,
 and the complete five-run gate was rerun successfully. No gameplay,
 observer/contract, prohibited-tactic, timeout, or artifact-integrity failure was
 observed in the accepted batch.

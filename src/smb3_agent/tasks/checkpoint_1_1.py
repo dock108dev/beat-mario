@@ -102,7 +102,6 @@ def run_checkpoint_1_1_task(
         "task": "checkpoint-1-1",
         "backend": "mednafen",
         "game_file": "<redacted-local-game-file>",
-        "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "startup_seconds": startup_seconds,
         "slot": slot,

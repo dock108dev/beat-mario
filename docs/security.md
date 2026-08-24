@@ -11,8 +11,7 @@ gameplay artifacts, emulator subprocesses, and reviewed route-patch workflow.
 Mario setup remains loopback-only, CSRF-protected, form-encoded, body-limited,
 escaped, and serialized by the privileged-action lock. Automatic detection and
 the explicit macOS picker inspect only local supported paths. Identity checks
-read the NES header and SHA-256 fingerprint; the product does not copy, expose,
-or upload ROM contents.
+use a local fingerprint; the product does not copy or expose source contents.
 
 The product preference file may retain the selected local path, fingerprint,
 input-readiness confirmation, session choice, coaching/detail preferences, and
@@ -30,7 +29,7 @@ requires fresh exact-process verification and explicit authorization.
   Route-patch imports are narrower: the patch document must be a regular,
   non-symlinked file beneath the repository so the same backend remains safe
   when reached from Route Lab.
-- ROMs, savestates, screenshots, traces, and generated session records are
+- Savestates, screenshots, traces, and generated session records are
   local-only data. Repository and CI guards keep them out of tracked source.
 - Emulator processes use fixed argument vectors rather than a shell. Product
   FCEUX runs receive a sanitized environment; diagnostic overrides remain
@@ -43,6 +42,11 @@ requires fresh exact-process verification and explicit authorization.
   before filesystem access. Temporary adapter directories use fixed prefixes.
 - Legacy Mednafen diagnostics retain whether process output existed and its
   length, but not raw emulator output or the private local game-file path.
+  Accessibility permission is checked as a startup prerequisite but is not
+  copied into persisted or printed result objects.
+- Browser route-patch validation cannot supply a game-file argument. Live gate
+  configuration comes only from the operator-owned `SMB3_GAME_FILE` process
+  environment; injected form fields are ignored.
 
 ## Implemented controls
 
@@ -69,8 +73,8 @@ symlinks, ambiguous data ownership, remote display/execution, network
 telemetry, and background upload are refused. Failures and incomplete cleanup
 are retained.
 
-The Mario ROM is read only to establish local identity and never copied into
-artifacts. Accepted evidence, routes, reliability, records, learning, and owner
+The configured Mario source is used only to establish local identity and is
+never copied into artifacts. Accepted evidence, routes, reliability, records, learning, and owner
 history are protected. Stardew requires a dedicated regression fixture whose
 real path cannot overlap an owner-save root; every run uses a new disposable
 copy and never opens, copies, inspects, resets, mutates, or deletes a primary
@@ -122,7 +126,7 @@ string scans rather than regular expressions over browser-controlled text.
 | Unbounded Experimental descriptor parsing | Resource exhaustion / input validation | Experimental contract, fixture, and installation-manifest reads | Low | High | A very large local descriptor reachable through an onboarding action could consume excessive memory during parsing. | The onboarding loaders read entire YAML and JSON files without byte limits. | Regular non-symlinked UTF-8 files are required; contracts/manifests are capped at 256 KiB and fixtures at 1 MiB before parsing. **Fixed.** |
 | Ambiguous POST parser input | Input validation | Route Lab form parser | Low | High | Non-form bodies reached a parser designed for one encoding, making request behavior less predictable. | The parser did not require its supported media type. | Strict `application/x-www-form-urlencoded` enforcement with HTTP 415. **Fixed.** |
 
-No tracked credential, private-key marker, ROM, or savestate was found during
+No tracked credential, private-key marker, or savestate was found during
 this review. No SQL, template-expression, shell interpolation, external URL
 fetch, session-cookie, or role boundary exists in the current architecture.
 
@@ -153,7 +157,7 @@ confidence: **high**.
 - If Route Lab is placed behind any proxy or tunnel, verify the real bind,
   forwarded-host behavior, TLS termination, and authenticated-user boundary.
   Status: **needs decision**; it is not a supported deployment today.
-- If ROMs, Lua scripts, or patches come from another person, assess emulator
+- If Lua scripts or patches come from another person, assess emulator
   sandboxing and provenance on that actual distribution path. Status:
   **deferred**; current inputs are local-operator controlled.
 - Inspect ignored evidence retention on the operator workstation. The repo can
@@ -163,8 +167,8 @@ confidence: **high**.
 ## Deferred roadmap
 
 1. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
-   execution if the tool begins consuming untrusted ROMs, Lua scripts, or
-   externally supplied patches.
+   execution if the tool begins consuming untrusted Lua scripts or externally
+   supplied patches.
 2. Define retention and deletion policy for ignored screenshots, traces, and
    session evidence if the workstation becomes shared or those artifacts gain
    sensitive annotations.
@@ -174,7 +178,7 @@ confidence: **high**.
 
 ## Verification
 
-Run the focused web tests and the canonical ROM-free gate:
+Run the focused web tests and the canonical non-live gate:
 
 ```bash
 .venv/bin/python -m pytest -q tests/test_lab_ui.py tests/test_route_patch.py
@@ -187,8 +191,9 @@ server. Confirm that normal forms work, a copied POST without its token receives
 document security headers. No live FCEUX proof is required for these HTTP-only
 changes.
 
-For the 2026-08-23 hardening review, 203 focused security/CI-relevant tests and
-all 647 tests in the complete ROM-free repository gate passed. The canonical
+For the 2026-08-23 hardening review, the focused security/CI-relevant suite and
+the complete non-live repository gate passed. Exact test counts are omitted
+because the suite grows; the current gate output is authoritative. The canonical
 high-confidence tracked credential/game-asset scan found zero candidates.
 Bandit found zero high-confidence medium/high issues; its single medium,
 low-confidence HTML false positive is documented above. `pip-audit` found no

@@ -104,7 +104,7 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions
 installs the exact locked development graph on Python 3.11 using a cache keyed
-by `uv.lock` and runs the ROM-free gate. Pull requests additionally compare
+by `uv.lock` and runs the non-live gate. Pull requests additionally compare
 dependency changes against GitHub's advisory data.
 
 ## Persistence and data ownership
@@ -148,7 +148,7 @@ machine. Route Lab is an operator convenience surface, not a deployable web
 application: it has no TLS, user accounts, or remote-access authentication and
 must remain on loopback.
 
-For routine operation, run the canonical ROM-free gate before a change. For a
+For routine operation, run the canonical non-live gate before a change. For a
 live route change, also run the selected goal's authoritative reliability
 profile and a separate watch playback as described in
 [World 8 reliability gates](reliability-gate.md). Preserve the resulting local

@@ -12,7 +12,6 @@ from smb3_agent.backends.mednafen import (
     capture_window,
     find_mednafen_window,
     focus_mednafen,
-    is_accessibility_trusted,
     press,
 )
 
@@ -47,7 +46,6 @@ def run_mednafen_probe(
     result = {
         "backend": "mednafen",
         "game_file": "<redacted-local-game-file>",
-        "accessibility_trusted": is_accessibility_trusted(),
         "process_returncode": emulator.returncode,
         "window_bounds_before": asdict(bounds),
         "window_bounds_after": asdict(bounds_after),

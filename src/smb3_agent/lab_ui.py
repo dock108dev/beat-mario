@@ -4378,7 +4378,7 @@ def run_patch_ui_action(
             patch_id, repo_root=repo_root, artifacts_root=artifacts_root, actor="route_lab"
         )
     if action == "validate":
-        game_file = _single(data, "game_file", default="") or os.environ.get("SMB3_GAME_FILE")
+        game_file = os.environ.get("SMB3_GAME_FILE")
         return validate_route_patch(
             patch_id,
             repo_root=repo_root,

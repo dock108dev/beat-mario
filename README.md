@@ -1,95 +1,118 @@
-# Game Companion — Mario Adapter
+# Game Companion
 
-Game Companion is a local, evidence-first game assistance workbench. It can
-understand the current situation, then **Tell**, **Show**, or **Do** one bounded
-objective before returning control with a truthful handoff.
+Game Companion is a local, player-controlled assistant for single-player games.
+It observes a supported game, offers grounded advice (**Tell**), can demonstrate
+one bounded objective in a separate session (**Show**), and can take over only
+after explicit same-session authorization (**Do**). Every execution path must
+stop input and return control with a truthful handoff.
 
-This repository contains the live Mario adapter, the Stardew copied-save and
-companion contracts, their combined local catalog, and engineering tools for
-route evidence, reliability, and Experimental adapter onboarding. Mario's
-accepted route reaches the stable ending from power-on. Stardew's public
-surface is currently inspection-only and unconfigured. The consolidated owner
-campaign has not run and no owner acceptance is claimed.
+This repository is also the engineering workbench behind those experiences:
+route contracts and reliability evidence for Mario, a copied-save safety model
+for Stardew Valley, a combined adapter catalog, local scenario/metrics tooling,
+unattended regression, and fixture-only Experimental-adapter onboarding.
 
-No game file or generated evidence is tracked. Local ROMs, saves, screenshots,
-logs, and artifacts remain ignored.
+## What works today
+
+| Surface | Current repository behavior | Important boundary |
+| --- | --- | --- |
+| Mario | Public local UI, observation, Tell/coaching, separate Show, bounded same-process Do, route execution, review, and reliability tooling | Live use needs a configured local Mario environment and FCEUX. The current cumulative release candidate has not completed the final owner campaign. |
+| Stardew Valley | Copied-save, screen-observation, Tell/Show/Do, reclaim, reset, and evidence contracts with deterministic coverage | The public CLI and UI are inspection-only: they do not select/copy a save, attach to Stardew, or construct a live input driver. |
+| Combined catalog | Provider-owned Mario, Stardew, and installed Experimental entries at the local root UI | Switching is explicit and fails closed until the current adapter has stopped and returned player control. |
+| Experimental adapters | Validate, scaffold, inspect, conform, install, discover, and safely remove data-only adapters | Conformance is fixture-only. Installation does not prove live compatibility or promote an adapter to Supported. |
+| Scenarios, metrics, unattended regression | Local classified engineering contracts, reports, and bounded regression execution | These results cannot substitute for visible gameplay, authoritative completion, usefulness, or owner acceptance. |
+
+The final campaign is deliberately disabled in
+[`data/scenarios/final-campaign.yaml`](data/scenarios/final-campaign.yaml). Green
+Non-live tests prove repository behavior, not live game operation or owner
+acceptance.
 
 ## Requirements
 
 - Python 3.11 or newer
-- [`uv`](https://docs.astral.sh/uv/) for the locked development environment
-- FCEUX on `PATH` only for live gameplay or review runs
-- macOS only for the optional legacy Mednafen diagnostics
+- [`uv`](https://docs.astral.sh/uv/) for the locked environment
+- Git for source identity and reviewed route-patch worktrees
+- FCEUX on `PATH` only for live Mario use
+- macOS permissions and Mednafen only for the optional legacy diagnostic path
 
-## Setup
+Credentials and generated gameplay evidence are not tracked. The application
+has no database, cloud service, scheduler, or production deployment target.
+
+## Install and validate
 
 From the repository root:
 
 ```bash
-uv sync --locked --extra dev
-```
-
-## Validate
-
-Run the same ROM-free gate used by GitHub Actions:
-
-```bash
+uv sync --locked --all-extras
 PYTHON=.venv/bin/python scripts/validate_phase0.sh
 ```
 
-The gate checks repository hygiene, shell syntax, Ruff, all ROM-free tests,
-default goal and segment contracts, deterministic route status, and player/Lab
-render contracts. It does not run an emulator or prove live gameplay.
+The canonical gate checks whitespace, shell syntax, Ruff, tracked-file guards,
+the complete non-live test suite, goal/segment contracts, deterministic route
+status, and the player, Lab, and Stardew HTML render contracts. It never starts
+an emulator or reads an owner save.
 
-Useful smoke commands:
+For a quicker read-only check of the installed command surface:
 
 ```bash
-.venv/bin/python -m pytest -q
-.venv/bin/python -m smb3_agent goal validate world_8_finish_game
-.venv/bin/python -m smb3_agent goal status world_8_finish_game
-.venv/bin/python -m smb3_agent lab ui-render --output /tmp/game-companion.html
-.venv/bin/python -m smb3_agent stardew status
-.venv/bin/python -m smb3_agent stardew operator-render --output /tmp/stardew-operator.html
+.venv/bin/python -m smb3_agent --help
 .venv/bin/python -m smb3_agent companion catalog-status
-.venv/bin/python -m smb3_agent companion render --output /tmp/combined-game-companion.html
+.venv/bin/python -m smb3_agent stardew status
 ```
 
-## Run the local workbench
-
-The loopback-only server opens the combined player catalog at `/`, the preserved
-Mario workspace at `/mario`, the standalone Stardew workspace at `/stardew`,
-and the engineering Game Companion Lab at `/lab`. Route evidence, notes,
-issues, advanced route execution, and reviewed route patches remain in the Lab:
+## Start the local UI
 
 ```bash
 .venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
 ```
 
-The server is loopback-only and is not designed for network exposure. The root
-shows the combined catalog; `/mario`, `/stardew`, `/lab`, and `/onboarding`
-provide the adapter and engineering surfaces. See the [Mario player guide](docs/mario-player-guide.md),
-[Game Companion Lab guide](docs/mario-route-lab.md), and [security model](docs/security.md).
+Open `http://127.0.0.1:8765/` and choose an adapter. The server exposes:
 
-Live Mario validation requires an operator-supplied game file and FCEUX. Follow
-the [reliability guide](docs/reliability-gate.md); review playback never counts
-as authoritative evidence.
+- `/` — combined player catalog and selected workspace
+- `/mario` — Mario player workspace and first-use setup
+- `/stardew` — safe, unconfigured Stardew inspection surface
+- `/onboarding` — Experimental-adapter contributor flow
+- `/lab` — engineering review, route, evidence, and patch tools
 
-## Documentation
+The server accepts loopback hosts only. It is a single-operator local tool, not
+a web deployment; do not expose it through a LAN bind, proxy, tunnel, or public
+port.
 
-Start with the [documentation index](docs/README.md). The primary engineering
-references are:
+Mario first use uses the existing local configuration. The public
+`GAME_COMPANION_EXPERIMENTAL_ROOT` setting changes the local Experimental-
+adapter installation root. The application does not load a `.env` file and
+needs no credentials. See
+[runtime and configuration](docs/runtime-and-configuration.md) for internal
+runner variables and local artifact paths.
 
-- [Development and repository structure](docs/development.md)
-- [Runtime, configuration, and data](docs/runtime-and-configuration.md)
-- [Single sources of truth](docs/ssot.md)
-- [Architecture and module responsibilities](docs/agent-architecture.md)
-- [Operating and validation limitations](docs/known-limitations.md)
-- [Consolidated final campaign](docs/final-campaign-guide.md)
+## Repository map
 
-## Working rules
+```text
+src/smb3_agent/       Python package, CLI, adapters, lifecycle, and local UI
+data/                 Versioned goals, catalogs, profiles, scenarios, and schemas
+scripts/              Canonical gate and FCEUX Lua runners
+tests/                non-live unit, contract, integration, and render tests
+docs/                 Engineering, operating, safety, and evidence guides
+artifacts/            Ignored local runtime evidence (created as needed)
+```
 
-- Goal contracts and accepted evidence define product truth.
-- Green ROM-free tests are not live gameplay acceptance.
-- Product runs start from power-on and prohibit bridges, savestates, search,
-  blind mutation, and diagnostic fallback.
-- Credentials and local game/evidence assets must never be committed.
+The installed console command is `smb3-agent`; `python -m smb3_agent` is used in
+the docs so commands always run through the selected environment. The package
+name and `smb3_agent` namespace are retained compatibility names even though the
+user-facing product is Game Companion.
+
+## Where to go next
+
+- [Documentation index](docs/README.md) — task-oriented map of the canonical docs
+- [Local development](docs/development.md) — setup, layout, entry points, and change boundaries
+- [Architecture](docs/agent-architecture.md) — components, ownership, and data flow
+- [Runtime and configuration](docs/runtime-and-configuration.md) — settings, integrations, persistence, and deployment boundary
+- [Mario player guide](docs/mario-player-guide.md) — live first use and player controls
+- [Stardew companion guide](docs/stardew-operator-guide.md) — implemented contract and unwired-live boundary
+- [Testing and live reliability](docs/reliability-gate.md) — when non-live checks are insufficient
+- [Security model](docs/security.md) and [known limitations](docs/known-limitations.md)
+- [Final campaign](docs/final-campaign-guide.md) — remaining release-candidate and owner proof
+
+When modifying the project, keep adapter facts adapter-owned, require fresh
+authorization for input, preserve actor-labeled evidence, fail closed on stale
+or ambiguous state, and never treat deterministic or unattended results as
+owner acceptance.

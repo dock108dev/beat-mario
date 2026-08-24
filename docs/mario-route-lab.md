@@ -65,7 +65,7 @@ the default goal or acceptance state.
 Goal ids, ordering, labels, and subtitles come from the resolved product
 contracts under `data/goals/`. Route Lab does not maintain an independent goal
 registry. Product-contract and reliability-profile drift is rejected by the
-ROM-free test suite. See [Single sources of truth](ssot.md).
+Non-live test suite. See [Single sources of truth](ssot.md).
 
 Each route row uses player-facing language and displays its role:
 

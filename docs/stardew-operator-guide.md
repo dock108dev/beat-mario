@@ -143,7 +143,7 @@ timeout/cancellation/continuity/input loss, protected actions, reset and stale
 authority, exact reconciliation, evidence hashes, first-unmet reporting,
 desktop/narrow presentation, and Mario contract preservation. They were not
 used with an owner save or live Stardew process. Catalog/switching and render
-contracts are also exercised by the ROM-free suite.
+contracts are also exercised by the non-live suite.
 
 The consolidated campaign must begin from a frozen cumulative release
 candidate with deterministic contracts, then produce visible Stardew technical
@@ -151,4 +151,4 @@ proof and owner-pilot proof. The owner makes every authorization, reclaim,
 feedback, usefulness, and acceptance decision. V2.12 is
 implementation-complete with final validation deferred; V2.13 unattended
 regression and V2.14 Experimental onboarding are also implemented and
-ROM-free-tested, but neither supplies Stardew live or owner proof.
+Non-live-tested, but neither supplies Stardew live or owner proof.
