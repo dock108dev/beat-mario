@@ -1,7 +1,12 @@
 schema_version: game-companion-final-campaign/v1
-status: implementation_hooks_only
+status: v2_14_campaign_entry_contract_ready
 execution_enabled: false
+campaign_entry_enabled_after_candidate_gate: true
+campaign_completion: pending
 release_candidate_required: true
+candidate_manifest_schema: game-companion-campaign-entry-manifest/v1
+candidate_manifest_schema_path: data/scenarios/campaign-entry-manifest-schema.json
+candidate_manifest_namespace: artifacts/campaigns
 catalog: data/scenarios/catalog.yaml
 event_schema: data/scenarios/event-schema.json
 metrics_schema: data/scenarios/metrics-schema.json

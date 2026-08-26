@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import subprocess
 import traceback
 from typing import Any, Callable, Iterable, Mapping
 
@@ -21,6 +22,55 @@ PLAN_SCHEMA_VERSION = "game-companion-scenario-plan/v1"
 ATTEMPT_SCHEMA_VERSION = "game-companion-scenario-attempt/v1"
 DEFAULT_CATALOG = repository_path("data/scenarios/catalog.yaml")
 DEFAULT_ATTEMPT_ROOT = Path("artifacts/scenarios")
+READINESS_SCHEMA_VERSION = "game-companion-final-campaign-readiness/v2"
+CAMPAIGN_ENTRY_MANIFEST_SCHEMA_VERSION = "game-companion-campaign-entry-manifest/v1"
+CAMPAIGN_ENTRY_MANIFEST_MAX_BYTES = 256 * 1024
+AUTHORITATIVE_CAMPAIGN_CONTRACTS = (
+    "data/scenarios/catalog.yaml",
+    "data/scenarios/final-campaign.yaml",
+    "data/scenarios/campaign-entry-manifest-schema.json",
+    "data/scenarios/event-schema.json",
+    "data/scenarios/metrics-schema.json",
+    "data/scenarios/fixtures.yaml",
+    "data/scenarios/artifact-contract.yaml",
+    "data/scenarios/unattended-artifact-contract.yaml",
+    "data/scenarios/mario-owner-pilot.yaml",
+    "data/scenarios/stardew-owner-pilot.yaml",
+    "data/companion/catalog-contract.yaml",
+    "data/experimental-adapters/artifact-contract.yaml",
+    "data/stardew/evidence-contract.yaml",
+)
+KNOWN_CAPABILITY_STATUSES = frozenset(
+    {
+        "available",
+        "missing_implementation",
+        "implemented_campaign_validation_pending",
+        "candidate_prerequisite_blocked",
+        "live_validation_pending",
+        "owner_action_pending",
+        "completed_accepted",
+    }
+)
+CAMPAIGN_ELIGIBLE_STATUSES = frozenset(
+    {
+        "available",
+        "implemented_campaign_validation_pending",
+        "live_validation_pending",
+        "owner_action_pending",
+    }
+)
+IMPLEMENTATION_BLOCKING_STATUSES = frozenset({"missing_implementation"})
+CANDIDATE_BLOCKING_STATUSES = frozenset({"candidate_prerequisite_blocked"})
+SCHEDULED_VALIDATION_STATUSES = frozenset(
+    {"implemented_campaign_validation_pending", "live_validation_pending"}
+)
+PROOF_LIMITS = (
+    "deterministic readiness is not live proof",
+    "campaign entry is not campaign completion",
+    "technical validation is not reliability, usefulness, or owner acceptance",
+    "unattended regression cannot prove visible, authoritative, reliability, usefulness, or acceptance outcomes",
+    "final owner acceptance remains pending until the owner explicitly decides for the exact candidate",
+)
 
 
 class ScenarioError(ValueError):
@@ -143,6 +193,8 @@ class ScenarioDefinition:
     result_can_prove: tuple[str, ...]
     result_cannot_prove: tuple[str, ...]
     capability_status: str = "available"
+    implementation_evidence: tuple[str, ...] = ()
+    safety_requirements: tuple[str, ...] = ()
     visible_live_proof: bool = False
     authoritative_game_outcome: bool = False
 
@@ -151,6 +203,20 @@ class ScenarioDefinition:
             raise ScenarioError("scenario id and version are required")
         if self.timeout_seconds <= 0:
             raise ScenarioError(f"{self.scenario_id}: timeout must be positive")
+        if self.capability_status not in KNOWN_CAPABILITY_STATUSES:
+            raise ScenarioError(
+                f"{self.scenario_id}: unknown capability status: {self.capability_status}"
+            )
+        if self.capability_status in SCHEDULED_VALIDATION_STATUSES and (
+            not self.implementation_evidence or not self.safety_requirements
+        ):
+            raise ScenarioError(
+                f"{self.scenario_id}: campaign-eligible implementation requires evidence and safety requirements"
+            )
+        if self.capability_status == "owner_action_pending" and not self.owner_participation_required:
+            raise ScenarioError(
+                f"{self.scenario_id}: pending owner action requires owner participation"
+            )
         if self.owner_participation_required and self.classification not in {
             ScenarioClassification.OWNER_REQUIRED,
             ScenarioClassification.FINAL_CAMPAIGN,
@@ -287,6 +353,8 @@ def _load_definition(raw: Mapping[str, Any], defaults: Mapping[str, Any]) -> Sce
         result_can_prove=_tuples(item.get("result_can_prove")),
         result_cannot_prove=_tuples(item.get("result_cannot_prove")),
         capability_status=str(item.get("capability_status", "available")),
+        implementation_evidence=_tuples(item.get("implementation_evidence")),
+        safety_requirements=_tuples(item.get("safety_requirements")),
     )
     definition.validate()
     return definition
@@ -338,7 +406,7 @@ class ScenarioRunner:
         blockers = [f"missing capability: {item}" for item in definition.capability_requirements if item not in available]
         blockers.extend(f"missing fixture: {item}" for item in definition.required_fixtures if not Path(item).exists())
         blockers.extend(f"missing local asset: {item}" for item in definition.required_local_assets if not Path(item).exists())
-        if definition.capability_status != "available":
+        if definition.capability_status not in CAMPAIGN_ELIGIBLE_STATUSES:
             blockers.append(f"capability status: {definition.capability_status}")
         if unattended and definition.owner_participation_required:
             blockers.append("owner-required scenario cannot run unattended")
@@ -554,17 +622,351 @@ def _exception_record(exc: Exception, *, phase: str) -> dict[str, str]:
     }
 
 
-def final_campaign_readiness(catalog: Iterable[ScenarioDefinition]) -> dict[str, Any]:
-    scenarios = tuple(catalog)
-    blocked = {item.identity: item.capability_status for item in scenarios if item.capability_status != "available"}
-    owner = [item.identity for item in scenarios if item.owner_participation_required]
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def scenario_classification_hash(scenarios: Iterable[ScenarioDefinition]) -> str:
+    payload = [
+        {
+            "identity": item.identity,
+            "classification": item.classification.value,
+            "evidence_classification": item.evidence_classification.value,
+            "execution_classification": item.execution_classification,
+            "capability_status": item.capability_status,
+            "capability_requirements": item.capability_requirements,
+            "required_fixtures": item.required_fixtures,
+            "required_local_assets": item.required_local_assets,
+            "implementation_evidence": item.implementation_evidence,
+            "safety_requirements": item.safety_requirements,
+            "owner_participation_required": item.owner_participation_required,
+            "may_count_toward_reliability": item.may_count_toward_reliability,
+            "may_count_toward_owner_acceptance": item.may_count_toward_owner_acceptance,
+            "visible_live_proof": item.visible_live_proof,
+            "authoritative_game_outcome": item.authoritative_game_outcome,
+        }
+        for item in sorted(scenarios, key=lambda scenario: scenario.identity)
+    ]
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def campaign_contract_hashes() -> dict[str, str]:
+    hashes: dict[str, str] = {}
+    for relative in AUTHORITATIVE_CAMPAIGN_CONTRACTS:
+        path = repository_path(relative)
+        if not path.is_file() or path.is_symlink():
+            raise ScenarioError(f"campaign contract must be a regular non-symlinked file: {relative}")
+        hashes[relative] = _sha256_file(path)
+    return hashes
+
+
+def _campaign_completion_phase_blockers() -> list[dict[str, str]]:
+    contract = yaml.safe_load(
+        repository_path("data/scenarios/final-campaign.yaml").read_text(encoding="utf-8")
+    )
+    phases = contract.get("phases") if isinstance(contract, Mapping) else None
+    if not isinstance(phases, list):
+        raise ScenarioError("final campaign phases are missing")
+    blockers: list[dict[str, str]] = []
+    for phase in phases:
+        if not isinstance(phase, Mapping) or not isinstance(phase.get("id"), str):
+            raise ScenarioError("final campaign phase identity is invalid")
+        if phase["id"] == "deterministic_contracts":
+            continue
+        blockers.append(
+            {
+                "phase": str(phase["id"]),
+                "reason": "required campaign phase has not run",
+            }
+        )
+    return blockers
+
+
+def _owner_fields_blank() -> bool:
+    mario = yaml.safe_load(repository_path("data/scenarios/mario-owner-pilot.yaml").read_text(encoding="utf-8"))
+    stardew = yaml.safe_load(repository_path("data/scenarios/stardew-owner-pilot.yaml").read_text(encoding="utf-8"))
+    mario_values = tuple((mario.get("owner_feedback") or {}).values()) + tuple(
+        (mario.get("owner_acceptance") or {}).values()
+    )
+    stardew_values = tuple((stardew.get("owner_feedback") or {}).values()) + tuple(
+        (stardew.get("owner_acceptance") or {}).values()
+    )
+    return bool(mario_values) and all(value == "OWNER_TO_COMPLETE" for value in mario_values) and bool(
+        stardew_values
+    ) and all(value is None for value in stardew_values)
+
+
+def _git_value(*args: str) -> str:
+    try:
+        completed = subprocess.run(
+            ("git", *args),
+            cwd=repository_path("."),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise ScenarioError(f"cannot resolve candidate Git identity: {exc.stderr.strip()}") from exc
+    return completed.stdout.strip()
+
+
+def build_campaign_entry_manifest(
+    catalog: Iterable[ScenarioDefinition],
+    *,
+    focused_readiness_total: int,
+    focused_v2_total: int,
+    canonical_total: int,
+) -> dict[str, Any]:
+    scenarios = tuple(sorted(catalog, key=lambda scenario: scenario.identity))
+    if min(focused_readiness_total, focused_v2_total, canonical_total) <= 0:
+        raise ScenarioError("candidate manifest requires positive deterministic test totals")
+    dirty = _git_value("status", "--porcelain", "--untracked-files=all")
+    if dirty:
+        raise ScenarioError("candidate manifest requires a clean repository")
+    if not _owner_fields_blank():
+        raise ScenarioError("candidate manifest requires every owner response and acceptance field to be blank")
     return {
-        "schema_version": "game-companion-final-campaign-readiness/v1",
-        "implementation_only": True,
+        "schema_version": CAMPAIGN_ENTRY_MANIFEST_SCHEMA_VERSION,
+        "source_commit": _git_value("rev-parse", "HEAD"),
+        "source_tree": _git_value("rev-parse", "HEAD^{tree}"),
+        "repository_clean": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "classification_hash": scenario_classification_hash(scenarios),
+        "contract_hashes": campaign_contract_hashes(),
+        "deterministic_evidence": {
+            "focused_readiness": {"status": "passed", "test_total": focused_readiness_total},
+            "focused_v2": {"status": "passed", "test_total": focused_v2_total},
+            "canonical_non_live": {"status": "passed", "test_total": canonical_total},
+        },
+        "owner_fields_blank": True,
+        "owner_fields_source": [
+            "data/scenarios/mario-owner-pilot.yaml",
+            "data/scenarios/stardew-owner-pilot.yaml",
+        ],
+        "campaign_completion": "pending",
+        "proof_limits": list(PROOF_LIMITS),
+    }
+
+
+def write_campaign_entry_manifest(payload: Mapping[str, Any], path: Path) -> Path:
+    root = repository_path("artifacts/campaigns").resolve()
+    target = repository_path(path).resolve()
+    if target.parent != root and root not in target.parents:
+        raise ScenarioError("candidate manifest must remain under artifacts/campaigns")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    encoded = json.dumps(dict(payload), indent=2, sort_keys=True).encode("utf-8") + b"\n"
+    descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(encoded)
+        stream.flush()
+        os.fsync(stream.fileno())
+    return target
+
+
+def load_campaign_entry_manifest(path: Path) -> dict[str, Any]:
+    if not path.is_file() or path.is_symlink():
+        raise ScenarioError("candidate manifest must be a regular non-symlinked file")
+    if path.stat().st_size > CAMPAIGN_ENTRY_MANIFEST_MAX_BYTES:
+        raise ScenarioError("candidate manifest exceeds the 262144-byte limit")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ScenarioError(f"cannot read candidate manifest: {exc}") from exc
+    if not isinstance(payload, dict) or payload.get("schema_version") != CAMPAIGN_ENTRY_MANIFEST_SCHEMA_VERSION:
+        raise ScenarioError("unsupported candidate manifest schema")
+    return payload
+
+
+def _candidate_manifest_blockers(
+    manifest: Mapping[str, Any] | None,
+    scenarios: tuple[ScenarioDefinition, ...],
+    *,
+    verify_candidate_identity: bool,
+) -> list[dict[str, str]]:
+    if manifest is None:
+        return [{"id": "candidate_manifest", "reason": "missing candidate-bound campaign-entry manifest"}]
+    blockers: list[dict[str, str]] = []
+    required_fields = {
+        "schema_version",
+        "source_commit",
+        "source_tree",
+        "repository_clean",
+        "created_at",
+        "classification_hash",
+        "contract_hashes",
+        "deterministic_evidence",
+        "owner_fields_blank",
+        "owner_fields_source",
+        "campaign_completion",
+        "proof_limits",
+    }
+    if set(manifest) != required_fields:
+        blockers.append({"id": "candidate_manifest.fields", "reason": "manifest fields do not match the v1 schema"})
+    if manifest.get("schema_version") != CAMPAIGN_ENTRY_MANIFEST_SCHEMA_VERSION:
+        blockers.append({"id": "candidate_manifest.schema", "reason": "unsupported manifest schema"})
+    commit = str(manifest.get("source_commit", ""))
+    tree = str(manifest.get("source_tree", ""))
+    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+        blockers.append({"id": "candidate_identity.commit", "reason": "missing exact 40-character commit"})
+    if len(tree) != 40 or any(character not in "0123456789abcdef" for character in tree):
+        blockers.append({"id": "candidate_identity.tree", "reason": "missing exact 40-character Git tree"})
+    if manifest.get("repository_clean") is not True:
+        blockers.append({"id": "candidate_identity.clean", "reason": "candidate was not frozen clean"})
+    if manifest.get("owner_fields_blank") is not True or not _owner_fields_blank():
+        blockers.append({"id": "owner_fields", "reason": "owner response or acceptance fields are not guaranteed blank"})
+    if manifest.get("owner_fields_source") != [
+        "data/scenarios/mario-owner-pilot.yaml",
+        "data/scenarios/stardew-owner-pilot.yaml",
+    ]:
+        blockers.append({"id": "owner_fields.source", "reason": "owner field sources are incomplete"})
+    if manifest.get("campaign_completion") != "pending":
+        blockers.append({"id": "campaign_completion", "reason": "campaign completion must begin pending"})
+    if manifest.get("proof_limits") != list(PROOF_LIMITS):
+        blockers.append({"id": "proof_limits", "reason": "candidate proof limits do not match"})
+    if manifest.get("classification_hash") != scenario_classification_hash(scenarios):
+        blockers.append({"id": "classification_hash", "reason": "scenario classification hash mismatch"})
+    try:
+        expected_hashes = campaign_contract_hashes()
+    except ScenarioError as exc:
+        blockers.append({"id": "campaign_contracts", "reason": str(exc)})
+    else:
+        if manifest.get("contract_hashes") != expected_hashes:
+            blockers.append({"id": "campaign_contracts", "reason": "candidate contract hashes do not match"})
+    evidence = manifest.get("deterministic_evidence")
+    if not isinstance(evidence, Mapping):
+        blockers.append({"id": "deterministic_evidence", "reason": "deterministic gate evidence is missing"})
+    else:
+        for gate in ("focused_readiness", "focused_v2", "canonical_non_live"):
+            record = evidence.get(gate)
+            if not isinstance(record, Mapping) or record.get("status") != "passed" or not isinstance(
+                record.get("test_total"), int
+            ) or int(record["test_total"]) <= 0:
+                blockers.append({"id": f"deterministic_evidence.{gate}", "reason": "passed status and positive total required"})
+    if verify_candidate_identity and not blockers:
+        if _git_value("rev-parse", "HEAD") != commit:
+            blockers.append({"id": "candidate_identity.commit", "reason": "manifest does not match HEAD"})
+        if _git_value("rev-parse", "HEAD^{tree}") != tree:
+            blockers.append({"id": "candidate_identity.tree", "reason": "manifest does not match the current Git tree"})
+        if _git_value("status", "--porcelain", "--untracked-files=all"):
+            blockers.append({"id": "candidate_identity.clean", "reason": "repository is not clean"})
+    return blockers
+
+
+def final_campaign_readiness(
+    catalog: Iterable[ScenarioDefinition],
+    candidate_manifest: Mapping[str, Any] | None = None,
+    *,
+    verify_candidate_identity: bool = False,
+) -> dict[str, Any]:
+    scenarios = tuple(sorted(catalog, key=lambda scenario: scenario.identity))
+    implementation_blockers: list[dict[str, str]] = []
+    candidate_blockers: list[dict[str, str]] = []
+    for scenario in scenarios:
+        if scenario.capability_status in IMPLEMENTATION_BLOCKING_STATUSES:
+            implementation_blockers.append(
+                {"scenario": scenario.identity, "reason": scenario.capability_status}
+            )
+        if scenario.capability_status in SCHEDULED_VALIDATION_STATUSES and not scenario.safety_requirements:
+            implementation_blockers.append(
+                {"scenario": scenario.identity, "reason": "missing campaign safety requirements"}
+            )
+        if scenario.capability_status in SCHEDULED_VALIDATION_STATUSES and not scenario.implementation_evidence:
+            implementation_blockers.append(
+                {"scenario": scenario.identity, "reason": "missing implementation evidence"}
+            )
+        for evidence_path in scenario.implementation_evidence:
+            evidence = repository_path(evidence_path)
+            if not evidence.is_file() or evidence.is_symlink():
+                implementation_blockers.append(
+                    {"scenario": scenario.identity, "reason": f"missing implementation evidence: {evidence_path}"}
+                )
+        if scenario.capability_status in CANDIDATE_BLOCKING_STATUSES:
+            candidate_blockers.append(
+                {"scenario": scenario.identity, "reason": scenario.capability_status}
+            )
+        for fixture_path in scenario.required_fixtures:
+            fixture = repository_path(fixture_path)
+            if not fixture.is_file() or fixture.is_symlink():
+                candidate_blockers.append(
+                    {"scenario": scenario.identity, "reason": f"missing fixture: {fixture_path}"}
+                )
+        for asset_path in scenario.required_local_assets:
+            asset = repository_path(asset_path)
+            if not asset.exists():
+                candidate_blockers.append(
+                    {"scenario": scenario.identity, "reason": f"missing local asset: {asset_path}"}
+                )
+    candidate_blockers.extend(
+        _candidate_manifest_blockers(
+            candidate_manifest,
+            scenarios,
+            verify_candidate_identity=verify_candidate_identity,
+        )
+    )
+    scheduled = [
+        {
+            "scenario": item.identity,
+            "status": item.capability_status,
+            "classification": item.classification.value,
+            "proof_status": "pending",
+        }
+        for item in scenarios
+        if item.capability_status != "completed_accepted"
+        and item.classification
+        in {
+            ScenarioClassification.VISIBLE_TECHNICAL,
+            ScenarioClassification.RELIABILITY,
+            ScenarioClassification.REVIEW_ONLY,
+            ScenarioClassification.UNATTENDED_REGRESSION,
+        }
+    ]
+    owner_actions = [
+        {
+            "scenario": item.identity,
+            "status": item.capability_status,
+            "entry_blocker": False,
+            "completion_required": True,
+        }
+        for item in scenarios
+        if item.owner_participation_required
+    ]
+    implementation_ready = not implementation_blockers
+    campaign_entry_ready = implementation_ready and not candidate_blockers
+    completion_blockers = _campaign_completion_phase_blockers() + [
+        {"scenario": item["scenario"], "reason": "scheduled technical validation has not run"}
+        for item in scheduled
+    ] + [
+        {"scenario": item["scenario"], "reason": "required owner action has not occurred"}
+        for item in owner_actions
+    ]
+    return {
+        "schema_version": READINESS_SCHEMA_VERSION,
         "scenario_count": len(scenarios),
-        "capability_blockers": blocked,
-        "owner_action_scenarios": owner,
-        "ready_to_execute": False,
-        "reason": "V2.8 defines plans and hooks only; consolidated validation is deferred.",
-        "classification_hash": hashlib.sha256("\n".join(sorted(item.identity + ":" + item.evidence_classification.value for item in scenarios)).encode()).hexdigest(),
+        "implementation_readiness": {
+            "ready": implementation_ready,
+            "blockers": implementation_blockers,
+        },
+        "campaign_entry_readiness": {
+            "ready": campaign_entry_ready,
+            "blockers": candidate_blockers,
+        },
+        "campaign_completion": {
+            "complete": False,
+            "blockers": completion_blockers,
+        },
+        "implementation_blockers": implementation_blockers,
+        "candidate_blockers": candidate_blockers,
+        "scheduled_technical_validations": scheduled,
+        "required_owner_actions": owner_actions,
+        "completion_blockers": completion_blockers,
+        "proof_limits": list(PROOF_LIMITS),
+        "campaign_entry_ready": campaign_entry_ready,
+        "campaign_complete": False,
+        "classification_hash": scenario_classification_hash(scenarios),
+        "candidate_commit": candidate_manifest.get("source_commit") if candidate_manifest else None,
     }

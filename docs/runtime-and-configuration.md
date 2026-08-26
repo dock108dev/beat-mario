@@ -129,6 +129,7 @@ Generated state is filesystem-only and ignored by Git:
 | `artifacts/stardew-operator/` | Stardew copied-save attempt evidence when a controller is explicitly constructed. |
 | `artifacts/scenarios/` and `artifacts/session-metrics/` | Classified scenario attempts, events, indexes, summaries, and exports. |
 | `artifacts/unattended-regression/` | Immutable regression-only manifests, run directories, reports, cleanup evidence, and comparisons. |
+| `artifacts/campaigns/<exact-commit>/` | Ignored candidate-bound entry manifest with clean Git identity, contract hashes, deterministic totals, blank-owner guarantee, and proof limits. |
 | `public/assets/local/` | Optional ignored local artwork used by Route Lab. |
 
 Experimental scaffolds default to repository-local `experimental-adapters/`.
@@ -157,4 +158,9 @@ evidence directory and record its exact path when reporting acceptance.
 The final campaign is not a deployed job or generic CLI runner:
 `data/scenarios/final-campaign.yaml` has `execution_enabled: false`. It is a
 manual, frozen-candidate workflow with explicit owner pauses described in the
-[consolidated final campaign](final-campaign-guide.md).
+[consolidated final campaign](final-campaign-guide.md). The false setting
+prevents automatic campaign execution; it does not mean V2.14 implementation is
+missing. `scenario candidate-manifest` writes an ignored, exact clean
+candidate-bound manifest under `artifacts/campaigns/`, and
+`scenario final-campaign-readiness --candidate-manifest ... --gate` exits
+nonzero unless implementation and campaign-entry prerequisites reconcile.

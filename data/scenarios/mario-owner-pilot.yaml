@@ -1,5 +1,5 @@
 schema_version: game-companion-mario-owner-pilot/v1
-pilot_version: "2.9-rc1"
+pilot_version: "2.14-rc1"
 status: prepared_not_run
 execution_enabled: false
 release_candidate:
@@ -8,7 +8,7 @@ release_candidate:
   product_manifest_sha256: OWNER_PILOT_PRODUCT_MANIFEST_SHA256
   frozen_at: OWNER_PILOT_FREEZE_TIME
 preconditions:
-  - V2.6 through V2.9 implementation is frozen with validation still deferred
+  - V2.0 through V2.14 implementation and campaign-entry contracts are frozen with live validation still pending
   - the owner supplies the supported local Mario game file; the product does not provide or copy it
   - FCEUX is locally installed and launches visibly
   - keyboard or controller input is ready and the owner can reclaim directly in FCEUX

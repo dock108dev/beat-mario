@@ -21,10 +21,13 @@ unattended regression, and fixture-only Experimental-adapter onboarding.
 | Experimental adapters | Validate, scaffold, inspect, conform, install, discover, and safely remove data-only adapters | Conformance is fixture-only. Installation does not prove live compatibility or promote an adapter to Supported. |
 | Scenarios, metrics, unattended regression | Local classified engineering contracts, reports, and bounded regression execution | These results cannot substitute for visible gameplay, authoritative completion, usefulness, or owner acceptance. |
 
-The final campaign is deliberately disabled in
-[`data/scenarios/final-campaign.yaml`](data/scenarios/final-campaign.yaml). Green
-Non-live tests prove repository behavior, not live game operation or owner
-acceptance.
+The V2.14 campaign-entry contract is prepared in
+[`data/scenarios/final-campaign.yaml`](data/scenarios/final-campaign.yaml).
+Automatic execution remains disabled: an exact clean candidate-bound manifest
+and the structured readiness gate are required before the first attended phase.
+Green Non-live tests can establish implementation and campaign-entry readiness;
+they do not prove live game operation, usefulness, campaign completion, or
+owner acceptance.
 
 ## Requirements
 

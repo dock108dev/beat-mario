@@ -235,6 +235,6 @@ def test_onboarding_ui_names_all_states_steps_proof_limits_and_narrow_layout(tmp
 
 def test_scenario_contract_agrees_with_conformance_and_proof_limits() -> None:
     scenario = next(item for item in load_scenario_catalog() if item.scenario_id == "adapters.experimental_onboarding_removal")
-    assert scenario.capability_status == "implemented_validation_deferred"
+    assert scenario.capability_status == "implemented_campaign_validation_pending"
     assert scenario.may_count_toward_owner_acceptance is False
     assert set(PROOF_LIMITS).issubset(set(scenario.result_cannot_prove))

@@ -701,7 +701,7 @@ class MarioUnattendedProvider:
 
     def capability(self) -> Mapping[str, Any]:
         configured = self.rom_path is not None and self.rom_path.exists() and self.executable.exists()
-        return {"adapter_id": self.adapter_id, "supported": True, "configured": configured, "eligible": False if not configured else "pending_scenario_source_display_preflight", "status": "implemented_validation_deferred", "requires": ["owner-configured local ROM", "FCEUX", "rendered-pixel display"], "proof": "technical repeatability only"}
+        return {"adapter_id": self.adapter_id, "supported": True, "configured": configured, "eligible": False if not configured else "pending_scenario_source_display_preflight", "status": "implemented_campaign_validation_pending", "requires": ["owner-configured local ROM", "FCEUX", "rendered-pixel display"], "proof": "technical repeatability only"}
 
     def plan(self, *, run_root: Path | None = None) -> ProviderRunPlan:
         if self.rom_path is None:
@@ -753,7 +753,7 @@ class StardewUnattendedProvider:
 
     def capability(self) -> Mapping[str, Any]:
         configured = self.fixture_path is not None and self.fixture_path.exists() and self.executable is not None and self.executable.exists() and bool(self.owner_save_roots)
-        return {"adapter_id": self.adapter_id, "supported": True, "configured": configured, "eligible": False if not configured else "pending_scenario_source_display_path_preflight", "status": "implemented_validation_deferred", "requires": ["designated regression fixture", "visible-window pixel backend", "ordinary input", "all owner-save roots"], "primary_save_allowed": False, "proof": "technical regression behavior only"}
+        return {"adapter_id": self.adapter_id, "supported": True, "configured": configured, "eligible": False if not configured else "pending_scenario_source_display_path_preflight", "status": "implemented_campaign_validation_pending", "requires": ["designated regression fixture", "visible-window pixel backend", "ordinary input", "all owner-save roots"], "primary_save_allowed": False, "proof": "technical regression behavior only"}
 
     def plan(self, *, run_root: Path | None = None) -> ProviderRunPlan:
         if self.fixture_path is None or self.executable is None:

@@ -88,9 +88,12 @@ from smb3_agent.segments import (
 from smb3_agent.scenarios import (
     DEFAULT_CATALOG as DEFAULT_SCENARIO_CATALOG,
     ScenarioError,
+    build_campaign_entry_manifest,
     final_campaign_readiness,
+    load_campaign_entry_manifest,
     load_scenario_catalog,
     scenario_plan,
+    write_campaign_entry_manifest,
 )
 from smb3_agent.stardew_adapter import (
     ADAPTER_CONTRACT_PATH,
@@ -657,9 +660,23 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("scenario_id", nargs="?" if action == "list" else None)
         command.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
     readiness = scenario_subparsers.add_parser(
-        "final-campaign-readiness", help="Report classified final-campaign blockers"
+        "final-campaign-readiness", help="Inspect or gate structured V2.14 campaign-entry readiness"
     )
     readiness.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
+    readiness.add_argument("--candidate-manifest", default=None)
+    readiness.add_argument(
+        "--gate",
+        action="store_true",
+        help="Exit nonzero unless the exact current candidate is ready to enter the campaign",
+    )
+    candidate_manifest = scenario_subparsers.add_parser(
+        "candidate-manifest", help="Create one clean candidate-bound attended-campaign manifest"
+    )
+    candidate_manifest.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
+    candidate_manifest.add_argument("--output", required=True)
+    candidate_manifest.add_argument("--focused-readiness-total", required=True, type=int)
+    candidate_manifest.add_argument("--focused-v2-total", required=True, type=int)
+    candidate_manifest.add_argument("--canonical-total", required=True, type=int)
 
     unattended = subparsers.add_parser(
         "unattended", help="Inspect or run honestly labeled local unattended regression"
@@ -1329,8 +1346,35 @@ def main() -> None:
                     for item in catalog
                 ], indent=2, sort_keys=True))
                 return
+            if args.scenario_command == "candidate-manifest":
+                payload = build_campaign_entry_manifest(
+                    catalog,
+                    focused_readiness_total=args.focused_readiness_total,
+                    focused_v2_total=args.focused_v2_total,
+                    canonical_total=args.canonical_total,
+                )
+                path = write_campaign_entry_manifest(payload, Path(args.output))
+                print(json.dumps({
+                    "candidate_commit": payload["source_commit"],
+                    "classification_hash": payload["classification_hash"],
+                    "manifest": str(path),
+                    "owner_fields_blank": payload["owner_fields_blank"],
+                }, indent=2, sort_keys=True))
+                return
             if args.scenario_command == "final-campaign-readiness":
-                print(json.dumps(final_campaign_readiness(catalog), indent=2, sort_keys=True))
+                manifest = (
+                    load_campaign_entry_manifest(Path(args.candidate_manifest))
+                    if args.candidate_manifest
+                    else None
+                )
+                result = final_campaign_readiness(
+                    catalog,
+                    manifest,
+                    verify_candidate_identity=args.gate,
+                )
+                print(json.dumps(result, indent=2, sort_keys=True))
+                if args.gate and not result["campaign_entry_ready"]:
+                    raise SystemExit(1)
                 return
             if selected is None:
                 parser.error(f"unknown scenario: {args.scenario_id}")
@@ -1341,10 +1385,18 @@ def main() -> None:
                 print(json.dumps({
                     "scenario_id": selected.scenario_id,
                     "version": selected.version,
-                    "implementation": "defined",
+                    "implementation": (
+                        "missing"
+                        if selected.capability_status == "missing_implementation"
+                        else "present"
+                    ),
                     "capability_status": selected.capability_status,
                     "owner_participation_required": selected.owner_participation_required,
-                    "execution_deferred": True,
+                    "campaign_validation_pending": selected.capability_status in {
+                        "implemented_campaign_validation_pending",
+                        "live_validation_pending",
+                    },
+                    "campaign_completion_proven": selected.capability_status == "completed_accepted",
                 }, indent=2, sort_keys=True))
                 return
             parser.error(

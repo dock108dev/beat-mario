@@ -751,6 +751,11 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
     assert "Mark Resolved" in html
     assert "Needs Rerun" in html
     assert "Create Codex Task" in html
+    assert "V2.14 readiness" in html
+    assert "Implementation blockers" in html
+    assert "Candidate blockers" in html
+    assert "Campaign entry" in html
+    assert "Campaign complete" in html
     assert "1-1" in html
     assert "1-3" in html
     assert "Fortress" in html

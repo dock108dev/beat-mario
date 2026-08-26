@@ -284,9 +284,12 @@ built-ins. Experimental entries remain live-unproven and cannot self-promote.
 
 Non-live tests exercise rendering, conformance, deterministic scaffolding, and
 temporary-root install/status/removal behavior. No persistent operator adapter
-installation, live game activity, or owner acceptance has run. The next action
-is to freeze the cumulative release candidate and rerun deterministic contract
-validation against that exact identity.
+installation, live game activity, or owner acceptance has run. The structured
+V2.14 readiness model may establish implementation readiness and campaign-entry
+readiness for an exact clean candidate while keeping the switching,
+unattended-regression, Experimental-onboarding, reliability, usefulness,
+campaign-completion, and owner-decision proofs pending for their designated
+campaign phases.
 
 ## V2 completion
 

@@ -66,8 +66,9 @@ locked Python 3.11 environment.
 ## Release-candidate and historical planning material
 
 - [Consolidated final campaign](final-campaign-guide.md) is the still-unrun
-  release-candidate, live-game, and owner-proof workflow. The tracked campaign
-  remains disabled until a candidate is frozen.
+  release-candidate, live-game, and owner-proof workflow. Automatic execution
+  remains disabled; a frozen candidate-bound manifest and structured entry gate
+  determine when its attended phases are eligible to begin.
 - [Game Companion V2 roadmap](v2-roadmap.md) records slice status through V2.14.
   It is a status/evidence document, not the setup guide.
 - [Local UI assets](local-assets.md) explains optional ignored artwork.

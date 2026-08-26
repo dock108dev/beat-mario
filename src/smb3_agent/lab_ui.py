@@ -135,7 +135,13 @@ from smb3_agent.route_patch import (
 )
 from smb3_agent.run_library import LocalRunLibrary, RunLibraryError
 from smb3_agent.takeover import TakeoverError, supported_solutions
-from smb3_agent.scenarios import ScenarioError, final_campaign_readiness, load_scenario_catalog, scenario_plan
+from smb3_agent.scenarios import (
+    ScenarioError,
+    final_campaign_readiness,
+    load_campaign_entry_manifest,
+    load_scenario_catalog,
+    scenario_plan,
+)
 from smb3_agent.stardew_adapter import InputOwner, OperatorLifecycle, OperatorView, load_stardew_contract, render_stardew_operator
 
 
@@ -3043,7 +3049,15 @@ def _player_session_history_panel() -> str:
 def _scenario_engineering_panel() -> str:
     try:
         catalog = load_scenario_catalog()
-        readiness = final_campaign_readiness(catalog)
+        manifests = sorted(
+            repository_path("artifacts/campaigns").glob("*/campaign-entry-manifest.json")
+        )
+        manifest = load_campaign_entry_manifest(manifests[-1]) if manifests else None
+        readiness = final_campaign_readiness(
+            catalog,
+            manifest,
+            verify_candidate_identity=manifest is not None,
+        )
     except (ScenarioError, OSError, yaml.YAMLError) as exc:
         return f'''
           <section class="paper-panel" data-testid="lab-scenario-engineering">
@@ -3064,8 +3078,8 @@ def _scenario_engineering_panel() -> str:
     )
     return f'''
       <section class="paper-panel" data-testid="lab-scenario-engineering">
-        <div class="section-title"><div><h2>Scenario automation &amp; metrics</h2><p>Plans, blockers, schemas, retention, and final-campaign readiness</p></div><span class="status-pill">Implementation only</span></div>
-        <dl class="fact-grid"><div><dt>Catalog</dt><dd>{len(catalog)} versioned scenarios</dd></div><div><dt>Raw events</dt><dd>{LocalMetricsStore().status()['accepted_events']}</dd></div><div><dt>Capability blockers</dt><dd>{len(readiness['capability_blockers'])}</dd></div><div><dt>Campaign executable</dt><dd>No — validation deferred</dd></div></dl>
+        <div class="section-title"><div><h2>Scenario automation &amp; metrics</h2><p>Implementation, campaign entry, completion, proof limits, and owner boundaries remain separate</p></div><span class="status-pill">V2.14 readiness</span></div>
+        <dl class="fact-grid"><div><dt>Catalog</dt><dd>{len(catalog)} versioned scenarios</dd></div><div><dt>Raw events</dt><dd>{LocalMetricsStore().status()['accepted_events']}</dd></div><div><dt>Implementation blockers</dt><dd>{len(readiness['implementation_blockers'])}</dd></div><div><dt>Candidate blockers</dt><dd>{len(readiness['candidate_blockers'])}</dd></div><div><dt>Campaign entry</dt><dd>{'Ready' if readiness['campaign_entry_ready'] else 'Not ready'}</dd></div><div><dt>Campaign complete</dt><dd>No — live and owner proof pending</dd></div></dl>
         <details><summary>Scenario catalog and dry plans</summary>{scenario_rows}</details>
         <details><summary>Metric definitions and classification filters</summary><ul>{labels}</ul><p>No combined success score exists. Unknown, failed, incompatible, and missing evidence stay visible.</p></details>
         <details><summary>Storage, reconciliation, and recovery</summary><p>Raw events are append-only and integrity hashed. Derived indexes are atomic and rebuildable. Malformed, contradictory, duplicate-content, out-of-order, unsupported, or classification-changing events are rejected or quarantined.</p><p>Failed attempts and artifacts are retained; retries create new immutable attempts. Deletion planning protects accepted route evidence.</p></details>

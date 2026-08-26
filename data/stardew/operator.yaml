@@ -41,46 +41,46 @@ protected_action_terms:
   - primary save
 capabilities:
   - id: disposable_save
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py]
   - id: visible_window_detection
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py]
   - id: screen_observation
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py, data/stardew/fixtures.yaml]
   - id: explicit_input_ownership
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py]
   - id: bounded_watering_operator
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py]
   - id: exact_task_accounting
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_adapter.py, data/stardew/evidence-contract.yaml]
   - id: tell
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/tell.py]
   - id: show
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py]
   - id: do_takeover_mode
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/takeover.py]
   - id: immediate_reclaim_and_neutral_handback
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/stardew_adapter.py]
   - id: disposable_save_reset
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py, src/smb3_agent/stardew_adapter.py]
   - id: stardew_safety_policy
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/stardew_companion.py, data/stardew/operator.yaml]
   - id: combined_catalog
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/companion_catalog.py, data/companion/catalog-contract.yaml]
   - id: unattended_regression_provider
-    status: implemented_validation_deferred
+    status: implemented_campaign_validation_pending
     contract_references: [src/smb3_agent/unattended.py, data/scenarios/unattended-artifact-contract.yaml]
 fail_closed_on:
   - unknown or stale visible state

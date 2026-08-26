@@ -25,6 +25,7 @@ README_PATH = REPOSITORY_ROOT / "README.md"
 RUNTIME_DOC_PATH = REPOSITORY_ROOT / "docs/runtime-and-configuration.md"
 STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
 FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
+CAMPAIGN_ENTRY_SCHEMA_PATH = REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
 ROADMAP_PATH = REPOSITORY_ROOT / "docs/v2-roadmap.md"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
@@ -226,6 +227,8 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
         assert required in readme
     assert "# Game Companion — Mario Adapter" not in readme
     assert "execution_enabled: false" in final_campaign
+    assert "status: v2_14_campaign_entry_contract_ready" in final_campaign
+    assert CAMPAIGN_ENTRY_SCHEMA_PATH.is_file()
     assert "Status: **in progress" not in roadmap
 
 
@@ -261,6 +264,7 @@ def test_runtime_docs_match_configuration_persistence_and_public_stardew_boundar
         "artifacts/scenarios/",
         "artifacts/session-metrics/",
         "artifacts/unattended-regression/",
+        "artifacts/campaigns/",
     ):
         assert path in runtime
     assert "inspection-only" in stardew

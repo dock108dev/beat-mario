@@ -138,20 +138,24 @@ Stardew tests
 
 ## Scenario and metric classification
 
-Domain: scenario identity/lifecycle/evidence eligibility and classified local
-metrics.
+Domain: scenario identity/lifecycle/evidence eligibility, V2.14 implementation
+and campaign-entry readiness, candidate manifests, and classified local metrics.
 
 SSOT module/file: `src/smb3_agent/scenarios.py` plus
 `data/scenarios/catalog.yaml`; metric schemas and aggregation live in
 `src/smb3_agent/metrics.py`.
 
-Why this is authoritative: the scenario catalog defines what can run or prove;
-the runner enforces transitions. Metrics accept those classifications without
-inventing a blended success score. Generic scenario `run`/`cancel` CLI entries
-were removed because no supported dispatcher owned them.
+Why this is authoritative: the scenario catalog defines what is implemented,
+what is eligible for later validation, and what each result can prove; the
+runner enforces transitions. Candidate manifests bind the exact clean Git
+identity, authoritative contract hashes, deterministic gate records, and blank
+owner fields. Readiness keeps entry separate from completion. Metrics accept
+those classifications without inventing a blended success score. Generic
+scenario `run`/`cancel` CLI entries were removed because no supported dispatcher
+owned them.
 
-Known callers: scenario CLI list/status/plan/readiness, unattended eligibility,
-Route Lab, metrics CLI, and tests
+Known callers: scenario CLI list/status/plan/candidate-manifest/readiness gate,
+unattended eligibility, Route Lab, metrics CLI, and tests
 
 ## Unattended regression
 

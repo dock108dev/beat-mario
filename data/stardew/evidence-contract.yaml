@@ -1,5 +1,5 @@
 schema_version: game-companion-stardew-evidence/v1
-classification: implementation_hooks_only
+classification: implementation_contract_live_validation_pending
 execution_enabled: false
 required_per_attempt:
   - attempt.json

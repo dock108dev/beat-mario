@@ -473,6 +473,13 @@ scenario readiness, missing final evidence, pilot manifest, and recovery state.
 contract. It cannot populate feedback or acceptance and cannot upgrade
 technical evidence.
 
+`scenarios.py` also owns the V2.14 readiness model and candidate-manifest
+validation. Catalog status and implementation evidence determine implementation
+readiness; exact clean Git identity, authoritative contract hashes,
+deterministic gate records, fixtures/assets, safety requirements, and blank
+owner fields determine campaign entry. Scheduled technical validation and
+pending owner action are completion blockers, not circular entry blockers.
+
 ## Experimental adapter onboarding and discovery
 
 `experimental_adapters.py` owns the V2.14 versioned contract, deterministic

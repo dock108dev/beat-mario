@@ -1,8 +1,9 @@
 # Consolidated Final Campaign
 
-The final campaign is prepared but has not run. V2.6 through V2.14 are
-implementation-complete only until the frozen release candidate passes the
-campaign and the owner records an explicit decision.
+The final campaign is prepared but has not run. V2.6 through V2.14 may be
+implementation-ready and eligible to enter the campaign while every live,
+reliability, usefulness, completion, and owner-acceptance result remains
+pending. Campaign entry and campaign completion are deliberately separate.
 
 The executable source of truth is `data/scenarios/final-campaign.yaml`; the
 Mario owner workflow is frozen in `data/scenarios/mario-owner-pilot.yaml`; the
@@ -12,6 +13,46 @@ identity placeholders, preconditions, owner
 choices, expected product states, required evidence, failure retention, the
 no-patching rule, first-unmet-requirement reporting, artifact reconciliation,
 blank usefulness feedback, and a blank owner acceptance field.
+
+## Readiness layers and candidate manifest
+
+Implementation readiness means the required product surfaces, deterministic
+fixtures, safety contracts, tests, and operator surfaces exist. Campaign-entry
+readiness additionally requires one exact clean candidate, matching hashes for
+the authoritative campaign contracts, passed deterministic gates, and verified
+blank owner-response fields. The ignored manifest uses schema
+`game-companion-campaign-entry-manifest/v1`, is defined by
+`data/scenarios/campaign-entry-manifest-schema.json`, and lives below
+`artifacts/campaigns/`; it binds the exact commit and Git tree without copying
+or fabricating any owner response.
+
+`scenario final-campaign-readiness` is an informational structured inspection.
+Pass `--candidate-manifest` and `--gate` for a fail-closed entry gate. The output
+keeps implementation blockers, candidate blockers, scheduled technical
+validations, required owner actions, completion blockers, and proof limits
+separate. Pending final owner acceptance never blocks entry, but it always
+blocks campaign completion until the owner explicitly decides for that exact
+candidate.
+
+After the deterministic suites pass and the exact source commit is clean, bind
+their real totals without filling owner fields:
+
+```bash
+.venv/bin/python -m smb3_agent scenario candidate-manifest \
+  --output artifacts/campaigns/<exact-commit>/campaign-entry-manifest.json \
+  --focused-readiness-total <total> \
+  --focused-v2-total <total> \
+  --canonical-total <total>
+.venv/bin/python -m smb3_agent scenario final-campaign-readiness \
+  --candidate-manifest artifacts/campaigns/<exact-commit>/campaign-entry-manifest.json \
+  --gate
+```
+
+The first command refuses a dirty repository, a nonpositive total, or nonblank
+owner fields. The gate verifies the manifest against current `HEAD`, the Git
+tree, repository cleanliness, classification hash, and every authoritative
+contract hash. Inspection without `--gate` retains exit zero for diagnostics;
+gate mode exits nonzero when campaign entry is false.
 
 ## Attempt rules
 

@@ -150,6 +150,34 @@ def test_removed_generic_scenario_actions_are_not_cli_paths(
         build_parser().parse_args(["scenario", removed_action, "fixture"])
 
 
+def test_readiness_cli_has_distinct_inspection_gate_and_manifest_creation_paths() -> None:
+    inspect = build_parser().parse_args(["scenario", "final-campaign-readiness"])
+    gate = build_parser().parse_args([
+        "scenario",
+        "final-campaign-readiness",
+        "--candidate-manifest",
+        "artifacts/campaigns/candidate/campaign-entry-manifest.json",
+        "--gate",
+    ])
+    manifest = build_parser().parse_args([
+        "scenario",
+        "candidate-manifest",
+        "--output",
+        "artifacts/campaigns/candidate/campaign-entry-manifest.json",
+        "--focused-readiness-total",
+        "10",
+        "--focused-v2-total",
+        "366",
+        "--canonical-total",
+        "666",
+    ])
+    assert inspect.gate is False
+    assert gate.gate is True
+    assert manifest.focused_readiness_total == 10
+    assert manifest.focused_v2_total == 366
+    assert manifest.canonical_total == 666
+
+
 def test_parse_unsupported_command() -> None:
     with pytest.raises(CommandParseError, match="Unsupported command"):
         parse_command("please improvise a route")

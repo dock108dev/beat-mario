@@ -386,7 +386,13 @@ scenarios:
     evidence_classification: technical_session_result
     execution_classification: visible_technical
     capability_requirements: [local_event_store, combined_game_catalog]
-    capability_status: implemented_validation_deferred
+    capability_status: implemented_campaign_validation_pending
+    implementation_evidence:
+      - src/smb3_agent/companion_catalog.py
+      - tests/test_companion_catalog.py
+      - data/companion/catalog-contract.yaml
+      - docs/agent-architecture.md
+    safety_requirements: [target validated before current-state mutation, player-owned neutral handback, retained attempt and evidence, volatile observation and authority invalidated, unknown or ambiguous state fails closed]
     required_fixtures: [data/companion/catalog-contract.yaml, data/scenarios/artifact-contract.yaml]
     expected_events: [adapter_selected, active_mode_stopped, input_neutralized, handback_completed, attempt_retained, authority_invalidated, observation_invalidated, adapter_switched, new_observation_required, evidence_reconciled]
     negative_expectations: [no adapter-state leakage, no cross-save action, no cross-adapter observation or authority reuse, no game-evidence promotion, no game-id branching in shared catalog or switching]
@@ -400,7 +406,13 @@ scenarios:
     evidence_classification: unattended_regression_result
     execution_classification: unattended_regression
     capability_requirements: [local_event_store, unattended_runner, explicit_unattended_provider, rendered_pixel_display]
-    capability_status: implemented_validation_deferred
+    capability_status: implemented_campaign_validation_pending
+    implementation_evidence:
+      - src/smb3_agent/unattended.py
+      - tests/test_unattended.py
+      - data/scenarios/unattended-artifact-contract.yaml
+      - docs/unattended-regression.md
+    safety_requirements: [regression-only immutable classification, isolated provider-owned attempts, exact-process cleanup, owner data and accepted evidence protected, no promotion to visible reliability usefulness authoritative or acceptance proof]
     preconditions:
       - exact source commit and dirty-state fingerprint are fresh
       - selected adapter explicitly supports unattended regression
@@ -444,7 +456,13 @@ scenarios:
     evidence_classification: technical_session_result
     execution_classification: visible_technical
     capability_requirements: [local_event_store, new_game_onboarding]
-    capability_status: implemented_validation_deferred
+    capability_status: implemented_campaign_validation_pending
+    implementation_evidence:
+      - src/smb3_agent/experimental_adapters.py
+      - tests/test_experimental_adapters.py
+      - data/experimental-adapters/artifact-contract.yaml
+      - docs/new-game-onboarding.md
+    safety_requirements: [declarative bounded contract, no generated code command or network dependency, atomic manifest-owned installation and rollback, active or modified state refuses removal, Experimental status cannot self-promote]
     preconditions: [frozen release candidate, bounded empty scaffold and installation roots, fixture-only sample selected, no game process or active adapter authority]
     required_fixtures: [data/experimental-adapters/fixture-quest/adapter.yaml, data/scenarios/fixtures.yaml]
     automated_steps:
@@ -480,7 +498,12 @@ scenarios:
     owner_participation_required: true
     visible_execution_required: true
     may_count_toward_owner_acceptance: true
-    capability_status: blocked_until_release_freeze_and_campaign
+    capability_status: owner_action_pending
+    implementation_evidence:
+      - data/scenarios/mario-owner-pilot.yaml
+      - data/scenarios/stardew-owner-pilot.yaml
+      - docs/final-campaign-guide.md
+    safety_requirements: [owner fields begin blank, owner actions cannot be simulated, explicit usefulness and acceptance decision required, acceptance applies only to the exact frozen candidate]
     expected_events: [owner_usefulness_feedback, owner_acceptance_decision, evidence_reconciled]
     result_can_prove: [explicit owner usefulness and acceptance decisions for the frozen release candidate]
     result_cannot_prove: [route reliability unless the separate reliability scenarios pass, authoritative game completion without game-owned evidence]

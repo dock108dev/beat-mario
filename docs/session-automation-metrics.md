@@ -127,9 +127,12 @@ cloud identifiers.
 
 ## Command and UI surfaces
 
-The CLI exposes scenario `list`, `status`, `plan`, and
-`final-campaign-readiness`, plus metrics `summarize`, `export`, `rebuild`,
-`schema`, and `status`. Generic scenario run/cancel entries are not supported;
+The CLI exposes scenario `list`, `status`, `plan`, `candidate-manifest`, and
+`final-campaign-readiness`. Readiness inspection emits separate implementation,
+campaign-entry, scheduled-validation, owner-action, completion-blocker, and
+proof-limit fields. Gate mode exits nonzero when campaign entry is false.
+Metrics expose `summarize`, `export`, `rebuild`, `schema`, and `status`. Generic
+scenario run/cancel entries are not supported;
 unattended regression uses its dedicated bounded runner, and the consolidated
 owner campaign must follow its explicit guide rather than a placeholder CLI.
 
