@@ -2275,6 +2275,7 @@ def render_experimental_onboarding(
         </style>
         <div class="onboarding" data-testid="experimental-onboarding">
           <header><p class="eyebrow">V2.14 · local contributor kit</p><h1>New Game Onboarding</h1><p>Create a declarative fixture-only scaffold, inspect its truth, run local conformance, install it as Experimental, or remove only what its manifest owns.</p><nav><a class="secondary-button nav-link" href="/">Catalog</a> <a class="secondary-button nav-link" href="/lab">Lab</a></nav></header>
+          <main>
           <section class="state-key" aria-label="Adapter states"><span>Declared</span><span>Conformant</span><span>Live-unproven</span><span>Unsupported</span><span>Scaffolded</span><span>Installed</span></section>
           {result}
           <section class="steps" aria-label="Onboarding steps">{step_html}</section>
@@ -2285,6 +2286,7 @@ def render_experimental_onboarding(
           </section>
           <section class="installed"><h2>Installed Experimental adapters</h2>{installed_rows}</section>
           <section class="proof-limits"><h2>What conformance cannot prove</h2><ul>{limits}</ul><p><strong>Experimental providers cannot promote themselves to Supported.</strong> Mario and Stardew remain explicit trusted built-ins.</p></section>
+          </main>
         </div>''',
     )
 
@@ -3322,19 +3324,23 @@ def _add_observation_mode(selected: dict[str, object]) -> str:
                     <textarea name="note__{_esc(location_id)}" placeholder="Where did Mario fail, or what should he do here?"></textarea>
                   </label>
                   <div class="note-tools">
-                    <select name="severity__{_esc(location_id)}">
-                      <option value="bug">failure</option>
-                      <option value="objective">expected behavior</option>
-                      <option value="map_action">route instruction</option>
-                      <option value="harden">validation note</option>
-                      <option value="guide_detail">positive evidence</option>
-                    </select>
-                    <select name="anchor__{_esc(location_id)}">
-                      <option value="">no anchor</option>
-                      <option value="in_game_timer">timer</option>
-                      <option value="frame">frame</option>
-                      <option value="map_position">map position</option>
-                    </select>
+                    <label>Classification
+                      <select name="severity__{_esc(location_id)}">
+                        <option value="bug">failure</option>
+                        <option value="objective">expected behavior</option>
+                        <option value="map_action">route instruction</option>
+                        <option value="harden">validation note</option>
+                        <option value="guide_detail">positive evidence</option>
+                      </select>
+                    </label>
+                    <label>Evidence anchor
+                      <select name="anchor__{_esc(location_id)}">
+                        <option value="">no anchor</option>
+                        <option value="in_game_timer">timer</option>
+                        <option value="frame">frame</option>
+                        <option value="map_position">map position</option>
+                      </select>
+                    </label>
                   </div>
                   <button type="submit" class="secondary-button">Add Observation</button>
                 </form>

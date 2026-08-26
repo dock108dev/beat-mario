@@ -230,6 +230,8 @@ def test_onboarding_ui_names_all_states_steps_proof_limits_and_narrow_layout(tmp
     for limit in PROOF_LIMITS:
         assert limit in html
     assert "@media(max-width:390px)" in html
+    assert "<main>" in html
+    assert "</main>" in html
     assert 'action="/adapter-remove"' not in html
 
 

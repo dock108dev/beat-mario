@@ -850,6 +850,8 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
     add_html = render_lab_ui(selected_location_id="world_1_1", selected_mode="add")
     assert 'name="note__world_1_1"' in add_html
     assert add_html.count('name="note__') == 1
+    assert "<label>Classification" in add_html
+    assert "<label>Evidence anchor" in add_html
     assert "Add Observation" in add_html
 
 
