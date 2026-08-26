@@ -75,6 +75,23 @@ def test_server_routes_player_shell_and_secondary_lab() -> None:
         connection = http.client.HTTPConnection(
             "127.0.0.1", server.server_port, timeout=5
         )
+        connection.request("GET", "/assets/favicon.svg")
+        favicon_response = connection.getresponse()
+        favicon = favicon_response.read().decode("utf-8")
+        favicon_content_type = favicon_response.getheader("Content-Type")
+        connection.close()
+
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/favicon.ico")
+        legacy_favicon_response = connection.getresponse()
+        legacy_favicon = legacy_favicon_response.read().decode("utf-8")
+        connection.close()
+
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
         connection.request("GET", "/lab")
         lab_response = connection.getresponse()
         lab = lab_response.read().decode("utf-8")
@@ -99,9 +116,44 @@ def test_server_routes_player_shell_and_secondary_lab() -> None:
     assert "window.setInterval" in script
     assert "live-action-error" in script
     assert "if (!response.ok)" in script
+    assert '<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">' in player
+    assert favicon_response.status == 200
+    assert favicon_content_type == "image/svg+xml; charset=utf-8"
+    assert "Game Companion placeholder icon" in favicon
+    assert legacy_favicon_response.status == 200
+    assert legacy_favicon == favicon
     assert lab_response.status == 200
     assert "Game Companion Lab" in lab
     assert "Run World 8 Route" in lab
+
+
+def test_mario_setup_never_renders_absolute_emulator_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_emulator_path = "/private/local/tools/fceux"
+    monkeypatch.setattr(
+        "smb3_agent.mario_product.shutil.which",
+        lambda _: private_emulator_path,
+    )
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        connection = http.client.HTTPConnection(
+            "127.0.0.1", server.server_port, timeout=5
+        )
+        connection.request("GET", "/mario")
+        response = connection.getresponse()
+        html = response.read().decode("utf-8")
+        connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert response.status == 200
+    assert private_emulator_path not in html
+    assert "Detected locally" in html
 
 
 def test_server_catalog_switch_invalidates_mario_volatile_presentation_state(

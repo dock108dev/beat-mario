@@ -148,6 +148,7 @@ from smb3_agent.stardew_adapter import InputOwner, OperatorLifecycle, OperatorVi
 WORLD_1_LOCATION_PATH = repository_path("data/worlds/world_1_locations.yaml")
 LAST_COMMAND_PATH = Path("artifacts/ui/last_command.yaml")
 LOCAL_ASSET_DIR = repository_path("public/assets/local")
+PUBLIC_ASSET_DIR = repository_path("public/assets")
 ARTIFACT_DIR = Path("artifacts")
 EXPERIMENTAL_SCAFFOLD_ROOT = Path("experimental-adapters")
 MAX_FORM_BYTES = 64 * 1024
@@ -288,6 +289,7 @@ LOCAL_ASSET_TYPES = {
     for suffix, content_type in SAFE_INLINE_TYPES.items()
     if content_type.startswith("image/")
 }
+FAVICON_ASSET_TYPES = {".svg": "image/svg+xml; charset=utf-8"}
 LOGGER = logging.getLogger(__name__)
 SUPPORTED_SPEEDS = ("1", "2", "4", "10", "25", "50", "100")
 SUPPORTED_ATTEMPTS = ("1", "3", "5", "10")
@@ -649,6 +651,13 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/assets/player-workspace.js":
             self._send_javascript(PLAYER_WORKSPACE_JS)
+            return
+        if path in {"/favicon.ico", "/assets/favicon.svg"}:
+            self._send_workspace_file(
+                PUBLIC_ASSET_DIR,
+                "favicon.svg",
+                FAVICON_ASSET_TYPES,
+            )
             return
         if path.startswith("/assets/local/"):
             self._send_local_asset(path.removeprefix("/assets/local/"))
@@ -2051,7 +2060,7 @@ def _first_use_panel(view: ProductSessionView, *, csrf_token: str | None) -> str
         {error}
         <div class="setup-steps">
           <article class="callout"><strong>1 · Local game file</strong><p>{_esc(game.reason)}</p><p class="meta">{_esc(game.display)} · {_esc(game.detected_from)}</p></article>
-          <article class="callout"><strong>2 · FCEUX</strong><p>{_esc(emulator.reason)}</p><p class="meta">{_esc(str(emulator.path) if emulator.path else "Not detected")}</p></article>
+          <article class="callout"><strong>2 · FCEUX</strong><p>{_esc(emulator.reason)}</p><p class="meta">{"Detected locally" if emulator.available else "Not detected"}</p></article>
           <article class="callout"><strong>3 · Input</strong><p>{_esc(setup.input_reason)}</p></article>
         </div>
         <form method="post" action="/setup-game-file" data-testid="manual-game-file">
@@ -3376,6 +3385,7 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <title>{_esc(title)}</title>
   <style>
     :root {{
