@@ -342,6 +342,9 @@ def test_root_surface_contains_both_cards_explicit_switch_and_narrow_contract(
     assert 'data-adapter-id="stardew"' in html
     assert 'action="/catalog-switch"' in html
     assert '@media(max-width:390px)' in html
+    assert ".catalog-capabilities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in html
+    assert ".catalog-capability{min-width:0;overflow-wrap:anywhere" in html
+    assert ".catalog-capability .status-pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}" in html
     assert 'href="/lab"' in html
     assert 'data-testid="safe-catalog-only"' in html
 
