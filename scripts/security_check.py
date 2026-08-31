@@ -60,21 +60,23 @@ def matched_secret_labels(path: Path) -> tuple[str, ...]:
 
 
 def main() -> int:
-    findings: list[str] = []
+    has_findings = False
     for path in tracked_files():
         if path.suffix.lower() in SENSITIVE_SUFFIXES:
-            findings.append(f"tracked sensitive/game asset: {path}")
+            has_findings = True
         try:
             matched = matched_secret_labels(path)
-        except OSError as exc:
-            findings.append(f"cannot inspect tracked file {path}: {exc}")
+        except OSError:
+            has_findings = True
             continue
-        findings.extend(f"possible {label}: {path}" for label in matched)
+        if matched:
+            has_findings = True
 
-    if findings:
-        print("Security hygiene check failed:", file=sys.stderr)
-        for finding in findings:
-            print(f"- {finding}", file=sys.stderr)
+    if has_findings:
+        print(
+            "Security hygiene check failed; review tracked files locally.",
+            file=sys.stderr,
+        )
         return 1
     print("Tracked credential and game-asset scan passed")
     return 0
