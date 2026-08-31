@@ -26,7 +26,8 @@ def test_failure_output_does_not_disclose_secret_or_path(
 ) -> None:
     security_check = _load_security_check()
     secret_path = tmp_path / "sensitive-name.txt"
-    secret_path.write_bytes(b"token=ghp_abcdefghijklmnopqrstuvwxyz1234567890")
+    fake_token = b"gh" + b"p_" + (b"a" * 36)
+    secret_path.write_bytes(b"token=" + fake_token)
     monkeypatch.setattr(security_check, "tracked_files", lambda: (secret_path,))
 
     assert security_check.main() == 1
