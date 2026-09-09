@@ -26,6 +26,7 @@ from smb3_agent.live_observation import (
     parse_observer_line,
 )
 from smb3_agent.run_library import LocalRunLibrary, SolutionClassification
+from smb3_agent.learning import LocalLearningStore
 from smb3_agent.takeover import TakeoverController
 
 
@@ -374,7 +375,8 @@ def test_takeover_lua_is_separate_and_reclaim_is_checked_inside_emulator_loop() 
 def test_valid_completion_automatically_creates_candidate_run_and_profile(tmp_path: Path) -> None:
     library = LocalRunLibrary(tmp_path / "run-library")
     manager = LiveObservationManager(
-        artifacts_root=tmp_path / "sessions", run_library=library
+        artifacts_root=tmp_path / "sessions", run_library=library,
+        learning_store=LocalLearningStore(tmp_path / "learning"),
     )
     artifact_dir = tmp_path / "session"
     artifact_dir.mkdir()
@@ -391,6 +393,8 @@ def test_valid_completion_automatically_creates_candidate_run_and_profile(tmp_pa
 
     runs = library.runs()
     assert len(runs) == 1
+    assert manager._learning_store.root == tmp_path / "learning"
+    assert len(manager._learning_store.snapshot().attempts) == 1
     assert runs[0].actor == "player"
     assert runs[0].solution_classification is SolutionClassification.CANDIDATE
     assert len(library.profiles()) == 1
@@ -425,7 +429,9 @@ def test_mixed_player_agent_completion_is_not_pure_agent_speedrun(tmp_path: Path
     accumulator = LiveSessionAccumulator(
         "session-1", "token-1", artifact_dir, takeover_controller=controller
     )
-    manager = LiveObservationManager(run_library=library)
+    manager = LiveObservationManager(
+        run_library=library, learning_store=LocalLearningStore(tmp_path / "learning")
+    )
     manager._accumulator = accumulator
     start = _sample(1, frame=100, x=24)
     accumulator.ingest(start)
@@ -442,6 +448,8 @@ def test_mixed_player_agent_completion_is_not_pure_agent_speedrun(tmp_path: Path
     accumulator.samples.append(terminal)
     manager._maybe_record_completion(agent, terminal)
     assert library.runs()[0].actor == "mixed"
+    assert manager._learning_store.root == tmp_path / "learning"
+    assert len(manager._learning_store.snapshot().attempts) == 1
     assert library.summary("smb3", "world_1_1")["fastest_agent"] is None
 
 

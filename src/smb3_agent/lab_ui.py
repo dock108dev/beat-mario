@@ -160,6 +160,15 @@ PLAYER_WORKSPACE_JS = r'''(() => {
   let updating = false;
   const detailKey = (details) =>
     details.dataset.testid || details.querySelector("summary")?.textContent?.trim() || "";
+  const focusable = "a[href], button, input, select, textarea, summary, [tabindex]";
+  const editingWorkspace = () => workspace.contains(document.activeElement) &&
+    document.activeElement.matches("select, input, textarea");
+  const focusKey = (element) => JSON.stringify([
+    element.tagName, element.id, element.getAttribute("data-testid"),
+    element.getAttribute("name"), element.getAttribute("type"),
+    element.getAttribute("href"), element.closest("form")?.getAttribute("action"),
+    element.closest("[id]")?.id, element.textContent.trim()
+  ]);
   const showActionError = (message) => {
     let error = workspace.querySelector("[data-testid='live-action-error']");
     if (!error) {
@@ -173,20 +182,32 @@ PLAYER_WORKSPACE_JS = r'''(() => {
   };
   async function refreshWorkspace(force = false) {
     if (updating) return;
-    const active = document.activeElement;
-    const editing = document.hasFocus() && workspace.contains(active) &&
-      active.matches("select, input, textarea");
-    if (!force && editing) return;
+    if (!force && editingWorkspace()) return;
     updating = true;
     try {
       const response = await fetch("/api/player-workspace", {cache: "no-store"});
       if (response.ok) {
+        const html = await response.text();
+        // Focus may move while the request is in flight. Preserve the current
+        // editing session, not the element that was active before the fetch.
+        if (!force && editingWorkspace()) return;
+        const active = document.activeElement;
+        const key = workspace.contains(active) && active.matches(focusable)
+          ? focusKey(active) : null;
         const openDetails = new Set(
           Array.from(workspace.querySelectorAll("details[open]"), detailKey)
         );
-        workspace.innerHTML = await response.text();
+        workspace.innerHTML = html;
         for (const details of workspace.querySelectorAll("details")) {
           if (openDetails.has(detailKey(details))) details.open = true;
+        }
+        if (key !== null) {
+          const matches = Array.from(workspace.querySelectorAll(focusable)).filter(
+            (element) => focusKey(element) === key && !element.disabled &&
+              element.getClientRects().length > 0
+          );
+          // Never redirect focus to a different action or an ambiguous match.
+          if (matches.length === 1) matches[0].focus({preventScroll: true});
         }
       }
     } finally {

@@ -87,6 +87,11 @@ dependency-review check that rejects newly introduced dependencies with known
 moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
 Actions dependency surfaces weekly.
 
+The workspace-refresh JavaScript regression runs through pytest when Node.js is
+available (including the GitHub runner); without Node.js its eight cases are
+explicitly skipped. Pre-walkthrough qualification requires those cases to run,
+plus actual browser keyboard/focus verification across background refreshes.
+
 For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
 and keep watchable playback separate from authoritative evidence.

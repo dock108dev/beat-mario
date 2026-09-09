@@ -33,6 +33,9 @@ The top workspace keeps the current Mario connection, input owner, checkpoint,
 observation freshness, objective, progress, timing, comparison, next action,
 and mode links together. Normal actions update the workspace in place and
 retain scroll, focus while editing, and open technical details.
+Background refresh also preserves keyboard focus on the same uniquely matched
+link, button, or disclosure without activating it. A removed, disabled, or
+ambiguous control does not transfer focus to a different action.
 
 - **Observe** — you play; Companion watches and tracks. Stop observation leaves
   the game running under player control.
