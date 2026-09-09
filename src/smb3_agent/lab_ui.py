@@ -3557,7 +3557,7 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
       box-shadow: 0 8px 22px rgba(31,41,55,.07);
     }}
     .identity-card, .observation-card {{ grid-column: span 6; }}
-    .live-observation-card, .objective-card, .session-more, .modes-card, .tell-request-card, .show-card, .handoff-card, .first-use-card, .product-overview, .recovery-card, [data-testid="session-history-metrics"] {{ grid-column: 1 / -1; }}
+    .learning-card, .live-observation-card, .objective-card, .session-more, .modes-card, .tell-request-card, .show-card, .handoff-card, .first-use-card, .product-overview, .recovery-card, [data-testid="session-history-metrics"] {{ grid-column: 1 / -1; }}
     .safety-card {{ grid-column: span 7; }}
     .activity-card {{ grid-column: span 5; }}
     .game-name {{ font-size: 21px; font-weight: 850; margin-bottom: 4px; }}
