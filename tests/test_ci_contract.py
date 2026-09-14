@@ -29,7 +29,7 @@ CAMPAIGN_ENTRY_SCHEMA_PATH = REPOSITORY_ROOT / "data/scenarios/campaign-entry-ma
 ROADMAP_PATH = REPOSITORY_ROOT / "docs/v2-roadmap.md"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
-SETUP_UV_PIN = "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
+SETUP_UV_PIN = "astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4"
 DEPENDENCY_REVIEW_PIN = (
     "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
 )
