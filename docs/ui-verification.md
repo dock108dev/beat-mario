@@ -6,7 +6,7 @@ September 21, 2026 · source implementation and engineering review only.
 
 ## Retained review
 
-The shared [review gallery](../../UI%20Templates/review.html) contains screenshots and browser check results. Browser specimens are local fixtures or isolated startup states. Web review checked representative 1440px/390px layouts, page exceptions, and page-level horizontal overflow; it is not an exhaustive audit of every state, contrast pair, screen reader, browser, installed build, or physical phone.
+Screenshots and browser check results are retained in `review.html` in the optional shared `UI Templates` folder described in [UI design](ui-design.md). That gallery is outside this repository and is not available in a standalone checkout. Browser specimens are local fixtures or isolated startup states. Web review checked representative 1440px/390px layouts, page exceptions, and page-level horizontal overflow; it is not an exhaustive audit of every state, contrast pair, screen reader, browser, installed build, or physical phone.
 
 Template gallery search, form submit feedback, dialog opening, and Escape dismissal were exercised. Shared styles include keyboard focus, reduced-motion, and reduced-transparency handling. Native Godot is a basic translucent fallback, not a true blur material. Native games retain their desktop layout and illustrated artwork.
 
