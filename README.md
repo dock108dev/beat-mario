@@ -11,6 +11,10 @@ route contracts and reliability evidence for Mario, a copied-save safety model
 for Stardew Valley, a combined adapter catalog, local scenario/metrics tooling,
 unattended regression, and fixture-only Experimental-adapter onboarding.
 
+## Current beta target
+
+The [path to personal beta](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) requires natural-language plan review, existing supported Mario routes and a broader Stardew farming routine (watering, harvesting, planting, selected-debris clearing). These additions are not established by the current implementation summary below. New-game guidance is required; completed third-game integration/onboarding is not. The old campaign definitions still need reconciliation before qualifying this revised scope.
+
 ## What works today
 
 | Surface | Current repository behavior | Important boundary |
@@ -119,3 +123,7 @@ When modifying the project, keep adapter facts adapter-owned, require fresh
 authorization for input, preserve actor-labeled evidence, fail closed on stale
 or ambiguous state, and never treat deterministic or unattended results as
 owner acceptance.
+
+## Shared UI design
+
+See [UI design and templates](docs/ui-design.md) before changing this interface. The shared Desktop `UI Templates` folder defines the glass design baseline for future contributors; this repository keeps its own runtime styles and a portable copy of the requirements.

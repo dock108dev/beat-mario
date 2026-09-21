@@ -1,5 +1,13 @@
 # Consolidated Final Campaign
 
+## Current personal-beta scope — September 21, 2026
+
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) supersedes the earlier V2 completion boundary for the personal beta. Keep existing supported Mario routes; custom route work is tentative. Require natural-language requests with a reviewable supported plan and a Stardew routine covering watering, harvesting, planting and selected-debris clearing. New-game guidance and an expansion/testing plan are required, but a third working adapter and completed Experimental onboarding/live testing are not beta gates.
+
+These are product requirements, not implementation or live acceptance claims. The existing watering-only adapter, prepared candidate and campaign evidence retain their original limits. Executable campaign/scenario definitions must be reconciled in B1 before they can qualify the new beta; this documentation update does not change those contracts or operate games.
+
+## Retained existing campaign procedure
+
 The final campaign is prepared but has not run. V2.6 through V2.14 may be
 implementation-ready and eligible to enter the campaign while every live,
 reliability, usefulness, completion, and owner-acceptance result remains

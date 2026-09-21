@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from smb3_agent.glass_ui import GLASS_CSS, STARDEW_GLASS_CSS
+
 import hashlib
 import html
 import json
@@ -926,7 +928,7 @@ header,section{{padding:18px}}h1,h2,h3,p{{margin-top:0}}.grid{{display:grid;grid
 .owner{{color:var(--safe)}}.failure{{border-color:var(--danger)}}.mode-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}}.mode-card{{min-width:0}}.actions{{display:flex;gap:10px;flex-wrap:wrap}}button{{min-height:44px;border-radius:9px;border:0;padding:0 16px;font-weight:700}}
 button[disabled]{{opacity:.5}}@media(max-width:620px){{main{{padding:12px}}.grid{{grid-template-columns:repeat(2,1fr)}}header,section{{padding:14px}}}}
 @media(max-width:390px){{.mode-grid{{grid-template-columns:1fr}}.actions button{{width:100%}}}}
-</style></head><body><main data-testid="stardew-operator">
+</style><style>{GLASS_CSS}{STARDEW_GLASS_CSS}</style></head><body><main data-testid="stardew-operator">
 <header><p class="muted">Standalone Stardew companion · copied save only</p><h1>Water every planted crop</h1><p data-testid="save-identity">{html.escape(save_label)}</p><p>Mode: <strong data-testid="current-mode">{html.escape(view.current_mode)}</strong> · {html.escape(view.availability_reason)}</p><p>Input owner: <strong class="owner" data-testid="input-owner">{html.escape(view.input_owner.value)}</strong> · State: {html.escape(view.lifecycle.value)}</p></header>
 {failure}<div class="grid" aria-label="Task accounting"><div class="metric"><span>Watered</span><strong data-testid="crop-progress">{crop_text}</strong></div><div class="metric"><span>Remaining</span><strong>{remaining}</strong></div><div class="metric"><span>Energy</span><strong>{view.energy if view.energy is not None else 'Unknown'}</strong></div><div class="metric"><span>Can</span><strong>{view.can_units if view.can_units is not None else 'Unknown'}</strong></div><div class="metric"><span>Refills</span><strong data-testid="refill-count">{refills}</strong></div></div>
 <div class="mode-grid"><section class="mode-card"><h2>Observe</h2><p>Freshness: <strong data-testid="observation-freshness">{html.escape(view.observation_freshness)}</strong></p><p class="muted">Evidence: {html.escape(evidence_text)}</p></section><section class="mode-card"><h2>Tell</h2><p data-testid="tell-card">{html.escape(tell_text)}</p><button{tell_disabled}>Refresh Tell</button></section><section class="mode-card"><h2>Show</h2><p><strong>Review only</strong> · never player completion or acceptance.</p><p>Status: <span data-testid="show-status">{html.escape(view.show_status)}</span></p><div class="actions"><button{show_start_disabled}>Start Show</button><button{show_stop_disabled}>Stop Show</button></div></section></div>

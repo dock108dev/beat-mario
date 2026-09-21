@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from smb3_agent.glass_ui import GLASS_CSS
+
 import html
 import json
 import logging
@@ -4036,7 +4038,7 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
     }}
   </style>
 </head>
-<body>{body}</body>
+<body>{body}<style>{GLASS_CSS}</style></body>
 </html>"""
 
 

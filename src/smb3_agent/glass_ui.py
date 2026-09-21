@@ -1,0 +1,20 @@
+"""Trusted shared visual styles, embedded to preserve the UI CSP."""
+
+GLASS_CSS = """
+/* Shared Glass UI Starter 01. See docs/ui-design.md. */
+:root{--app-bg:#edf3fc;--surface:rgba(255,255,255,.8);--surface-alt:#eaf0fb;--text:#182338;--muted:#54647b;--line:rgba(83,108,150,.2);--line-strong:#9daec8;--navy:#0969df;--blue:#0969df;--blue-soft:#e6efff;--badge:#e6efff}
+body{background:radial-gradient(ellipse at 0 0,#d4e6ff,transparent 55%),radial-gradient(ellipse at 100% 35%,#e3dcfa,transparent 50%),#edf3fc;background-size:auto;background-attachment:fixed;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+h1{letter-spacing:-.8px;line-height:1.15}h2{letter-spacing:-.3px}.companion-top,.catalog-header,.onboarding header,.lab-top{background:#ffffffbb;color:var(--text);border:1px solid white;border-radius:24px;box-shadow:0 12px 36px #334d7914;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}.companion-top p,.catalog-header p,.onboarding header p,.lab-top p,.companion-top .eyebrow{color:var(--muted)}
+.session-card,.catalog-card,.catalog-workspace,.catalog-empty,.catalog-preferences,.step,.action-card,.installed,.result,.proof-limits{background:var(--surface);border:1px solid white;border-radius:22px;box-shadow:0 12px 36px #334d7910,inset 0 1px 0 white;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}.catalog-card.selected{border:2px solid #69aaff}.catalog-capability{border-radius:14px}.primary-button{background:linear-gradient(#2588fc,#0969df);border-color:#1472de;box-shadow:0 4px 12px #1575e626}.primary-button:hover{background:#075ac0;border-color:#075ac0}button,button.small,button.quiet,.primary-button,.secondary-button,.nav-link,textarea,select,input{border-radius:13px}button,.primary-button,.secondary-button,button.small,button.quiet{min-height:44px}input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select{min-height:44px}.persistent-reclaim button,.danger{background:var(--red);color:white;border-color:var(--red)}.persistent-reclaim button:hover,.danger:hover{background:#982c27}.mode-grid a{border-radius:13px;min-height:44px}*:focus-visible{outline:3px solid #0969df;outline-offset:3px}
+@media(max-width:760px){.companion-shell,.catalog-shell,.onboarding{padding:14px}.companion-top,.catalog-header,.onboarding header{border-radius:22px;gap:14px}.catalog-header{flex-wrap:wrap}.session-card{border-radius:20px}}
+@media(prefers-reduced-transparency:reduce){.companion-top,.catalog-header,.onboarding header,.lab-top,.session-card,.catalog-card,.catalog-workspace,.step,.action-card{background:#f8faff;backdrop-filter:none;-webkit-backdrop-filter:none}}
+@supports not (backdrop-filter:blur(1px)){.session-card,.catalog-card,.companion-top,.catalog-header{background:#f8faff}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+"""
+
+STARDEW_GLASS_CSS = """
+:root{--bg:#edf3fc;--panel:rgba(255,255,255,.82);--ink:#182338;--muted:#54647b;--accent:#0969df;--safe:#08725e;--danger:#b32c46}
+main[data-testid=stardew-operator]>header,main[data-testid=stardew-operator] section{border:1px solid white;border-radius:24px;box-shadow:0 12px 36px #334d7910;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}main[data-testid=stardew-operator]>section{margin-top:16px}main[data-testid=stardew-operator] .grid{background:#dce5f4;border-color:white;border-radius:24px}main[data-testid=stardew-operator] .metric{background:#f5f8ff}main[data-testid=stardew-operator] button{background:#ffffffd9;border:1px solid #bccde5;color:#184779;min-height:44px;border-radius:13px}main[data-testid=stardew-operator] .failure{border-color:var(--danger)}
+@media(max-width:650px){main[data-testid=stardew-operator] .mode-grid{grid-template-columns:1fr}main[data-testid=stardew-operator] p{overflow-wrap:anywhere}}
+@media(prefers-reduced-transparency:reduce){main[data-testid=stardew-operator]>header,main[data-testid=stardew-operator] section{background:#f8faff;backdrop-filter:none;-webkit-backdrop-filter:none}}
+"""

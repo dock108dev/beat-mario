@@ -1,5 +1,11 @@
 # Product Direction
 
+## Current personal-beta scope — September 21, 2026
+
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) supersedes the earlier V2 completion boundary for the personal beta. Keep existing supported Mario routes; custom route work is tentative. Require natural-language requests with a reviewable supported plan and a Stardew routine covering watering, harvesting, planting and selected-debris clearing. New-game guidance and an expansion/testing plan are required, but a third working adapter and completed Experimental onboarding/live testing are not beta gates.
+
+These are product requirements, not implementation or live acceptance claims. The existing watering-only adapter, prepared candidate and campaign evidence retain their original limits. Executable campaign/scenario definitions must be reconciled in B1 before they can qualify the new beta; this documentation update does not change those contracts or operate games.
+
 ## Product
 
 **Game Companion** is a local, user-steered game assistant. It observes the
@@ -132,7 +138,7 @@ bounded, namespaced presentation preferences persist locally.
 
 ## Catalog growth
 
-V2 ends with a barebones New Game Onboarding flow for collaborators. It can
+The existing barebones New Game Onboarding flow is retained for collaborators; completing its campaign is not required for the revised personal beta. It can
 scaffold an experimental adapter, declare its capabilities and safety rules,
 attach fixtures, run conformance checks, and install it locally. Experimental
 adapters expose only proven capabilities and cannot enter the trusted supported

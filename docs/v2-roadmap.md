@@ -1,5 +1,11 @@
 # Game Companion V2 Roadmap
 
+## Current personal-beta scope — September 21, 2026
+
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) supersedes the earlier V2 completion boundary for the personal beta. Keep existing supported Mario routes; custom route work is tentative. Require natural-language requests with a reviewable supported plan and a Stardew routine covering watering, harvesting, planting and selected-debris clearing. New-game guidance and an expansion/testing plan are required, but a third working adapter and completed Experimental onboarding/live testing are not beta gates.
+
+These are product requirements, not implementation or live acceptance claims. The existing watering-only adapter, prepared candidate and campaign evidence retain their original limits. Executable campaign/scenario definitions must be reconciled in B1 before they can qualify the new beta; this documentation update does not change those contracts or operate games.
+
 ## Outcome
 
 V2 turns the accepted Mario automation system into a player-facing companion,
@@ -291,9 +297,11 @@ unattended-regression, Experimental-onboarding, reliability, usefulness,
 campaign-completion, and owner-decision proofs pending for their designated
 campaign phases.
 
-## V2 completion
+## Historical V2 completion contract
 
-V2 is complete only when Mario has owner-accepted `Tell`, `Show`, and bounded
+The following describes the earlier V2 target, retained for evidence interpretation. The September 21 personal-beta scope above replaces it for current beta planning; B1 must reconcile executable gates.
+
+The earlier V2 contract required completion only when Mario has owner-accepted `Tell`, `Show`, and bounded
 `Do`; Stardew has the accepted visible task through the same companion contract;
 both games coexist safely in one catalog; local automation and metrics
 distinguish reliability from usefulness; unattended regression is honestly
