@@ -148,6 +148,7 @@ def test_conversation_http_contract_keeps_controls_available_and_csrf(
     from urllib.parse import urlencode
 
     from smb3_agent import lab_ui
+    from smb3_agent.companion_catalog import CatalogPreferenceStore
 
     class FakeConversationService:
         def __init__(self, live_manager, *, artifacts_root) -> None:
@@ -171,6 +172,9 @@ def test_conversation_http_contract_keeps_controls_available_and_csrf(
 
     monkeypatch.setattr(lab_ui, "ConversationService", FakeConversationService)
     monkeypatch.setattr(lab_ui, "ARTIFACT_DIR", tmp_path)
+    # The HTTP contract must not inherit the player's persisted game selection.
+    monkeypatch.setattr(lab_ui, "CatalogPreferenceStore",
+                        lambda: CatalogPreferenceStore(tmp_path / "catalog-preferences.json"))
     server = lab_ui._new_lab_ui_server("127.0.0.1", 0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

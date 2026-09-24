@@ -1,12 +1,10 @@
 # Product Direction
 
-## Current personal-beta scope — September 23, 2026
+## Current capabilities and planned work
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status; the [personal-beta engineering packet](personal-beta-engineering.md) supplies the implementation contracts. Required: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing.
+Mario supports shared typed planning, a conversation surface, revision-bound controller changes and custom variant history. Faster, quickest and 100% intents initially load the same base route; speed does not imply route optimization or full completion. See the [conversation guide](b2-conversation-guide.md).
 
-Mario intent presets such as faster/quickest/100% initially load the single existing base route with an explicit fallback. They are not existing optimized or full-completion routes. Playback speed is separate from route optimization, and edits must cause real supported path changes. Saved variants retain their actual execution/evidence status. New-game guidance is required; a third working adapter and completed Experimental onboarding campaign are not beta gates.
-
-B1 is complete. B2 now implements shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. Engineering verification is tracked separately in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md); see the [B2 operating and B3 interface guide](b2-conversation-guide.md). The new `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. B3/B4 live Stardew work and later beta stages remain incomplete.
+Stardew session setup and watering execution are under development and require verified isolation and qualified perception before live input. Harvesting, planting and selected-debris clearing remain planned live capabilities. See the [Stardew guide](stardew-operator-guide.md).
 
 ## Product
 

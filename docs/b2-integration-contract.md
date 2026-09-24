@@ -1,6 +1,6 @@
 # B2 implementation ownership and seams
 
-B2 engineering is in progress on baseline 022bfd618e5c78754364e6c548a9a62555fed8e0 with preserved documentation edits. No owner verdict is authorized.
+B2 engineering completed on the exact retained candidate recorded in `artifacts/b2-engineering/20260924T010558Z/B2-handoff.md`. The ownership list below records that implementation. Current B3 interfaces are in [B3 integration contract](b3-integration-contract.md). No owner verdict is inferred.
 
 - Planning agent owns `request_planning.py`, `mario_route_plan.py`, `stardew_planning.py` and matching new tests. Typed JSON-serializable plans expose request/conversation/game/session/observation identity; original objective, normalized intent, real base route, revision/parent; typed actions and preconditions/outcomes; protection/resources/stop/effective boundary; speed; eligibility/evidence/authority. Pure planning never emits input.
 - Runtime agent owns `mario_plan_runtime.py`, the Python/Lua control seams in `live_observation.py`, `takeover.py`, `fceux_live_takeover.lua`, `fceux_1_1_agent.lua`, any new Lua controller file and matching runtime tests. It validates adapter-owned primitives, process/session/state, revisions and commands independently of planner claims.

@@ -24,6 +24,12 @@ stages:
     - {id: copied_save_setup, classification: visible_live_result}
     - {id: stardew_perception_and_input, classification: visible_live_result}
     - {id: live_watering, classification: visible_live_result}
+    - {id: watering_resource_and_return_reconciliation, classification: visible_live_result}
+    - {id: stardew_browser_authorization_and_outcome, classification: visible_live_result}
+    - {id: stardew_reclaim_focus_and_neutral_handback, classification: visible_live_result}
+    - {id: stardew_stale_reset_and_session_rejection, classification: unit_integration_result}
+    - {id: stardew_shortage_uncertainty_and_partial_results, classification: unit_integration_result}
+    - {id: b3_canonical_gate, classification: unit_integration_result}
   B4:
     - {id: live_harvest, classification: visible_live_result}
     - {id: live_plant, classification: visible_live_result}
@@ -40,6 +46,8 @@ stages:
   B9:
     - {id: two_game_owner_acceptance, classification: owner_product_acceptance}
 proof_limits:
+  - A B3 pass permits B4 engineering only; full beta and owner acceptance remain separate.
+  - Engineering-save isolation is not owner-save-copy validation; record the selected source class and actual load/persistence evidence.
   - A B2 pass permits the B3 engineering handoff only; it never makes the beta ready.
   - Fixtures, rendered UI and historical evidence do not satisfy visible game proof.
   - Playback speed does not establish game-frame route improvement or full completion.

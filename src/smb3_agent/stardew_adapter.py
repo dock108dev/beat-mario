@@ -7,6 +7,7 @@ import html
 import json
 import os
 import secrets
+import stat
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass, field
@@ -200,6 +201,8 @@ class ScreenObservation:
     source: str = "screen"
     scene_complete: bool = False
     unknown_regions: tuple[str, ...] = ()
+    session_nonce: str | None = None
+    perception_classification: str = "unqualified"
 
     def validate(self, expected_save_sha256: str) -> None:
         if not self.observation_id or not self.observed_at:
@@ -242,6 +245,7 @@ class InputCommand:
     duration_ms: int = 0
     target: tuple[int, int] | None = None
     purpose: str = ""
+    reviewed_crop_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -273,6 +277,10 @@ class WateringLedger:
     energy_start: int | None = None
     energy_current: int | None = None
     energy_spent: int = 0
+    can_water_start: int | None = None
+    can_water_current: int | None = None
+    can_water_consumed: int = 0
+    can_water_added: int = 0
     final_position: PositionObservation | None = None
     evidence_references: list[str] = field(default_factory=list)
 
@@ -289,6 +297,9 @@ class WateringLedger:
             refills=observation.tool.refill_count,
             energy_start=observation.energy,
             energy_current=observation.energy,
+            can_water_start=observation.tool.watering_can_units,
+            can_water_current=observation.tool.watering_can_units,
+            final_position=observation.position,
             evidence_references=list(observation.screenshot_references),
         )
 
@@ -303,6 +314,18 @@ class WateringLedger:
             raise StardewAdapterError(FailureCode.ACCOUNTING_MISMATCH.value)
         if self.energy_start is None or observation.energy is None:
             raise StardewAdapterError(FailureCode.RESOURCE_UNKNOWN.value)
+        if self.energy_current is not None and observation.energy > self.energy_current:
+            raise StardewAdapterError(FailureCode.ACCOUNTING_MISMATCH.value)
+        current_water = observation.tool.watering_can_units
+        if self.can_water_current is None or current_water is None:
+            raise StardewAdapterError(FailureCode.RESOURCE_UNKNOWN.value)
+        consumed = observation.tool.tool_uses - self.tool_uses
+        added = current_water - self.can_water_current + consumed
+        if added < 0 or (added > 0 and observation.tool.refill_count <= self.refills):
+            raise StardewAdapterError(FailureCode.ACCOUNTING_MISMATCH.value)
+        self.can_water_consumed += consumed
+        self.can_water_added += added
+        self.can_water_current = current_water
         self.confirmed_watered_ids = newly_confirmed
         self.tool_uses = observation.tool.tool_uses
         self.refills = observation.tool.refill_count
@@ -385,8 +408,11 @@ def _tree_identity(root: Path) -> tuple[str, int, int]:
     for path in sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix()):
         if path.is_symlink():
             raise StardewAdapterError("save directories containing symlinks are refused")
-        if not path.is_file():
+        mode = path.lstat().st_mode
+        if stat.S_ISDIR(mode):
             continue
+        if not stat.S_ISREG(mode) or path.stat().st_nlink != 1:
+            raise StardewAdapterError("save content must contain only unaliased regular files")
         relative = path.relative_to(root).as_posix().encode("utf-8")
         digest.update(len(relative).to_bytes(8, "big"))
         digest.update(relative)
@@ -443,13 +469,21 @@ class DisposableSaveManager:
             primary_unchanged=before_hash == after_primary_hash,
             disposable_only=(count == copy_count and byte_count == copy_bytes),
         )
-        if not identity.valid:
+        if (not identity.valid or primary != primary.resolve(strict=True) or
+                target_resolved != target_resolved.resolve(strict=True)):
             raise StardewAdapterError(FailureCode.SAVE_MISMATCH.value)
         return identity
 
     def verify_primary_unchanged(self, identity: SaveIdentity) -> bool:
-        current_hash, _, _ = _tree_identity(Path(identity.primary_real_path))
-        return current_hash == identity.source_tree_sha256
+        primary = Path(identity.primary_real_path)
+        try:
+            if primary != primary.resolve(strict=True):
+                return False
+            current_hash, count, byte_count = _tree_identity(primary)
+        except (OSError, StardewAdapterError):
+            return False
+        return (current_hash == identity.source_tree_sha256 and
+                count == identity.file_count and byte_count == identity.byte_count)
 
     def reset(self, previous: SaveIdentity, fresh_destination: Path) -> SaveIdentity:
         """Create a new attempt-owned copy while preserving the previous attempt."""
@@ -507,7 +541,13 @@ class StardewEvidenceStore:
 class MacVisibleStardewBackend:
     """Reads only normal macOS process/window metadata and visible window pixels."""
 
-    def detect_window(self) -> WindowObservation:
+    def __init__(self, *, process_id: int | None = None, process_started_at: str | None = None) -> None:
+        if (process_id is None) != (process_started_at is None):
+            raise StardewAdapterError("Expected process id and start identity must be supplied together")
+        self.expected_process_id = process_id
+        self.expected_process_started_at = process_started_at
+
+    def detect_window(self, *, require_foreground: bool = True) -> WindowObservation:
         try:
             import Quartz
             from AppKit import NSWorkspace
@@ -517,6 +557,9 @@ class MacVisibleStardewBackend:
         records = Quartz.CGWindowListCopyWindowInfo(options, Quartz.kCGNullWindowID) or ()
         candidates: list[Mapping[str, Any]] = []
         for record in records:
+            if (self.expected_process_id is not None and
+                    int(record.get(Quartz.kCGWindowOwnerPID, -1)) != self.expected_process_id):
+                continue
             owner = str(record.get(Quartz.kCGWindowOwnerName, ""))
             title = str(record.get(Quartz.kCGWindowName, ""))
             layer = int(record.get(Quartz.kCGWindowLayer, -1))
@@ -546,6 +589,8 @@ class MacVisibleStardewBackend:
         ).stdout.strip()
         if not started or geometry[2] <= 0 or geometry[3] <= 0:
             raise StardewAdapterError(FailureCode.WINDOW_LOSS.value)
+        if self.expected_process_started_at is not None and started != self.expected_process_started_at:
+            raise StardewAdapterError(FailureCode.PROCESS_LOSS.value)
         display_bounds = Quartz.CGDisplayBounds(Quartz.CGMainDisplayID())
         fullscreen = (
             geometry[0] == int(display_bounds.origin.x)
@@ -563,7 +608,8 @@ class MacVisibleStardewBackend:
             windowed=not fullscreen,
             foreground=foreground,
         )
-        if not window.trusted:
+        if (not window.windowed or window.occluded or
+                (require_foreground and not window.trusted)):
             raise StardewAdapterError(FailureCode.WINDOW_LOSS.value)
         return window
 

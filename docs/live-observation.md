@@ -95,5 +95,5 @@ full route requires exact fresh power-on. The controller consumes explicit
 button states for all eight NES buttons so browser typing does not supply game
 input. Unsupported fixed playback rates are rejected; normal and uncapped
 faster intervals retain actual frames and wall time. See the [B2 guide](b2-conversation-guide.md)
-and exact engineering evidence in the Desktop tracker. No owner acceptance is
+and exact engineering evidence for the tested source revision. No owner acceptance is
 inferred from these technical records.

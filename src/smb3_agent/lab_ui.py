@@ -6,7 +6,9 @@ from smb3_agent.conversation_ui import (
     CONVERSATION_JS,
     render_conversation_workspace,
 )
-from smb3_agent.conversation_service import ConversationService
+from smb3_agent.conversation_service import ConversationService, StardewConversationService
+from smb3_agent.stardew_companion import StardewCatalogProvider
+from smb3_agent.conversation_ui import render_stardew_conversation_workspace, STARDEW_CONVERSATION_JS
 
 import html
 import json
@@ -262,6 +264,7 @@ PLAYER_WORKSPACE_JS = r'''(() => {
 POST_PATHS = frozenset(
     {
         "/api/conversation",
+        "/api/stardew/conversation",
         "/notes",
         "/observation-action",
         "/issue-action",
@@ -359,6 +362,12 @@ class _ThreadingHTTPServer(ThreadingHTTPServer):
 
 
 def _shutdown_session_managers(server: ThreadingHTTPServer) -> None:
+    stardew = getattr(server, "stardew_conversation_service", None)
+    if stardew is not None:
+        try:
+            stardew.close()
+        except Exception:
+            LOGGER.exception("Stardew neutralization failed during shutdown")
     conversation = getattr(server, "conversation_service", None)
     if isinstance(conversation, ConversationService):
         try:
@@ -420,6 +429,8 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
         getattr(server, "live_observation_manager"),
         artifacts_root=ARTIFACT_DIR / "conversation",
     ))
+    setattr(server, "stardew_conversation_service", StardewConversationService(
+        artifacts_root=ARTIFACT_DIR / "stardew-conversation"))
     setattr(server, "objective_session_manager", ObjectiveSessionManager())
     setattr(server, "learning_store", learning_store)
     product_manager = MarioProductSessionManager()
@@ -431,7 +442,17 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
         invalidate=lambda: _invalidate_mario_catalog_state(server),
     )
     setattr(server, "mario_catalog_provider", mario_provider)
-    registry = build_default_catalog_registry(mario_provider=mario_provider)
+    stardew_service = server.stardew_conversation_service
+    stardew_provider = StardewCatalogProvider(
+        availability=lambda: ("available" if stardew_service.runtime.snapshot().get("available") else "setup_required",
+                              str(stardew_service.runtime.snapshot().get("reason") or "Setup required"),
+                              str(stardew_service.runtime.snapshot().get("status") or "unconfigured")),
+        runtime=lambda: _stardew_catalog_runtime(server),
+        retain=lambda: bool(stardew_service.snapshot()),
+        invalidate=stardew_service.invalidate_for_switch,
+    )
+    server.stardew_catalog_provider = stardew_provider
+    registry = build_default_catalog_registry(mario_provider=mario_provider, stardew_provider=stardew_provider)
     setattr(server, "catalog_session", CatalogSession(registry, CatalogPreferenceStore()))
     return server
 
@@ -445,7 +466,8 @@ def _refresh_catalog_registry(server: ThreadingHTTPServer) -> None:
         server,
         "catalog_session",
         CatalogSession(
-            build_default_catalog_registry(mario_provider=mario_provider),
+            build_default_catalog_registry(mario_provider=mario_provider,
+                                           stardew_provider=getattr(server, "stardew_catalog_provider", None)),
             current.store,
         ),
     )
@@ -459,6 +481,20 @@ def _experimental_source(adapter_id: str) -> Path:
     if not source.startswith(root.rstrip(os.sep) + os.sep):
         raise ExperimentalAdapterError("Experimental adapter source escapes the bounded root")
     return Path(source)
+
+
+def _stardew_catalog_runtime(server: ThreadingHTTPServer) -> AdapterRuntimeState:
+    state = server.stardew_conversation_service.runtime.snapshot()
+    active = state.get("status") == "running"
+    return AdapterRuntimeState(
+        adapter_id="stardew", input_owner=state.get("owner", "agent" if active else "player"),
+        active_mode="Do" if active else None, active_agent_input=active,
+        active_do_authorization=active,
+        handback_confirmed=state.get("handback_confirmed", not active),
+        pending_neutralization=not state.get("neutralized", not active),
+        volatile_observation_present=bool(state.get("observation_id")),
+        volatile_authority_present=active,
+    )
 
 
 def _mario_catalog_availability(
@@ -627,7 +663,8 @@ class _Handler(BaseHTTPRequestHandler):
             )
             return
         if path == "/stardew":
-            self._send_html(render_safe_stardew_workspace())
+            self._send_html(render_stardew_conversation_workspace(
+                self.server.stardew_conversation_service.snapshot(), csrf_token=self._csrf_token()))
             return
         if path == "/lab":
             query = parse_qs(parsed.query)
@@ -676,6 +713,12 @@ class _Handler(BaseHTTPRequestHandler):
                 self.send_error(HTTPStatus.BAD_REQUEST)
                 return
             self._send_json(build_control_panel_summary(goal_id))
+            return
+        if path == "/api/stardew/conversation":
+            self._send_json(self.server.stardew_conversation_service.snapshot())
+            return
+        if path == "/assets/stardew-conversation.js":
+            self._send_javascript(STARDEW_CONVERSATION_JS)
             return
         if path == "/api/conversation":
             self._send_json(self._conversation_service().snapshot())
@@ -756,6 +799,19 @@ class _Handler(BaseHTTPRequestHandler):
             return
         data = self._read_form()
         self._validate_csrf(data)
+        if path == "/api/stardew/conversation":
+            try:
+                payload = json.loads(_single(data, "payload", default="{}"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Conversation payload must be an object")
+                action = _single(data, "action")
+                if (self._catalog_session().selected_adapter_id not in {None, "stardew"}
+                        and action not in {"pause", "stop", "reclaim", "focus_lost"}):
+                    raise ValueError("Select Stardew from Games before changing its session")
+                self._send_json(self.server.stardew_conversation_service.dispatch(action, payload))
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
         if path == "/api/conversation":
             # Control priority and serialization belong to the conversation/runtime
             # service; a long-running legacy Lab action must not block reclaim.

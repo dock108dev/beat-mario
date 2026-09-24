@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -11,7 +12,7 @@ from typing import Any
 from uuid import uuid4
 
 from smb3_agent.custom_variants import CustomVariantStore, PlanAttemptHistory
-from smb3_agent.request_planning import ConversationPlan, Planner
+from smb3_agent.request_planning import ConversationPlan, Planner, is_advisory, normalized_text
 
 
 class ConversationService:
@@ -362,3 +363,212 @@ class ConversationService:
             if self._active():
                 self.runtime.control("stop", command_id=uuid4().hex)
                 self._sync()
+
+
+class StardewConversationService:
+    """Shared typed proposals with exclusively Stardew-owned volatile authority.
+
+    Saved events/outcomes are informational. Construction never reloads a plan,
+    selected targets, reviewed scope, or input permission from disk.
+    """
+
+    def __init__(self, *, runtime: Any = None,
+                 artifacts_root: Path = Path("artifacts/stardew-conversation")) -> None:
+        if runtime is None:
+            from smb3_agent.stardew_runtime import StardewRuntime
+            runtime = StardewRuntime()
+        self.runtime = runtime
+        self.root = Path(artifacts_root)
+        self.history = PlanAttemptHistory(self.root / "outcomes")
+        self.planner = Planner()
+        self.conversation_id = "stardew-conversation-" + uuid4().hex
+        self._lock = threading.RLock()
+        self._plan: dict[str, Any] | None = None
+        self._reviewed: dict[str, Any] | None = None
+        self._messages: list[dict[str, Any]] = []
+        self._requests: set[str] = set()
+        self._retained: set[str] = set()
+        self._selected: tuple[str, ...] = ()
+
+    def _message(self, role: str, text: str, kind: str) -> None:
+        event = {"role": role, "text": text, "kind": kind,
+                 "at": datetime.now(timezone.utc).isoformat()}
+        self._messages.append(event)
+        self.root.mkdir(parents=True, exist_ok=True)
+        with (self.root / (self.conversation_id + ".jsonl")).open("a") as stream:
+            stream.write(json.dumps(event) + "\n")
+
+    def snapshot(self) -> dict[str, Any]:
+        with self._lock:
+            runtime = deepcopy(self.runtime.snapshot())
+            outcome = runtime.get("outcome")
+            if (isinstance(outcome, dict) and outcome.get("attempt_id")
+                    and outcome.get("status") not in {None, "active", "running"}
+                    and runtime.get("status") != "running"):
+                identity = str(outcome["attempt_id"])
+                if identity not in self._retained:
+                    self.history.record(identity, {**outcome, "game_id": "stardew",
+                                                  "conversation_id": self.conversation_id})
+                    self._retained.add(identity)
+            return {"schema_version": "game-companion-conversation/v1",
+                    "game_id": "stardew", "conversation_id": self.conversation_id,
+                    "plan": deepcopy(self._plan), "reviewed": self._reviewed == self._plan and self._plan is not None,
+                    "current_plan": runtime.get("current_plan"), "pending_plan": None,
+                    "messages": deepcopy(self._messages[-60:]), "runtime": runtime,
+                    "selected_target_ids": list(self._selected),
+                    "outcome": outcome, "history": self.history.list()}
+
+    def _context(self) -> dict[str, Any]:
+        context_value = self.runtime.planning_context(conversation_id=self.conversation_id,
+                         current_plan=ConversationPlan.from_dict(self._plan) if self._plan else None)
+        context = asdict(context_value) if hasattr(context_value, "__dataclass_fields__") else dict(context_value)
+        # Selection carries only current observation-owned objects, never client facts.
+        targets = context.get("observation", {}).get("targets", [])
+        context["selected_targets"] = [item for item in targets if item.get("id") in self._selected]
+        context["reviewed_edit_scope"] = []  # Every changed scope needs fresh explicit review/Start.
+        return context
+
+    def dispatch(self, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        payload = payload or {}
+        # Runtime neutralization has priority over setup, persistence and planning locks.
+        if action in {"pause", "stop", "reclaim", "focus_lost"}:
+            self.runtime.control(action)
+            with self._lock:
+                self._reviewed = None
+                self._message("assistant", "Input stopped; review the remaining work before authorizing another attempt.", "control")
+            return self.snapshot()
+        with self._lock:
+            request_id = str(payload.get("request_id") or uuid4().hex)
+            if request_id in self._requests:
+                return self.snapshot()
+            if action in {"apply", "start"}:
+                if (not self._plan or payload.get("expected_plan_id") != self._plan["plan_id"]
+                        or type(payload.get("expected_revision")) is not int
+                        or payload["expected_revision"] != self._plan["revision"]):
+                    raise ValueError("The plan changed. Review its current version before continuing.")
+            if action == "launch_engineering":
+                self._plan = self._reviewed = None
+                self._selected = ()
+                self.runtime.setup({"action": "launch_engineering"})
+                self._message("assistant", "Engineering launch attempted in a fresh isolated folder. Check the setup status; this does not establish a prepared farm or grant gameplay input.", "setup")
+            elif action == "verify_engineering_session":
+                self._plan = self._reviewed = None
+                self._selected = ()
+                verifier = getattr(self.runtime, "verify_engineering_session", None)
+                if verifier is None:
+                    raise ValueError("Game loading and persistence verification is unavailable for this session.")
+                verifier()
+                self._message("assistant", "Session verification checked. The setup checklist shows which evidence is still required; no gameplay permission was granted.", "setup")
+            elif action == "connect_profile":
+                profile_id = payload.get("profile_id")
+                candidates = self.runtime.snapshot().get("qualified_profiles", [])
+                if (not isinstance(profile_id, str) or not profile_id
+                        or not any(item.get("profile_id") == profile_id for item in candidates)):
+                    raise ValueError("Choose a qualified screen profile from this session's available profiles. Browser-provided calibration cannot qualify a profile.")
+                connector = getattr(self.runtime, "connect_profile", None)
+                if connector is None:
+                    raise ValueError("Qualified screen connection is unavailable for this session.")
+                self._plan = self._reviewed = None
+                self._selected = ()
+                connector(profile_id)
+                self._message("assistant", "Screen connection checked. Request and review a task before explicitly authorizing watering.", "setup")
+            elif action == "setup":
+                if (not isinstance(payload.get("source"), str) or not payload["source"].strip()
+                        or not isinstance(payload.get("destination"), str) or not payload["destination"].strip()):
+                    raise ValueError("Choose the exact source and a new disposable destination.")
+                self.runtime.setup({key: payload[key] for key in
+                                    ("source", "destination", "copy_authorized", "setup_source_kind") if key in payload})
+                self._plan = self._reviewed = None
+                self._selected = ()
+                self._message("assistant", "Disposable setup recorded. Game loading, persistence and fresh screen perception must be verified before input.", "setup")
+            elif action == "reset":
+                if not isinstance(payload.get("destination"), str) or not payload["destination"].strip():
+                    raise ValueError("Choose a new disposable destination for the fresh attempt.")
+                self._plan = self._reviewed = None
+                self._selected = ()
+                self.runtime.setup({"action": "reset", "destination": payload.get("destination", "")})
+                self._message("assistant", "Reset attempted with a fresh identity. All prior plans, observations and permission are invalidated.", "reset")
+            elif action == "observe":
+                self.runtime.observe()
+                self._reviewed = None
+                self._message("assistant", "Observation refreshed. Review the current targets and resources.", "observed")
+            elif action == "select_targets":
+                ids = payload.get("target_ids", [])
+                if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids):
+                    raise ValueError("Select target identifiers from the current observation.")
+                valid = {item.get("id") for item in self._context().get("observation", {}).get("targets", [])}
+                if not set(ids) <= valid:
+                    raise ValueError("A selected target is absent from the current observation.")
+                self._selected = tuple(ids)
+                self._reviewed = None
+            elif action == "message":
+                text = str(payload.get("text", "")).strip()
+                self._message("user", text, "request")
+                if text.lower().strip(" ?.! ") in {"what is left", "what's left", "what remains", "remaining work"}:
+                    state = self.runtime.snapshot()
+                    self._message("assistant", self.progress_summary(state), "advisory")
+                else:
+                    # Submission is an explicit observation request. Polling never
+                    # activates the game; refresh here lets human composition take
+                    # arbitrary time while keeping proposals bound to fresh pixels.
+                    preview = self.planner.plan(text, {"game_id": "stardew"})
+                    if not preview.control and not is_advisory(normalized_text(text)):
+                        if self.runtime.snapshot().get("status") == "running":
+                            self.runtime.control("pause")
+                        self.runtime.observe()
+                    result = self.planner.plan(text, self._context())
+                    self._message("assistant", result.message, result.kind)
+                    if result.control:
+                        self.runtime.control(result.control["action"])
+                        self._reviewed = None
+                    elif result.plan and result.kind != "advisory":
+                        self._plan = result.plan.to_dict()
+                        self._reviewed = None
+            elif action == "apply":
+                assert self._plan is not None
+                if self._plan["execution_eligibility"] != "requires_runtime_validation":
+                    raise ValueError("This proposal is unavailable for live watering. Resolve the listed prerequisites first.")
+                self.runtime.review(ConversationPlan.from_dict(self._plan))
+                self._reviewed = deepcopy(self._plan)
+                self._message("assistant", "Scope reviewed. Start is a separate explicit Do authorization for this exact plan and session.", "reviewed")
+            elif action == "start":
+                if self._reviewed is None or self._reviewed != self._plan:
+                    raise ValueError("Review this exact scope before Start.")
+                self.runtime.start(ConversationPlan.from_dict(self._plan))
+                self._reviewed = None
+                self._message("assistant", "Started the reviewed watering scope. Chat focus stops ordinary game input.", "started")
+            elif action == "resume":
+                raise ValueError("Refresh the observation, review the remaining work, then explicitly Start; saved permission never resumes.")
+            elif action == "cancel_pending":
+                self._reviewed = None
+                self._message("assistant", "Review canceled. Completed watering remains in the outcome.", "cancelled")
+            else:
+                raise ValueError("Unsupported Stardew conversation action")
+            self._requests.add(request_id)
+            return self.snapshot()
+
+    @staticmethod
+    def progress_summary(state: dict[str, Any]) -> str:
+        ledger = state.get("ledger")
+        if not ledger:
+            return "Remaining work is unknown until a fresh complete planted-set observation is available."
+        observation = state.get("observation") or {}
+        tool = observation.get("tool") or {}
+        return (f"{ledger.get('watered_count', 'Unknown')} watered; {ledger.get('remaining_count', 'unknown')} remaining. "
+                f"Energy: {ledger.get('energy_current') if ledger.get('energy_current') is not None else 'unknown'}. "
+                f"Water in can: {tool.get('watering_can_units') if tool.get('watering_can_units') is not None else 'unknown'}. "
+                f"Refills: {ledger.get('refills', 'unknown')}. " + str(state.get("reason") or ""))
+
+    def invalidate_for_switch(self) -> bool:
+        state = self.runtime.snapshot()
+        if state.get("status") == "running" or state.get("owner") == "agent":
+            return False
+        self.runtime.invalidate()
+        with self._lock:
+            self._plan = self._reviewed = None
+            self._selected = ()
+        return True
+
+    def close(self) -> None:
+        self.runtime.close()
+        self.snapshot()

@@ -4,9 +4,9 @@ The root [README](../README.md) is the verified first-use path: install the
 locked environment, run the non-live gate, inspect the command surface, and
 start the local UI. Use this index to find the next task-specific guide.
 
-## Current engineering work
+## Player workflows
 
-Start with the [personal-beta engineering packet](personal-beta-engineering.md): B1 planning is complete; the Desktop tracker records B2 implementation and verification status. The [B2 guide](b2-conversation-guide.md) covers the actual interfaces and B3 handoff. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns slice status. Required work includes real conversational route edits from the single Mario base and the expanded Stardew routine. Existing V2 implementation records do not establish those capabilities.
+Use the [Mario conversation and route guide](b2-conversation-guide.md) for bounded planning and supported edits. The [Stardew guide](stardew-operator-guide.md) describes disposable setup, watering and the verification required before live input. See [known limitations](known-limitations.md) for unfinished capabilities.
 
 ## Understand the system
 
@@ -58,8 +58,7 @@ locked Python 3.11 environment.
 ## Work with other adapters and shared product surfaces
 
 - [Stardew companion guide](stardew-operator-guide.md) describes the implemented
-  copied-save and controller contract and the current inspection-only public
-  boundary.
+  session isolation, guarded controller contract and live-input prerequisites.
 - [Session automation and metrics](session-automation-metrics.md) documents
   scenario classification, local product metrics, and proof limits.
 - [Unattended regression](unattended-regression.md) covers opt-in isolated

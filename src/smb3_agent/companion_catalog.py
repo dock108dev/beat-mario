@@ -316,6 +316,7 @@ class CatalogRegistry:
 def build_default_catalog_registry(
     *,
     mario_provider: CatalogProvider | None = None,
+    stardew_provider: CatalogProvider | None = None,
     experimental_install_root: Path | None = None,
 ) -> CatalogRegistry:
     """Build the supported catalog in its one authoritative provider order."""
@@ -325,7 +326,7 @@ def build_default_catalog_registry(
 
     mario = mario_provider or MarioCatalogProvider()
     experimental = discover_installed_providers(experimental_install_root)
-    return CatalogRegistry((mario, StardewCatalogProvider(), *experimental))
+    return CatalogRegistry((mario, stardew_provider or StardewCatalogProvider(), *experimental))
 
 
 @dataclass

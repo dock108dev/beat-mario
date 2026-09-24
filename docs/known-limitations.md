@@ -3,11 +3,13 @@
 These boundaries are implemented or directly implied by the current runtime;
 they are not unverified product promises.
 
-## B2 implementation is bounded; later beta stages remain incomplete
+## Bounded planning and unfinished capabilities
 
-The [B2 guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
+The [conversation guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
 
-Stardew planning is fixture/unavailable-live only. B3 copied-save setup, visible perception/input and watering, B4 expanded farming and all later live integration/acceptance requirements remain open.
+Native Stardew input delivery and visible farm loading/persistence still need live verification. A successful isolated title-screen launch does not establish those capabilities.
+
+The ordinary Stardew workspace now routes setup, planning, review and controls into its own runtime. Actual game loading/persistence, calibrated complete-farm perception and real watering are unverified; Start remains unavailable without those prerequisites. No qualified live pixel profile ships. Expanded farming and live verification remain incomplete. See [Stardew integration](b3-integration-contract.md).
 
 ## Live validation requires local assets
 
@@ -30,17 +32,9 @@ control are unsupported.
 The non-live CI job runs on Linux and intentionally does not install or start
 either emulator.
 
-## Stardew is not publicly wired for live operation
+## Stardew live-input prerequisites
 
-The Stardew copied-save, visible-window, observation, Tell/Show/Do, reclaim,
-reset, and evidence contracts have deterministic coverage. The public CLI and
-loopback server currently expose only capability inspection and a safe
-unconfigured render. They do not create a save copy, launch or attach to
-Stardew, configure ordinary input, or start a live controller. Live Stardew
-operation requires the already-scoped B3/B4 integration and applicable live
-proof, followed by the revised beta review; it cannot be inferred from domain
-tests. The missing work is implementation and verification, not another broad
-owner scope decision.
+The browser workspace routes setup, planning and guarded controls into the Stardew runtime. The CLI remains inspection-only. Start requires verified session isolation, a qualified real-game pixel profile, complete fresh observations and reviewed scope. No qualified profile ships with this checkout. Harvesting, planting and debris clearing are not supported live actions. See the [Stardew guide](stardew-operator-guide.md).
 
 ## Route Lab is local-only
 

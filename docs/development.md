@@ -96,17 +96,17 @@ For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
 and keep watchable playback separate from authoritative evidence.
 
-## B2 verification
+## Conversation and route verification
 
-Focused B2 checks live in `test_request_planning.py`, `test_stardew_planning.py`,
+Focused conversation checks live in `test_request_planning.py`, `test_stardew_planning.py`,
 `test_conversation_service.py`, `test_conversation_ui.py`, `test_custom_variants.py`,
 `test_beta_readiness.py` and the runtime tests. The canonical gate includes them.
 Live proof additionally needs fresh isolated Mario attempts, actual alternate
 traversal, dynamic speed, typing with no effective-input mismatch, revision
 acknowledgment, paused reclaim, neutral handback and affected route regression.
 Source snapshots include uncommitted files. Keep every failed attempt and use a
-new directory after repair. The [B2 guide](b2-conversation-guide.md) describes the
-ordinary launch path and B3 handoff.
+new directory after repair. The [conversation guide](b2-conversation-guide.md) describes the
+ordinary launch path and shared adapter interfaces.
 
 ## Source files over roughly 500 lines
 

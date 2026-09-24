@@ -1,6 +1,5 @@
-# Shared UI design requirements
+# Game Companion UI design requirements
 
-Glass Starter 02 adaptation · September 23, 2026. The optional shared gallery and its `review/starter-02/index.html` comparison are design references; this file is the portable local guidance.
 
 ## Task first
 
@@ -8,11 +7,11 @@ Put the useful result and next action before setup inventories or technical deta
 
 ## Direction
 
-Use a light iOS Liquid Glass-inspired appearance: cool white surfaces, restrained translucency, subtle blue/lavender ambient background, soft depth, rounded controls, and native system typography. This is the user's requested baseline for our Desktop products. Adapt layouts to each product. Do not recreate the former beige, forest-green, yellow-tinted dashboard theme.
+Use a light iOS Liquid Glass-inspired appearance: cool white surfaces, restrained translucency, subtle blue/lavender ambient background, soft depth, rounded controls, and native system typography. Do not recreate the former beige, forest-green, yellow-tinted dashboard theme.
 
 ## Foundations
 
-- Use the shared template `assets/glass.css` as the reference for tokens and components. Default action accent is blue (#0969df); primary text is deep slate (#182338), secondary text #54647b.
+- Use `src/smb3_agent/glass_ui.py` for tokens and components. Default action accent is blue (#0969df); primary text is deep slate (#182338), secondary text #54647b.
 - Use the platform system font stack. Favor natural sentence case; reserve small uppercase labels for occasional context. Avoid oversized headings and widely spaced labels throughout the interface.
 - Use an 8-ish pixel spacing rhythm (8, 12, 16, 20, 24, 32). Keep related controls close and groups visibly distinct.
 - Panels generally use 22–26px radii; controls 12–14px; status pills fully rounded. Avoid applying pills to every piece of information.
@@ -34,8 +33,6 @@ Use compact tables on desktop, deliberate horizontal scrolling or readable recor
 - A light theme is included. Do not claim dark-mode support without implementing and checking it.
 - Demo interactions are local-only. Real apps must retain their existing behavior, confirmation rules, persistence, math, data boundaries, and source labels.
 
-## Handoff and future work
+## Maintaining the interface
 
-Every adopting project must link its local design note from its README and mention this shared template folder for future contributors. Include the source version/date and local adaptations. Copy assets into the repository; do not rely on a machine-specific link at runtime. Keep project-specific instructions and verification boundaries intact.
-
-Before calling a rollout complete, inspect representative desktop and phone views and verify the affected interactions. Record what was checked and what remains unverified. Visual implementation does not imply owner acceptance, release approval, or real-data qualification.
+Keep design guidance consistent with the implementation. Check affected screens and interactions at supported sizes; record any remaining limitations. Preserve data contracts, calculations, permissions, persistence and game rules.

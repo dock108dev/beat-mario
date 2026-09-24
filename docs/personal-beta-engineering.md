@@ -1,8 +1,12 @@
 # Personal beta engineering packet
 
-Updated September 23, 2026. **B2 implementation and evidence are tracked against this contract. B1 remains complete; owner acceptance and B3/B4 live Stardew work remain pending.** The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current slice status; this packet owns implementation contracts and checks. The V2 roadmap records the existing foundation and its historical proof.
+Updated September 24, 2026. **B2 engineering is complete on its retained candidate. B3 is incomplete and paused by the user; B4 and owner acceptance remain pending.** Rosetta and isolated title-screen launch work. Latest retained engineering checks passed 903 repository tests and 240 focused tests; no real farm creation, persistence/reload, automatic farm perception or watering is proved. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status and exact tested-source identity.
 
 The implemented module/API mapping, launch flow and B3 prerequisites are in the [B2 conversation guide](b2-conversation-guide.md). Exact integrated results and retained evidence are recorded in the Desktop tracker; code presence does not establish B2 PASS.
+
+## Current pause and next action
+
+The test UI server and task-owned game were stopped. Remaining live checks require a visible foreground game; no headless completion or overnight run is scheduled. On resume, verify ordinary setup input delivery, prepare and visibly reload the dedicated farm under the existing authorization, qualify complete automatic screen perception, then prove reviewed watering/resources/return/reclaim. The previous setup mouse pulses did not visibly advance past the title screen. New launches require fresh process/window/session identity. This status-only documentation update does not extend the retained test results to a new source hash.
 
 ## Product loop and scope
 
@@ -83,7 +87,7 @@ Prove Mario's process-specific emulator input while the text field has keyboard 
 
 ## Stardew live and farm contract — B3 and B4
 
-B3 must deliver actual setup: owner-selected save source, separately identified disposable copy, clear launch/selection instructions, visible supported game/window, screen observations and configured ordinary-input driver. Reuse copy verification and hashes. Never inspect/migrate a primary save merely to manufacture proof of isolation. Do not assume the game can directly load an arbitrary copy path: verify the actual supported save-selection workflow and persistence location before enabling input. No copying, game launch or owner-data inspection occurs in this planning task.
+B3 must deliver actual setup: owner-selected save source, separately identified disposable copy, clear launch/selection instructions, visible supported game/window, screen observations and configured ordinary-input driver. Reuse copy verification and hashes. Never inspect/migrate a primary save merely to manufacture proof of isolation. Do not assume the game can directly load an arbitrary copy path: verify the actual supported save-selection workflow and persistence location before enabling input. The original planning-only boundary is historical. Subsequent B3 engineering and isolated title launch are authorized and implemented. The user also authorized dedicated disposable farm creation, free starter-seed planting and sleeping only for save/reload, then paused visible work for tonight. Resume only when requested; do not repeat that preparation approval or inspect personal saves.
 
 Screen-only perception is a real implementation dependency. Fixtures and manual annotations may support development but cannot be represented as automatic live observation. Bound the supported farm/viewport state, identify crops/plots/debris, tools/seeds/inventory and relevant resources from actual visible evidence, handle scrolling/occlusion, and stop on insufficient confidence. If reliable coverage is not yet possible, retain partial engineering and the exact missing perception capability rather than marking the adapter usable.
 
@@ -142,8 +146,15 @@ Keep live engineering attempts, review-only demonstrations, historical authorita
 
 The current app is a local loopback Python/UI product with external game prerequisites, not an already packaged standalone Mac app. B8 should deliver the simplest usable, identified local launcher/package and instructions for this personal beta; signing/notarization or public distribution is a separate scope. No bundled proprietary game assets. Distinguish engineering delivery readiness from the owner's final beta decision.
 
-## First engineering handoff
+## Current engineering handoff
 
-Start **B2.1**, then **B2.2**, in the current repository. Re-read the tracker, current Git state and this packet; preserve these documentation edits and all existing route/evidence/game inputs. Implement the smallest shared request/plan contract that supports both games, with honest Mario preset fallback and real conversation correction. Establish the Mario runtime seam and alternate traversal before calling the UI complete. Continue through the stated dependent slices under the engineering task's authorization, report concrete blockers while doing independent work, and do not reopen settled product-scope questions.
+B2.1–B2.4 are complete on their retained historical candidate. B3 is the active
+engineering stage; its candidate and current limitations are recorded in the
+Desktop tracker and [B3 integration contract](b3-integration-contract.md).
+Finish actual isolated-game setup, automatic visible perception, ordinary watering
+and resource/return reconciliation before claiming B3 complete. Missing game access
+does not prevent independent implementation, but unit/browser checks cannot replace
+that live proof. B4 remains gated on B3, and owner acceptance remains blank.
 
-This preparation task changes documentation only. It does not launch games, inspect or copy owner saves, change executable scenarios, install a model/provider, run gameplay, commit, push or publish. Later technical results and owner verdicts must be recorded when they actually occur.
+Preserve source work, retained attempts and historical route/game inputs. No commit,
+push, publication, primary-save access or owner verdict is implied by this packet.

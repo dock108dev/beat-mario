@@ -66,6 +66,7 @@ def inspect_beta(manifest: dict[str, Any] | None = None, *, evidence_root: Path 
         failures[stage] = missing
     b2_failures = [f"{stage}: {item}" for stage, values in failures.items()
                    if stage.startswith("B2.") for item in values]
+    b3_failures = [f"B3: {item}" for item in failures.get("B3", [])]
     all_failures = [f"{stage}: {item}" for stage, values in failures.items() for item in values]
     # A manifest cannot supply owner review via a unit test or an absent decision.
     owner_decision = manifest.get("owner_acceptance")
@@ -76,6 +77,9 @@ def inspect_beta(manifest: dict[str, Any] | None = None, *, evidence_root: Path 
         "manifest_matches_candidate": manifest_ok,
         "b2_complete": not b2_failures,
         "ready_for_b3": not b2_failures,
+        "b3_complete": not b3_failures,
+        "ready_for_b4": not b3_failures,
+        "first_unmet_b3_requirement": b3_failures[0] if b3_failures else None,
         "beta_ready": not all_failures and owner_ok,
         "first_unmet_b2_requirement": b2_failures[0] if b2_failures else None,
         "remaining": failures,
@@ -90,6 +94,7 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--evidence-root", type=Path)
     parser.add_argument("--gate-b2", action="store_true")
+    parser.add_argument("--gate-b3", action="store_true")
     parser.add_argument("--identity", action="store_true")
     args = parser.parse_args()
     if args.identity:
@@ -99,6 +104,8 @@ def main() -> None:
     result = inspect_beta(manifest, evidence_root=args.evidence_root)
     print(json.dumps(result, indent=2))
     if args.gate_b2 and not result["b2_complete"]:
+        raise SystemExit(1)
+    if args.gate_b3 and not result["b3_complete"]:
         raise SystemExit(1)
 
 

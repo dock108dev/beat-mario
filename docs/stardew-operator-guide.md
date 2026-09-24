@@ -1,28 +1,38 @@
 # Stardew Companion Guide
 
-## Current beta work versus existing implementation
+## Setup and live-input prerequisites
 
-The September 23 [engineering packet](personal-beta-engineering.md) requires live setup/perception/input in B3, harvesting/planting/selected-debris clearing and a combined routine in B4, and shared conversational planning in B2/B5. Shared B2 planning now describes these actions with explicit fixture/unavailable-live eligibility; the live B3/B4 capabilities remain required implementation work. See the [B3 interface handoff](b2-conversation-guide.md#implementation-seams-for-b3). The guide below describes the existing watering-only contracts. Extend task-specific observations, resources, ledgers and postconditions while preserving primary-save protection; do not treat the old watering guard as approval for every farming action. No new owner scope decision is needed to begin the planned engineering.
+The `/stardew` workspace provides disposable setup, conversation, reviewed scope, explicit Start, observation refresh and pause/reclaim controls. It uses Stardew-owned session/runtime authority. Unconfigured setup and unqualified perception keep live input disabled.
 
-V2.11 implements standalone Stardew companion modes above the V2.10 visible
-operator for one bounded task:
+Use an explicitly selected disposable farm. The isolated-game launcher redirects configuration and data into a fresh namespace, preserves HOME, and applies OS restrictions against primary-save paths and network access. It accepts only inspected game and runtime hashes. Installation or copying alone does not verify that the game loads and persists within that namespace.
+
+On Apple Silicon, an Intel game/runtime may require [Rosetta](https://support.apple.com/en-us/102527). Session verification still requires same-session process/window loading and persistence evidence; the UI cannot bypass it with a manual verified flag.
+
+The ordinary workspace now offers **Check isolated farm session** and a selection
+of server-registered screen profiles. Verification requires retained real loading
+and persistence proof. Profile connection is limited to the current verified farm
+and retained calibration evidence; missing evidence leaves the selection empty.
+These actions never grant gameplay authority. Review and Start remain separate.
+
+Automatic recognition is implemented as strict pixel matching for a bounded fixed
+viewport. **No qualified real-game pixel profile ships with this candidate.** A
+profile must identify every tile in the complete planted area, player and farmhouse
+return tile, equipped can and exact resources, with retained calibration/coverage
+evidence. Unknown pixels, scrolling, scale changes, occlusion or unobservable exact
+resource counts stop recognition. Synthetic profiles and manual annotations remain
+development evidence. Refilling is not live-qualified.
+
+The unchanged watering contract is:
 
 > Water every crop planted at the initial exact observation, then return to the
 > visibly confirmed farmhouse entrance.
 
-The domain implementation and deterministic tests are complete; live product
-integration and owner validation are deferred. The public `stardew` CLI and
-`/stardew` server route are inspection-only: they report capability truth and
-render a safe unconfigured surface. They do not select or copy a save, detect
-or launch Stardew, construct an ordinary-input driver, or operate the game.
-This guide describes the implemented controller contracts, not accepted live
-behavior.
+A visible subset cannot silently replace that complete set. Harvest, planting,
+selected-debris clearing and combined routines remain unavailable for live execution
+until implemented and verified. See [Stardew integration and extension contracts](b3-integration-contract.md).
 
-V2.12 exposes this unchanged standalone workspace at `/stardew` from the
-combined catalog at `/`. Stardew supplies its own catalog truth. A switch is
-refused during active Show/Do/input, reclaim, neutralization, ambiguous
-ownership, unconfirmed handback, incomplete retention, unsafe reset, or unknown
-window continuity. Mario state and evidence can never satisfy this adapter.
+The sections below describe controller contracts; they are not a claim that the
+missing real-game calibration, isolation or live watering has passed.
 
 ## Mode separation
 
@@ -121,14 +131,32 @@ review-only labeling, Do scope and expiry, current input owner, immediate
 reclaim, neutralization and handback, reset status, crop/energy/can/refill/
 position reconciliation, protected-action refusal, and first failure with safe
 recovery. Controls remain disabled when their exact preconditions are absent.
-Desktop and 390-pixel standalone contracts are prepared. The V2.12 combined
-shell links this surface without weakening its adapter-owned controls.
+The combined shell links this surface while preserving adapter-owned controls. Render checks cover desktop and 390-pixel widths.
 
-There is currently no public configuration/start action for these controls.
-They remain disabled in the supported surface because no live save, window,
-observation, or input driver is attached.
+The ordinary workspace provides setup, conversation and review actions. Start
+remains disabled until verified loading/persistence, fresh automatic observation,
+complete reviewed scope and ordinary input are available. Native input code uses
+bounded process-targeted pulses with foreground checks; actual delivery and visible
+effects remain unverified without the game. Chat focus stops gameplay authority.
+Pause preserves the partial outcome; continuation requires fresh observation,
+review and explicit Start. Saved information never restores permission.
 
-These inspection commands do not detect, open, copy, reset, or operate Stardew:
+Launch from the repository:
+
+```bash
+.venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
+```
+
+Open `http://127.0.0.1:8765/stardew`. Use **Open isolated engineering game** to request
+a fresh title-screen attempt. Existing-save copying is under **Advanced** and needs
+an explicit source and copying authorization. Describe “water these crops” only after
+the engineering farm, isolation and visible perception are qualified. Missing
+prerequisites remain visible and Start stays disabled; a screenshot or copied folder
+does not bypass them. Focus/observation and Start explicitly activate only the verified
+engineering PID; polling and questions never steal focus.
+
+The public CLI remains inspection-only. These commands do not select or copy a save,
+detect or open a game, reset a session, or operate Stardew:
 
 ```bash
 .venv/bin/python -m smb3_agent stardew status
@@ -149,10 +177,4 @@ desktop/narrow presentation, and Mario contract preservation. They were not
 used with an owner save or live Stardew process. Catalog/switching and render
 contracts are also exercised by the non-live suite.
 
-The consolidated campaign must begin from a frozen cumulative release
-candidate with deterministic contracts, then produce visible Stardew technical
-proof and owner-pilot proof. The owner makes every authorization, reclaim,
-feedback, usefulness, and acceptance decision. V2.12 is
-implementation-complete with final validation deferred; V2.13 unattended
-regression and V2.14 Experimental onboarding are also implemented and
-Non-live-tested, but neither supplies Stardew live or owner proof.
+Live verification must use the exact tested source and assets with an isolated farm. Fixture, catalog and render checks do not establish real input delivery, visible watering or gameplay usefulness.

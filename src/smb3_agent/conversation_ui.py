@@ -296,3 +296,156 @@ CONVERSATION_JS = r'''(() => {
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 })();
 '''
+
+
+def render_stardew_conversation_workspace(state: Mapping[str, object] | None = None,
+                                           *, csrf_token: str | None = None) -> str:
+    """Ordinary watering workspace; editable nodes remain stable across polling."""
+    encoded = html.escape(json.dumps(dict(state or {})), quote=True)
+    token = html.escape(csrf_token or "", quote=True)
+    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Stardew · Game Companion</title>
+<style>{CONVERSATION_CSS}
+body{{margin:0;background:#f5f8f4;color:#203626;font:16px/1.5 system-ui}}main{{max-width:1080px;margin:auto;padding:20px}}button,input,textarea{{font:inherit}}button{{padding:10px 14px;border:1px solid #7b987e;border-radius:10px;background:#fff;cursor:pointer}}button:disabled{{opacity:.55;cursor:default}}.card{{background:white;border:1px solid #d3dfd4;border-radius:16px}}pre{{white-space:pre-wrap;overflow-wrap:anywhere}}label{{display:block}}input[type=checkbox]{{width:auto!important}}.setup-fields{{display:grid;gap:10px}}.conversation-controls{{margin:16px 0}}a{{color:#245c38}}</style></head><body><main>
+<a href="/">Games</a><h1>Stardew Valley</h1><p>Water the complete initial crop set, then return to the farmhouse entrance. Harvesting, planting and clearing are not yet supported.</p>
+<div id="stardew-workspace" data-initial-state="{encoded}" data-csrf="{token}">
+<div class="conversation-controls" aria-label="Persistent Stardew controls"><strong id="stardew-owner">You control the game</strong>
+<button data-action="pause">Pause</button><button data-action="stop">Stop</button><button data-action="reclaim" class="danger">Take control</button>
+<p id="stardew-error" class="conversation-alert" role="alert" hidden></p></div>
+<p id="stardew-status" role="status"></p>
+<section class="conversation-workspace" aria-label="Stardew conversation and plan">
+<div class="conversation-chat card"><h2>1. Open an engineering session</h2><p>Open the installed game in a fresh isolated folder. This starts at the title screen; a prepared and verified farm is still required before watering.</p>
+<button data-action="launch_engineering">Open isolated engineering game</button>
+<details><summary>Advanced: copy a selected existing save</summary><p>No save is discovered automatically. Choose the exact source and a new destination. Copying alone does not verify where the game loads or saves.</p>
+<form data-action="setup" class="setup-fields"><label>Source kind<select name="setup_source_kind"><option value="engineering_source">Dedicated engineering save</option><option value="owner_copy">Selected owner save</option></select></label><label>Selected source directory<input name="source" required autocomplete="off"></label>
+<label>New disposable destination<input name="destination" required autocomplete="off"></label>
+<label><input type="checkbox" name="copy_authorized" required> I authorize copying this selected source to this destination.</label>
+<button type="submit">Create disposable copy</button></form></details>
+<p id="stardew-setup"></p>
+<h3>Verify the farm session</h3><p>Opening the title screen is the first step. A prepared engineering farm must have retained proof of saving and loading in this isolated folder. Verification checks that evidence; it does not prepare a farm or perform gameplay.</p>
+<button data-action="verify_engineering_session">Check isolated farm session</button>
+<ol id="stardew-setup-steps" aria-label="Setup evidence checklist"></ol>
+<h3>Connect screen recognition</h3><p id="stardew-profile-status">No qualified screen profile is available. Unverified calibration cannot enable watering.</p>
+<form data-action="connect_profile"><label for="stardew-profile">Qualified profile for this session</label><select id="stardew-profile" name="profile_id"><option value="">No qualified profile available</option></select><button id="stardew-connect" type="submit" disabled>Connect qualified screen profile</button></form>
+<details><summary>Reset to a fresh disposable attempt</summary><form data-action="reset"><label>New destination<input name="destination" required autocomplete="off"></label><button type="submit">Create fresh attempt</button></form></details><button data-action="observe">Focus game and observe</button>
+<h2>2. Request watering</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Water all initially planted crops" required></textarea><button type="submit">Send request</button></form>
+<p class="meta">Task requests and Observe focus the verified game to refresh its view. Questions and control requests do not change focus. Start returns focus to the reviewed Stardew window. Switching away pauses input and requires a fresh observation, review and explicit Start.</p>
+<ul id="stardew-messages" class="conversation-transcript" aria-live="polite"></ul></div>
+<div class="conversation-plan card"><h2>Observed targets</h2><p id="stardew-observation"></p><form data-action="select_targets"><div id="stardew-targets"></div><button type="submit">Use selected targets</button></form>
+<h2>3. Review watering scope</h2><p id="stardew-plan">Request a task to prepare a proposal.</p><ol id="stardew-actions"></ol><p id="stardew-limits"></p><p id="stardew-issues"></p>
+<div class="conversation-buttons"><button data-action="apply" id="stardew-review">Review scope</button><button data-action="start" id="stardew-start">Start reviewed watering</button></div>
+<p id="stardew-review-status"></p><section class="conversation-outcome"><h2>Outcome and remaining work</h2><p id="stardew-outcome">No attempt yet.</p><pre id="stardew-ledger"></pre></section>
+<details><summary>Session and evidence details</summary><pre id="stardew-details"></pre></details></div>
+</section></div></main><script src="/assets/stardew-conversation.js" defer></script></body></html>'''
+
+
+STARDEW_CONVERSATION_JS = r'''
+(() => {
+  "use strict";
+  const root = document.getElementById("stardew-workspace"); if (!root) return;
+  const node = id => document.getElementById(`stardew-${id}`);
+  const text = (id, value) => { const target = node(id); const copy = value ?? ""; if (target.textContent !== String(copy)) target.textContent = copy; };
+  const api = "/api/stardew/conversation";
+  let state = {}, generation = 0, polling = false, targetsSignature = "", messagesSignature = "", profilesSignature = "", setupStepsSignature = "";
+  const busy = new Set();
+  function render(next) {
+    state = next;
+    const run = state.runtime || {}, plan = state.plan, observation = run.observation || {}, planningObservation = run.planning_observation || observation;
+    text("owner", run.owner === "agent" || run.input_owner === "agent" ? "Companion controls watering" : run.handback_confirmed === false ? "Handback not confirmed" : "You control the game");
+    text("status", run.reason || run.status || "Setup required");
+    const setup = run.setup?.session_id ? run.setup : (run.engineering_launches || []).at(-1) || run.setup || {}, save = setup.save || {};
+    text("setup", setup.classification === "fresh_engineering_namespace" ? `Engineering session ${setup.session_id.slice(0, 8)} · ${setup.blocker || ""} Folder and process identity are in Session and evidence details.` : setup.session_id ? `Session ${setup.session_id} · ${setup.classification === "engineering_source" ? "Engineering source" : "Selected owner copy"}. Source: ${save.primary_path || save.source_path || "unknown"}. Disposable: ${save.disposable_path || "unknown"}. ${setup.blocker || ""}` : "No disposable session selected.");
+    const steps = run.setup_steps || [];
+    const stepsSignature = JSON.stringify(steps);
+    if (stepsSignature !== setupStepsSignature) {
+      setupStepsSignature = stepsSignature;
+      node("setup-steps").replaceChildren(...steps.map(step => {
+        const item = document.createElement("li");
+        item.textContent = `${step.label || step.id}: ${step.status || "unknown"}${step.reason ? ` — ${step.reason}` : ""}`;
+        return item;
+      }));
+    }
+    const profiles = run.qualified_profiles || [];
+    const profileSignature = JSON.stringify(profiles);
+    if (profileSignature !== profilesSignature) {
+      profilesSignature = profileSignature;
+      const select = node("profile"), previous = select.value;
+      const options = profiles.map(profile => { const option = document.createElement("option"); option.value = profile.profile_id; option.textContent = profile.label || profile.profile_id; return option; });
+      if (!options.length) { const option = document.createElement("option"); option.value = ""; option.textContent = "No qualified profile available"; options.push(option); }
+      select.replaceChildren(...options);
+      if (profiles.some(profile => profile.profile_id === previous)) select.value = previous;
+    }
+    node("connect").disabled = !profiles.length;
+    node("profile").disabled = !profiles.length;
+    text("profile-status", profiles.length ? "Only retained, qualified profiles for this session are listed. Connection rechecks their evidence and game identity." : "No qualified screen profile is available. Unverified calibration cannot enable watering.");
+    text("observation", observation.observation_id ? `Observation ${observation.observation_id} · ${observation.source || "unknown source"}` : "No validated automatic observation. Targets and resources remain unknown.");
+    const targets = planningObservation.targets || (observation.crops || []).filter(item => item.planted).map(item => ({...item,id:item.crop_id}));
+    const signature = JSON.stringify(targets.map(item => item.id));
+    if (signature !== targetsSignature) {
+      targetsSignature = signature;
+      const checked = new Set([...node("targets").querySelectorAll("input:checked")].map(item => item.value));
+      node("targets").replaceChildren(...targets.map(item => {
+        const label = document.createElement("label"), input = document.createElement("input");
+        input.type = "checkbox"; input.name = "target_ids"; input.value = item.id;
+        input.checked = checked.has(item.id) || (state.selected_target_ids || []).includes(item.id);
+        const copy = document.createElement("span"); copy.dataset.targetId = item.id;
+        label.append(input, copy); return label;
+      }));
+    }
+    for (const copy of node("targets").querySelectorAll("[data-target-id]")) {
+      const item = targets.find(target => target.id === copy.dataset.targetId);
+      if (item) copy.textContent = ` ${item.label || item.id} · ${item.watered === true ? "watered" : item.watered === false ? "needs water" : "water state unknown"}`;
+    }
+    text("plan", plan ? `Version ${plan.revision} · ${plan.original_request}` : "Request a task to prepare a proposal.");
+    const actions = (plan?.actions || []).map(action => `${action.kind}: ${(action.target_ids || []).join(", ") || "targets unresolved"}`);
+    if (node("actions").textContent !== actions.join("")) node("actions").replaceChildren(...actions.map(copy => { const item = document.createElement("li"); item.textContent = copy; return item; }));
+    text("limits", plan ? `Return: ${plan.stop_point === "farmhouse_entrance" ? "farmhouse entrance" : "not confirmed"}. ${plan.resource_limits?.minimum_energy != null ? `Keep at least ${plan.resource_limits.minimum_energy} energy. ` : ""}Stop if resources are insufficient or uncertain. No purchases.` : "");
+    text("issues", [...(plan?.ambiguities || []), ...(plan?.unsupported_parts || []), plan?.fallback_explanation || ""].join(" "));
+    node("review").disabled = plan?.execution_eligibility !== "requires_runtime_validation";
+    node("start").disabled = !state.reviewed;
+    text("review-status", state.reviewed ? "Exact scope reviewed. Start grants new Do permission only if current game conditions pass." : "No input permission. Review is separate from Start.");
+    const messageSignature = JSON.stringify(state.messages || []);
+    if (messageSignature !== messagesSignature) {
+      messagesSignature = messageSignature;
+      node("messages").replaceChildren(...(state.messages || []).slice(-8).map(message => { const li = document.createElement("li"); li.dataset.role = message.role; li.textContent = `${message.role === "user" ? "You" : "Companion"}: ${message.text}`; return li; }));
+    }
+    const outcome = state.outcome, ledger = run.ledger, tool = observation.tool || {};
+    text("outcome", outcome ? `${outcome.status || "Partial"} · ${outcome.stop_reason || run.reason || ""} · Input ${run.neutralized === true ? "neutral" : "neutrality unconfirmed"} · ${run.handback_confirmed ? "Control returned to you" : "Handback unconfirmed"}` : "No attempt yet.");
+    text("ledger", ledger ? `${ledger.watered_count ?? "Unknown"} watered · ${ledger.remaining_count ?? "Unknown"} remaining\nEnergy: ${ledger.energy_current ?? "Unknown"} · Water in can: ${tool.watering_can_units ?? "Unknown"}\nTool uses: ${ledger.tool_uses ?? "Unknown"} · Refills: ${ledger.refills ?? "Unknown"}\nReturn point: ${ledger.final_position?.at_farmhouse_entrance === true ? "Reached" : "Not confirmed"}` : "Crop, energy, can-water and refill accounting remain unknown.");
+    text("details", JSON.stringify({runtime:run,plan,history:state.history},null,2));
+  }
+  function error(message) { text("error", message); node("error").hidden = !message; }
+  async function dispatch(action, payload = {}) {
+    const priority = ["pause", "stop", "reclaim", "focus_lost"].includes(action);
+    if (busy.has(action) || (!priority && busy.size)) return false;
+    busy.add(action); const started = ++generation;
+    payload.request_id = crypto.randomUUID();
+    if (["apply", "start"].includes(action)) Object.assign(payload, {expected_plan_id:state.plan?.plan_id,expected_revision:state.plan?.revision});
+    try {
+      const response = await fetch(api, {method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({csrf_token:root.dataset.csrf,action,payload:JSON.stringify(payload)})});
+      const next = await response.json(); if (!response.ok) throw new Error(next.error || "Action failed");
+      if (started === generation) { render(next); error(""); } return true;
+    } catch (failure) { if (started === generation) error(failure.message); return false; }
+    finally { busy.delete(action); }
+  }
+  async function refresh() {
+    if (polling || busy.size) return; polling = true; const started = generation;
+    try { const response = await fetch(api,{cache:"no-store"}); if (!response.ok) throw new Error("Live updates unavailable"); const next = await response.json(); if (started === generation) render(next); }
+    catch(failure) { if (started === generation) error(failure.message); }
+    finally { polling = false; }
+  }
+  root.addEventListener("click", event => { const button = event.target.closest("button[data-action]"); if (button) dispatch(button.dataset.action); });
+  root.addEventListener("submit", async event => {
+    const form = event.target; if (!(form instanceof HTMLFormElement)) return; event.preventDefault();
+    const data = new FormData(form), payload = Object.fromEntries(data), action = form.dataset.action;
+    if (action === "setup") payload.copy_authorized = data.has("copy_authorized");
+    if (action === "select_targets") payload.target_ids = data.getAll("target_ids");
+    const draft = node("draft"), submitted = draft.value;
+    if (await dispatch(action,payload) && action === "message" && draft.value === submitted) draft.value = "";
+  });
+  // Native foreground checks remain authoritative; this is an additional prompt handback.
+  root.addEventListener("focusin", () => { if ((state.runtime?.owner || state.runtime?.input_owner) === "agent") dispatch("focus_lost"); });
+  try { render(JSON.parse(root.dataset.initialState || "{}")); } catch (_) { render({}); }
+  refresh(); window.setInterval(refresh,750);
+})();
+'''

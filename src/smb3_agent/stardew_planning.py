@@ -1,4 +1,4 @@
-"""Stardew-owned farm planning. B2 exposes fixtures, never live farm execution.
+"""Stardew-owned farm planning. Live eligibility requires the complete automatic observation and runtime validation.
 
 Targets are supplied observations with stable id, kind (crop/plot/debris), and
 optional label/patch/ready/planted/visible/confidence fields. References only
@@ -98,10 +98,10 @@ def _resolve_targets(kind: str, clause: str, context: PlanningContext,
         candidates = [target for target in compatible if _id(target) in selected_ids]
     elif re.search(r"\b(?:them|same|again)\b", clause) and prior:
         candidates = [target for target in compatible if _id(target) in prior]
+    elif re.search(r"\ball (?:the )?(?:visible|observed|initially planted|planted|crops)\b", clause):
+        candidates = compatible
     elif selected_ids:
         candidates = [target for target in compatible if _id(target) in selected_ids]
-    elif re.search(r"\ball (?:the )?(?:visible|observed)\b", clause):
-        candidates = compatible
     else:
         ambiguities.append(f"Select the observable targets to {kind}; the task does not authorize every object on the farm.")
         return ()
@@ -123,7 +123,7 @@ def _resolve_targets(kind: str, clause: str, context: PlanningContext,
 
 class StardewPlanningAdapter:
     help_text = ("I can plan watering, harvesting ready crops, planting owned seeds, and clearing selected debris. "
-                 "Select observed targets and name the seed type for planting. Stardew live execution is unavailable in B2.")
+                 "Select observed targets and name the seed type for planting. Watering requires verified disposable setup and automatic complete-set perception. Harvest, planting and clearing await B4.")
 
     def propose(self, text: str, context: PlanningContext) -> AdapterProposal:
         current = context.current_plan
@@ -277,7 +277,7 @@ class StardewPlanningAdapter:
         if stop_time:
             limits["stop_time"] = stop_time.group(1)
             recognized = True
-        stop = current.stop_point if current else "selected_return_point"
+        stop = current.stop_point if current else context.observation.get("return_point", "selected_return_point")
         return_match = re.search(r"\b(?:return|go back)\s+to\s+(?:the\s+)?([a-z][a-z -]*?)(?:[.,;]|$)", text)
         if return_match:
             stop = return_match.group(1).strip().replace(" ", "_")
@@ -295,14 +295,37 @@ class StardewPlanningAdapter:
         if not actions and not (leave or any(is_negated(text, match.start()) for match in matches)):
             ambiguities.append("Specify at least one bounded farm action and its selected targets.")
         fixture = context.observation.get("source") in {"fixture", "synthetic", "manual_fixture"} or context.observation.get("fixture") is True
+        live = (context.observation_fresh is True
+                and context.observation.get("source") == "automatic_visible"
+                and context.observation.get("validated") is True
+                and context.observation.get("complete_initial_set") is True
+                and context.observation.get("isolation_verified") is True)
+        watering_only = bool(actions) and all(action.kind == "water" for action in actions)
+        if live and watering_only:
+            initial_ids = set(context.observation.get("initial_target_ids", ()))
+            requested_ids = {identity for action in actions for identity in action.target_ids}
+            if not initial_ids or requested_ids != initial_ids:
+                ambiguities.append("The watering contract covers all initially planted crops. Review the complete initial set; a narrower live task is not supported.")
+            if limits.get("stop_time") is not None or limits.get("maximum_seeds") is not None:
+                unsupported.append("Clock and seed limits are unavailable for live watering; remove them before review.")
+            if stop != context.observation.get("return_point"):
+                ambiguities.append("Use the visibly confirmed farmhouse entrance return point.")
+            actions = [replace(action, parameters={**action.parameters, "capability_status": "requires_runtime_validation",
+                       "watering_contract": "initial-planted-set/v1"},
+                       preconditions=tuple(item for item in action.preconditions if item != "live_perception_and_input_not_yet_available"))
+                       for action in actions]
+        eligibility = "requires_runtime_validation" if live and watering_only else "unavailable_live"
+        explanation = ("Review every initially planted crop and the farmhouse return point. Start requires fresh Stardew authority; focusing chat pauses game input."
+                       if live and watering_only else
+                       "Live watering requires verified disposable setup and automatic complete-set perception. Harvest, planting, clearing and combined routines remain unavailable until B4.")
         return AdapterProposal(
             normalized_intent="farm_routine", requested_objective=current.requested_objective if current else text,
             actions=tuple(actions), base_task_id=FARM_TASK_ID,
             ambiguities=tuple(dict.fromkeys(ambiguities)), unsupported_parts=tuple(dict.fromkeys(unsupported)),
             protected_choices=tuple(dict.fromkeys(protected)), resource_limits=limits,
             stop_point=stop, effective_boundary="before_next_farm_action",
-            execution_eligibility="unavailable_live", evidence_status="fixture_only" if fixture else "proposal_only",
-            fallback_explanation="Stardew planning only: live perception, copied-save setup, and farm input are unavailable in B2. No save or game is accessed.",
+            execution_eligibility=eligibility, evidence_status="fixture_only" if fixture else "proposal_only",
+            fallback_explanation=explanation,
             change_summary=tuple(changes) or ("Update the proposed farm routine limits.",),
             changed_scopes=("farm_routine",),
         )

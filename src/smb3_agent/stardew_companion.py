@@ -815,6 +815,7 @@ class StardewCompanionController:
         *,
         evidence_root: Path,
         required_evidence: tuple[str, ...],
+        completion_guard: Callable[[], None] | None = None,
     ) -> StardewModeAttempt:
         attempt = self._require_active()
         envelope = self.provider.observe(
@@ -861,6 +862,8 @@ class StardewCompanionController:
             attempt.player_ownership_restored = False
             self.authorization = None
             return attempt
+        if completion_guard is not None:
+            completion_guard()
         self.operator.lifecycle = OperatorLifecycle.COMPLETED
         self.authorization = None
         if (
@@ -974,8 +977,13 @@ class StardewCompanionController:
             and after.tool.watering_can_units == before.tool.watering_can_units
             and after.energy == before.energy
         )
+        if command.purpose == "water_crop" and command.reviewed_crop_id is not None and (after_watered - before_watered) != {command.reviewed_crop_id}:
+            raise StardewCompanionError("watering changed a different crop than the reviewed target")
         if command.purpose == "water_crop" and not (
             len(after_watered - before_watered) == 1
+            and before_watered.issubset(after_watered)
+            and after.tool.refill_count == before.tool.refill_count
+            and after.tool.selected_tool == before.tool.selected_tool == "watering_can"
             and after.tool.tool_uses == before.tool.tool_uses + 1
             and after.tool.watering_can_units == before.tool.watering_can_units - 1
             and after.energy is not None
