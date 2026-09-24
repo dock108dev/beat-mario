@@ -39,7 +39,8 @@ the complete non-live test suite, goal/segment contracts, deterministic route
 status, and the player, Lab, and Stardew HTML render contracts. It never starts
 an emulator or reads an owner save.
 
-For a quicker read-only check of the installed command surface:
+The Stardew CLI is inspection-only; live setup and guarded controls are in the
+browser workspace. For a quicker read-only check of the installed command surface:
 
 ```bash
 .venv/bin/python -m smb3_agent --help

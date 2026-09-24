@@ -197,12 +197,21 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
     assert all(not (REPOSITORY_ROOT / path).exists() for path in retired_paths)
 
     markdown_files = (README_PATH, *sorted((REPOSITORY_ROOT / "docs").glob("*.md")))
+    tracked_files = subprocess.check_output(
+        ["git", "ls-files", "-z"], cwd=REPOSITORY_ROOT, text=True
+    ).split("\0")
+    checkout_paths = set()
+    for name in filter(None, tracked_files):
+        path = (REPOSITORY_ROOT / name).resolve()
+        checkout_paths.add(path)
+        checkout_paths.update(path.parents)
     missing_links: list[tuple[Path, str]] = []
     for source in markdown_files:
         for target in re.findall(r"\[[^]]+\]\(([^)#]+)", source.read_text(encoding="utf-8")):
             if "://" in target or target.startswith("/"):
                 continue
-            if not (source.parent / target).resolve().exists():
+            resolved = (source.parent / target).resolve()
+            if not resolved.exists() or resolved not in checkout_paths:
                 missing_links.append((source, target))
     assert missing_links == []
 
