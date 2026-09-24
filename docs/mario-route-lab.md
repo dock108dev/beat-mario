@@ -1,8 +1,10 @@
 # Game Companion Lab — Mario
 
 Game Companion Lab is the local evidence-first Mario route review surface. It
-is the current engineering view beneath the planned player-facing companion
-session. It answers:
+is the engineering view beneath the existing player-facing companion session.
+The [conversational custom-route flow](b2-conversation-guide.md)
+belongs in the ordinary player workspace; the Lab retains source-patch and
+evidence review. It answers:
 
 - Where is Mario in the selected route?
 - What is proved, bridged, planned, or failing?

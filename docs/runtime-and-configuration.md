@@ -46,6 +46,23 @@ Lab is running, it owns bounded Show/live-observation threads and child
 processes; server shutdown asks those managers to stop and closes the only
 persistent server process.
 
+## B2 conversation and plan runtime
+
+The ordinary Mario workspace adds `conversation_service.py` between the typed
+`request_planning.py` adapters and `mario_plan_runtime.py`. The renderer lives in
+`conversation_ui.py`; HTTP transport remains in `lab_ui.py`. Plan revisions are
+atomic data mailboxes, not Lua or shell supplied by text. The emulator consumes
+epoch/session/revision-bound commands and acknowledges actual boundaries.
+`fceux_b2_plan.lua` owns supported opening choices, speed/pause, reclaim and
+neutral restoration; the accepted route script only exposes guarded callbacks.
+The B2 explicit launch holds a fresh session for review and disables automatic
+save/load for that isolated process. Legacy passive observation remains read-only.
+
+Custom variants and outcome ledgers live under `artifacts/conversation/`; saved
+revisions never restore runtime authority. The `game-companion-personal-beta/v2`
+contract and `python -m smb3_agent.beta_readiness` inspect the new requirements
+without altering historical campaign manifests. See the [B2 guide](b2-conversation-guide.md).
+
 ## Operator configuration
 
 The application does not load `.env` files and does not need a sample env file.

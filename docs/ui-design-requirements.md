@@ -1,5 +1,11 @@
 # Shared UI design requirements
 
+Glass Starter 02 adaptation · September 23, 2026. The optional shared gallery and its `review/starter-02/index.html` comparison are design references; this file is the portable local guidance.
+
+## Task first
+
+Put the useful result and next action before setup inventories or technical detail. Use ordinary sentences instead of internal codes and repeated badges. Group related facts; keep the current blocker, freshness, uncertainty and consequences next to the action. Move full history and advanced setup into named disclosures while leaving common controls directly available. Compare the same states and viewports, including keyboard use, increased text size and error recovery. Compact spacing must not come from smaller text or cramped controls.
+
 ## Direction
 
 Use a light iOS Liquid Glass-inspired appearance: cool white surfaces, restrained translucency, subtle blue/lavender ambient background, soft depth, rounded controls, and native system typography. This is the user's requested baseline for our Desktop products. Adapt layouts to each product. Do not recreate the former beige, forest-green, yellow-tinted dashboard theme.

@@ -359,7 +359,7 @@ def test_selected_workspace_preserves_standalone_surface_and_switch_is_explicit(
     assert 'data-adapter-id="stardew"' in html
     assert 'href="/stardew"' in html
     assert 'action="/catalog-switch"' in html
-    assert "The new adapter requires a fresh observation" in html
+    assert "A new observation is required in the next game" in html
     assert "Recovery guidance:" in html
 
 

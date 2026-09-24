@@ -1004,6 +1004,8 @@ end
 local held = {}
 
 local function advance_frame()
+  local b2_plan = rawget(_G, "SMB3_B2_PLAN")
+  if b2_plan then b2_plan.before_frame(held) end
   local takeover_reclaim_path = os.getenv("SMB3_TAKEOVER_RECLAIM_PATH")
   if rawget(_G, "SMB3_EMBEDDED_TAKEOVER") and takeover_reclaim_path ~= nil then
     local reclaim = io.open(takeover_reclaim_path, "r")
@@ -1471,6 +1473,8 @@ end
 
 
 local function log_state(event, extra)
+  local b2_plan = rawget(_G, "SMB3_B2_PLAN")
+  if b2_plan then b2_plan.observe_event(event) end
   if (world_8_extension_mode == "world_8_8_2"
         or world_8_extension_mode == "world_8_super_tanks"
         or world_8_extension_mode == "world_8_finish_game")
@@ -1708,8 +1712,10 @@ function use_inventory_item_from_map(item_id, event_prefix)
 end
 
 local function bootstrap_to_level()
-  FCEU.speedmode("maximum")
-  advance(150, "boot_wait")
+  if not rawget(_G, "SMB3_B2_PLAN") then FCEU.speedmode("maximum") end
+  -- The live observer has already consumed FCEUX's initial frame-zero yield.
+  -- Preserve the accepted input schedule at title frame149 without resetting.
+  advance(rawget(_G, "SMB3_B2_PLAN") and 149 or 150, "boot_wait")
   press("start", 18, "title_start")
   advance(150, "title_to_menu")
   press("start", 18, "menu_start")
@@ -1746,6 +1752,8 @@ local scheduled_jumps = {
 }
 
 local function run_agent(attempt)
+  local b2_plan = rawget(_G, "SMB3_B2_PLAN")
+  if b2_plan then b2_plan.boundary("world_1_1_opening") end
   local jump_frames = 0
   local jump_hold_b = true
   local slow_b_frames = 0
@@ -1792,7 +1800,10 @@ local function run_agent(attempt)
       last_x = m.x
     end
 
-    if jump_frames > 0 then
+    if b2_plan and b2_plan.opening_step(held) then
+      apply()
+      advance_frame()
+    elseif jump_frames > 0 then
       held.right = true
       held.B = jump_hold_b
       held.A = true
@@ -25905,7 +25916,8 @@ end
 
 local embedded_takeover = rawget(_G, "SMB3_EMBEDDED_TAKEOVER") == true
 local embedded_policy = rawget(_G, "SMB3_EMBEDDED_TAKEOVER_POLICY")
-if embedded_takeover and embedded_policy == "world_1_1_remainder_v1" then
+if embedded_takeover and (embedded_policy == "world_1_1_remainder_v1"
+    or embedded_policy == "b2_world_1_1_plan_v1") then
   bootstrap_to_level = function() end
 end
 bootstrap_to_level()
@@ -25914,6 +25926,9 @@ if attempts == 1 then
   -- Checkpoints remain available only for explicitly requested retry batches.
   advance(10, "attempt_1_fresh_start")
   local success = run_agent(1)
+  local b2_plan = rawget(_G, "SMB3_B2_PLAN")
+  if b2_plan and not success then error("GAME_COMPANION_B2_CONTROLLER_INCOMPLETE") end
+  if b2_plan and success then b2_plan.boundary("world_1_1_exit") end
   if success and not (embedded_takeover and embedded_policy == "world_1_1_remainder_v1") then
     run_post_1_1_probe()
   end

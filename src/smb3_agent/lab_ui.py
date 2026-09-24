@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from smb3_agent.glass_ui import GLASS_CSS
+from smb3_agent.conversation_ui import (
+    CONVERSATION_CSS,
+    CONVERSATION_JS,
+    render_conversation_workspace,
+)
+from smb3_agent.conversation_service import ConversationService
 
 import html
 import json
@@ -199,9 +205,12 @@ PLAYER_WORKSPACE_JS = r'''(() => {
         const openDetails = new Set(
           Array.from(workspace.querySelectorAll("details[open]"), detailKey)
         );
+        const playToolsOpen = Array.from(workspace.querySelectorAll("details"))
+          .find(details => details.id === "other-play-tools")?.open;
         workspace.innerHTML = html;
         for (const details of workspace.querySelectorAll("details")) {
-          if (openDetails.has(detailKey(details))) details.open = true;
+          if (details.id === "other-play-tools" && playToolsOpen !== undefined) details.open = playToolsOpen;
+          else if (openDetails.has(detailKey(details))) details.open = true;
         }
         if (key !== null) {
           const matches = Array.from(workspace.querySelectorAll(focusable)).filter(
@@ -252,6 +261,7 @@ PLAYER_WORKSPACE_JS = r'''(() => {
 '''
 POST_PATHS = frozenset(
     {
+        "/api/conversation",
         "/notes",
         "/observation-action",
         "/issue-action",
@@ -349,12 +359,25 @@ class _ThreadingHTTPServer(ThreadingHTTPServer):
 
 
 def _shutdown_session_managers(server: ThreadingHTTPServer) -> None:
-    manager = getattr(server, "show_manager", None)
-    if isinstance(manager, ShowSessionManager):
-        manager.shutdown()
-    live_manager = getattr(server, "live_observation_manager", None)
-    if isinstance(live_manager, LiveObservationManager):
-        live_manager.shutdown()
+    conversation = getattr(server, "conversation_service", None)
+    if isinstance(conversation, ConversationService):
+        try:
+            conversation.close()
+        except Exception:
+            LOGGER.exception("Conversation stop failed during shutdown; continuing input cleanup")
+    for name, kind in (("show_manager", ShowSessionManager),
+                       ("live_observation_manager", LiveObservationManager)):
+        manager = getattr(server, name, None)
+        if isinstance(manager, kind):
+            try:
+                manager.shutdown()
+            except Exception:
+                LOGGER.exception("Session manager %s failed during shutdown", name)
+    if isinstance(conversation, ConversationService):
+        try:
+            conversation.snapshot()
+        except Exception:
+            LOGGER.exception("Conversation outcome could not be retained after shutdown")
 
 
 def run_lab_ui_server(host: str = "127.0.0.1", port: int = 8765, *, open_browser: bool = False) -> None:
@@ -393,6 +416,10 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     setattr(server, "show_manager", ShowSessionManager())
     learning_store = LocalLearningStore()
     setattr(server, "live_observation_manager", LiveObservationManager(learning_store=learning_store))
+    setattr(server, "conversation_service", ConversationService(
+        getattr(server, "live_observation_manager"),
+        artifacts_root=ARTIFACT_DIR / "conversation",
+    ))
     setattr(server, "objective_session_manager", ObjectiveSessionManager())
     setattr(server, "learning_store", learning_store)
     product_manager = MarioProductSessionManager()
@@ -595,6 +622,7 @@ class _Handler(BaseHTTPRequestHandler):
                     objective_view=objective_view,
                     learning_snapshot=learning_snapshot,
                     product_view=product_view,
+                    conversation_state=self._conversation_service().snapshot(),
                 )
             )
             return
@@ -648,6 +676,12 @@ class _Handler(BaseHTTPRequestHandler):
                 self.send_error(HTTPStatus.BAD_REQUEST)
                 return
             self._send_json(build_control_panel_summary(goal_id))
+            return
+        if path == "/api/conversation":
+            self._send_json(self._conversation_service().snapshot())
+            return
+        if path == "/assets/conversation.js":
+            self._send_javascript(CONVERSATION_JS)
             return
         if path == "/api/player-workspace":
             snapshot = self._live_observation_manager().snapshot()
@@ -722,6 +756,21 @@ class _Handler(BaseHTTPRequestHandler):
             return
         data = self._read_form()
         self._validate_csrf(data)
+        if path == "/api/conversation":
+            # Control priority and serialization belong to the conversation/runtime
+            # service; a long-running legacy Lab action must not block reclaim.
+            try:
+                payload = json.loads(_single(data, "payload", default="{}"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Conversation payload must be an object")
+                action = _single(data, "action")
+                if (self._catalog_session().selected_adapter_id not in {None, "smb3"}
+                        and action not in {"pause", "stop", "reclaim"}):
+                    raise ValueError("Select Mario from Games before changing its plan or control")
+                self._send_json(self._conversation_service().dispatch(action, payload))
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
         action_lock = getattr(self.server, "action_lock", None)
         if not isinstance(action_lock, type(threading.Lock())):
             raise RuntimeError("Game Companion Lab server is missing its action lock")
@@ -861,6 +910,9 @@ class _Handler(BaseHTTPRequestHandler):
                     )
                     return
                 if path == "/observe-start":
+                    if (_single(data, "pause_for_plan", default="") == "true"
+                            and self._catalog_session().selected_adapter_id not in {None, "smb3"}):
+                        raise LabUiError("Select Mario from Games before opening a companion session")
                     product = self._product_session_manager()
                     game_path = product.first_use_state().game_file.path
                     if game_path is None:
@@ -876,13 +928,20 @@ class _Handler(BaseHTTPRequestHandler):
                                 data, "allow_takeover", default=""
                             )
                             == "true",
+                            **({"pause_for_plan": True} if _single(
+                                data, "pause_for_plan", default=""
+                            ) == "true" else {}),
                         )
                     except LiveObservationError as exc:
                         failure_id = "duplicate_session" if "already" in str(exc).lower() else "launch_failure"
                         product.mark_failure(failure_id, detail=str(exc))
                         raise
                     product.mark_started(started.session_id)
-                    self._redirect("/#live")
+                    self._redirect(
+                        "/mario#mario-conversation"
+                        if _single(data, "pause_for_plan", default="") == "true"
+                        else "/#live"
+                    )
                     return
                 if path == "/observe-stop":
                     snapshot = self._live_observation_manager().stop()
@@ -1313,6 +1372,12 @@ class _Handler(BaseHTTPRequestHandler):
             raise RuntimeError("Game Companion server is missing its live observation manager")
         return manager
 
+    def _conversation_service(self) -> ConversationService:
+        service = getattr(self.server, "conversation_service", None)
+        if not isinstance(service, ConversationService):
+            raise RuntimeError("Game Companion server is missing its conversation service")
+        return service
+
     def _objective_session_manager(self) -> ObjectiveSessionManager:
         manager = getattr(self.server, "objective_session_manager", None)
         if not isinstance(manager, ObjectiveSessionManager):
@@ -1407,9 +1472,11 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
-    def _send_json(self, data: dict[str, object]) -> None:
+    def _send_json(
+        self, data: dict[str, object], *, status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
         encoded = json.dumps(data, indent=2, sort_keys=True).encode("utf-8")
-        self.send_response(HTTPStatus.OK)
+        self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
@@ -2079,30 +2146,29 @@ def _first_use_panel(view: ProductSessionView, *, csrf_token: str | None) -> str
     )
     return f'''
       <section id="setup" class="session-card first-use-card" data-testid="mario-first-use" data-setup-status="{_esc(setup.status.value)}">
-        <div class="section-title"><div><h2>Mario setup</h2><p class="selected-mode">Game Companion does not provide the game file.</p></div><span class="status-pill">{_esc(status)}</span></div>
+        <div class="section-title"><div><h2>Mario setup</h2></div><span class="status-pill">{_esc(status)}</span></div>
         {error}
-        <div class="setup-steps">
-          <article class="callout"><strong>1 · Local game file</strong><p>{_esc(game.reason)}</p><p class="meta">{_esc(game.display)} · {_esc(game.detected_from)}</p></article>
-          <article class="callout"><strong>2 · FCEUX</strong><p>{_esc(emulator.reason)}</p><p class="meta">{"Detected locally" if emulator.available else "Not detected"}</p></article>
-          <article class="callout"><strong>3 · Input</strong><p>{_esc(setup.input_reason)}</p></article>
-        </div>
+        <p>{_esc(game.reason)} {_esc(emulator.reason)}</p>
+        <p class="meta">{_esc(setup.input_reason)}</p>
+        <form method="post" action="/setup-pick-game-file" data-testid="native-game-file-picker"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}"><button type="submit">Choose Game File…</button></form>
+        <details><summary>Enter a game file path manually</summary>
         <form method="post" action="/setup-game-file" data-testid="manual-game-file">
           <input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}">
           <label>Select a local game file <input type="text" name="game_file_path" required placeholder="/Users/you/Games/mario.nes" autocomplete="off"></label>
           <button type="submit">Verify Local Game File</button>
           <p class="meta">Only the local path, NES header, and SHA-256 identity are read. ROM contents are not copied, displayed, or stored.</p>
         </form>
-        <form method="post" action="/setup-pick-game-file" data-testid="native-game-file-picker"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}"><button type="submit">Choose Game File…</button></form>
+        </details>
         <form method="post" action="/setup-choice" data-testid="first-use-session-choice">
           <input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}">
           <fieldset><legend>Start a visible session</legend>
-            <label><input type="radio" name="session_kind" value="observe_only" checked> <strong>Observe only</strong><br><span>You play; Companion watches and tracks. This session has no agent-input path.</span></label>
-            <label><input type="radio" name="session_kind" value="takeover_capable"> <strong>Observe with the option to allow Do later</strong><br><span>Adds a write-capable controller path, but sends no agent input until a fresh explicit goal authorization.</span></label>
+            <label><input type="radio" name="session_kind" value="observe_only" checked> <strong>Observe only</strong><br><span>You play; Companion watches. Companion cannot send game input in this session.</span></label>
+            <label><input type="radio" name="session_kind" value="takeover_capable"> <strong>Observe and allow companion play later</strong><br><span>Companion can play only after you authorize a specific goal.</span></label>
           </fieldset>
           <label class="inline-check"><input type="checkbox" name="input_ready" value="true" required><span>My FCEUX keyboard or controller mapping is ready.</span></label>
           <button type="submit" {'disabled aria-disabled="true"' if not game.supported_identity or not emulator.available or view.stage not in {ProductStage.FIRST_USE, ProductStage.IDLE, ProductStage.STOPPED, ProductStage.FAILURE, ProductStage.RECOVERY} else ''}>Start Chosen Session</button>
         </form>
-        <details><summary>Exactly what Mario support is available</summary>{_capability_list(view)}</details>
+        <details><summary>Setup details and available features</summary><p>FCEUX: {"Detected locally" if emulator.available else "Not detected"}</p><p>{_esc(game.display)} · {_esc(game.detected_from)}</p>{_capability_list(view)}</details>
         <p class="meta">Retry never duplicates an active session. A launch error remains visible until you retry or resolve it.</p>
       </section>'''
 
@@ -2206,6 +2272,7 @@ def _active_workspace(
     return (
         _first_use_panel(current_product, csrf_token=csrf_token)
         + _recovery_panel(current_product, csrf_token=csrf_token)
+        + f'<details id="other-play-tools" class="session-more" {"open" if current_snapshot.observation_active or show_session else ""}><summary>Observe, coaching and demonstrations</summary><div class="companion-more-grid">'
         + _product_overview_panel(
             current_product,
             snapshot,
@@ -2228,6 +2295,7 @@ def _active_workspace(
             objective_view,
             csrf_token=csrf_token,
         )
+        + '</div></details>'
     )
 
 
@@ -2250,7 +2318,7 @@ def render_safe_stardew_workspace() -> str:
             evidence_status="not started",
             capability_status=capabilities,
             current_mode="Observe",
-            availability_reason="Configure a verified disposable save copy and a visible screen observation in the standalone Stardew flow.",
+            availability_reason="Live Stardew play is not connected in this app yet. Save selection and screen observation are unavailable; these controls are for inspection only.",
             observation_freshness="unknown",
             neutralization_status="neutral",
             handback_status="player ownership required before active modes",
@@ -2338,27 +2406,27 @@ def render_combined_catalog(
         f'<section class="catalog-workspace" data-testid="selected-game-workspace" '
         f'data-adapter-id="{_esc(selected.adapter_id)}">'
         f'<div class="section-title"><div><p class="eyebrow">Selected game</p><h2>{_esc(selected.display_name)}</h2></div>'
-        f'<a class="secondary-button nav-link" href="{_esc(selected.standalone_surface)}" target="_top">Open standalone surface</a></div>'
-        f'<dl class="catalog-runtime"><div><dt>Input owner</dt><dd>{_esc(runtime.input_owner)}</dd></div>'
+        f'<a class="primary-button nav-link" href="{_esc(selected.standalone_surface)}">Open {_esc(selected.display_name)}</a></div>'
+        f'<dl class="catalog-runtime"><div><dt>Who has control</dt><dd>{_esc({"player": "You", "agent": "Companion", "none": "No active input"}.get(runtime.input_owner, runtime.input_owner))}</dd></div>'
         f'<div><dt>Active mode</dt><dd>{_esc(runtime.active_mode or "none")}</dd></div>'
-        f'<div><dt>Neutralization</dt><dd>{"pending" if runtime.pending_neutralization else "neutral"}</dd></div>'
-        f'<div><dt>Handback</dt><dd>{"confirmed" if runtime.handback_confirmed else "unconfirmed"}</dd></div></dl>'
-        f'<p class="callout">A game switch is allowed only after active Show/Do/input stops, input is neutral, player handback is confirmed, evidence is retained, and continuity is known. The new adapter requires a fresh observation.</p>'
-        f'<p><strong>Recovery guidance:</strong> {_esc(selected.recovery_guidance)}</p>'
-        f'<p><a class="primary-button nav-link" href="{_esc(selected.standalone_surface)}">Enter {_esc(selected.display_name)} workspace</a></p></section>'
+        f'<div><dt>Companion input</dt><dd>{"Stopping" if runtime.pending_neutralization else "Active" if runtime.active_agent_input or runtime.active_show else "Stopped"}</dd></div>'
+        f'<div><dt>Control returned</dt><dd>{"confirmed" if runtime.handback_confirmed else "unconfirmed"}</dd></div></dl>'
+        f'<p role="status">{_esc("Cannot switch yet: " + "; ".join(runtime.refusal_reasons()).replace("adapter", "game")) if runtime.refusal_reasons() else ""}</p>'
+        f'<p class="callout">Before switching games, stop companion play and take control. A new observation is required in the next game.</p>'
+        f'<details><summary>Switching checks and recovery</summary><p>Input must be stopped, control returned, history saved and the current game state confirmed.</p><p><strong>Recovery guidance:</strong> {_esc(selected.recovery_guidance)}</p></details></section>'
         if selected and runtime
-        else '<section class="catalog-empty" data-testid="safe-catalog-only"><h2>Select a game</h2><p>No game observation or authority is active. Choose an adapter to enter its existing player workspace.</p></section>'
+        else '<p class="meta" data-testid="safe-catalog-only">Nothing is playing.</p>'
     )
     recovery_panel = (
-        f'<section class="catalog-recovery" role="alert" data-testid="catalog-recovery"><h2>Safe catalog recovery</h2><p>{_esc(recovery)}</p><p>Persisted selection was ignored. Player ownership is the default and every active mode remains disabled.</p></section>'
+        f'<section class="catalog-recovery" role="alert" data-testid="catalog-recovery"><h2>Choose your game again</h2><p>{_esc(recovery)}</p><p>Your saved selection could not be restored. Companion play is disabled; you keep control.</p></section>'
         if recovery
         else ""
     )
     preference_form = (
-        f'<form class="catalog-preferences" method="post" action="/catalog-preferences">'
-        f'<label class="inline-check"><input type="checkbox" name="compact_catalog" value="true" {"checked" if compact_catalog else ""}> Compact catalog</label>'
-        f'<label class="inline-check"><input type="checkbox" name="catalog_expanded" value="true" {"checked" if catalog_expanded else ""}> Keep catalog details expanded</label>'
-        f'<button type="submit">Save display preferences</button></form>'
+        f'<details class="catalog-display"><summary>Display options</summary><form class="catalog-preferences" method="post" action="/catalog-preferences">'
+        f'<label class="inline-check"><input type="checkbox" name="compact_catalog" value="true" {"checked" if compact_catalog else ""}> Compact game cards</label>'
+        f'<label class="inline-check"><input type="checkbox" name="catalog_expanded" value="true" {"checked" if catalog_expanded else ""}> Keep game details open</label>'
+        f'<button type="submit">Save display preferences</button></form></details>'
         if selected_id
         else ""
     )
@@ -2367,17 +2435,24 @@ def render_combined_catalog(
         csrf_token=csrf_token,
         body=f"""
         <style>
-          .catalog-shell{{max-width:1320px;margin:auto;padding:20px}}.catalog-header{{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px;background:var(--navy);color:#fff;border-radius:12px}}.catalog-header p{{margin:0;color:#dbeafe}}.catalog-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}}.catalog-grid.compact .catalog-card details{{display:none}}.catalog-card,.catalog-workspace,.catalog-empty,.catalog-recovery,.catalog-preferences{{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:0 8px 22px rgba(31,41,55,.07)}}.catalog-card.selected{{border:2px solid var(--navy)}}.catalog-card h2{{font-size:20px}}.catalog-card details{{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}}.catalog-card ul{{padding-left:20px}}.catalog-capabilities{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}}.catalog-capability{{min-width:0;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:8px;padding:9px;background:var(--surface-alt)}}.catalog-capability .status-pill{{max-width:100%;white-space:normal;overflow-wrap:anywhere}}.catalog-card form button{{width:100%}}.catalog-runtime{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}}.catalog-runtime div{{border-top:1px solid var(--line);padding-top:7px}}.catalog-recovery{{border-color:#e8b3ae;background:var(--red-soft)}}.catalog-preferences{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}}.catalog-preferences input{{width:auto}}
+          .catalog-shell{{max-width:1320px;margin:auto;padding:20px}}.catalog-header{{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px;background:var(--navy);color:#fff;border-radius:12px}}.catalog-header p{{margin:0;color:#dbeafe}}.catalog-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}}.catalog-grid.compact .catalog-card{{padding:12px}}.catalog-card,.catalog-workspace,.catalog-empty,.catalog-recovery,.catalog-preferences{{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:0 8px 22px rgba(31,41,55,.07)}}.catalog-card.selected{{border:2px solid var(--navy)}}.catalog-card h2{{font-size:20px}}.catalog-card details{{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}}.catalog-card ul{{padding-left:20px}}.catalog-capabilities{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}}.catalog-capability{{min-width:0;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:8px;padding:9px;background:var(--surface-alt)}}.catalog-capability .status-pill{{max-width:100%;white-space:normal;overflow-wrap:anywhere}}.catalog-card form button{{width:100%}}.catalog-runtime{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}}.catalog-runtime div{{border-top:1px solid var(--line);padding-top:7px}}.catalog-recovery{{border-color:#e8b3ae;background:var(--red-soft)}}.catalog-preferences{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}}.catalog-preferences input{{width:auto}}
           @media(max-width:700px){{.catalog-shell{{padding:10px}}.catalog-header{{align-items:flex-start;flex-direction:column}}.catalog-grid{{grid-template-columns:1fr}}.catalog-runtime{{grid-template-columns:repeat(2,minmax(0,1fr))}}.catalog-workspace{{padding:10px}}}}
           @media(max-width:390px){{.catalog-capabilities,.catalog-runtime{{grid-template-columns:1fr}}.catalog-card,.catalog-empty,.catalog-recovery{{padding:12px}}}}
         </style>
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
-          <header class="catalog-header"><div><p class="eyebrow">Local multi-game companion</p><h1>Game Companion</h1><p>Adapter-owned help and explicit player-controlled handoff.</p></div><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
+          <header class="catalog-header"><h1>Game Companion</h1><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
           {recovery_panel}
-          <main>{preference_form}<section aria-labelledby="games-heading"><div class="section-title"><div><p class="eyebrow">Trusted built-ins and locally installed Experimental adapters</p><h2 id="games-heading">Choose the adapter whose truth you want to use</h2></div><span class="status-pill">{len(session.registry.entries)} adapters</span></div><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{workspace}<p><a class="secondary-button nav-link" href="/onboarding">Onboard an Experimental game</a></p></main>
+          <main>{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a></p></main>
         </div>
         """,
     )
+
+
+def _catalog_display_reason(reason: str) -> str:
+    return {
+        "Select an owner-provided primary save, create a verified disposable copy, and establish a visible window.":
+            "Live Stardew play is not connected in this app yet. You can inspect the watering controls; live use still needs verification.",
+    }.get(reason, reason)
 
 
 def _catalog_card(
@@ -2405,17 +2480,16 @@ def _catalog_card(
         button = (
             f'<form method="post" action="/catalog-switch"><input type="hidden" '
             f'name="adapter_id" value="{_esc(entry.adapter_id)}"><button type="submit" '
-            f'{disabled}>{"Switch to" if switching else "Select"} {_esc(entry.display_name)}</button></form>'
+            f'class="primary-button" {disabled}>{"Switch to" if switching else "Select"} {_esc(entry.display_name)}</button></form>'
         )
     return f"""
       <article class="catalog-card{' selected' if selected else ''}" data-testid="catalog-card" data-adapter-id="{_esc(entry.adapter_id)}" data-game-id="{_esc(entry.game_id)}">
-        <div class="section-title"><div><p class="eyebrow">{_esc(entry.adapter_id)} · {_esc(entry.adapter_version)}</p><h2>{_esc(entry.display_name)}</h2></div><span class="status-pill">{_esc(entry.availability.replace('_', ' '))}</span></div>
-        <p>{_esc(entry.description)}</p><p class="callout"><strong>{_esc(entry.implementation_status)}</strong><br><strong>Setup:</strong> {_esc(entry.setup_state)}<br>{_esc(entry.availability_reason)}</p>
-        <h3>Tell, Show, and Do</h3><div class="catalog-capabilities">{modes}</div>
-        <details {'open' if expanded else ''}><summary>Observation, goals, and solution profiles</summary><p><strong>{_esc(entry.observation.label)}:</strong> {_esc(entry.observation.trust_boundary)}</p><h3>Goals</h3><ul>{goals}</ul><h3>Profiles</h3><ul>{profiles}</ul></details>
-        <details><summary>Takeover, stop, and safety</summary><ul>{scopes}</ul><p><strong>Stop behavior:</strong> {_esc(entry.safety.stop_behavior)}</p><p><strong>Safety:</strong> {_esc(entry.safety.summary)}</p><ul>{''.join(f'<li>{_esc(item)}</li>' for item in entry.safety.protected_decisions)}</ul><p><strong>Reclaim:</strong> {_esc(entry.safety.reclaim_behavior)}</p><p><strong>Handback:</strong> {_esc(entry.safety.handback_behavior)}</p></details>
-        <details><summary>Evidence and recovery</summary><p><strong>Namespace:</strong> <code>{_esc(entry.evidence.namespace)}</code></p><p>{_esc(', '.join(entry.evidence.classifications))}</p><p>{_esc(entry.evidence.trust_boundary)}</p><p><strong>Recovery:</strong> {_esc(entry.recovery_guidance)}</p></details>
+        <div class="section-title"><h2>{_esc(entry.display_name)}</h2><span class="status-pill">{_esc("Inspection only" if entry.availability_reason.startswith("Select an owner-provided primary save,") else entry.availability.replace("_", " ").capitalize())}</span></div>
+        <p class="callout">{_esc(_catalog_display_reason(entry.availability_reason))}</p>
         {button}
+        <details {'open' if expanded else ''}><summary>Help and supported goals</summary><p>{_esc(entry.description)}</p><div class="catalog-capabilities">{modes}</div><p><strong>{_esc(entry.observation.label)}:</strong> {_esc(entry.observation.trust_boundary)}</p><h3>Goals</h3><ul>{goals}</ul><h3>Profiles</h3><ul>{profiles}</ul></details>
+        <details><summary>Takeover, stop, and safety</summary><ul>{scopes}</ul><p><strong>Stop behavior:</strong> {_esc(entry.safety.stop_behavior)}</p><p><strong>Safety:</strong> {_esc(entry.safety.summary)}</p><ul>{''.join(f'<li>{_esc(item)}</li>' for item in entry.safety.protected_decisions)}</ul><p><strong>Reclaim:</strong> {_esc(entry.safety.reclaim_behavior)}</p><p><strong>Handback:</strong> {_esc(entry.safety.handback_behavior)}</p></details>
+        <details><summary>Technical details and recovery</summary><p>{_esc(entry.adapter_id)} · {_esc(entry.adapter_version)}</p><p>{_esc(entry.implementation_status)}</p><p>Setup: {_esc(entry.setup_state)}</p><p><strong>Namespace:</strong> <code>{_esc(entry.evidence.namespace)}</code></p><p>{_esc(', '.join(entry.evidence.classifications))}</p><p>{_esc(entry.evidence.trust_boundary)}</p><p><strong>Recovery:</strong> {_esc(entry.recovery_guidance)}</p></details>
       </article>"""
 
 
@@ -2433,6 +2507,7 @@ def render_companion_ui(
     objective_view: ObjectiveView | None = None,
     learning_snapshot: LearningSnapshot | None = None,
     product_view: ProductSessionView | None = None,
+    conversation_state: dict[str, object] | None = None,
 ) -> str:
     session.validate()
     observation = session.observation
@@ -2495,20 +2570,20 @@ def render_companion_ui(
         <div class="companion-shell" data-testid="companion-shell" data-session-state="{_esc(session.lifecycle.value)}">
           <header class="companion-top">
             <div>
-              <p class="eyebrow">Local player session</p>
-              <h1>Game Companion</h1>
-              <p>Live Mario coaching.</p>
+              <h1>Mario <span class="app-context">· Game Companion</span></h1>
             </div>
             <nav aria-label="Game Companion views" data-testid="lab-navigation">
+              <a class="secondary-button nav-link" href="/">Choose a game</a>
               <a class="secondary-button nav-link" href="/lab">Open Game Companion Lab</a>
             </nav>
           </header>
 
           <main class="companion-main">
+            {render_conversation_workspace(conversation_state, csrf_token=csrf_token)}
             <div id="active-workspace" class="active-workspace">
               {active_workspace}
             </div>
-            {_player_session_history_panel()}
+            <details class="session-more"><summary>Previous runs and comparisons</summary>{_player_session_history_panel()}</details>
             <details class="session-more" data-testid="more-companion-tools">
               <summary>More tools and technical evidence</summary>
               <div class="companion-more-grid">
@@ -2560,6 +2635,7 @@ def render_companion_ui(
             </details>
           </main>
           <script src="/assets/player-workspace.js" defer></script>
+          <script src="/assets/conversation.js" defer></script>
         </div>
         """,
     )
@@ -4038,7 +4114,8 @@ def _page(*, title: str, body: str, csrf_token: str | None = None) -> str:
     }}
   </style>
 </head>
-<body>{body}<style>{GLASS_CSS}</style></body>
+<body>{body}<style>{GLASS_CSS}
+{CONVERSATION_CSS}</style></body>
 </html>"""
 
 

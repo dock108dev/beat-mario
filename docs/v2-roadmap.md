@@ -1,12 +1,16 @@
 # Game Companion V2 Roadmap
 
-## Current personal-beta scope — September 21, 2026
+## Current personal-beta scope — September 23, 2026
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) supersedes the earlier V2 completion boundary for the personal beta. Keep existing supported Mario routes; custom route work is tentative. Require natural-language requests with a reviewable supported plan and a Stardew routine covering watering, harvesting, planting and selected-debris clearing. New-game guidance and an expansion/testing plan are required, but a third working adapter and completed Experimental onboarding/live testing are not beta gates.
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status; the [personal-beta engineering packet](personal-beta-engineering.md) supplies the implementation contracts. Required: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing.
 
-These are product requirements, not implementation or live acceptance claims. The existing watering-only adapter, prepared candidate and campaign evidence retain their original limits. Executable campaign/scenario definitions must be reconciled in B1 before they can qualify the new beta; this documentation update does not change those contracts or operate games.
+Mario intent presets such as faster/quickest/100% initially load the single existing base route with an explicit fallback. They are not existing optimized or full-completion routes. Playback speed is separate from route optimization, and edits must cause real supported path changes. Saved variants retain their actual execution/evidence status. New-game guidance is required; a third working adapter and completed Experimental onboarding campaign are not beta gates.
 
-## Outcome
+B1 is complete. B2 now implements shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. Engineering verification is tracked separately in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md); see the [B2 operating and B3 interface guide](b2-conversation-guide.md). The new `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. B3/B4 live Stardew work and later beta stages remain incomplete.
+
+## Historical V2 outcome and sequencing
+
+The sequence and V2 slice records below describe the prior implementation plan. Current B2–B9 ordering and added Mario/NLP/Stardew requirements are in the engineering packet above; do not restart completed V2 slices or use the old sequence as a new beta gate.
 
 V2 turns the accepted Mario automation system into a player-facing companion,
 proves the same contract in Stardew Valley, combines both games in one catalog,
@@ -54,8 +58,9 @@ the selected adapter cannot prove.
 Status: **complete / non-live validated**.
 
 Rename the user-facing product and workbench to Game Companion, document Mario
-as the first adapter, preserve existing technical identifiers, and make this
-roadmap authoritative.
+as the first adapter, preserve existing technical identifiers, and establish this
+roadmap as the V2 implementation record. Current beta status is owned by the
+Desktop tracker and engineering packet.
 
 Acceptance:
 
@@ -299,7 +304,7 @@ campaign phases.
 
 ## Historical V2 completion contract
 
-The following describes the earlier V2 target, retained for evidence interpretation. The September 21 personal-beta scope above replaces it for current beta planning; B1 must reconcile executable gates.
+The following describes the earlier V2 target, retained for evidence interpretation. The September 23 personal-beta scope above replaces it for current beta planning; the B1 packet maps required gate changes, and implementation must version/reconcile those executable gates alongside the features.
 
 The earlier V2 contract required completion only when Mario has owner-accepted `Tell`, `Show`, and bounded
 `Do`; Stardew has the accepted visible task through the same companion contract;

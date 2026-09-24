@@ -1,5 +1,9 @@
 # Objective profiles and live coaching
 
+## September 23 beta requirement
+
+The [engineering packet](personal-beta-engineering.md) adds conversational route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [B2 conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
+
 Game Companion V2.5 treats each supported level as its own measurable objective space. A profile is adapter-neutral and versioned. It declares the game and level, classification, exact start and terminal conditions, timing boundary and units, finite required and optional events, allowed and prohibited techniques, resource rules, supported facts, recovery and miss semantics, evidence, outcomes, and capability flags.
 
 Classifications are never promoted implicitly. Accepted agent best, accepted safe/reference run, player personal best, historical player run, review-only demonstration, and unreviewed candidate remain distinct. Review-only Show evidence cannot become an authoritative comparison reference.

@@ -1,5 +1,9 @@
 # Stardew Companion Guide
 
+## Current beta work versus existing implementation
+
+The September 23 [engineering packet](personal-beta-engineering.md) requires live setup/perception/input in B3, harvesting/planting/selected-debris clearing and a combined routine in B4, and shared conversational planning in B2/B5. Shared B2 planning now describes these actions with explicit fixture/unavailable-live eligibility; the live B3/B4 capabilities remain required implementation work. See the [B3 interface handoff](b2-conversation-guide.md#implementation-seams-for-b3). The guide below describes the existing watering-only contracts. Extend task-specific observations, resources, ledgers and postconditions while preserving primary-save protection; do not treat the old watering guard as approval for every farming action. No new owner scope decision is needed to begin the planned engineering.
+
 V2.11 implements standalone Stardew companion modes above the V2.10 visible
 operator for one bounded task:
 

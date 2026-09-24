@@ -60,7 +60,9 @@ class ExecutableSolution:
         if not all((self.solution_id, self.game_id, self.profile_id, self.policy_id)):
             raise TakeoverError("solution identity is required")
         if self.version < 1 or not self.scopes or not self.stop_conditions:
-            raise TakeoverError("solution version, scope, and stop conditions are required")
+            raise TakeoverError(
+                "solution version, scope, and stop conditions are required"
+            )
 
     @property
     def executable(self) -> bool:
@@ -88,6 +90,7 @@ class TakeoverAuthorization:
     protected_decisions: tuple[str, ...]
     issued_at: str
     expires_at: str
+    authority_kind: str = "accepted_solution"
 
 
 @dataclass(frozen=True)
@@ -158,18 +161,33 @@ class TakeoverController:
         protected_resources: tuple[str, ...] = (),
         protected_decisions: tuple[str, ...] = (),
         now: datetime | None = None,
+        _bounded_plan: bool = False,
     ) -> TakeoverAuthorization:
         solution.validate()
-        if self.snapshot.owner is not ControlOwner.PLAYER or self.snapshot.state not in {
-            TakeoverState.PLAYER_CONTROL,
-            TakeoverState.RETURNED,
-        }:
+        if (
+            self.snapshot.owner is not ControlOwner.PLAYER
+            or self.snapshot.state
+            not in {
+                TakeoverState.PLAYER_CONTROL,
+                TakeoverState.RETURNED,
+            }
+        ):
             raise TakeoverError("control ownership is not exclusively player")
-        if not solution.executable:
-            raise TakeoverError("only replay-safe accepted solutions can drive takeover")
+        if _bounded_plan and solution.policy_id not in {
+            "b2_world_1_1_plan_v1",
+            "b2_full_route_plan_v1",
+        }:
+            raise TakeoverError("unsupported bounded session policy")
+        if not _bounded_plan and not solution.executable:
+            raise TakeoverError(
+                "only replay-safe accepted solutions can drive takeover"
+            )
         if solution.game_id != game_id or solution.profile_id != profile_id:
             raise TakeoverError("solution objective does not match authorization")
-        if scope not in solution.scopes or stop_condition not in solution.stop_conditions:
+        if (
+            scope not in solution.scopes
+            or stop_condition not in solution.stop_conditions
+        ):
             raise TakeoverError("unsupported solution scope or stop condition")
         if timeout_seconds < 1 or timeout_seconds > 3600:
             raise TakeoverError("takeover timeout must be between 1 and 3600 seconds")
@@ -195,6 +213,7 @@ class TakeoverController:
             tuple(sorted(set(protected_decisions))),
             issued.isoformat(),
             (issued + timedelta(seconds=timeout_seconds)).isoformat(),
+            "bounded_session_plan" if _bounded_plan else "accepted_solution",
         )
         self.snapshot = replace(
             self.snapshot,
@@ -237,8 +256,11 @@ class TakeoverController:
             or authorization.state_fingerprint != current_fingerprint
             or authorization.control_epoch != self.snapshot.control_epoch
         ):
-            raise TakeoverError("authorization no longer matches the live process and state")
+            raise TakeoverError(
+                "authorization no longer matches the live process and state"
+            )
         self._used_nonces.add(authorization.nonce)
+        self.reclaim_path.unlink(missing_ok=True)
         self._write_command(
             {
                 "action": "start",
@@ -256,23 +278,48 @@ class TakeoverController:
             state=TakeoverState.AGENT_CONTROL,
             neutralized=False,
         )
-        self._event("ownership_transferred", {"owner": "agent", "control_epoch": authorization.control_epoch})
+        self._event(
+            "ownership_transferred",
+            {"owner": "agent", "control_epoch": authorization.control_epoch},
+        )
 
     def record_agent_input(self, epoch: int, buttons: tuple[str, ...]) -> None:
         active = self.snapshot.authorization
+        bounded_inflight = (
+            active is not None
+            and active.authority_kind == "bounded_session_plan"
+            and self.snapshot.state is TakeoverState.NEUTRALIZING
+        )
         if (
             self.snapshot.owner is not ControlOwner.AGENT
-            or self.snapshot.state is not TakeoverState.AGENT_CONTROL
+            or (
+                self.snapshot.state is not TakeoverState.AGENT_CONTROL
+                and not bounded_inflight
+            )
             or active is None
             or epoch != active.control_epoch
         ):
-            field = "agent_inputs_after" if self.snapshot.state is TakeoverState.RETURNED else "agent_inputs_before"
-            self.snapshot = replace(self.snapshot, **{field: getattr(self.snapshot, field) + 1})
+            field = (
+                "agent_inputs_after"
+                if self.snapshot.state is TakeoverState.RETURNED
+                else "agent_inputs_before"
+            )
+            self.snapshot = replace(
+                self.snapshot, **{field: getattr(self.snapshot, field) + 1}
+            )
             raise TakeoverError("agent input is outside active authorization")
         self.snapshot = replace(
             self.snapshot, agent_inputs_during=self.snapshot.agent_inputs_during + 1
         )
-        self._event("agent_input", {"control_epoch": epoch, "buttons": list(buttons), "actor": "agent"})
+        self._event(
+            "agent_input",
+            {
+                "control_epoch": epoch,
+                "buttons": list(buttons),
+                "actor": "agent",
+                **({"observed_while_neutralizing": True} if bounded_inflight else {}),
+            },
+        )
 
     def reclaim(
         self,
@@ -283,7 +330,10 @@ class TakeoverController:
         requested_at: datetime | None = None,
         completed_at: datetime | None = None,
     ) -> ControlSnapshot:
-        if self.snapshot.owner is not ControlOwner.AGENT or epoch != self.snapshot.control_epoch:
+        if (
+            self.snapshot.owner is not ControlOwner.AGENT
+            or epoch != self.snapshot.control_epoch
+        ):
             raise TakeoverError("reclaim does not target the active control epoch")
         started = requested_at or datetime.now(timezone.utc)
         self.snapshot = replace(self.snapshot, state=TakeoverState.NEUTRALIZING)
@@ -328,9 +378,14 @@ class TakeoverController:
         self.snapshot = replace(self.snapshot, state=TakeoverState.NEUTRALIZING)
         self._pending_reason = reason
         self._handback_requested_at = datetime.now(timezone.utc)
-        self._write_command({"action": "neutralize", "epoch": self.snapshot.control_epoch})
+        self._write_command(
+            {"action": "neutralize", "epoch": self.snapshot.control_epoch}
+        )
         self.reclaim_path.touch(exist_ok=True)
-        self._event("terminal_stop_requested", {"reason": reason.value, "control_epoch": self.snapshot.control_epoch})
+        self._event(
+            "terminal_stop_requested",
+            {"reason": reason.value, "control_epoch": self.snapshot.control_epoch},
+        )
         return self.snapshot
 
     def finish(
@@ -341,9 +396,13 @@ class TakeoverController:
         process_alive: bool,
     ) -> ControlSnapshot:
         if self.snapshot.owner is ControlOwner.AGENT:
-            self._write_command({"action": "neutralize", "epoch": self.snapshot.control_epoch})
+            self._write_command(
+                {"action": "neutralize", "epoch": self.snapshot.control_epoch}
+            )
             self.reclaim_path.touch(exist_ok=True)
-        return self._return_control(reason, final_state_fingerprint, process_alive, None)
+        return self._return_control(
+            reason, final_state_fingerprint, process_alive, None
+        )
 
     def _return_control(
         self,
@@ -352,12 +411,18 @@ class TakeoverController:
         process_alive: bool,
         latency_ms: float | None,
     ) -> ControlSnapshot:
+        # B2 cannot infer neutral input from a lost process. Retain the legacy
+        # accepted-solution reconciliation schema for historical consumers.
+        neutralized = process_alive or not (
+            self.snapshot.authorization is not None
+            and self.snapshot.authorization.authority_kind == "bounded_session_plan"
+        )
         self.snapshot = replace(
             self.snapshot,
             owner=ControlOwner.PLAYER,
             state=TakeoverState.RETURNED if process_alive else TakeoverState.FAILED,
             terminal_reason=reason,
-            neutralized=True,
+            neutralized=neutralized,
             observation_resumed=process_alive,
             handback_latency_ms=latency_ms,
             final_state_fingerprint=final_state_fingerprint,
@@ -368,7 +433,7 @@ class TakeoverController:
             {
                 "control_epoch": self.snapshot.control_epoch,
                 "reason": reason.value,
-                "neutralized": True,
+                "neutralized": neutralized,
                 "observation_resumed": process_alive,
                 "process_alive": process_alive,
                 "final_state_fingerprint": final_state_fingerprint,
@@ -381,23 +446,43 @@ class TakeoverController:
         payload = asdict(self.snapshot)
         payload["owner"] = self.snapshot.owner.value
         payload["state"] = self.snapshot.state.value
-        payload["terminal_reason"] = self.snapshot.terminal_reason.value if self.snapshot.terminal_reason else None
+        payload["terminal_reason"] = (
+            self.snapshot.terminal_reason.value
+            if self.snapshot.terminal_reason
+            else None
+        )
         payload["zero_agent_input_before"] = self.snapshot.agent_inputs_before == 0
         payload["zero_agent_input_after"] = self.snapshot.agent_inputs_after == 0
         return payload
 
     def _event(self, event: str, payload: dict[str, Any]) -> None:
         self.artifact_dir.mkdir(parents=True, exist_ok=True)
-        with (self.artifact_dir / "ownership_events.jsonl").open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps({"event": event, "at": datetime.now(timezone.utc).isoformat(), **payload}, sort_keys=True) + "\n")
+        with (self.artifact_dir / "ownership_events.jsonl").open(
+            "a", encoding="utf-8"
+        ) as handle:
+            handle.write(
+                json.dumps(
+                    {
+                        "event": event,
+                        "at": datetime.now(timezone.utc).isoformat(),
+                        **payload,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
 
     def _write(self, name: str, payload: dict[str, Any]) -> None:
         self.artifact_dir.mkdir(parents=True, exist_ok=True)
-        (self.artifact_dir / name).write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        (self.artifact_dir / name).write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
     def _write_command(self, payload: dict[str, Any]) -> None:
         self.command_path.parent.mkdir(parents=True, exist_ok=True)
-        fd, temporary = tempfile.mkstemp(prefix=".control.", dir=self.command_path.parent)
+        fd, temporary = tempfile.mkstemp(
+            prefix=".control.", dir=self.command_path.parent
+        )
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 for key, value in sorted(payload.items()):

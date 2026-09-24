@@ -84,3 +84,16 @@ sent to the local append-only run library. Its captured trace is comparison
 evidence and defaults to candidate/non-executable. The completion may establish
 or improve a fastest *locally observed* baseline; it never implies a community,
 global, or world record.
+
+## B2 opt-in session plans
+
+The separate B2 launch adds a fresh review hold, revision-bound primitive
+mailboxes, acknowledged speed/pause and process-local input auditing. Only its
+bounded plan path reads `fceux_b2_plan.lua`; passive observation remains unable
+to emit controls. World 1-1 opening entry must have known level lineage, and the
+full route requires exact fresh power-on. The controller consumes explicit
+button states for all eight NES buttons so browser typing does not supply game
+input. Unsupported fixed playback rates are rejected; normal and uncapped
+faster intervals retain actual frames and wall time. See the [B2 guide](b2-conversation-guide.md)
+and exact engineering evidence in the Desktop tracker. No owner acceptance is
+inferred from these technical records.

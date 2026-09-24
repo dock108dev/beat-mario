@@ -184,7 +184,7 @@ def test_failure_neutralizes_returns_safe_owner_and_renders_narrow_contract(tmp_
     page = render_stardew_operator(operator.view())
     assert failure.input_neutralized
     assert operator.owner is InputOwner.PLAYER
-    assert 'data-testid="input-owner">player' in page
+    assert 'data-testid="input-owner">You control the game' in page
     assert 'data-testid="failure"' in page
     assert "@media(max-width:620px)" in page
     assert 'data-testid="tell-card"' in page

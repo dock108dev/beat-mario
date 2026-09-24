@@ -3,6 +3,8 @@
 Game Companion is a local Mario companion. The main page is the player product;
 `/lab` is a secondary engineering surface.
 
+The ordinary workspace now includes [conversation and custom-route controls](b2-conversation-guide.md): review the real base fallback, start a bounded plan, type while it plays, inspect pending/applied revisions and retain named variants. The Desktop tracker records engineering verification; owner acceptance remains pending.
+
 The combined Game Companion catalog is at `/`. Select Mario there to enter this
 same workspace at `/mario`. Switching to or from another adapter is explicit
 and is refused until active modes stop, input is neutral, evidence is retained,

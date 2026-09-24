@@ -8,6 +8,8 @@ local image_dir = os.getenv("SMB3_LIVE_IMAGE_DIR")
 local control_path = os.getenv("SMB3_TAKEOVER_CONTROL_PATH")
 local reclaim_path = os.getenv("SMB3_TAKEOVER_RECLAIM_PATH")
 local agent_script = os.getenv("SMB3_TAKEOVER_AGENT_SCRIPT")
+local b2_script = os.getenv("SMB3_B2_PLAN_SCRIPT")
+local b2 = b2_script and dofile(b2_script) or nil
 
 if session_id == nil or observer_token == nil or log_path == nil
     or detach_path == nil or image_dir == nil or control_path == nil
@@ -105,12 +107,50 @@ local function emit_agent_frame(held)
   end
 end
 
+-- GUI callbacks are invoked on paused redraws as well as game frames. This
+-- deliberately uses no global keyboard events and keeps the command mailbox
+-- and observer heartbeat responsive while the browser has focus.
+local last_heartbeat = 0
+local preparing = os.getenv("SMB3_B2_PAUSE_FOR_PLAN") == "1"
+if b2 then
+  gui.register(function()
+    if b2.active then b2.poll() end
+    local request = command()
+    if preparing and request and request.action == "start" then
+      preparing = false
+      emu.unpause()
+    end
+    if io.open(detach_path, "r") then emu.unpause() end
+    if os.time() ~= last_heartbeat then
+      last_heartbeat = os.time()
+      if not (b2.active and b2.stopped) then
+        emit(active_epoch and "agent" or "player", "", "idle_heartbeat")
+      end
+    end
+  end)
+  emu.registerbefore(function()
+    if b2.active then
+      local input = {}
+      for _, button in ipairs(ordered_buttons) do
+        input[button] = not b2.stopped and not b2.paused and b2.held[button] == true
+      end
+      joypad.set(1, input)
+    end
+  end)
+  emu.registerafter(function() b2.audit_input() end)
+end
+if preparing then
+  emit("player", "", "plan_review_paused")
+  emu.pause()
+end
+
 while true do
   local detach = io.open(detach_path, "r")
   if detach ~= nil then
     detach:close()
     joypad.set(1, {})
     emit("player", "", "detached_neutral")
+    if b2 then gui.register(nil); emu.registerbefore(nil); emu.registerafter(nil) end
     log:close()
     return
   end
@@ -120,25 +160,63 @@ while true do
       and request.nonce ~= consumed_nonce and active_epoch == nil then
     active_epoch = tonumber(request.epoch)
     consumed_nonce = request.nonce
-    os.remove(reclaim_path)
     local supported_policy = request.policy == "world_1_1_remainder_v1"
       or request.policy == "world_8_finish_game_v1"
+      or request.policy == "b2_world_1_1_plan_v1"
+      or request.policy == "b2_full_route_plan_v1"
     emit("agent", "", "ownership_transferred")
     _G.SMB3_EMBEDDED_TAKEOVER = true
     _G.SMB3_EMBEDDED_TAKEOVER_POLICY = request.policy
     _G.SMB3_TAKEOVER_FRAME_CALLBACK = emit_agent_frame
+    local bounded = b2 and (request.policy == "b2_world_1_1_plan_v1"
+      or request.policy == "b2_full_route_plan_v1")
+    if bounded then
+      b2.start(request)
+      _G.SMB3_B2_PLAN = b2
+    end
     local succeeded = false
     local failure = "unsupported executable policy"
     if supported_policy then
-      succeeded, failure = pcall(dofile, agent_script)
+      -- Lua 5.1 cannot yield through pcall/dofile. Resume an isolated coroutine
+      -- and relay its frameadvance yield to FCEUX's main script coroutine.
+      local chunk, load_failure = loadfile(agent_script)
+      if chunk then
+        local runner = coroutine.create(chunk)
+        repeat
+          succeeded, failure = coroutine.resume(runner)
+          if not succeeded or coroutine.status(runner) == "dead" then break end
+          coroutine.yield()
+        until false
+      else failure = load_failure end
     end
-    joypad.set(1, {})
+    if not succeeded then
+      local failure_log = io.open(log_path .. ".controller-failure.txt", "a")
+      if failure_log then failure_log:write(tostring(failure) .. "\n"); failure_log:close() end
+    end
+    if bounded and not b2.stopped then
+      b2.finish(succeeded and b2.route_complete and "completed_route" or "controller_failure")
+    end
+    if bounded then
+      -- Keep the B2 registerbefore override active for one complete neutral
+      -- frame. An empty table would clear the mask back to pass-through, and
+      -- an immediate joypad.get would mislabel cached agent input as player.
+      b2.force_neutral()
+      emu.frameadvance()
+      if not b2.confirm_neutral() then
+        error("GAME_COMPANION_B2_NEUTRALIZATION_UNCONFIRMED")
+      end
+    else
+      joypad.set(1, {})
+    end
     _G.SMB3_EMBEDDED_TAKEOVER = nil
     _G.SMB3_EMBEDDED_TAKEOVER_POLICY = nil
     _G.SMB3_TAKEOVER_FRAME_CALLBACK = nil
-    if succeeded then
+    _G.SMB3_B2_PLAN = nil
+    if bounded then b2.active = false end
+    if bounded and b2.abort ~= "completed_route" and b2.abort ~= "completed_stop" then succeeded = false end
+    if succeeded or (bounded and b2.abort == "completed_stop") then
       emit("agent", "", "solution_returned_neutral")
-    elseif string.find(tostring(failure), "GAME_COMPANION_RECLAIM_REQUESTED", 1, true) then
+    elseif (bounded and b2.abort == "reclaimed") or string.find(tostring(failure), "GAME_COMPANION_RECLAIM_REQUESTED", 1, true) then
       emit("player", "", "reclaimed_neutral")
     else
       emit("player", "", "solution_failed_neutral")

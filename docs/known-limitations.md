@@ -3,6 +3,12 @@
 These boundaries are implemented or directly implied by the current runtime;
 they are not unverified product promises.
 
+## B2 implementation is bounded; later beta stages remain incomplete
+
+The [B2 guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
+
+Stardew planning is fixture/unavailable-live only. B3 copied-save setup, visible perception/input and watering, B4 expanded farming and all later live integration/acceptance requirements remain open.
+
 ## Live validation requires local assets
 
 Non-live tests verify contracts, parsers, reports, security controls, and
@@ -31,8 +37,10 @@ reset, and evidence contracts have deterministic coverage. The public CLI and
 loopback server currently expose only capability inspection and a safe
 unconfigured render. They do not create a save copy, launch or attach to
 Stardew, configure ordinary input, or start a live controller. Live Stardew
-operation and owner proof therefore require a separate integration decision
-and the consolidated campaign; they cannot be inferred from the domain tests.
+operation requires the already-scoped B3/B4 integration and applicable live
+proof, followed by the revised beta review; it cannot be inferred from domain
+tests. The missing work is implementation and verification, not another broad
+owner scope decision.
 
 ## Route Lab is local-only
 

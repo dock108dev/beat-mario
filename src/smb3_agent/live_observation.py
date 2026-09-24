@@ -44,6 +44,7 @@ from smb3_agent.tell import ObservedFact
 LIVE_OBSERVER_SCRIPT = repository_path("scripts/fceux_live_observer.lua")
 LIVE_TAKEOVER_SCRIPT = repository_path("scripts/fceux_live_takeover.lua")
 AGENT_SCRIPT = repository_path("scripts/fceux_1_1_agent.lua")
+B2_PLAN_SCRIPT = repository_path("scripts/fceux_b2_plan.lua")
 LIVE_ARTIFACTS_ROOT = Path("artifacts/live-observation")
 BUTTONS = ("A", "B", "up", "down", "left", "right", "start", "select")
 ITEM_CODES = {
@@ -90,7 +91,9 @@ class EvidenceSource:
         if not self.source:
             raise LiveObservationError("observation source is required")
         if self.sequence < 0 or self.frame < 0:
-            raise LiveObservationError("observation sequence and frame must be non-negative")
+            raise LiveObservationError(
+                "observation sequence and frame must be non-negative"
+            )
         if not 0 <= self.confidence <= 1:
             raise LiveObservationError("observation confidence must be between 0 and 1")
 
@@ -115,7 +118,9 @@ class ControllerInput:
         if len(set(self.buttons)) != len(self.buttons) or any(
             button not in BUTTONS for button in self.buttons
         ):
-            raise LiveObservationError("input contains duplicate or unsupported buttons")
+            raise LiveObservationError(
+                "input contains duplicate or unsupported buttons"
+            )
 
 
 @dataclass(frozen=True)
@@ -161,7 +166,9 @@ class LiveSample:
             raise LiveObservationError("session and observer identity are required")
         ControllerInput(self.actor, self.buttons, self.provenance()).validate()
         if len(self.items) != 10:
-            raise LiveObservationError("Mario resource samples require ten inventory slots")
+            raise LiveObservationError(
+                "Mario resource samples require ten inventory slots"
+            )
         if self.player_is_dying not in {0, 1}:
             raise LiveObservationError("player death state must be zero or one")
 
@@ -222,7 +229,10 @@ class LiveObservationSnapshot:
     def tell_unavailable_reason(self) -> str:
         if self.tell_ready:
             return "Live Tell is ready from this fresh supported checkpoint."
-        if self.state is not ConnectionState.CONNECTED or self.freshness is not Freshness.FRESH:
+        if (
+            self.state is not ConnectionState.CONNECTED
+            or self.freshness is not Freshness.FRESH
+        ):
             return self.reason
         if self.checkpoint_id is None:
             return (
@@ -293,10 +303,17 @@ class LiveSessionAccumulator:
     def ingest(self, sample: LiveSample) -> None:
         sample.validate()
         if self.stopped:
-            raise LiveObservationError("stopped observation sessions cannot accept samples")
-        if sample.session_id != self.session_id or sample.observer_token != self.observer_token:
+            raise LiveObservationError(
+                "stopped observation sessions cannot accept samples"
+            )
+        if (
+            sample.session_id != self.session_id
+            or sample.observer_token != self.observer_token
+        ):
             self.connection_state = ConnectionState.DISCONNECTED
-            self.reason = "Session identity changed unexpectedly; the prior session was closed."
+            self.reason = (
+                "Session identity changed unexpectedly; the prior session was closed."
+            )
             raise LiveObservationError("unexpected live-session replacement")
         if self.samples and sample.sequence <= self.samples[-1].sequence:
             raise LiveObservationError("observation sequence must increase")
@@ -306,20 +323,47 @@ class LiveSessionAccumulator:
             self.agent_input_count += 1
             if self.takeover_controller is None:
                 self.connection_state = ConnectionState.DISCONNECTED
-                self.reason = "Agent input appeared in observe-only mode; observation stopped."
+                self.reason = (
+                    "Agent input appeared in observe-only mode; observation stopped."
+                )
                 raise LiveObservationError("observe-only mode rejects agent input")
             try:
-                self.takeover_controller.record_agent_input(sample.control_epoch, sample.buttons)
+                # Neutral lifecycle acknowledgments carry no gameplay input.
+                # They may race the Python side's already-issued reclaim.
+                neutral_ack = (
+                    not sample.buttons
+                    and sample.takeover_detail
+                    in {
+                        "ownership_transferred",
+                        "idle_heartbeat",
+                        "solution_returned_neutral",
+                    }
+                    and self.takeover_controller.snapshot.state.value == "neutralizing"
+                )
+                if not neutral_ack:
+                    self.takeover_controller.record_agent_input(
+                        sample.control_epoch, sample.buttons
+                    )
             except TakeoverError as exc:
                 self.connection_state = ConnectionState.DISCONNECTED
                 self.reason = str(exc)
                 raise LiveObservationError(str(exc)) from exc
         if self.inputs and self.inputs[-1].provenance.frame == sample.frame:
-            if self.inputs[-1].actor != sample.actor:
-                raise LiveObservationError("simultaneous player and agent input is ambiguous")
+            if self.inputs[-1].actor != sample.actor and sample.takeover_detail not in {
+                "ownership_transferred",
+                "reclaimed_neutral",
+                "solution_failed_neutral",
+                "observation",
+                "idle_heartbeat",
+            }:
+                raise LiveObservationError(
+                    "simultaneous player and agent input is ambiguous"
+                )
         previous = self.samples[-1] if self.samples else None
         self.samples.append(sample)
-        self.inputs.append(ControllerInput(sample.actor, sample.buttons, sample.provenance()))
+        self.inputs.append(
+            ControllerInput(sample.actor, sample.buttons, sample.provenance())
+        )
         self._derive_events(previous, sample)
         self.connection_state = ConnectionState.CONNECTED
         self.reason = (
@@ -417,7 +461,11 @@ class LiveSessionAccumulator:
             freshness = Freshness.STALE
             reason = "The last emulator observation is stale. Tell is unavailable."
         checkpoint_id, checkpoint = _checkpoint(latest)
-        if state is ConnectionState.CONNECTED and not 0 <= latest.world <= 7:
+        if (
+            state is ConnectionState.CONNECTED
+            and not 0 <= latest.world <= 7
+            and checkpoint_id != "fresh_power_on"
+        ):
             state = ConnectionState.UNKNOWN
             freshness = Freshness.UNKNOWN
             reason = "The observed game state is unknown. Tell is unavailable."
@@ -469,7 +517,8 @@ class LiveSessionAccumulator:
             if self.takeover_controller
             else 0,
             self.takeover_controller.snapshot.terminal_reason.value
-            if self.takeover_controller and self.takeover_controller.snapshot.terminal_reason
+            if self.takeover_controller
+            and self.takeover_controller.snapshot.terminal_reason
             else None,
             self.takeover_controller.snapshot.neutralized
             if self.takeover_controller
@@ -488,26 +537,32 @@ class LiveSessionAccumulator:
     def _derive_events(self, previous: LiveSample | None, sample: LiveSample) -> None:
         source = sample.provenance()
         if previous is None:
-            self.events.append(LiveEvent(EventKind.TRANSITION, "Observation connected", source))
+            self.events.append(
+                LiveEvent(EventKind.TRANSITION, "Observation connected", source)
+            )
             return
         if (
             previous.lives != 255
             and sample.lives != 255
             and sample.lives < previous.lives
-        ) or (
-            sample.player_is_dying == 1 and previous.player_is_dying == 0
-        ):
+        ) or (sample.player_is_dying == 1 and previous.player_is_dying == 0):
             self.deaths += 1
-            self.events.append(LiveEvent(EventKind.DEATH, "Mario death observed", source))
+            self.events.append(
+                LiveEvent(EventKind.DEATH, "Mario death observed", source)
+            )
         if previous.player_is_dying == 1 and sample.player_is_dying == 0:
             self.recoveries += 1
-            self.events.append(LiveEvent(EventKind.RECOVERY, "Mario re-entry observed", source))
+            self.events.append(
+                LiveEvent(EventKind.RECOVERY, "Mario re-entry observed", source)
+            )
         if (sample.world, sample.object_set, sample.map_page) != (
             previous.world,
             previous.object_set,
             previous.map_page,
         ):
-            detail = f"State changed to world={sample.world} object_set={sample.object_set}"
+            detail = (
+                f"State changed to world={sample.world} object_set={sample.object_set}"
+            )
             kind = (
                 EventKind.COURSE_CLEAR
                 if previous.object_set != 0
@@ -517,12 +572,18 @@ class LiveSessionAccumulator:
             )
             self.events.append(LiveEvent(kind, detail, source))
         if sample.x > previous.x and sample.object_set != 0:
-            self.events.append(LiveEvent(EventKind.PROGRESS, f"Mario advanced to x={sample.x}", source))
+            self.events.append(
+                LiveEvent(EventKind.PROGRESS, f"Mario advanced to x={sample.x}", source)
+            )
         if sample.items != previous.items or sample.form != previous.form:
-            self.events.append(LiveEvent(EventKind.RESOURCE, "Inventory or power-up changed", source))
+            self.events.append(
+                LiveEvent(EventKind.RESOURCE, "Inventory or power-up changed", source)
+            )
 
 
-def parse_observer_line(line: str, *, observed_at: datetime | None = None) -> LiveSample:
+def parse_observer_line(
+    line: str, *, observed_at: datetime | None = None
+) -> LiveSample:
     fields: dict[str, str] = {}
     for token in line.strip().split():
         key, separator, value = token.partition("=")
@@ -587,7 +648,44 @@ def parse_observer_line(line: str, *, observed_at: datetime | None = None) -> Li
     return sample
 
 
+def _bounded_boot_sentinel(sample: LiveSample, epoch: int) -> bool:
+    """The authenticated, still-uninitialized frame zero after B2 transfer."""
+    return (
+        sample.frame == 0
+        and sample.world == 255
+        and sample.object_set == 0
+        and sample.map_page == 255
+        and sample.map_cursor_x == 0
+        and sample.map_cursor_y == 255
+        and sample.x == 65280
+        and sample.y == 65280
+        and sample.form == 255
+        and sample.lives == 255
+        and sample.return_map == 255
+        and sample.player_is_dying == 0
+        and not any(sample.items)
+        and not sample.buttons
+        and sample.actor == "agent"
+        and sample.control_epoch == epoch
+        and sample.takeover_detail
+        in {"ownership_transferred", "authorized_solution_input"}
+    )
+
+
 def _checkpoint(sample: LiveSample) -> tuple[str | None, str | None]:
+    if (
+        sample.frame == 0
+        and sample.world == 255
+        and sample.object_set == 0
+        and sample.x == 65280
+        and sample.y == 65280
+        and not sample.buttons
+        and sample.takeover_detail
+        in {"plan_review_paused", "idle_heartbeat", "observation"}
+    ):
+        # The cartridge has not run its first CPU frame. This opt-in hold is
+        # the true fresh entry, before game RAM initialization, not a reset.
+        return "fresh_power_on", "Fresh power-on (paused for plan review)"
     if (
         sample.frame <= 60
         and sample.world == 0
@@ -623,7 +721,11 @@ def _facts(sample: LiveSample) -> tuple[LiveFact, ...]:
 def observed_level_id(samples: tuple[LiveSample, ...] | list[LiveSample]) -> str | None:
     """Resolve the latest observed gameplay segment from adapter-owned state."""
     gameplay_index = next(
-        (index for index in range(len(samples) - 1, -1, -1) if samples[index].object_set != 0),
+        (
+            index
+            for index in range(len(samples) - 1, -1, -1)
+            if samples[index].object_set != 0
+        ),
         None,
     )
     if gameplay_index is None:
@@ -679,11 +781,17 @@ class LiveObservationManager:
         self._allow_takeover = False
 
     def start(
-        self, game_path: Path, *, allow_takeover: bool = False
+        self,
+        game_path: Path,
+        *,
+        allow_takeover: bool = False,
+        pause_for_plan: bool = False,
     ) -> LiveObservationSnapshot:
         if not game_path.is_file():
             raise FileNotFoundError(f"Local game file not found: {game_path}")
-        observer_script = LIVE_TAKEOVER_SCRIPT if allow_takeover else LIVE_OBSERVER_SCRIPT
+        observer_script = (
+            LIVE_TAKEOVER_SCRIPT if allow_takeover else LIVE_OBSERVER_SCRIPT
+        )
         if not observer_script.is_file():
             raise LiveObservationError("Mario live-observer script is missing")
         if allow_takeover and not AGENT_SCRIPT.is_file():
@@ -722,7 +830,11 @@ class LiveObservationManager:
             self._allow_takeover = allow_takeover
             self._game_file_sha256 = hashlib.sha256(game_path.read_bytes()).hexdigest()
             self._write_manifest(game_path, allow_takeover=allow_takeover)
-            env = {key: value for key, value in os.environ.items() if not key.startswith("SMB3_LIVE_")}
+            env = {
+                key: value
+                for key, value in os.environ.items()
+                if not key.startswith("SMB3_LIVE_")
+            }
             env.update(
                 {
                     "SMB3_LIVE_SESSION_ID": session_id,
@@ -733,7 +845,12 @@ class LiveObservationManager:
                     "SMB3_TAKEOVER_CONTROL_PATH": str(control_path.resolve()),
                     "SMB3_TAKEOVER_RECLAIM_PATH": str(reclaim_path.resolve()),
                     "SMB3_TAKEOVER_AGENT_SCRIPT": str(AGENT_SCRIPT.resolve()),
-                    "SMB3_AGENT_LOG": str((artifact_dir / "agent_solution.log").resolve()),
+                    "SMB3_B2_PLAN_SCRIPT": str(B2_PLAN_SCRIPT.resolve()),
+                    "SMB3_B2_DIRECTORY": str((artifact_dir / "b2").resolve()),
+                    "SMB3_B2_PAUSE_FOR_PLAN": "1" if pause_for_plan else "0",
+                    "SMB3_AGENT_LOG": str(
+                        (artifact_dir / "agent_solution.log").resolve()
+                    ),
                     "SMB3_AGENT_IMAGE_DIR": str(image_dir.resolve()),
                     "SMB3_AGENT_ATTEMPTS": "1",
                     "SMB3_POST_1_1_PROBE": "run_1_castle_after_1_6",
@@ -744,6 +861,20 @@ class LiveObservationManager:
             stderr = (artifact_dir / "fceux_stderr.log").open("wb")
             command = [
                 "fceux",
+                *(
+                    [
+                        "--no-config",
+                        "1",
+                        "--loadstate",
+                        "10",
+                        "--savestate",
+                        "10",
+                        "--periodicsaves",
+                        "0",
+                    ]
+                    if pause_for_plan
+                    else []
+                ),
                 "--loadlua",
                 str(observer_script.resolve()),
                 str(game_path.resolve()),
@@ -773,7 +904,12 @@ class LiveObservationManager:
                     "game_id": "smb3",
                     "continuity_rule": "same process id, observer token, increasing sequence, and non-decreasing frame",
                     "takeover_capable": allow_takeover,
-                    "command": ["fceux", "--loadlua", str(observer_script), "<configured-game-file>"],
+                    "command": [
+                        "fceux",
+                        "--loadlua",
+                        str(observer_script),
+                        "<configured-game-file>",
+                    ],
                 },
             )
             self._thread = threading.Thread(
@@ -805,13 +941,26 @@ class LiveObservationManager:
         protected_decisions: tuple[str, ...] = (),
     ) -> TakeoverAuthorization:
         with self._lock:
-            if not self.takeover_capable or self._accumulator is None or self._process is None:
-                raise LiveObservationError("This session was not launched with takeover capability")
+            if (
+                not self.takeover_capable
+                or self._accumulator is None
+                or self._process is None
+            ):
+                raise LiveObservationError(
+                    "This session was not launched with takeover capability"
+                )
             snapshot = self._accumulator.snapshot()
-            if snapshot.freshness is not Freshness.FRESH or not self._accumulator.samples:
-                raise LiveObservationError("Takeover requires a fresh current-state observation")
+            if (
+                snapshot.freshness is not Freshness.FRESH
+                or not self._accumulator.samples
+            ):
+                raise LiveObservationError(
+                    "Takeover requires a fresh current-state observation"
+                )
             if self._process.poll() is not None:
-                raise LiveObservationError("The observed emulator process is no longer running")
+                raise LiveObservationError(
+                    "The observed emulator process is no longer running"
+                )
             if self._takeover_controller is None or self._game_file_sha256 is None:
                 raise LiveObservationError(
                     "Takeover authority is missing its bound controller or game identity"
@@ -837,7 +986,11 @@ class LiveObservationManager:
 
     def transfer_takeover(self, authorization: TakeoverAuthorization) -> None:
         with self._lock:
-            if self._takeover_controller is None or self._accumulator is None or self._process is None:
+            if (
+                self._takeover_controller is None
+                or self._accumulator is None
+                or self._process is None
+            ):
                 raise LiveObservationError("No takeover-capable live session is active")
             if not self._accumulator.samples or self._game_file_sha256 is None:
                 raise LiveObservationError("Takeover requires a current observed state")
@@ -866,13 +1019,26 @@ class LiveObservationManager:
     ) -> TakeoverAuthorization:
         """Authorize and transfer against one locked observation sample."""
         with self._lock:
-            if not self.takeover_capable or self._accumulator is None or self._process is None:
-                raise LiveObservationError("This session was not launched with takeover capability")
+            if (
+                not self.takeover_capable
+                or self._accumulator is None
+                or self._process is None
+            ):
+                raise LiveObservationError(
+                    "This session was not launched with takeover capability"
+                )
             snapshot = self._accumulator.snapshot()
-            if snapshot.freshness is not Freshness.FRESH or not self._accumulator.samples:
-                raise LiveObservationError("Takeover requires a fresh current-state observation")
+            if (
+                snapshot.freshness is not Freshness.FRESH
+                or not self._accumulator.samples
+            ):
+                raise LiveObservationError(
+                    "Takeover requires a fresh current-state observation"
+                )
             if self._process.poll() is not None or self._game_file_sha256 is None:
-                raise LiveObservationError("The observed emulator process is no longer running")
+                raise LiveObservationError(
+                    "The observed emulator process is no longer running"
+                )
             if self._takeover_controller is None:
                 raise LiveObservationError(
                     "Takeover authority is missing its bound controller"
@@ -905,12 +1071,126 @@ class LiveObservationManager:
             )
             return authorization
 
+    def begin_session_plan(self, fields: dict[str, Any]) -> TakeoverAuthorization:
+        """Issue new, bounded authority; this never promotes a custom route.
+
+        The adapter checks its actual observation independently of planner text.
+        Configuration is written before the atomic start request.
+        """
+        from smb3_agent.mario_plan_runtime import validate_runtime_fields, write_fields
+
+        validate_runtime_fields(fields)
+        with self._lock:
+            if (
+                not self.takeover_capable
+                or self._accumulator is None
+                or self._process is None
+            ):
+                raise LiveObservationError(
+                    "Launch a takeover-capable Mario session first"
+                )
+            snapshot = self._accumulator.snapshot()
+            if snapshot.freshness is not Freshness.FRESH or not snapshot.samples:
+                raise LiveObservationError(
+                    "Starting needs a fresh supported observation"
+                )
+            if self._process.poll() is not None or self._game_file_sha256 is None:
+                raise LiveObservationError("The bound emulator process is unavailable")
+            if fields.get("session_id") != snapshot.session_id:
+                raise LiveObservationError("The plan belongs to another session")
+            sample = snapshot.samples[-1]
+            fresh = snapshot.checkpoint_id == "fresh_power_on"
+            opening = (
+                sample.world == 0
+                and sample.object_set == 1
+                and 0 < sample.x <= 64
+                and 0 < sample.y < 500
+                and sample.player_is_dying == 0
+                and sample.return_map == 0
+                and observed_level_id(snapshot.samples)
+                == "world_1_page_1_node_64_32_object_1"
+            )
+            if not fresh and not opening:
+                raise LiveObservationError(
+                    "Start needs fresh power-on or the World 1-1 opening; arbitrary resume is unsupported"
+                )
+            if not fresh and fields["stop_point"] == "full_route":
+                raise LiveObservationError(
+                    "The full route requires fresh power-on; review a World 1-1 stop for this entry"
+                )
+            if (
+                fields["path_choice"] != "default"
+                and fields["stop_point"] == "full_route"
+            ):
+                raise LiveObservationError(
+                    "The opening alternate is bounded to World 1-1; review a World 1-1 stop"
+                )
+            policy = "b2_full_route_plan_v1" if fresh else "b2_world_1_1_plan_v1"
+            solution = ExecutableSolution(
+                policy,
+                1,
+                "smb3",
+                "smb3.b2.session_plan",
+                ("bounded_plan",),
+                ("fresh_supported_entry",),
+                ("plan_stop",),
+                True,
+                False,
+                policy,
+                ("adapter-owned bounded action primitives",),
+            )
+            controller = self._takeover_controller
+            assert controller is not None
+            fingerprint = state_fingerprint(
+                snapshot.session_id, self._process.pid, sample
+            )
+            authorization = controller.authorize(
+                session_id=snapshot.session_id,
+                emulator_pid=self._process.pid,
+                game_file_sha256=self._game_file_sha256,
+                current_fingerprint=fingerprint,
+                game_id="smb3",
+                profile_id=solution.profile_id,
+                profile_version=1,
+                solution=solution,
+                scope="bounded_plan",
+                stop_condition="plan_stop",
+                timeout_seconds=1800 if fields["stop_point"] == "full_route" else 180,
+                _bounded_plan=True,
+            )
+            directory = snapshot.artifact_dir / "b2"
+            directory.mkdir(exist_ok=True)
+            write_fields(
+                directory / "initial.request",
+                {
+                    **fields,
+                    "epoch": authorization.control_epoch,
+                    "expires_epoch": int(
+                        datetime.fromisoformat(authorization.expires_at).timestamp()
+                    ),
+                },
+            )
+            controller.transfer(
+                authorization,
+                session_id=snapshot.session_id,
+                emulator_pid=self._process.pid,
+                game_file_sha256=self._game_file_sha256,
+                current_fingerprint=fingerprint,
+            )
+            return authorization
+
     def reclaim_takeover(self) -> Any:
         with self._lock:
-            if self._takeover_controller is None or self._accumulator is None or self._process is None:
+            if (
+                self._takeover_controller is None
+                or self._accumulator is None
+                or self._process is None
+            ):
                 raise LiveObservationError("No takeover-capable live session is active")
             if self._takeover_controller.snapshot.owner is not ControlOwner.AGENT:
-                raise LiveObservationError("Companion does not own the active control epoch")
+                raise LiveObservationError(
+                    "Companion does not own the active control epoch"
+                )
             fingerprint = (
                 state_fingerprint(
                     self._accumulator.session_id,
@@ -938,7 +1218,10 @@ class LiveObservationManager:
             snapshot = self._accumulator.snapshot()
             controller = self._takeover_controller
             process = self._process
-            if controller is not None and controller.snapshot.owner is ControlOwner.AGENT:
+            if (
+                controller is not None
+                and controller.snapshot.owner is ControlOwner.AGENT
+            ):
                 authorization = controller.snapshot.authorization
                 if process is None or process.poll() is not None:
                     controller.finish(
@@ -956,15 +1239,63 @@ class LiveObservationManager:
                 elif (
                     snapshot.freshness is not Freshness.FRESH
                     and controller.snapshot.state.value == "agent_control"
+                    and not (
+                        authorization is not None
+                        and authorization.authority_kind == "bounded_session_plan"
+                        and snapshot.age_seconds is not None
+                        and snapshot.age_seconds < 2
+                        and snapshot.samples
+                        and (
+                            0 <= snapshot.samples[-1].world <= 7
+                            or (
+                                authorization.solution_id == "b2_full_route_plan_v1"
+                                and _bounded_boot_sentinel(
+                                    snapshot.samples[-1], authorization.control_epoch
+                                )
+                            )
+                        )
+                    )
                 ):
                     controller.request_terminal(TakeoverTerminal.STALE_STATE)
                 snapshot = self._accumulator.snapshot()
             return replace(
                 snapshot,
-                emulator_pid=process.pid if process is not None and process.poll() is None else None,
+                emulator_pid=process.pid
+                if process is not None and process.poll() is None
+                else None,
             )
 
     def stop(self) -> LiveObservationSnapshot:
+        # A B2 detach must wait for the process to acknowledge neutral input.
+        # Keep the follower alive while waiting; it is the acknowledgment reader.
+        with self._lock:
+            controller = self._takeover_controller
+            bounded = (
+                controller is not None
+                and controller.snapshot.authorization is not None
+                and controller.snapshot.authorization.authority_kind
+                == "bounded_session_plan"
+            )
+            if bounded and controller.snapshot.owner is ControlOwner.AGENT:
+                if controller.snapshot.state.value != "neutralizing":
+                    controller.request_terminal(TakeoverTerminal.CANCELLED)
+        if bounded:
+            deadline = time.monotonic() + 2
+            while (
+                controller.snapshot.owner is ControlOwner.AGENT
+                and time.monotonic() < deadline
+            ):
+                time.sleep(0.02)
+            with self._lock:
+                if controller.snapshot.owner is ControlOwner.AGENT:
+                    self._append_lifecycle(
+                        "neutralization_unconfirmed",
+                        "The emulator has not acknowledged neutral input; observation continues",
+                    )
+                    return replace(
+                        self._accumulator.snapshot(),
+                        reason="Neutralization has not been acknowledged; input state is unconfirmed",
+                    )
         with self._lock:
             accumulator = self._accumulator
             detach_path = self._detach_path
@@ -991,7 +1322,8 @@ class LiveObservationManager:
                 self._takeover_controller.finish(
                     TakeoverTerminal.CANCELLED,
                     final_state_fingerprint=fingerprint,
-                    process_alive=self._process is not None and self._process.poll() is None,
+                    process_alive=self._process is not None
+                    and self._process.poll() is None,
                 )
             if detach_path is not None:
                 detach_path.touch(exist_ok=True)
@@ -1008,7 +1340,10 @@ class LiveObservationManager:
             thread = self._thread
             if accumulator is not None and not accumulator.stopped:
                 return False
-            if controller is not None and controller.snapshot.owner is ControlOwner.AGENT:
+            if (
+                controller is not None
+                and controller.snapshot.owner is ControlOwner.AGENT
+            ):
                 return False
         if thread is not None and thread.is_alive():
             thread.join(timeout=5)
@@ -1026,11 +1361,24 @@ class LiveObservationManager:
 
     def shutdown(self) -> None:
         with self._lock:
+            controller = self._takeover_controller
+            bounded = (
+                controller is not None
+                and controller.snapshot.authorization is not None
+                and controller.snapshot.authorization.authority_kind
+                == "bounded_session_plan"
+            )
+        if bounded:
+            self.stop()
+            return
+        with self._lock:
             if self._accumulator is not None and not self._accumulator.stopped:
                 if self._detach_path is not None:
                     self._detach_path.touch(exist_ok=True)
                 self._accumulator.stop()
-                self._append_lifecycle("server_shutdown_detach", self._accumulator.reason)
+                self._append_lifecycle(
+                    "server_shutdown_detach", self._accumulator.reason
+                )
                 self._finalize("server_shutdown")
 
     def _follow(
@@ -1043,6 +1391,15 @@ class LiveObservationManager:
         position = 0
         try:
             while process.poll() is None:
+                if self._accumulator is not None and self._allow_takeover:
+                    directory = self._accumulator.artifact_dir / "b2"
+                    directory.mkdir(exist_ok=True)
+                    clock_path = directory / "clock.request"
+                    temporary_clock = directory / ".clock.tmp"
+                    temporary_clock.write_text(
+                        f"wall={time.time():.6f}\n", encoding="ascii"
+                    )
+                    os.replace(temporary_clock, clock_path)
                 position = self._consume(log_path, position)
                 with self._lock:
                     if self._accumulator is None or self._accumulator.stopped:
@@ -1056,14 +1413,17 @@ class LiveObservationManager:
                     )
                     if (
                         self._takeover_controller is not None
-                        and self._takeover_controller.snapshot.owner is ControlOwner.AGENT
+                        and self._takeover_controller.snapshot.owner
+                        is ControlOwner.AGENT
                     ):
                         self._takeover_controller.finish(
                             TakeoverTerminal.PROCESS_LOSS,
                             final_state_fingerprint="process_lost",
                             process_alive=False,
                         )
-                    self._append_lifecycle("process_disconnected", self._accumulator.reason)
+                    self._append_lifecycle(
+                        "process_disconnected", self._accumulator.reason
+                    )
                     self._finalize("process_disconnected")
         finally:
             stdout.close()
@@ -1118,6 +1478,14 @@ class LiveObservationManager:
         )
         if sample.takeover_detail == "reclaimed_neutral" or (
             sample.takeover_detail == "solution_failed_neutral"
+            and self._takeover_controller.snapshot.state.value == "neutralizing"
+        ):
+            self._takeover_controller.confirm_handback(
+                final_state_fingerprint=fingerprint,
+                process_alive=self._process.poll() is None,
+            )
+        elif (
+            sample.takeover_detail == "solution_returned_neutral"
             and self._takeover_controller.snapshot.state.value == "neutralizing"
         ):
             self._takeover_controller.confirm_handback(
@@ -1206,7 +1574,11 @@ class LiveObservationManager:
             terminal_frame=sample.frame,
             elapsed_compatible_frames=sample.frame - start.frame,
             timing_units="fceux_emulated_frames",
-            emulator_assumptions=("same_process", "same_game_file", "fceux_movie_framecount"),
+            emulator_assumptions=(
+                "same_process",
+                "same_game_file",
+                "fceux_movie_framecount",
+            ),
             deaths=sum(
                 1
                 for left, right in zip(level_samples, level_samples[1:])
@@ -1224,7 +1596,12 @@ class LiveObservationManager:
                 "start_form": start.form,
                 "terminal_form": sample.form,
             },
-            required_events=("stable_level_identity", "observed_start_boundary", "game_owned_course_clear", "normal_map_return"),
+            required_events=(
+                "stable_level_identity",
+                "observed_start_boundary",
+                "game_owned_course_clear",
+                "normal_map_return",
+            ),
             optional_events=(),
             input_trace_reference=str(
                 self._accumulator.artifact_dir / "controller_inputs.jsonl"
@@ -1243,14 +1620,18 @@ class LiveObservationManager:
         decision = self._run_library.record(record)
         anchor_samples: dict[str, list[LiveSample]] = {}
         for level_sample in level_samples:
-            anchor_samples.setdefault(f"x-{level_sample.x // 32}", []).append(level_sample)
+            anchor_samples.setdefault(f"x-{level_sample.x // 32}", []).append(
+                level_sample
+            )
         anchors = tuple(
             ProgressAnchor(
                 anchor_id,
                 f"{level_id}:x-bucket:{anchor_id.removeprefix('x-')}",
                 samples_at_anchor[0].frame - start.frame,
                 {
-                    "death": any(item.player_is_dying == 1 for item in samples_at_anchor),
+                    "death": any(
+                        item.player_is_dying == 1 for item in samples_at_anchor
+                    ),
                     "failed_recovery": False,
                     "x_min": min(item.x for item in samples_at_anchor),
                     "x_max": max(item.x for item in samples_at_anchor),
@@ -1264,8 +1645,10 @@ class LiveObservationManager:
             for left, right in zip(level_samples, level_samples[1:])
             if ({"left", "right"}.intersection(left.buttons))
             and ({"left", "right"}.intersection(right.buttons))
-            and ({"left", "right"}.intersection(left.buttons)
-                != {"left", "right"}.intersection(right.buttons))
+            and (
+                {"left", "right"}.intersection(left.buttons)
+                != {"left", "right"}.intersection(right.buttons)
+            )
         )
         hesitation_intervals = sum(
             1
@@ -1313,7 +1696,9 @@ class LiveObservationManager:
                 missed_requirements=(),
                 lost_resources=tuple(
                     f"inventory_slot_{index}"
-                    for index, (before, after) in enumerate(zip(start.items, sample.items))
+                    for index, (before, after) in enumerate(
+                        zip(start.items, sample.items)
+                    )
                     if before and not after
                 ),
                 anchors=anchors,
@@ -1342,7 +1727,9 @@ class LiveObservationManager:
 
     def _write_manifest(self, game_path: Path, *, allow_takeover: bool) -> None:
         if self._accumulator is None:
-            raise LiveObservationError("Cannot write a manifest without an active session")
+            raise LiveObservationError(
+                "Cannot write a manifest without an active session"
+            )
         self._write_json(
             "session_manifest.json",
             {
@@ -1362,11 +1749,15 @@ class LiveObservationManager:
                 "controller_write_path": allow_takeover,
                 "savestate": False,
                 "reset": False,
-                "agent_input_expected": 0 if not allow_takeover else "only inside active authorization",
+                "agent_input_expected": 0
+                if not allow_takeover
+                else "only inside active authorization",
                 "started_at": datetime.now(timezone.utc).isoformat(),
             },
         )
-        self._append_lifecycle("connecting", "Visible observation-enabled FCEUX launch requested.")
+        self._append_lifecycle(
+            "connecting", "Visible observation-enabled FCEUX launch requested."
+        )
 
     def _finalize(self, outcome: str) -> None:
         if self._accumulator is None:
@@ -1404,7 +1795,9 @@ class LiveObservationManager:
                 "deaths": self._accumulator.deaths,
                 "recoveries": self._accumulator.recoveries,
                 "events": len(self._accumulator.events),
-                "independently_readable_state_samples": [str(path) for path in converted],
+                "independently_readable_state_samples": [
+                    str(path) for path in converted
+                ],
                 "state_sample_conversion_exception": conversion_exception,
                 "last_sequence": self._accumulator.samples[-1].sequence
                 if self._accumulator.samples
@@ -1458,14 +1851,20 @@ class LiveObservationManager:
 
     def _append_jsonl(self, name: str, payload: dict[str, Any]) -> None:
         if self._accumulator is None:
-            raise LiveObservationError("Cannot append evidence without an active session")
+            raise LiveObservationError(
+                "Cannot append evidence without an active session"
+            )
         path = self._accumulator.artifact_dir / name
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload, sort_keys=True, default=_json_default) + "\n")
+            handle.write(
+                json.dumps(payload, sort_keys=True, default=_json_default) + "\n"
+            )
 
     def _write_json(self, name: str, payload: dict[str, Any]) -> None:
         if self._accumulator is None:
-            raise LiveObservationError("Cannot write evidence without an active session")
+            raise LiveObservationError(
+                "Cannot write evidence without an active session"
+            )
         path = self._accumulator.artifact_dir / name
         path.write_text(
             json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",

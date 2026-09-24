@@ -13,7 +13,9 @@ unattended regression, and fixture-only Experimental-adapter onboarding.
 
 ## Current beta target
 
-The [path to personal beta](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) requires natural-language plan review, existing supported Mario routes and a broader Stardew farming routine (watering, harvesting, planting, selected-debris clearing). These additions are not established by the current implementation summary below. New-game guidance is required; completed third-game integration/onboarding is not. The old campaign definitions still need reconciliation before qualifying this revised scope.
+The [path to personal beta](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) requires natural-language planning, **Mario route editing while playing and typing at a chosen speed**, and a full Stardew farm routine (watering, harvesting, planting, selected-debris clearing). Faster/quickest/100% intents initially load the **same existing base route**, visibly labeled as a fallback. The beta must let the player make real supported path changes and save variants; neither preset names nor speed imply an optimized or 100% result.
+
+The [engineering packet](docs/personal-beta-engineering.md) maps the existing code, new contracts and revised slices. **B2 adds the bounded Mario conversation and custom-plan flow.** Engineering verification and the first unmet requirement are recorded in the Desktop tracker. The [B2 guide](docs/b2-conversation-guide.md) describes the delivered interfaces and the bounded Mario editing flow; the Desktop tracker owns verification status. New-game expansion guidance is required; completed third-game integration/onboarding is not.
 
 ## What works today
 
@@ -25,9 +27,11 @@ The [path to personal beta](/Users/michaelfuscoletti/Desktop/mario_next_steps.md
 | Experimental adapters | Validate, scaffold, inspect, conform, install, discover, and safely remove data-only adapters | Conformance is fixture-only. Installation does not prove live compatibility or promote an adapter to Supported. |
 | Scenarios, metrics, unattended regression | Local classified engineering contracts, reports, and bounded regression execution | These results cannot substitute for visible gameplay, authoritative completion, usefulness, or owner acceptance. |
 
-The V2.14 campaign-entry contract is prepared in
+The retained V2.14 campaign-entry contract is prepared in
 [`data/scenarios/final-campaign.yaml`](data/scenarios/final-campaign.yaml).
-Automatic execution remains disabled: an exact clean candidate-bound manifest
+It describes the prior scope. The new `data/scenarios/personal-beta-v2.yaml`
+and `python -m smb3_agent.beta_readiness` inspect the expanded beta separately. Automatic execution remains
+disabled: an exact clean candidate-bound manifest
 and the structured readiness gate are required before the first attended phase.
 Green Non-live tests can establish implementation and campaign-entry readiness;
 they do not prove live game operation, usefulness, campaign completion, or
@@ -109,6 +113,7 @@ user-facing product is Game Companion.
 
 ## Where to go next
 
+- [Personal-beta engineering](docs/personal-beta-engineering.md) — current implementation packet and first engineering handoff
 - [Documentation index](docs/README.md) — task-oriented map of the canonical docs
 - [Local development](docs/development.md) — setup, layout, entry points, and change boundaries
 - [Architecture](docs/agent-architecture.md) — components, ownership, and data flow
@@ -117,7 +122,7 @@ user-facing product is Game Companion.
 - [Stardew companion guide](docs/stardew-operator-guide.md) — implemented contract and unwired-live boundary
 - [Testing and live reliability](docs/reliability-gate.md) — when non-live checks are insufficient
 - [Security model](docs/security.md) and [known limitations](docs/known-limitations.md)
-- [Final campaign](docs/final-campaign-guide.md) — remaining release-candidate and owner proof
+- [Final campaign](docs/final-campaign-guide.md) — current beta mapping and retained V2 procedure
 
 When modifying the project, keep adapter facts adapter-owned, require fresh
 authorization for input, preserve actor-labeled evidence, fail closed on stale

@@ -56,6 +56,21 @@ The [live-observation contract](live-observation.md) documents V2.4's exact
 visible FCEUX connection, direct player-input source, read-only boundary,
 continuity rules, and retained local evidence.
 
+## B2 typed planning and bounded Mario execution
+
+`request_planning.py` owns a registry of adapter planners and a serialized typed
+plan contract. `mario_route_plan.py` and `stardew_planning.py` own actions,
+capabilities, protected choices and target semantics. Advisory proposals cannot
+grant permission. The local grammar supports bounded contextual requests and
+keeps unsupported clauses explicit; there is no external model dependency.
+
+`conversation_service.py` coordinates the ordinary Mario UI, reviewed plans,
+exact command acknowledgments, variant compatibility and append-only outcomes.
+`mario_plan_runtime.py` independently validates primitives, process and state,
+then delegates a fresh bounded authority to the existing takeover controller.
+B2 execution permission does not change accepted-solution or route records.
+See [B2 interfaces and B3 extension points](b2-conversation-guide.md).
+
 ## Stardew companion adapter
 
 V2.10 adds `stardew_adapter.py` beside, not inside, the Mario implementation.

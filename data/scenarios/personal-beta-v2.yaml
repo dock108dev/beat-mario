@@ -1,0 +1,47 @@
+schema_version: game-companion-personal-beta/v2
+historical_contract: data/scenarios/final-campaign.yaml
+execution_enabled: false
+owner_acceptance: null
+owner_usefulness: null
+third_game_onboarding_required: false
+stages:
+  B2.1:
+    - {id: conversational_plans, classification: unit_integration_result}
+  B2.2:
+    - {id: runtime_control, classification: unit_integration_result}
+    - {id: alternate_traversal, classification: visible_live_result}
+    - {id: active_speed_change, classification: visible_live_result}
+    - {id: typing_isolation, classification: visible_live_result}
+    - {id: revision_application, classification: visible_live_result}
+    - {id: reclaim_and_cleanup, classification: visible_live_result}
+    - {id: affected_route_regressions, classification: visible_live_result}
+  B2.3:
+    - {id: ordinary_browser_flow, classification: browser_result}
+  B2.4:
+    - {id: variants_history, classification: unit_integration_result}
+    - {id: canonical_gate, classification: unit_integration_result}
+  B3:
+    - {id: copied_save_setup, classification: visible_live_result}
+    - {id: stardew_perception_and_input, classification: visible_live_result}
+    - {id: live_watering, classification: visible_live_result}
+  B4:
+    - {id: live_harvest, classification: visible_live_result}
+    - {id: live_plant, classification: visible_live_result}
+    - {id: live_selected_clear, classification: visible_live_result}
+    - {id: combined_farm_routine, classification: visible_live_result}
+  B5:
+    - {id: two_game_conversation_and_switching, classification: visible_live_result}
+  B6:
+    - {id: mario_qualification_and_feedback, classification: owner_usefulness_feedback}
+  B7:
+    - {id: expansion_guidance, classification: document_review_result}
+  B8:
+    - {id: exact_candidate_delivery, classification: technical_session_result}
+  B9:
+    - {id: two_game_owner_acceptance, classification: owner_product_acceptance}
+proof_limits:
+  - A B2 pass permits the B3 engineering handoff only; it never makes the beta ready.
+  - Fixtures, rendered UI and historical evidence do not satisfy visible game proof.
+  - Playback speed does not establish game-frame route improvement or full completion.
+  - Owner feedback and acceptance remain blank until an actual owner review.
+  - No third-game onboarding completion is required by this beta contract.

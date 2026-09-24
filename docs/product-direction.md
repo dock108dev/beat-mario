@@ -1,10 +1,12 @@
 # Product Direction
 
-## Current personal-beta scope — September 21, 2026
+## Current personal-beta scope — September 23, 2026
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) supersedes the earlier V2 completion boundary for the personal beta. Keep existing supported Mario routes; custom route work is tentative. Require natural-language requests with a reviewable supported plan and a Stardew routine covering watering, harvesting, planting and selected-debris clearing. New-game guidance and an expansion/testing plan are required, but a third working adapter and completed Experimental onboarding/live testing are not beta gates.
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status; the [personal-beta engineering packet](personal-beta-engineering.md) supplies the implementation contracts. Required: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing.
 
-These are product requirements, not implementation or live acceptance claims. The existing watering-only adapter, prepared candidate and campaign evidence retain their original limits. Executable campaign/scenario definitions must be reconciled in B1 before they can qualify the new beta; this documentation update does not change those contracts or operate games.
+Mario intent presets such as faster/quickest/100% initially load the single existing base route with an explicit fallback. They are not existing optimized or full-completion routes. Playback speed is separate from route optimization, and edits must cause real supported path changes. Saved variants retain their actual execution/evidence status. New-game guidance is required; a third working adapter and completed Experimental onboarding campaign are not beta gates.
+
+B1 is complete. B2 now implements shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. Engineering verification is tracked separately in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md); see the [B2 operating and B3 interface guide](b2-conversation-guide.md). The new `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. B3/B4 live Stardew work and later beta stages remain incomplete.
 
 ## Product
 
@@ -28,8 +30,9 @@ ambiguous state fails closed.
 
 ## Current proof: Mario
 
-The existing Mario adapter is the accepted execution and reliability proof,
-not the final product identity. Its `world_8_finish_game` contract starts from
+The existing Mario adapter retains historical accepted execution and reliability
+proof for its original route; that proof does not qualify new conversational
+variants or the current cumulative beta. Its `world_8_finish_game` contract starts from
 fresh power-on, executes the accepted route with normal gameplay, defeats
 Bowser, observes the Princess rescue and credits, and stops at the stable
 game-owned ending.
@@ -64,7 +67,7 @@ Existing compatibility remains deliberate:
 ## Implemented second adapter; live proof pending: Stardew Valley
 
 The first modern-game proof uses the visible, windowed game, ordinary player
-input, and a disposable copy of an owner-provided local save. The first bounded
+input, and a disposable copy of an owner-provided local save. The existing implemented bounded
 goal is:
 
 > Water every currently planted crop, then return to the farmhouse entrance.
@@ -144,15 +147,17 @@ attach fixtures, run conformance checks, and install it locally. Experimental
 adapters expose only proven capabilities and cannot enter the trusted supported
 catalog without explicit review and game-specific live evidence.
 
-The ordered implementation and acceptance gates are in the
-[Game Companion V2 roadmap](v2-roadmap.md).
+The current engineering order and acceptance cases are in the
+[personal-beta engineering packet](personal-beta-engineering.md); the
+[Game Companion V2 roadmap](v2-roadmap.md) preserves earlier slice history.
 
 ## Boundaries
 
 - Local-only by default; no cloud telemetry.
 - Offline, owner-controlled, single-player games only for V2.
-- No multiplayer, competitive play, anti-cheat environments, purchases,
-  economies, or unauthorized permanent decisions.
+- No multiplayer, competitive play, anti-cheat environments or unauthorized
+  permanent decisions. The beta farm routine uses owned tools/seeds and excludes
+  implied purchases, sales, gifts and story choices.
 - Diagnostic, assisted, review-only, unattended, and owner-accepted evidence
   remain distinct.
 - Reliability metrics cannot substitute for owner usefulness feedback.

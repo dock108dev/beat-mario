@@ -4,6 +4,10 @@ The root [README](../README.md) is the verified first-use path: install the
 locked environment, run the non-live gate, inspect the command surface, and
 start the local UI. Use this index to find the next task-specific guide.
 
+## Current engineering work
+
+Start with the [personal-beta engineering packet](personal-beta-engineering.md): B1 planning is complete; the Desktop tracker records B2 implementation and verification status. The [B2 guide](b2-conversation-guide.md) covers the actual interfaces and B3 handoff. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns slice status. Required work includes real conversational route edits from the single Mario base and the expanded Stardew routine. Existing V2 implementation records do not establish those capabilities.
+
 ## Understand the system
 
 - [Product direction](product-direction.md) defines Tell, Show, Do, player
@@ -65,10 +69,10 @@ locked Python 3.11 environment.
 
 ## Release-candidate and historical planning material
 
-- [Consolidated final campaign](final-campaign-guide.md) is the still-unrun
-  release-candidate, live-game, and owner-proof workflow. Automatic execution
-  remains disabled; a frozen candidate-bound manifest and structured entry gate
-  determine when its attended phases are eligible to begin.
+- [Consolidated final campaign](final-campaign-guide.md) maps the revised beta
+  requirements and preserves the still-unrun V2 workflow. Its existing executable
+  contracts require versioned reconciliation before they can qualify this beta;
+  automatic execution remains disabled.
 - [Game Companion V2 roadmap](v2-roadmap.md) records slice status through V2.14.
   It is a status/evidence document, not the setup guide.
 - [Local UI assets](local-assets.md) explains optional ignored artwork.
