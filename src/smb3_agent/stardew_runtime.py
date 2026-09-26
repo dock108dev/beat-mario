@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import os
 import threading
 from collections import deque
 from dataclasses import asdict
@@ -17,10 +19,14 @@ from pathlib import Path
 from typing import Callable
 from uuid import uuid4
 
+from smb3_agent.failure_diagnostics import log_failure
 from smb3_agent.request_planning import ConversationPlan, PlanningContext
 from smb3_agent.stardew_adapter import InputCommand, InputKind, InputOwner, OrdinaryInputDriver, ScreenObservation, StardewAdapterError
 from smb3_agent.stardew_companion import StardewCompanionController, attempt_payload
 from smb3_agent.stardew_farm_tasks import FARM_CONTRACT, FarmLedger, FarmObservation
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def plan_digest(plan: ConversationPlan) -> str:
@@ -201,6 +207,7 @@ class StardewRuntime:
         self._tick_lock = threading.Lock()
         self._worker: threading.Thread | None = None
         self._evidence_files: list[str] = []
+        self.evidence_error: str | None = None
         self._paused_scope: tuple[str, ...] | None = None
         self._activate_game: Callable[[], None] | None = None
         self._engineering_launches: list[tuple[object, object]] = []
@@ -377,9 +384,12 @@ class StardewRuntime:
             if self.status in {"unconfigured", "ready"}:
                 self.status = "ready"
         except Exception as exc:
+            reason = self._failure_reason("stardew_observe", exc)
+            self.screen = self._review_screen = None
+            self._review_digest = None
             if self.status == "running":
-                self.control("stop", reason=str(exc))
-            self.reason = str(exc)
+                self.control("stop", reason=reason)
+            self.reason = reason
         return self.snapshot()
 
     def setup(self, payload: dict) -> dict:
@@ -562,6 +572,7 @@ class StardewRuntime:
                 raise StardewAdapterError("watering requires a retained attempt evidence directory")
             self.evidence_root.mkdir(parents=True, exist_ok=True)
             self._evidence_files = []
+            self.evidence_error = None
             self._retain("review", {"plan": plan.to_dict(), "before": asdict(current)})
             # Both mouse watering and keyboard navigation are required. Controller's
             # epoch uses a single kind; change it only within this reviewed runtime.
@@ -709,9 +720,10 @@ class StardewRuntime:
             # the draining worker must not overwrite it with an input error.
             if self._cancel.is_set() and self.status != "completed":
                 return self.ui_snapshot()
+            reason = self._failure_reason("stardew_tick", exc)
             active = self.controller.active_attempt if self.controller else None
             detail = active.first_unmet_requirement if active else None
-            self.control("stop", reason=detail or str(exc))
+            self.control("stop", reason=detail or reason)
         return self.ui_snapshot()
 
     def _retain(self, kind: str, value: dict) -> None:
@@ -720,9 +732,26 @@ class StardewRuntime:
         if kind == "outcome" and self.controller and isinstance(self.controller.operator.ledger, FarmLedger):
             value = {**value, "task_ledger": asdict(self.controller.operator.ledger)}
         name = f"{len(self._evidence_files):04d}-{kind}-{uuid4().hex}.json"
-        with (self.evidence_root / name).open("x") as stream:
-            json.dump(value, stream, default=lambda obj: sorted(obj) if isinstance(obj, set) else str(obj), sort_keys=True, indent=2)
+        pending = self.evidence_root / (name + ".pending")
+        try:
+            # Publish only a complete JSON record. A failed write may leave a
+            # .pending file, which is never included in required evidence.
+            payload = json.dumps(value, default=lambda obj: sorted(obj) if isinstance(obj, set) else str(obj), sort_keys=True, indent=2)
+            with pending.open("x") as stream:
+                stream.write(payload)
+            os.replace(pending, self.evidence_root / name)
+        except Exception as exc:
+            self.evidence_error = f"{kind} evidence could not be saved ({type(exc).__name__})."
+            log_failure(LOGGER, "stardew_evidence_" + kind, exc)
+            raise StardewAdapterError(self.evidence_error) from exc
         self._evidence_files.append(name)
+
+    @staticmethod
+    def _failure_reason(phase: str, exc: Exception) -> str:
+        if isinstance(exc, StardewAdapterError):
+            return str(exc)
+        log_failure(LOGGER, phase, exc)
+        return f"Unexpected farm operation failure ({type(exc).__name__}); inspect the local diagnostics."
 
     def control(self, action: str, *, reason: str | None = None) -> dict:
         if action == "focus_lost":
@@ -740,7 +769,8 @@ class StardewRuntime:
             try:
                 self.driver.neutralize()
             except Exception as exc:
-                neutral_failure = str(exc)
+                log_failure(LOGGER, "stardew_neutralize", exc)
+                neutral_failure = f"input release failed ({type(exc).__name__})"
         with self._authority_lock:
             self._generation += 1
             self.status = "stopping"
@@ -754,11 +784,21 @@ class StardewRuntime:
             if not self.controller.operator.input_neutralized:
                 neutral_failure = neutral_failure or "input neutralization could not be verified"
             if active:
-                self._retain("outcome", attempt_payload(active))
+                try:
+                    self._retain("outcome", attempt_payload(active))
+                except Exception as exc:
+                    # Also cover outcome construction before _retain is called.
+                    # Reporting must not interrupt final authority revocation.
+                    if self.evidence_error is None:
+                        self.evidence_error = f"outcome evidence could not be saved ({type(exc).__name__})."
+                        log_failure(LOGGER, "stardew_outcome", exc)
         self.status = "paused" if action == "pause" else "stopped"
         self.reason = reason or ("Paused with neutral input; fresh review and Start required." if action == "pause" else "Control returned to the player.")
         if neutral_failure:
             self.status, self.reason = "failed", f"Input authority ended; neutral handback unconfirmed: {neutral_failure}"
+        if self.evidence_error:
+            self.status = "failed"
+            self.reason += " " + self.evidence_error + " The in-memory outcome remains available; saved history may be incomplete."
         self._review_digest = None
         return self.snapshot()
 
@@ -776,6 +816,7 @@ class StardewRuntime:
                     {"id": "farm", "label": "Verify saved test farm", "status": "complete" if getattr(getattr(self.setup_manager, "session", None), "input_ready", False) else "pending"},
                     {"id": "perception", "label": "Connect verified screen recognition", "status": "complete" if self.observer else "pending"}],
                 "status": self.status, "reason": self.reason,
+                "evidence_error": self.evidence_error,
                 "session_id": self.controller.save.nonce if self.controller else None,
                 "observation_id": self.screen.observation_id if self.screen else None,
                 "observation": asdict(self.screen) if self.screen else None,

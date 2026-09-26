@@ -27,7 +27,7 @@ fully usable.
 
 ## Unattended regression assets
 
-V2.13 does not place protected runtime inputs in this directory or any other
+The unattended runner does not place protected runtime inputs in this directory or any other
 artifact namespace. The Mario provider records only a local identity; it does
 not copy, track, embed, export, or upload source content. Stardew uses only a dedicated regression fixture
 proven disjoint from every configured owner-save root, then creates a fresh

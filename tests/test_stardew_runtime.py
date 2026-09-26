@@ -592,3 +592,92 @@ def test_new_start_uses_visible_post_interruption_baseline_without_recredit(tmp_
     assert previous.inputs[-1].after_observation_id == 'missing_or_unverified'
     assert previous.status.value == 'stopped'
     assert list((tmp_path/'attempt').glob('*reauthorization-baseline*'))
+
+
+def test_storage_failure_still_finishes_stop_and_keeps_partial_outcome(tmp_path, monkeypatch, caplog):
+    runtime, plan, state, commands = configured(tmp_path)
+    runtime.start(plan, background=False)
+    runtime.tick()  # One confirmed watering action precedes the storage fault.
+    def broken_replace(*args):
+        raise OSError("secret-storage-detail")
+    monkeypatch.setattr("smb3_agent.stardew_runtime.os.replace", broken_replace)
+    result = runtime.control("stop", reason="operator requested stop")
+    assert result["status"] == "failed"
+    assert result["handback_confirmed"]
+    assert runtime.controller.authorization is None and runtime._review_digest is None
+    assert result["outcome"] is not None
+    assert "operator requested stop" in result["reason"]
+    assert "outcome evidence could not be saved" in result["evidence_error"]
+    assert not list((tmp_path / "attempt").glob("*outcome*.json"))
+    assert list((tmp_path / "attempt").glob("*.pending"))
+    assert "secret-storage-detail" not in caplog.text + result["reason"]
+    runtime.tick()
+    assert len(commands) == 1
+
+
+def test_tick_storage_failure_revokes_authority_without_worker_crash(tmp_path, monkeypatch):
+    runtime, plan, state, commands = configured(tmp_path)
+    runtime.start(plan, background=False)
+    def broken_replace(*args):
+        raise OSError("disk full")
+    monkeypatch.setattr("smb3_agent.stardew_runtime.os.replace", broken_replace)
+    result = runtime.tick()
+    assert result["status"] == "failed" and result["handback_confirmed"]
+    assert runtime.controller.authorization is None
+    assert runtime._cancel.is_set()
+    assert result["evidence_error"]
+    assert len(commands) == 1  # The action happened; its postcondition is unverified.
+    assert result["outcome"]["status"] != "completed"
+    runtime.tick()
+    assert len(commands) == 1
+
+
+def test_observer_defect_clears_review_and_uses_safe_diagnostics(tmp_path, caplog):
+    runtime, plan, state, commands = configured(tmp_path)
+    def broken():
+        raise RuntimeError("secret-observation-payload")
+    runtime.observer = broken
+    result = runtime.observe()
+    assert result["observation"] is None
+    assert runtime._review_digest is None
+    assert "RuntimeError" in result["reason"]
+    assert "stardew_observe" in caplog.text
+    assert "secret-observation-payload" not in caplog.text + result["reason"]
+    assert not commands
+
+
+def test_completed_action_with_failed_outcome_write_is_not_saved_success(tmp_path, monkeypatch):
+    runtime, plan, state, commands = configured(tmp_path)
+    runtime.start(plan, background=False)
+    runtime.tick()
+    import os
+    original = os.replace
+    def fail_outcome(source, destination):
+        if "-outcome-" in str(destination):
+            raise OSError("private-detail")
+        return original(source, destination)
+    monkeypatch.setattr("smb3_agent.stardew_runtime.os.replace", fail_outcome)
+    result = runtime.tick()
+    assert result["status"] == "failed"
+    assert result["outcome"]["status"] == "completed"
+    assert result["handback_confirmed"]
+    assert "saved history may be incomplete" in result["reason"]
+    assert "private-detail" not in str(result)
+
+
+def test_storage_and_neutralization_failures_remain_separate(tmp_path, monkeypatch):
+    runtime, plan, state, commands = configured(tmp_path)
+    runtime.start(plan, background=False)
+    def release_failure():
+        raise OSError("release failed")
+    def storage_failure(*args):
+        raise OSError("storage failed")
+    monkeypatch.setattr(runtime.driver, "neutralize", release_failure)
+    monkeypatch.setattr("smb3_agent.stardew_runtime.os.replace", storage_failure)
+    result = runtime.control("stop")
+    assert result["status"] == "failed"
+    assert not result["handback_confirmed"]
+    assert "handback unconfirmed" in result["reason"]
+    assert result["evidence_error"]
+    assert runtime.controller.authorization is None
+    assert runtime._review_digest is None

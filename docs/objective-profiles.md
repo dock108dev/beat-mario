@@ -2,9 +2,9 @@
 
 ## September 23 beta requirement
 
-The [engineering packet](personal-beta-engineering.md) adds conversational route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [B2 conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
+Conversation supports route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
 
-Game Companion V2.5 treats each supported level as its own measurable objective space. A profile is adapter-neutral and versioned. It declares the game and level, classification, exact start and terminal conditions, timing boundary and units, finite required and optional events, allowed and prohibited techniques, resource rules, supported facts, recovery and miss semantics, evidence, outcomes, and capability flags.
+Game Companion treats each supported level as its own measurable objective space. A profile is adapter-neutral and versioned. It declares the game and level, classification, exact start and terminal conditions, timing boundary and units, finite required and optional events, allowed and prohibited techniques, resource rules, supported facts, recovery and miss semantics, evidence, outcomes, and capability flags.
 
 Classifications are never promoted implicitly. Accepted agent best, accepted safe/reference run, player personal best, historical player run, review-only demonstration, and unreviewed candidate remain distinct. Review-only Show evidence cannot become an authoritative comparison reference.
 
@@ -22,10 +22,10 @@ Quiet suppresses all unsolicited advice. On request emits advice only after the 
 
 Objective-aware Tell answers comparison, remaining-requirement, miss, recovery, next-action, behind, and full-plan questions. Minimal, Guided, and Full spoiler levels control detail. Answers separately label current live facts, profile facts, reference facts, inferences, and unknowns.
 
-V2.5 coaching itself never writes controller input. Show stays separate and
+Coaching itself never writes controller input. Show stays separate and
 review-only.
 
-## Dynamic V2.6 run and profile library
+## Dynamic run and profile library
 
 The local run library is open-ended and adapter-neutral. A measurable profile
 is data with a version, boundaries, timing units, emulator assumptions, finite
@@ -43,5 +43,5 @@ runs replace only the relevant local index, duplicate evidence is idempotent,
 and failed/incomplete/incompatible runs are retained without becoming a best.
 
 An accepted replay-safe solution is separate from a fastest observed run and
-from a captured candidate trace. V2.6 takeover can select only the former; trace
-review and promotion remain V2.7 work.
+from a captured candidate trace. Takeover can select only the former; trace
+review and promotion use the separate [learning workflow](learning.md).

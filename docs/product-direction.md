@@ -76,25 +76,24 @@ sell, discard, gift, enter consequential dialogue, choose story outcomes,
 sleep, overwrite the owner's primary save, read process memory, use a hidden
 game API, or claim headless regression as player-facing proof.
 
-V2.10 implements the operator foundation separately from Mario. The adapter owns
+The Stardew operator foundation is independent of Mario. The adapter owns
 verified disposable-save creation, process/window continuity, screen-only crop
 and resource observations, fresh player/agent ownership, ordinary input
 filtering, exact watering reconciliation, neutral stop, primary-save
 reverification, and append-only evidence. Unknown or occluded crops, missing
 resources, save/process/window mismatch, ambiguous authority, protected-action
-risk, or incomplete evidence stop the attempt. Final visible and owner proof is
-deferred to the consolidated campaign; no Stardew execution or acceptance is
-claimed.
+risk, or incomplete evidence stop the attempt. Live support is restricted to the prepared farms and pixel profiles described
+in the [Stardew guide](stardew-operator-guide.md). Owner acceptance remains
+separate from technical qualification.
 
-V2.11 adds screen-only Observe conversion, provenance-grounded Tell, one-task
+The companion supports screen-only Observe conversion, provenance-grounded Tell, one-task
 fresh-copy review-only Show, and same-current-session Do with exact volatile
 authorization, per-input revalidation, immediate reclaim, neutral handback,
 completion reconciliation, and safe disposable-copy reset. Stardew facts and
-safety remain adapter-owned behind the shared envelope. V2.12 implements the
-combined catalog with final validation deferred.
+safety remain adapter-owned behind the shared envelope. The combined catalog coordinates switching and neutral handback.
 
-V2.13 adds an optional engineering-only unattended regression surface after
-both adapters exist. It is not a player-facing mode. Only explicitly eligible
+An optional engineering-only unattended regression surface supports eligible
+adapters. It is not a player-facing mode. Only explicitly eligible
 scenarios and adapter providers may use it, every attempt is isolated and
 bounded, and its evidence is permanently `unattended_regression_result`.
 Neither normal nor virtual-display output can supply visible player proof,
@@ -102,7 +101,7 @@ Show, route reliability, authoritative completion, usefulness, acceptance, or
 the consolidated campaign. Mario protected assets/evidence and Stardew primary
 saves remain outside its artifact and mutation boundaries.
 
-V2.14 implements the final barebones collaborator path. A contributor can
+Experimental adapter onboarding provides a data-only contributor path. A contributor can
 declare metadata, detection, read-only observation, ordinary allowlisted input,
 ownership, reclaim/handback, capabilities, measurable goals, fixture-only
 profiles, safety, scopes, fixtures, evidence, and removal; review a deterministic
@@ -152,7 +151,7 @@ The current engineering order and acceptance cases are in the
 ## Boundaries
 
 - Local-only by default; no cloud telemetry.
-- Offline, owner-controlled, single-player games only for V2.
+- Offline, owner-controlled, single-player games only.
 - No multiplayer, competitive play, anti-cheat environments or unauthorized
   permanent decisions. The beta farm routine uses owned tools/seeds and excludes
   implied purchases, sales, gifts and story choices.
@@ -160,6 +159,5 @@ The current engineering order and acceptance cases are in the
   remain distinct.
 - Reliability metrics cannot substitute for owner usefulness feedback.
 - The user can cancel or take over; no input continues after handback.
-- V2.6–V2.14 are implementation-complete only. The prepared owner pilots and
-  consolidated validation campaign have not run and cannot be inferred from UI,
-  deterministic, scenario-contract, or route evidence.
+- Automated checks and retained technical runs do not establish owner acceptance.
+  Historical campaign contracts remain separate from current source qualification.

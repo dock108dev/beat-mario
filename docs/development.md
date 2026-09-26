@@ -47,7 +47,16 @@ artifacts/              Ignored local execution evidence
 ```
 
 Generated sessions, screenshots, emulator output, runtime state, caches, and
-local UI assets are ignored. Do not force-add them.
+local UI assets are ignored. Root `build/` and `dist/` are disposable packaging
+output; authored tools remain in `scripts/`. NES/FDS game files and local saves
+must stay ignored. Do not force-add generated output.
+
+The tracked-file guard in `scripts/validate_phase0.sh` rejects local artifacts
+and root packaging output even if force-added. Required replay images in
+`data/fixtures/state/`, route inputs, contracts, and asset placeholders remain
+tracked. Ignore changes do not untrack existing files: inspect callers before
+any index removal and preserve local evidence. Historical artifact links refer
+to retained local-only evidence, which a fresh clone does not include.
 
 ## Entry points
 
@@ -73,10 +82,19 @@ not copy old command inventories into documentation.
 
 ## Validation workflow
 
-Run a focused test while editing, then the full canonical gate:
+For a bounded change, run affected tests, Ruff on changed Python files, and a
+syntax check. For example:
 
 ```bash
 .venv/bin/python -m pytest -q tests/test_goals.py
+.venv/bin/python -m ruff check src/smb3_agent/goals.py
+.venv/bin/python -m py_compile src/smb3_agent/goals.py
+```
+
+The full non-live gate is available for repository-wide validation and is run
+by CI; it is not required after every documentation or localized cleanup edit:
+
+```bash
 PYTHON=.venv/bin/python scripts/validate_phase0.sh
 ```
 
@@ -87,10 +105,18 @@ dependency-review check that rejects newly introduced dependencies with known
 moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
 Actions dependency surfaces weekly.
 
-The workspace-refresh JavaScript regression runs through pytest when Node.js is
-available (including the GitHub runner); without Node.js its eight cases are
-explicitly skipped. Pre-walkthrough qualification requires those cases to run,
+JavaScript regressions run through pytest using Node.js. CI explicitly installs
+Node 22 with an immutable `setup-node` action pin; it does not rely on the
+runner image to provide Node. No npm packages or npm cache are required.
+Locally, tests that need Node are explicitly skipped when it is unavailable. Pre-walkthrough qualification requires those cases to run,
 plus actual browser keyboard/focus verification across background refreshes.
+
+The stable repository jobs are `verify` and `dependency-review`; the latter runs
+only on pull requests and is intentionally skipped on pushes/manual runs.
+GitHub also supplies managed CodeQL checks outside the workflow file:
+`Analyze (actions)`, `Analyze (python)`, and `Analyze (javascript-typescript)`.
+Hosted
+passes at a committed baseline do not qualify subsequent uncommitted edits.
 
 For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
@@ -140,7 +166,7 @@ runtime. These files were reviewed and retained:
   moderate and extraction would currently add indirection without isolating a
   reusable subsystem.
 
-Six focused test modules are also over roughly 500 lines:
+Previously reviewed large test modules include:
 `test_reliability.py`, `test_fceux_harness.py`, `test_lab_ui.py`,
 `test_goals.py`, `test_live_observation.py`, and `test_route_patch.py`. They are
 organized around their matching production contract and retain shared fixtures

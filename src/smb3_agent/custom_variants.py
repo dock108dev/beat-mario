@@ -198,6 +198,8 @@ class PlanAttemptHistory:
         for path in self.root.glob("*.json"):
             try:
                 record = json.loads(path.read_text())
+                if not isinstance(record, dict) or not isinstance(record.get("recorded_at", ""), str):
+                    raise ValueError("Saved outcome is not a valid history record")
                 record["evidence_path"] = str(path)
                 records.append(record)
             except (OSError, ValueError):

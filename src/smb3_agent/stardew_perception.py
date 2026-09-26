@@ -1,6 +1,6 @@
 """Bounded pixel recognition, with no hidden-state or save-reading fallback.
 
-No qualified Stardew profile ships with B3. A profile needs retained real-screen
+No qualified Stardew profile ships with this repository. A profile needs retained real-screen
 calibration and a complete farm coverage proof before it can emit live-qualified
 observations. Synthetic templates exercise the algorithm only. Exact region
 matches are deliberately brittle: scale, scroll, animation, occlusion, and

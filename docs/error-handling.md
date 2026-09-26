@@ -41,10 +41,11 @@ patches. It also validates the loopback `Host`, requires a per-process CSRF
 token on every POST, and permits only one state-changing action at a time. On
 startup it enables timestamped standard-library logging. Completed
 HTTP requests are logged at `INFO`.
-Expected invalid requests are logged at `WARNING` with method, path, status,
-error type, and detail. Unexpected handler defects are logged at `ERROR` with a
-traceback and return a generic HTTP 500 page that does not expose the exception
-detail to the browser.
+Expected invalid requests are logged at `WARNING` with method, recognized
+route, status and error type. Unexpected handler defects are logged at `ERROR`
+with file/line/function stack locations and return a generic HTTP 500 page.
+HTTP logs omit queries, arbitrary artifact paths, exception messages, source
+lines and frame locals. Subprocess timeout pages omit command arguments.
 
 The response mapping is:
 
@@ -59,7 +60,11 @@ The response mapping is:
 
 Form bodies are limited to 65,536 bytes, must use
 `application/x-www-form-urlencoded`, declare a non-negative numeric
-`Content-Length`, arrive completely, and decode as strict UTF-8. Artifact
+`Content-Length`, arrive completely, and decode as strict UTF-8 including
+percent-encoded values. Duplicate framing headers, Transfer-Encoding, more
+than 128 fields and repeated scalar fields are refused. Invalid non-ASCII CSRF
+values produce an explicit refusal rather than a handler crash. Host must name
+the actual loopback port; a supplied POST Origin must match it. Artifact
 responses use a passive content-type allowlist and a 50 MiB ceiling.
 Unsupported paths remain HTTP 404. Server shutdown always closes the listening
 socket. See [Security model and hardening](security.md) for the complete browser
@@ -98,11 +103,74 @@ Bounded `SIGTERM` then `SIGKILL` escalation is retained, but a lost process
 handle, second timeout, or still-running process raises `ShowError`; the UI must
 not claim that control returned in that state.
 
+An unexpected Show worker failure requests owned-process shutdown **before**
+writing its failure report. Execution, cleanup and reporting failures are logged
+separately; even an unwritable artifact directory leaves a failed in-memory
+session. Failed cleanup blocks a replacement Show session and volatile-state
+invalidation, retaining the owned process handle. Stop can retry cleanup of that
+failed session. Server shutdown also retries cleanup after the worker has exited
+and reports a worker that exceeds its bounded join. Never infer handback from a
+worker thread merely ending.
+
 Stardew ordinary-input failures always enter the adapter's fail-closed terminal
 path. If both input dispatch and neutralization fail, the retained failure names
 both errors, clears authority, leaves the owner as `none`, and refuses confirmed
 player handback. The companion controller reuses that first adapter failure
 instead of neutralizing again and overwriting the original cause.
+
+## Stardew runtime and saved results
+
+Expected observation/authority refusals retain their domain reason. A failed
+observation clears the displayed observation and reviewed Start permission;
+it cannot leave the previous observation looking fresh. Unexpected observer and
+tick defects record their phase, exception type and stack locations in the
+server log. Ordinary execution exceptions still stop the reviewed task; Pause
+or reclaim already in progress retains its terminal reason.
+
+Runtime evidence is serialized into a unique `.json.pending` file and renamed
+to `.json` only after a complete write. Only published records enter the required
+evidence list. A failed write or rename stops execution, sets `evidence_error`
+in the runtime snapshot, and retains a failed runtime status even if input
+release succeeds. Outcome storage cannot interrupt authority revocation or the
+final handback status. A previously verified completed action can therefore
+have a completed in-memory outcome and a failed runtime storage status. This
+means gameplay was observed, **not** that the outcome was durably saved.
+
+When storage fails:
+
+1. Stop and inspect `handback_confirmed` independently of `status` and
+   `evidence_error`. An unresolved release requires the existing process-specific
+   recovery procedure in the operator guide.
+2. Preserve the in-memory outcome and local evidence before closing the server.
+   Saved history may be incomplete; a restart cannot reconstruct missing records.
+3. Inspect the server log for `stardew_evidence_<kind>`, verify space/access to
+   the attempt directory, and preserve any `.pending` file as incomplete evidence.
+   Do not rename it into qualified evidence or replay the action to repair a log.
+4. After repairing storage, use a fresh observation, review and Start for any
+   remaining work. A new Start resets the runtime storage-error field and must
+   write its review evidence before acquiring authority. Old attempts stay old.
+
+Atomic publication prevents readers from seeing a partially written runtime
+JSON file, but there is no filesystem power-loss durability guarantee or
+cross-file transaction. Saved history tolerates corrupt JSON, non-object records
+and invalid ordering fields by displaying an `unavailable` entry with its evidence
+path; other valid results remain readable. It does not repair or overwrite them.
+
+## Background diagnostic privacy
+
+The Show worker and Stardew runtime's new failure diagnostics use
+`failure_diagnostics`: phase, exception type, file/line/function stack locations.
+They omit exception messages, source lines and frame locals, which can carry
+private payloads or subprocess arguments. These errors are not rate limited or
+suppressed. Show's browser error and failure report contain a safe summary;
+`failure_traceback.txt` contains stack locations. Cleanup/report failures have
+separate log phases so neither hides the execution failure.
+
+Older reliability, scenario and conversion diagnostics retain their
+existing local traceback/message behavior described above. Treat all local
+logs and artifact paths as private and inspect/redact them before sharing.
+There is no external telemetry service, scheduler or production deployment, and
+no separate production/debug strictness flag for these new boundaries.
 
 ## Scenario and unattended artifacts
 
@@ -139,12 +207,36 @@ changes its working directory.
 
 ## Validation
 
-Run the unchanged repository gate from the repository root:
+For this failure-handling pass, run focused synthetic checks from the source
+checkout using its environment (or an existing locked interpreter with
+`PYTHONPATH=src`):
 
 ```bash
-PYTHON=.venv/bin/python scripts/validate_phase0.sh
+python -m pytest -q tests/test_show.py tests/test_stardew_runtime.py tests/test_custom_variants.py tests/test_stardew_companion.py tests/test_b8_delivery.py
+python -m ruff check src tests scripts/security_check.py
+python -m compileall -q src
 ```
+
+The complete repository gate remains
+`PYTHON=.venv/bin/python scripts/validate_phase0.sh` when a broader qualification
+is authorized or needed.
 
 This hardening changes orchestration and local operations only. It does not
 change goal contracts, route inputs, gameplay observers, or the requirements
 for live FCEUX acceptance.
+
+
+## September 26 maintenance boundary
+
+Failure-handling changes alter the working source and do not inherit earlier
+live qualification. The [delivery record](b8-personal-delivery.md) retains the
+identified build and review limits. Recovery behavior must be qualified on the
+source actually used for a live run.
+
+The repository pattern review covered Python handlers/workers, frontend fetch
+fallbacks, native input/process cleanup, local persistence, optional dependencies,
+Lua guards, launch scripts and CI suppression. Existing transactional rollback,
+classified reliability failures, visible frontend retry messages, catalog
+preference recovery, optional artwork and unavailable-adapter defaults are
+retained: they either expose their degradation or cannot grant execution.
+No broad-catch removal or gameplay-policy rewrite was warranted for those paths.

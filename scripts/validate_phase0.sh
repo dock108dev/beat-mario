@@ -23,6 +23,9 @@ echo "== tracked generated-file guard =="
 tracked_generated="$(
   git ls-files \
     'artifacts/*' \
+    'evidence/*' \
+    'build/*' \
+    'dist/*' \
     'data/attempts/*' \
     'data/screenshots/*' \
     'data/variants/*.yaml' \

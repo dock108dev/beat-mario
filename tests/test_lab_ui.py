@@ -568,7 +568,9 @@ def test_route_lab_returns_generic_500_and_logs_unexpected_traceback(
     assert response.status == 500
     assert "Unexpected Game Companion Lab failure" in body
     assert "private unexpected detail" not in body
-    assert "RuntimeError: private unexpected detail" in caplog.text
+    assert "error_type=RuntimeError" in caplog.text
+    assert " in crash" in caplog.text
+    assert "private unexpected detail" not in caplog.text
 
 
 def test_route_lab_rejects_untrusted_host_and_missing_csrf() -> None:

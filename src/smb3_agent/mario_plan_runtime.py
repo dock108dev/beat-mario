@@ -18,14 +18,9 @@ import threading
 import time
 from typing import Any
 
-PATHS = {"default", "opening_hop"}
-STOPS = {"full_route", "world_1_1_exit", "world_1_1_opening_end"}
-SPEEDS = (1, "turbo")
-BOUNDARIES = {"world_1_1_opening", "world_1_1_exit"}
-PRIMITIVES = {
-    "world_1_1_default_v1": "default",
-    "world_1_1_opening_hop_v1": "opening_hop",
-}
+from smb3_agent.mario_route_contract import (
+    BASE_ROUTE_ID, PRIMITIVE_PATHS, SUPPORTED_SPEEDS, validate_traversal,
+)
 
 
 def write_fields(path: Path, fields: dict[str, Any]) -> None:
@@ -51,18 +46,8 @@ def write_fields(path: Path, fields: dict[str, Any]) -> None:
 
 
 def validate_runtime_fields(fields: dict[str, Any]) -> None:
-    if fields.get("path_choice") not in PATHS:
-        raise ValueError("Unsupported Mario traversal primitive")
-    if fields.get("stop_point") not in STOPS:
-        raise ValueError("Unsupported Mario stop point")
-    if (
-        fields.get("path_choice") == "opening_hop"
-        and fields.get("stop_point") != "world_1_1_opening_end"
-    ):
-        raise ValueError(
-            "The opening hop is validated only to the opening stop; later traversal is unsupported"
-        )
-    if fields.get("speed") not in SPEEDS:
+    validate_traversal(fields.get("path_choice"), fields.get("stop_point"))
+    if fields.get("speed") not in SUPPORTED_SPEEDS:
         raise ValueError(
             "Supported playback is 1× or turbo (uncapped faster); 2×/4× are unavailable"
         )
@@ -87,7 +72,7 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
     if data.get("game_id", data.get("game")) not in {"mario", "smb3"}:
         raise ValueError("Mario execution rejects a plan for another game")
     if (
-        data.get("base_route_id") != "world_8_finish_game"
+        data.get("base_route_id") != BASE_ROUTE_ID
         or str(data.get("base_version")) != "1"
     ):
         raise ValueError("The plan's base route or version is incompatible")
@@ -100,16 +85,10 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         if is_dataclass(action):
             action = asdict(action)
         parameters = action.get("parameters", {})
-        primitive = parameters.get(
-            "primitive_id",
-            action.get(
-                "primitive_id",
-                action.get("kind") if action.get("kind") in PRIMITIVES else None,
-            ),
-        )
-        if primitive not in PRIMITIVES:
+        primitive = parameters.get("primitive_id")
+        if primitive not in PRIMITIVE_PATHS:
             raise ValueError("Unvalidated primitives cannot execute")
-        path = PRIMITIVES[primitive]
+        path = PRIMITIVE_PATHS[primitive]
         if (
             parameters.get("path_choice", path) != path
             or data.get("path_choice", path) != path
@@ -122,7 +101,7 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         if parameters.get("base_solution_id") != "world_8_finish_game_v1":
             raise ValueError("Action has an incompatible base solution")
         path = parameters.get("path_choice", path)
-        if action.get("kind") not in set(PRIMITIVES) | {"mario_traverse"}:
+        if action.get("kind") != "mario_traverse":
             raise ValueError(f"Unsupported Mario action: {action.get('kind')}")
     speed = data.get("requested_speed", data.get("speed", 1))
     if isinstance(speed, dict):
@@ -165,7 +144,7 @@ class MarioPlanRuntime:
             "terminal_wall": None,
             "handback_frame": None,
             "native_neutral_ack": False,
-            "supported_speeds": [1, "turbo"],
+            "supported_speeds": list(SUPPORTED_SPEEDS),
             "speed_limitation": "Turbo is uncapped; actual rate depends on this machine.",
             "authority_restored_from_storage": False,
         }
@@ -544,7 +523,7 @@ class MarioPlanRuntime:
                 return self.snapshot()
             self._sync()
             if action == "speed":
-                if speed not in SPEEDS:
+                if speed not in SUPPORTED_SPEEDS:
                     raise ValueError(
                         "Supported playback is 1× or turbo (uncapped faster); requested rate unavailable"
                     )

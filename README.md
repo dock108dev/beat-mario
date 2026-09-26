@@ -1,6 +1,6 @@
 # Game Companion
 
-Local launch: double-click **Open Game Companion.command**, then choose a game. Use the first-use steps below, then the game-specific guides. B7 guidance is complete; [B8 delivery work](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md) and owner review remain separate.
+Local launch: double-click **Open Game Companion.command**, then choose a game. Use the first-use steps below and the game-specific guides.
 
 Game Companion is a local, player-controlled assistant for single-player games.
 It observes a supported game, offers grounded advice (**Tell**), can demonstrate
@@ -53,9 +53,9 @@ browser workspace. For a quicker read-only check of the installed command surfac
 
 ## Launch and first use
 
-The existing local checkout already has its locked `.venv`, command launcher and game configuration. The launcher does not install Python, FCEUX, a Mario game file, Stardew, prepared farms or calibration evidence. An eventual delivery must identify what it includes and what remains a local prerequisite; no standalone Mac package has been delivered by B7. On another checkout, use the install instructions above. The full non-live gate is for engineering validation, not a step to repeat on every launch.
+The launcher uses the local `.venv` and game configuration; it does not install dependencies, games, prepared farms or calibration evidence. On another checkout, use the install instructions above. Delivery is in place, with prerequisites listed in the [delivery guide](docs/b8-personal-delivery.md). The full non-live gate is an engineering check, not an every-launch step.
 
-1. Double-click **Open Game Companion.command**. It uses this checkout's `.venv`, opens the loopback page and starts a background server if needed. Logs are in `artifacts/local-companion.log`. A missing environment or another application on port 8765 is an error; inspect it before retrying. Reusing a running Companion server does not verify its source version—B8 must check that identity.
+1. Double-click **Open Game Companion.command**. It uses this checkout's `.venv`, opens the loopback page and starts a background server if needed. Logs are in `artifacts/local-companion.log`. A missing environment or another application on port 8765 is an error; inspect it before retrying. Reusing a running Companion server does not verify its source version; reconcile its identity before owner review.
 2. Choose Mario or Stardew Valley. Use the [Mario guide](docs/mario-player-guide.md) to verify the local game file/emulator and open a fresh companion session, or the [Stardew guide](docs/stardew-operator-guide.md) to select the correct prepared farm, verify isolation and connect its matching screen profile.
 3. Describe a bounded request; inspect the actual path/actions, targets, resources, destination and readiness reason. Correct ambiguities before reviewing. **Start reviewed plan** (Mario) or **Review scope → Start reviewed work** (Stardew) grants fresh permission. Opening the page or selecting a game does not.
 4. Keep **Pause**, **Stop** and **Take control** available. Read the outcome and remaining work when execution ends. Use the recovery steps below before trying again.
@@ -96,7 +96,7 @@ Completed means the reviewed bounded work and required stop were observed. Stopp
 
 Use **Choose a game** to switch. Switching stops input, waits for handback and retains the result before selecting the other adapter. If handback is unresolved, the switch is refused. Old observations, plans, targets and pending edits cannot transfer. Returning to a game requires fresh compatible setup/review; its history remains available.
 
-Before closing, Stop or Take control and wait for input release/handback. Inspect the result, then close the game normally; close disposable Stardew copies without saving to preserve the seed. If handback cannot be confirmed, do not assume that switching or closing the browser stops input: end the specifically identified game process and retain the unresolved result. A dead process cannot provide a native receipt. For a foreground server, press Control-C in its terminal after handback. The double-click launcher leaves a background server running when its terminal/browser closes; stopping that server requires identifying its process in Activity Monitor. Do not terminate unrelated Python/game processes. B8 must make this launch/relaunch/shutdown procedure concrete for the chosen delivery.
+Before closing, Stop or Take control and wait for input release/handback. Inspect the result, then close the game normally; close disposable Stardew copies without saving to preserve the seed. If handback cannot be confirmed, do not assume that switching or closing the browser stops input: end the specifically identified game process and retain the unresolved result. A dead process cannot provide a native receipt. For a foreground server, press Control-C in its terminal after handback. The double-click launcher leaves a background server running when its terminal/browser closes. Double-click **Stop Game Companion.command** to request shutdown of this repository’s identified server and verify that it exits. A failed stop remains an error; inspect it before retrying. Do not terminate unrelated Python/game processes.
 
 ## Repository map
 
@@ -119,14 +119,16 @@ user-facing product is Game Companion.
 - [Documentation index](docs/README.md) — task-oriented map of the canonical docs
 - [Local development](docs/development.md) — setup, layout, entry points, and change boundaries
 - [Architecture](docs/agent-architecture.md) — components, ownership, and data flow
+- [Source of truth](docs/ssot.md) — domain authorities and supported compatibility boundaries
 - [Runtime and configuration](docs/runtime-and-configuration.md) — settings, integrations, persistence, and deployment boundary
 - [Mario player guide](docs/mario-player-guide.md) — live first use and player controls
 - [Stardew companion guide](docs/stardew-operator-guide.md) — setup, watering contract and live-input prerequisites
 - [Testing and live reliability](docs/reliability-gate.md) — when non-live checks are insufficient
+- [Error handling and operations](docs/error-handling.md) — failed workers, input release, incomplete evidence and recovery
 - [Security model](docs/security.md) and [known limitations](docs/known-limitations.md)
 
 ## UI design
 
 See [UI design](docs/ui-design.md) for layout, local styles and accessibility requirements.
 
-Personal Mac launch, source identity and verified shutdown: [B8 delivery instructions](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-personal-delivery.md). Closing the browser does not stop execution.
+Personal Mac launch, source identity and verified shutdown: [Delivery instructions](docs/b8-personal-delivery.md). Closing the browser does not stop execution.

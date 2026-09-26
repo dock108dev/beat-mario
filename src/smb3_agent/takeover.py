@@ -411,7 +411,7 @@ class TakeoverController:
         process_alive: bool,
         latency_ms: float | None,
     ) -> ControlSnapshot:
-        # B2 cannot infer neutral input from a lost process. Retain the legacy
+        # Conversation control cannot infer neutral input from a lost process. Retain the legacy
         # accepted-solution reconciliation schema for historical consumers.
         neutralized = process_alive or not (
             self.snapshot.authorization is not None

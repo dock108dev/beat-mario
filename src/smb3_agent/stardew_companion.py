@@ -392,7 +392,7 @@ class StardewSafetyPolicy:
 
 
 class StardewCompanionProvider:
-    """Standalone Stardew Observe/Tell/Show/Do provider above the V2.10 operator."""
+    """Standalone Stardew Observe/Tell/Show/Do provider above the input operator."""
 
     def __init__(self, contract: Mapping[str, object] | None = None) -> None:
         self.contract = contract or load_stardew_contract()

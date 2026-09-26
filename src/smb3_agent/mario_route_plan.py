@@ -9,11 +9,9 @@ from smb3_agent.request_planning import (
 )
 from smb3_agent.takeover import supported_solutions
 
-BASE_ROUTE_ID = "world_8_finish_game"
-DEFAULT_PRIMITIVE_ID = "world_1_1_default_v1"
-HOP_PRIMITIVE_ID = "world_1_1_opening_hop_v1"
-OPENING_BOUNDARY = "world_1_1_opening"
-SUPPORTED_STOP_POINTS = ("world_1_1_opening_end", "world_1_1_exit", "full_route")
+from smb3_agent.mario_route_contract import (
+    BASE_ROUTE_ID, OPENING_BOUNDARY, PRIMITIVE_PATHS, SUPPORTED_STOP_POINTS, TRAVERSALS,
+)
 
 
 def resolve_base_route() -> dict[str, object]:
@@ -154,8 +152,8 @@ class MarioPlanningAdapter:
                     stop = target_id
                     scopes.append("stop_point")
                     changes.append(f"Use the selected stop point: {stop}.")
-                elif target_id in {DEFAULT_PRIMITIVE_ID, HOP_PRIMITIVE_ID}:
-                    path_choice = "opening_hop" if target_id == HOP_PRIMITIVE_ID else "default"
+                elif target_id in PRIMITIVE_PATHS:
+                    path_choice = PRIMITIVE_PATHS[target_id]
                     scopes.append("path")
                     changes.append(f"Use the selected {path_choice.replace('_', ' ')} path.")
                 else:
@@ -193,10 +191,11 @@ class MarioPlanningAdapter:
         if not recognized:
             return AdapterProposal(intent, requested, (), recognized=False)
 
-        if path_choice == "opening_hop" and stop != "world_1_1_opening_end":
+        traversal = TRAVERSALS[path_choice]
+        if stop not in traversal.stop_points:
             if stop_count or any(target.get("id") in {"world_1_1_exit", "full_route"} for target in context.selected_targets):
                 ambiguities.append("The opening hop supports only the opening segment; confirm stopping after the opening or choose the default path for the longer destination.")
-            stop = "world_1_1_opening_end"
+            stop = traversal.stop_points[-1]
             scopes.append("stop_point")
             changes.append("The opening hop is bounded to the opening segment and stops there; continuation through the rest of the level is unvalidated.")
 
@@ -207,7 +206,7 @@ class MarioPlanningAdapter:
             fallback = "No full-completion variant is available. The loaded route is world_8_finish_game; finishing it does not establish 100% completion, and coverage remains unknown."
         if not changes:
             changes.append("Prepare the existing world_8_finish_game base route; selecting it does not reset gameplay.")
-        primitive = HOP_PRIMITIVE_ID if path_choice == "opening_hop" else DEFAULT_PRIMITIVE_ID
+        primitive = traversal.primitive_id
         actions = (PlannedAction(
             action_id="mario-traversal", kind="mario_traverse", target_ids=("world_1_1",),
             parameters={"primitive_id": primitive, "path_choice": path_choice, "base_route_id": BASE_ROUTE_ID,

@@ -18,7 +18,7 @@ Choose **Open Mario for companion play** to open a visible FCEUX session held at
 | Opening hop | Opening end only; later traversal is not qualified |
 | Return from player control at the verified World 1-1 opening | A fresh observation, review and Start may authorize only the opening stop (`world_1_1_opening_end`) |
 
-**Longer traversal after taking control requires a fresh session.** A resumed opening-to-level-exit attempt died in B6 and remains a failed attempt. The current guard refuses that request. Close the old game after handback, open Mario afresh, select/reopen the desired plan, review and Start. Arbitrary map, later-level or manually positioned states cannot substitute for a compatible entry.
+**Longer traversal after taking control requires a fresh session.** The runtime refuses opening-to-level-exit resumption because that entry path is not supported. Close the old game after handback, open Mario afresh, select/reopen the desired plan, review and Start. Arbitrary map, later-level or manually positioned states cannot substitute for a compatible entry.
 
 Useful requests include:
 
@@ -42,4 +42,4 @@ Expand **Save or reopen a route** to save a named variant or Reopen it. A varian
 
 A completed opening stop means that bounded stop completed; it does not mean the full base or a 100% objective completed. Death, lost process, reclaim and missed boundaries remain distinct partial/stopped results. After process loss, open a fresh session; old edits and Start identities cannot be reused, and no native handback receipt can be supplied by the dead process. See [shared history and recovery](../README.md#history-recovery-and-safe-shutdown).
 
-The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits. Technical evidence: [B6 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b6-engineering-handoff.md). B6 is complete; owner acceptance and delivery remain separate.
+The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits.

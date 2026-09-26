@@ -1,6 +1,6 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
-Game Companion V2.7 turns the V2.6 local run library into reviewable learning
+The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
 All data stays local under `artifacts/learning`; no credentials,
 cloud identifiers, telemetry, or unnecessary owner identity are stored.
@@ -17,7 +17,7 @@ candidate until compatible replay and promotion gates pass.
 
 ## Learning envelope and compatibility
 
-`AttemptContract` references the immutable V2.6 run and adds adapter version,
+`AttemptContract` references the immutable observed run and adds adapter version,
 level and segment, objective ID/version, exact start and terminal boundaries,
 timing units, complete-interval status, emulator assumptions, allowed
 techniques, resource policy, required and observed facts, evidence integrity,
@@ -78,7 +78,7 @@ takeover authorization.
 The store appends checksum-bound `game-companion-learning/v1` events and
 atomically rebuilds derived indexes. Stable IDs and candidate content hashes
 make repeated processing idempotent. Unknown schema versions and checksum
-mismatches fail explicitly. Rebuilding an index never rewrites V2.6 raw run
+mismatches fail explicitly. Rebuilding an index never rewrites raw run
 evidence. Candidate review packets are hash-bound exports that declare the
 existing `beat-mario.route-patch/v1` promotion mechanism and its missing gates.
 
@@ -93,7 +93,7 @@ python -m smb3_agent learning review CANDIDATE_ID approve --reason "..."
 ```
 
 These commands inspect, recover derived indexes, idempotently wrap historical
-V2.6 runs, export, or review. They do not
+observed runs, export, or review. They do not
 run replay validation, promote a route, or start the emulator.
 
 ## Deferred final campaign
@@ -102,6 +102,6 @@ run replay validation, promote a route, or start the emulator.
 counterexamples, candidate derivation, idempotency, invalid transitions,
 review, rejection, validation failure, promotion readiness, exact-diff
 promotion, rollback, supersession, corruption/recovery, preference reset,
-advice provenance, UI classification, and V2.6 takeover-isolation cases. None
+advice provenance, UI classification, and takeover-isolation cases. None
 of those cases is accepted until the consolidated V2 final-validation campaign
 runs against the frozen cumulative release candidate.

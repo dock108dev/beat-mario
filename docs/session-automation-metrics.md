@@ -1,15 +1,15 @@
 # Session Automation and Local Product Metrics
 
-V2.8 defines repeatable, adapter-neutral session scenarios and a local event and
+Scenario contracts define repeatable, adapter-neutral session scenarios and a local event and
 metrics pipeline. This implementation is not a validation result. A scenario is
 not made true by being defined, planned, or technically completed.
 
-## V2.9 Mario product events
+## Mario product events
 
 The Mario product prepares first-use, game-file detection/selection, identity
 verification, emulator detection, input-readiness confirmation, session choice,
 configuration failure, first-use completion, product-session start, History
-update, and owner-feedback-prompt event types. The V2.9 scenario hooks bind
+update, and owner-feedback-prompt event types. The scenario hooks bind
 these to the existing observation, Tell, advice, Show, takeover, ownership,
 reclaim, handback, learning, recovery, and reconciliation events.
 
@@ -59,7 +59,7 @@ retained; retries create new attempts; duplicate processing is idempotent.
 
 Dry plans state what happens, which steps are automated, owner pauses, affected
 process/save, allowed input, protected decisions, reclaim behavior, duration,
-cleanup, retained evidence, and exact proof limits. V2.8 does not activate plan
+cleanup, retained evidence, and exact proof limits. Scenario inspection does not activate plan
 execution.
 
 ## Versioned local events
@@ -100,7 +100,7 @@ unattended execution cannot supply it.
 There is no combined success score because it would erase the distinction
 between operation, gameplay proof, usefulness, and owner acceptance.
 
-V2.13 stores unattended events in a dedicated `unattended_regression_result`
+The unattended runner stores unattended events in a dedicated `unattended_regression_result`
 series. Ingestion requires the immutable regression-only fields and rejects
 owner-feedback, owner-acceptance, fastest-run, candidate-review, or learning-
 promotion mutations. Summaries report unattended event/attempt counts
@@ -151,7 +151,7 @@ missing, mismatched, ambiguous, post-handback, unattended-owner, cleanup,
 adapter-leakage, and incomplete-rebuild cases.
 
 The deterministic and negative hooks are exercised by the non-live suite.
-V2.13 implements unattended emulator execution, but no live unattended attempt
+The unattended runner implements unattended emulator execution, but no live unattended attempt
 has run for the current candidate. Owner-pilot fields remain blank and the
 disabled final campaign has not run. Historical backfill and candidate
 promotion/rollback remain separate explicit operator actions rather than

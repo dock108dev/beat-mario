@@ -6,7 +6,7 @@ webhook, or third-party callback.
 Its important trust boundaries are the local Route Lab HTTP server, ignored
 gameplay artifacts, emulator subprocesses, and reviewed route-patch workflow.
 
-## V2.9 first use and product persistence
+## First use and product persistence
 
 Mario setup remains loopback-only, CSRF-protected, form-encoded, body-limited,
 escaped, and serialized by the privileged-action lock. Automatic detection and
@@ -58,7 +58,7 @@ session, controller, process identity, window identity, game identity, or
 fixture is absent. These safety decisions do not use Python `assert`, so
 optimized execution cannot remove them.
 
-### V2.13 unattended regression
+### Unattended regression
 
 Unattended regression is local-only and opt-in. It accepts only an explicit
 provider, eligible scenario, supported rendered-pixel display, bounded counts
@@ -81,11 +81,21 @@ copy and never opens, copies, inspects, resets, mutates, or deletes a primary
 save. Protected actions remain forbidden. See the
 [unattended operator guide](unattended-regression.md).
 
-Route Lab accepts only loopback bind addresses and loopback `Host` headers.
-Each server process generates an unpredictable CSRF token; every state-changing
+Route Lab accepts only loopback bind addresses and one syntactically valid
+loopback `Host` authority at the actual listening port. Userinfo, paths, query
+strings, fragments, duplicate Host fields and mismatched ports are refused.
+A browser POST with an `Origin` must match the request Host's HTTP origin and
+port exactly; foreign, opaque (`null`) and duplicate origins are refused before
+reading the body. Origin-less local launcher/CLI calls remain supported, and
+must still supply the CSRF token. Each server process generates an unpredictable CSRF token; every state-changing
 form must return that token. POST requests must use
 `application/x-www-form-urlencoded`, declare a complete body no larger than
-65,536 bytes, and decode as strict UTF-8. Only known POST routes are accepted,
+65,536 bytes, and decode as strict UTF-8, including percent-encoded values.
+Exactly one decimal Content-Length and one supported Content-Type are required;
+Transfer-Encoding is unsupported. Forms are limited to 128 fields. Scalar
+fields (including CSRF and action) must occur exactly once; declared list fields
+retain their repeated-value behavior. A non-ASCII CSRF value is refused as an
+invalid token. Only known POST routes are accepted,
 and one state-changing action may execute at a time.
 
 Responses use a restrictive Content Security Policy, deny framing, disable
@@ -96,13 +106,19 @@ loopback interface and is never an internet HTTPS origin.
 
 Artifact responses remain underneath the configured artifact root after path
 resolution. Symlink escapes, unknown file types, SVG, and files larger than 50
-MiB are refused. HTML artifacts are rendered as plain text, not active same-
+MiB are refused. The actual file read is also bounded to the limit plus one
+byte, so file growth after the metadata check cannot bypass the ceiling. HTML artifacts are rendered as plain text, not active same-
 origin content. Redirect query parameters use percent encoding.
 
 Expected request failures produce explicit 400, 403, 404, 409, 413, 415, or
 504 responses. Unexpected failures produce a generic 500 without exposing a
-traceback to the browser. Server logs retain request path, status, and failure
-type but do not log form bodies or the CSRF token.
+traceback to the browser. HTTP logs retain the recognized route (artifact/asset
+paths are grouped), method, status and failure type. They omit request query
+strings, arbitrary path components, form bodies, protocol-error payloads and
+exception messages. Unexpected failures retain file/line/function stack locations
+without frame locals or source lines. Subprocess timeout pages omit command
+arguments. This does not redact older log files or other subsystems' existing
+local evidence.
 
 CSRF-field injection and note artifact-path extraction use bounded linear
 string scans rather than regular expressions over browser-controlled text.
@@ -126,9 +142,63 @@ string scans rather than regular expressions over browser-controlled text.
 | Unbounded Experimental descriptor parsing | Resource exhaustion / input validation | Experimental contract, fixture, and installation-manifest reads | Low | High | A very large local descriptor reachable through an onboarding action could consume excessive memory during parsing. | The onboarding loaders read entire YAML and JSON files without byte limits. | Regular non-symlinked UTF-8 files are required; contracts/manifests are capped at 256 KiB and fixtures at 1 MiB before parsing. **Fixed.** |
 | Ambiguous POST parser input | Input validation | Route Lab form parser | Low | High | Non-form bodies reached a parser designed for one encoding, making request behavior less predictable. | The parser did not require its supported media type. | Strict `application/x-www-form-urlencoded` enforcement with HTTP 415. **Fixed.** |
 
-No tracked credential, private-key marker, or savestate was found during
-this review. No SQL, template-expression, shell interpolation, external URL
-fetch, session-cookie, or role boundary exists in the current architecture.
+The historical credential scan results are recorded under Verification below.
+There is no SQL, template-expression evaluation, shell interpolation,
+session-cookie or multi-user role boundary in this application. The launcher
+uses fixed loopback URLs; browser input does not select a remote fetch target.
+
+## September 26 HTTP hardening
+
+HTTP hardening changes the current source; earlier delivery qualification does
+not automatically cover it. Retained identities and review limits are recorded
+in the [delivery record](b8-personal-delivery.md).
+
+The current surface is Python's local threaded HTTP service plus escaped HTML
+and same-origin JavaScript. GETs expose local status/evidence and the process
+CSRF bootstrap; POSTs reach operator actions, file handling and guarded game
+workers. There is no distinct admin account: the loopback server is the operator
+surface. The filesystem and inherited OS permissions remain the CLI/process
+boundary. Gameplay additionally requires adapter-owned fresh process/window,
+observation, reviewed plan and explicit authority; HTTP validation cannot replace
+those checks. No database, external callback, queue or hosted deployment exists.
+
+| Title | Category / area | Severity / confidence | Evidence and realistic scenario | Resolution / status |
+| --- | --- | --- | --- | --- |
+| Private request/error material in HTTP logs | Confirmed information disclosure; `_Handler.log_message`, request failure handlers | Low / High | The prior access logger interpolated the entire request line, while expected errors logged `self.path` plus exception text and unexpected errors used a raw traceback. Query tokens or private subprocess/error payloads could persist in logs and be disclosed when logs were shared. This is not an independently demonstrated remote auth bypass. | Recognized routes and status only; unexpected stack locations exclude messages/locals/source text; timeout pages omit command arguments. **Fixed.** |
+| Permissive authority and missing Origin validation | Hardening; HTTP browser boundary | Low / High | Host parsing extracted only a hostname (accepting malformed authority syntax and ignoring port); no explicit Origin gate existed. CSRF already blocked ordinary foreign-page mutations. | Exact Host syntax/listening port and same-origin browser POST validation supplement CSRF; token-bearing origin-less launcher calls still work. **Fixed.** |
+| Ambiguous or unexpectedly decoded forms | Hardening; form parser / scalar access | Low / High | First headers/scalar values were selected silently, percent decoding replaced invalid UTF-8, and non-ASCII token comparison raised TypeError. These cause inconsistent refusals and unnecessary 500s; no request-smuggling exploit is claimed for this non-proxied service. | Duplicate framing/scalars and Transfer-Encoding refused; strict decoding, 128-field cap and ASCII token validation. Repeated list fields remain supported. **Fixed.** |
+| Growing artifact bypasses initial size check | Hardening; artifact resource limits | Low / High | `stat` preceded an unlimited `read_bytes`; an actively growing local log could exceed the documented response cap. | Bound the actual read and refuse an over-limit result. **Fixed.** |
+
+All new checks use synthetic requests and temporary data. Existing escaping,
+CSP/no-store/no-referrer/noindex, CSRF, domain authority checks, fixed argument
+vectors, safe YAML loading, controlled artifact roots and bounded process
+cleanup are retained. HTTP restrictions apply equally in normal and optimized
+Python; no debug-mode bypass or hosted authentication stack was introduced.
+
+Prioritized follow-up for this local configuration:
+
+1. **Manual verification:** review existing logs before sharing them; historical
+   logs and older subsystem artifacts may contain private exception text. Any
+   blanket redaction/retention change must preserve useful retained evidence.
+2. **Deferred:** if untrusted local users/processes become in-scope, define OS
+   isolation and local-client authentication first. Origin/CSRF does not stop a
+   local program from requesting a token. The threaded server is not hardened
+   against hostile local socket exhaustion, nor do filesystem checks provide
+   isolation from a same-user process racing filesystem mutations.
+3. **Manual verification:** refresh dependency vulnerability evidence at the next
+   dependency/release review. The locked environment and pinned CI controls were
+   inspected; no current vulnerability-database audit was run in this pass.
+   Historical audit results below are not a current clean-dependency claim.
+
+Focused validation:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_http_security.py tests/test_lab_ui.py tests/test_b8_delivery.py tests/test_security_check.py
+.venv/bin/python -m ruff check src tests scripts/security_check.py
+.venv/bin/python -m compileall -q src scripts/launch_companion.py
+.venv/bin/python scripts/security_check.py
+git diff --check
+```
 
 ## Accepted design decisions
 

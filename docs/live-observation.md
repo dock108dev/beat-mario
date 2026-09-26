@@ -1,12 +1,12 @@
 # Live Mario observation
 
-Valid completed observations also create an adapter-neutral V2.7 learning
+Valid completed observations also create an adapter-neutral learning
 attempt referencing the original run, input trace, and observation evidence.
 This derived envelope never rewrites the raw session. Candidate derivation is
 advisory and review-only; the takeover capability continues to enumerate only
 accepted replay-safe executable solutions.
 
-V2.4 uses one deliberately narrow connection mechanism. From the player page,
+Observation uses one deliberately narrow connection mechanism. From the player page,
 **Start visible live observation** launches a normal visible FCEUX process with
 `scripts/fceux_live_observer.lua` loaded. FCEUX keeps its existing keyboard and
 controller configuration, and the owner plays in that window. Game Companion
@@ -17,7 +17,7 @@ The Lua observer reads controller state with `joypad.get(1)` and reads bounded
 Mario state with `memory.readbyte`. It contains no controller setter, memory
 writer, reset, power-on, savestate, or state-load call. The Python live-session
 manager only launches the observation-enabled window and reads its append-only
-trace. It has no controller-output dependency or API. V2.4 therefore labels
+trace. It has no controller-output dependency or API. The observer therefore labels
 direct emulator input as `player`, reserves `agent` as a separate future actor,
 and fails closed if an agent, unknown, duplicated, unsupported, out-of-order,
 or replacement-session record appears. The expected agent-input count is zero.
@@ -62,7 +62,7 @@ This evidence is owner-play observation evidence only. It is not route
 reliability, Show evidence, agent-executed gameplay, takeover proof, or a player
 completion claim. Show remains a separate fresh review process.
 
-V2.6 preserves that exact observation-only launch and adds a separate opt-in
+The run library preserves that exact observation-only launch and supports a separate opt-in
 choice, **Allow takeover later**. The opt-in launch uses
 `fceux_live_takeover.lua`; the passive script remains structurally incapable of
 controller writes. Player ownership is still the default. A transfer requires
@@ -85,15 +85,15 @@ evidence and defaults to candidate/non-executable. The completion may establish
 or improve a fastest *locally observed* baseline; it never implies a community,
 global, or world record.
 
-## B2 opt-in session plans
+## Opt-in session plans
 
-The separate B2 launch adds a fresh review hold, revision-bound primitive
+The separate conversation launch provides a fresh review hold, revision-bound primitive
 mailboxes, acknowledged speed/pause and process-local input auditing. Only its
 bounded plan path reads `fceux_b2_plan.lua`; passive observation remains unable
 to emit controls. World 1-1 opening entry must have known level lineage, and the
 full route requires exact fresh power-on. The controller consumes explicit
 button states for all eight NES buttons so browser typing does not supply game
 input. Unsupported fixed playback rates are rejected; normal and uncapped
-faster intervals retain actual frames and wall time. See the [B2 guide](b2-conversation-guide.md)
+faster intervals retain actual frames and wall time. See the [conversation guide](b2-conversation-guide.md)
 and exact engineering evidence for the tested source revision. No owner acceptance is
 inferred from these technical records.

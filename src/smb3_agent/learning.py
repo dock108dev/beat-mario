@@ -1492,7 +1492,7 @@ def attempt_from_run_record(
     adapter_id: str,
     adapter_version: str,
 ) -> AttemptContract:
-    """Backfill an existing V2.6 record without inventing unavailable anchors."""
+    """Backfill an existing run-library record without inventing unavailable anchors."""
     return AttemptContract(
         run_id=run.run_id,
         game_id=run.game_id,

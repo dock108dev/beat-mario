@@ -7,7 +7,7 @@ they are not unverified product promises.
 
 The [conversation guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Resumed play permits only the verified opening stop after fresh observation/review/Start; level-exit or full-base traversal requires fresh power-on. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
 
-Stardew's retained B3 watering and B4 combined-action successes apply only to the prepared configurations in the [Stardew guide](stardew-operator-guide.md). B5's two return attempts stopped, with return unconfirmed. B6 did not rerun Stardew. Neutral handback is distinct from completing the return. B8 must resolve the delivery evidence gap before advertising a complete current-candidate routine.
+Stardew watering and combined-action support is restricted to the prepared configurations in the [Stardew guide](stardew-operator-guide.md). Guarded stops may leave the return unconfirmed even when selected actions finish. Neutral handback is distinct from reaching the farmhouse. Retained successful runs establish behavior only for their identified source and configuration; they do not qualify later source changes or establish owner acceptance.
 
 ## Live validation requires local assets
 

@@ -1,18 +1,11 @@
-# Consolidated Final Campaign
+# Historical campaign procedure
 
-## Current personal-beta scope — September 23, 2026
-
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status; the [personal-beta engineering packet](personal-beta-engineering.md) supplies the implementation contracts. Required: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing.
-
-Mario intent presets such as faster/quickest/100% initially load the single existing base route with an explicit fallback. They are not existing optimized or full-completion routes. Playback speed is separate from route optimization, and edits must cause real supported path changes. Saved variants retain their actual execution/evidence status. New-game guidance is required; a third working adapter and completed Experimental onboarding campaign are not beta gates.
-
-B1 is complete. B2 now implements shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. Engineering verification is tracked separately in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md); see the [B2 operating and B3 interface guide](b2-conversation-guide.md). The new `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. B3/B4 live Stardew work and later beta stages remain incomplete.
-
-## Current beta qualification mapping
-
-The [engineering packet](personal-beta-engineering.md#qualification-reconciliation-and-focused-checks) maps required NLP, preset fallback, real path edits, dynamic speed, typing/focus, revision recovery, expanded farming and shared-product cases. Implement versioned beta scenarios/manifests and matching readiness validation together; preserve legacy contracts for historical interpretation. Begin these changes with the feature slices and reconcile the complete candidate in B8. Owner fields remain blank until actual B9 review.
-
-The commands and phases below operate the existing V2 contract. A PASS there does not certify the revised beta or authorize an owner run for it. Do not silently edit old evidence or delete safety checks to make new readiness pass. Third-game onboarding completion is optional for this personal beta; existing deterministic regressions remain relevant when their code changes.
+This document retains the earlier versioned campaign workflow. It is an
+engineering history record, not the current setup guide or current delivery
+qualification. Use the [README](../README.md) to run the application and the
+[delivery record](b8-personal-delivery.md) for identified build and review limits.
+Historical schema names and phase identifiers below are retained for interpreting
+existing contracts; they do not establish current-source readiness.
 
 ## Retained existing campaign procedure
 

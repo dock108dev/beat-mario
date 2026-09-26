@@ -1,7 +1,7 @@
-# B3 Stardew integration and evidence contract
+# Stardew integration and evidence contract
 
-B3 owns disposable-session setup, visible perception, ordinary input and watering.
-Its completion requires actual isolated-game evidence on the final source candidate.
+Stardew integration owns disposable-session setup, visible perception, ordinary input and watering.
+Qualification requires actual isolated-game evidence on the tested source candidate.
 A working browser, fixture, copied directory or parsed request cannot satisfy it.
 Full beta readiness and owner acceptance are separate.
 
@@ -21,7 +21,7 @@ Full beta readiness and owner acceptance are separate.
   A proposal is never permission to act.
 - `conversation_service.py`, `conversation_ui.py` and `lab_ui.py` route the ordinary
   workspace into the Stardew runtime. Mario process/controller facts never satisfy it.
-- `beta_readiness.py` and `personal-beta-v2.yaml` require classified, hashed evidence
+- `beta_readiness.py` and `personal-beta-v3.yaml` require classified, hashed evidence
   bound to HEAD and all active source files. `--gate-b3` cannot pass from unit evidence alone.
 
 ## Review and execution boundary
@@ -38,7 +38,7 @@ observations, process/window changes, uncertain resources, incomplete coverage a
 reset revoke execution. Neutral handback and partial outcomes are recorded even
 when the task cannot complete. No promise of Mario-style play while typing applies.
 
-## B3 evidence classes
+## Evidence classes
 
 | Requirement | Required evidence |
 | --- | --- |
@@ -50,14 +50,12 @@ when the task cannot complete. No promise of Mario-style play while typing appli
 | Stale/reset/session mismatch, shortage, uncertainty | Focused unit/integration plus bounded live checks when feasible |
 | Canonical gate | Unit/integration; never gameplay or owner acceptance |
 
-## B4 interface handoff
+## Selected farm-action extension
 
-B4 must extend `StardewPlanningAdapter.propose` with task-specific live eligibility
-and supply runtime executors beside the watering executor. Harvest needs eligible
-crop and inventory-delta observations; planting needs owned seed/plot/season
-observations and newly planted target reconciliation; selected clearing needs
-identified debris, correct tool, protected targets and acquired-item accounting.
-Combined routines need ordered task dependencies and a ledger that includes newly
-planted crops. Version any changed task semantics. Do not add these purposes to the
-watering allowlist and call them supported. B4 live actions stay unavailable until
-implemented and independently verified.
+`stardew_farm_tasks.py` owns selected harvest, planting, watering and small-stone
+clearing ledgers. Planning and runtime eligibility require supported targets,
+owned tools/seeds, visible resources, inventory capacity and observable
+postconditions. The browser routes reviewed proposals through the same session,
+reclaim and handback boundaries. The original all-crop watering contract remains
+separate from selected Day 5 work. See the [Stardew guide](stardew-operator-guide.md)
+for the supported configurations and target limits.

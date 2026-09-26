@@ -1,6 +1,6 @@
 # New Game Onboarding and Experimental Adapter Contributor Guide
 
-V2.14 provides a local, barebones contributor flow at `/onboarding` and under
+Experimental adapters have a local, data-only contributor flow at `/onboarding` and under
 the Lab. It creates declarative fixture-only adapters; it does not generate
 Python, JavaScript, shell scripts, controller drivers, observation code, or
 network dependencies, and it never launches or controls a game.
@@ -16,7 +16,7 @@ A live adapter is separate engineering work; the scaffold does not create its ob
 5. **Stop before handback.** Pause/reclaim, focus or identity loss, stale evidence, missed boundaries and failure must release input, revoke authority and retain partial outcomes. Require confirmed handback for switching; record missing receipts honestly when the process is gone. Recovery requires fresh eligibility, review and Start.
 6. **Test in layers.** Use deterministic fixtures for parsing/corrections, eligibility, postconditions, shortages, stale/replayed authority, cancellation, session isolation, switching and history. Test rendered controls separately. Then qualify the actual game on the exact source with fresh isolated sessions: ordinary request/review/Start, observed work and resources, reviewed stop/return, neutral handback, interruption and recovery. Select regressions for changed shared contracts and existing adapters. Fixture conformance never becomes actual-game success, owner feedback or release acceptance.
 
-Use [architecture](agent-architecture.md), [B2 integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
+Use [architecture](agent-architecture.md), [Mario integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
 
 ## State vocabulary
 
@@ -108,4 +108,4 @@ returned. If that bounded cleanup also fails, the operation fails explicitly
 and reports the retained staging path; it never silently claims rollback. See
 [Error handling and operations](error-handling.md).
 
-This scaffold remains optional expansion infrastructure. B7 requires guidance only; no third adapter, installation or onboarding campaign is required. Current delivery work is assigned in the [B8 work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md).
+This scaffold is optional expansion infrastructure. Installed adapters remain Experimental until their live behavior is implemented and qualified.

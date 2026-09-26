@@ -43,7 +43,7 @@ Lab is running, it owns bounded Show/live-observation threads and child
 processes; server shutdown asks those managers to stop and closes the only
 persistent server process.
 
-## B2 conversation and plan runtime
+## Conversation and plan runtime
 
 The ordinary Mario workspace adds `conversation_service.py` between the typed
 `request_planning.py` adapters and `mario_plan_runtime.py`. The renderer lives in
@@ -52,13 +52,13 @@ atomic data mailboxes, not Lua or shell supplied by text. The emulator consumes
 epoch/session/revision-bound commands and acknowledges actual boundaries.
 `fceux_b2_plan.lua` owns supported opening choices, speed/pause, reclaim and
 neutral restoration; the accepted route script only exposes guarded callbacks.
-The B2 explicit launch holds a fresh session for review and disables automatic
+The explicit conversation launch holds a fresh session for review and disables automatic
 save/load for that isolated process. Legacy passive observation remains read-only.
 
 Custom variants and outcome ledgers live under `artifacts/conversation/`; saved
-revisions never restore runtime authority. The `game-companion-personal-beta/v2`
+revisions never restore runtime authority. The `game-companion-personal-beta/v3`
 contract and `python -m smb3_agent.beta_readiness` inspect the new requirements
-without altering historical campaign manifests. See the [B2 guide](b2-conversation-guide.md).
+without altering historical campaign manifests. See the [conversation guide](b2-conversation-guide.md).
 
 ## Operator configuration
 
@@ -110,8 +110,8 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
   and a visible desktop session are required only by the optional macOS
   diagnostic adapter.
 - The macOS Stardew backend can inspect one visible foreground window and
-  capture its pixels using Quartz and `mss`, but no public command currently
-  constructs a live Stardew controller or ordinary-input driver.
+  capture its pixels using Quartz and `mss`, and the browser setup connects the live controller and ordinary-input driver
+  after checking isolation and profile compatibility. CLI commands remain inspection-only.
 - The standard-library web server and optional default-browser launch are the
   only Route Lab integrations. Route Lab makes no cloud or external HTTP calls.
 
@@ -157,13 +157,16 @@ screenshots, logs, generated evidence, or copyrighted local UI assets.
 ## Deployment and operations boundary
 
 There is no production service deployment, container image, package registry
-release, database bootstrap, health endpoint, or service-manager definition.
+release, database bootstrap, or service-manager definition. The local
+`/api/delivery` endpoint reports server identity; `/api/delivery/shutdown`
+requires the server token and matching instance identity.
 The supported operating model is a repository checkout on an engineer's
 machine. Route Lab is an operator convenience surface, not a deployable web
 application: it has no TLS, user accounts, or remote-access authentication and
 must remain on loopback.
 
-For routine operation, run the canonical non-live gate before a change. For a
+For development checks, use the focused workflow in the
+[development guide](development.md). For a
 live route change, also run the selected goal's authoritative reliability
 profile and a separate watch playback as described in
 [World 8 reliability gates](reliability-gate.md). Preserve the resulting local
@@ -173,8 +176,7 @@ The final campaign is not a deployed job or generic CLI runner:
 `data/scenarios/final-campaign.yaml` has `execution_enabled: false`. It is a
 manual, frozen-candidate workflow with explicit owner pauses described in the
 [consolidated final campaign](final-campaign-guide.md). The false setting
-prevents automatic campaign execution; it does not mean V2.14 implementation is
-missing. `scenario candidate-manifest` writes an ignored, exact clean
+prevents automatic campaign execution. `scenario candidate-manifest` writes an ignored, exact clean
 candidate-bound manifest under `artifacts/campaigns/`, and
 `scenario final-campaign-readiness --candidate-manifest ... --gate` exits
 nonzero unless implementation and campaign-entry prerequisites reconcile.

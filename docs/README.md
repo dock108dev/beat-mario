@@ -64,7 +64,7 @@ locked Python 3.11 environment.
 - [New Game Onboarding](new-game-onboarding.md) covers data-only Experimental
   scaffolds, fixture conformance, installation, discovery, and safe removal.
 
-B7 guidance is complete. The next engineering stage is the [B8 delivery work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md); owner review remains separate.
+Use the [delivery guide](b8-personal-delivery.md) for launch identity and review boundaries. A retained build has begun owner review; acceptance remains pending. Later source changes are not automatically qualified by that review.
 
 ## Release-candidate and historical planning material
 

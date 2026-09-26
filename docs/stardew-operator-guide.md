@@ -1,6 +1,6 @@
 # Stardew companion guide
 
-Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. These seeds, profile registrations and retained calibration files already exist on this Mac; they are ignored local assets, not bundled by cloning the source or running the launcher. B8 must account for them in the delivery.
+Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. Live setup requires prepared seeds, profile registrations and their matching calibration files. These are ignored local assets and are not bundled by cloning the source or running the launcher. Without them, the CLI can inspect declared capabilities but the browser cannot start qualified farm work.
 
 ## Choose the matching farm and profile
 
@@ -30,7 +30,7 @@ Progress counts only when fresh visible evidence confirms the action and its res
 
 Occlusion, stale screenshots, unknown resources, unsupported positions or changed process/window identity can produce a guarded partial stop. For example, all requested farm actions may be confirmed while the farmhouse return remains unconfirmed. Inspect **Outcome** and **Saved results** separately for confirmed work, remaining work and uncertainty. If stopped between supported viewpoints, take player control to reach a clear supported position before observing/reviewing again, or close unsaved and open a fresh disposable copy. Do not blind-retry the whole routine in a changed farm. A new copy starts from the prepared seed, not from the unsaved stopped attempt.
 
-B3's retained all15 watering/return success and B4's retained combined-action/return success belong to their exact candidates. **B5's combined attempt and its recovery both remain stopped, with return unconfirmed.** Neutral input/handback passed separately; that is not proof of reaching the farmhouse. B6 did not rerun Stardew. These older successes cannot be relabeled as current-source rerun results. The remaining delivery gap is assigned explicitly in the [B8 work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md).
+Retained watering and combined-action successes apply to their exact source and configuration. A later successful final-return repair does not turn earlier stopped attempts into completed ones or qualify subsequent source changes. See the [delivery record](b8-personal-delivery.md) for the identified build and review limits.
 
 The public CLI remains inspection-only. Inspection commands do not select or copy a save, open a game or send input:
 
@@ -42,4 +42,4 @@ The public CLI remains inspection-only. Inspection commands do not select or cop
 
 Qualified Day 5 targets are the selected left ordinary parsnip and small stone only. Other plots/crops, regrowth, quality/bonus yields, other debris/tools, automatic refill, purchases, sales, gifts, discards, story choices and sleeping/saving are outside this live scope. Unknown resources stay unknown. Tell is input-free; Show is review-only; neither establishes completion or Do authority. Setup copying is not live game observation: current truth comes from supported visible screenshots, never save parsing or hidden game state.
 
-[Shared history and shutdown](../README.md#history-recovery-and-safe-shutdown) explains switching and canceled reviews. [B3 integration contract](b3-integration-contract.md) owns engineering interfaces. Exact historical reports remain unchanged: [B3 qualification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b3-engineering/20260925-integrated/qualification-report.md), [B4 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b4-engineering-handoff.md), [B5 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b5-engineering-handoff.md). The former guide's chronological investigation notes are preserved verbatim in the [B7 pre-edit archive](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/stardew-guide-before.md); use this guide for current instructions.
+[Shared history and shutdown](../README.md#history-recovery-and-safe-shutdown) explains switching and canceled reviews. The [Stardew integration contract](b3-integration-contract.md) describes engineering interfaces. Historical qualification and repair records are linked from the [delivery record](b8-personal-delivery.md).

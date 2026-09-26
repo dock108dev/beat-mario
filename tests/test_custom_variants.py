@@ -84,3 +84,14 @@ def test_history_selects_latest_recorded_outcomes_before_applying_limit(monkeypa
     assert [record["ordinal"] for record in records] == list(range(21, 1, -1))
     assert records[0]["attempt_id"] == "attempt-01"
     assert len(list(tmp_path.glob("*.json"))) == 22
+
+
+@pytest.mark.parametrize("payload", ["[]", "null", "42", '{"recorded_at": 123}', '{"recorded_at": null}'])
+def test_malformed_history_is_visible_without_hiding_valid_records(tmp_path, payload):
+    history = PlanAttemptHistory(tmp_path)
+    history.record("valid", {"status": "partial"})
+    (tmp_path / "corrupt.json").write_text(payload)
+    rows = history.list()
+    assert len(rows) == 2
+    assert rows[0]["attempt_id"] == "valid"
+    assert rows[1]["status"] == "unavailable"

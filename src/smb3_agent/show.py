@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import signal
 import subprocess
@@ -16,6 +17,7 @@ from typing import Any, Callable
 import yaml
 
 from smb3_agent.companion_session import Observation, ObservationSource
+from smb3_agent.failure_diagnostics import failure_stack, log_failure
 from smb3_agent.fceux_images import convert_gd_directory, write_contact_sheet
 from smb3_agent.goals import load_goal_contract, resolve_goal_path
 from smb3_agent.observe import build_state_trace, write_state_trace
@@ -24,6 +26,8 @@ from smb3_agent.review import LogEvent, parse_log_events
 from smb3_agent.segments import load_segment_catalog, validate_goal_segments
 from smb3_agent.tell import ProvenanceReference, load_tell_knowledge
 
+
+LOGGER = logging.getLogger(__name__)
 
 SHOW_DEFINITIONS_PATH = repository_path("data/show/mario.yaml")
 SHOW_ARTIFACTS_ROOT = Path("artifacts/show/world_1_1_clear")
@@ -523,6 +527,8 @@ class ShowSessionManager:
         request.validate()
         selected = definition or load_show_definition()
         with self._lock:
+            if self._session is not None and not self._session.control_returned and self._session.lifecycle is ShowLifecycle.FAILED:
+                raise ShowError("Previous Show process handback is unconfirmed; stop it before starting again")
             if self._session is not None and self._session.lifecycle in {
                 ShowLifecycle.STARTING,
                 ShowLifecycle.ACTIVE,
@@ -540,11 +546,19 @@ class ShowSessionManager:
 
     def stop(self, *, takeover: bool = False) -> ShowSession:
         with self._lock:
-            if self._session is None or self._controller is None or self._session.lifecycle not in {ShowLifecycle.STARTING, ShowLifecycle.ACTIVE}:
+            if self._session is None or self._controller is None or self._session.lifecycle not in {ShowLifecycle.STARTING, ShowLifecycle.ACTIVE, ShowLifecycle.FAILED}:
                 raise ShowError("No active Show session can be stopped")
-            self._session = self._session.transition(ShowLifecycle.STOP_REQUESTED, activity="Take Control requested." if takeover else "Stop demonstration requested.")
+            if self._session.lifecycle is not ShowLifecycle.FAILED:
+                self._session = self._session.transition(ShowLifecycle.STOP_REQUESTED, activity="Take Control requested." if takeover else "Stop demonstration requested.")
             controller = self._controller
         controller.request_stop(takeover=takeover)
+        with self._lock:
+            if self._session is not None and self._session.lifecycle is ShowLifecycle.FAILED:
+                confirmed = controller.input_stopped.is_set()
+                error = self._session.error
+                if confirmed and error:
+                    error = error.replace("Owned process cleanup failed; handback is unconfirmed.", "Owned process stop is now confirmed after cleanup retry.")
+                self._session = replace(self._session, control_returned=confirmed, error=error)
         return self.snapshot()  # type: ignore[return-value]
 
     def invalidate_volatile_state(self) -> bool:
@@ -552,6 +566,8 @@ class ShowSessionManager:
         with self._lock:
             thread = self._thread
             session = self._session
+            if session is not None and session.lifecycle is ShowLifecycle.FAILED and not session.control_returned:
+                return False
             if session is not None and session.lifecycle in {
                 ShowLifecycle.STARTING,
                 ShowLifecycle.ACTIVE,
@@ -571,9 +587,12 @@ class ShowSessionManager:
     def shutdown(self) -> None:
         with self._lock:
             controller, thread = self._controller, self._thread
-        if controller is not None and thread is not None and thread.is_alive():
+        if controller is not None:
             controller.request_stop()
+        if thread is not None and thread.is_alive():
             thread.join(timeout=10)
+            if thread.is_alive():
+                raise ShowError("Show worker did not finish after bounded shutdown")
 
     def _progress(self, message: str) -> None:
         with self._lock:
@@ -636,17 +655,40 @@ class ShowSessionManager:
                     terminal = ShowLifecycle.DEMONSTRATED if outcome.demonstration_game_owned_success else ShowLifecycle.FAILED
                     self._session = current.transition(terminal, activity=outcome.explanation, outcome=outcome, control_returned=True)
         except Exception as exc:
-            if session.artifacts_dir:
+            # Cleanup must precede fallible reporting: the runner may have died
+            # while its owned emulator still holds input.
+            log_failure(LOGGER, "show_execution", exc)
+            cleanup_failed = False
+            try:
+                controller.request_stop()
+            except Exception as cleanup_exc:
+                cleanup_failed = True
+                log_failure(LOGGER, "show_cleanup", cleanup_exc)
+            error = f"Show execution failed ({type(exc).__name__}); inspect the local diagnostics."
+            if cleanup_failed:
+                error += " Owned process cleanup failed; handback is unconfirmed."
+            try:
                 session.artifacts_dir.mkdir(parents=True, exist_ok=True)
-                (session.artifacts_dir / "failure_traceback.txt").write_text(traceback.format_exc())
-                _write_json(session.artifacts_dir / "show_report.json", {"review_only": True, "promotable": False, "counts_toward_reliability": False, "player_completion": False, "authoritative_acceptance": False, "demonstration_game_owned_success": False, "failure_classification": "unexpected-exception", "error": f"{type(exc).__name__}: {exc}"})
+                (session.artifacts_dir / "failure_traceback.txt").write_text(failure_stack(exc))
+                _write_json(session.artifacts_dir / "show_report.json", {
+                    "review_only": True, "promotable": False,
+                    "counts_toward_reliability": False, "player_completion": False,
+                    "authoritative_acceptance": False, "demonstration_game_owned_success": False,
+                    "failure_classification": "unexpected-exception", "error": error,
+                    "error_type": type(exc).__name__, "cleanup_failed": cleanup_failed,
+                    "input_stopped": controller.input_stopped.is_set() and not cleanup_failed,
+                })
+            except Exception as report_exc:
+                log_failure(LOGGER, "show_failure_report", report_exc)
+                error += " Failure evidence could not be fully saved."
             with self._lock:
                 if self._session is not None:
                     current = self._session
-                    if current.lifecycle in {ShowLifecycle.STARTING, ShowLifecycle.ACTIVE, ShowLifecycle.STOP_REQUESTED}:
-                        if controller.input_stopped.is_set() and current.lifecycle in {ShowLifecycle.ACTIVE, ShowLifecycle.STOP_REQUESTED}:
-                            current = current.transition(ShowLifecycle.INPUT_STOPPED, activity="Automation input stopped after failure.")
-                        self._session = current.transition(ShowLifecycle.FAILED, activity="Show failed closed.", error=f"{type(exc).__name__}: {exc}", control_returned=controller.input_stopped.is_set())
+                    if current.lifecycle in {ShowLifecycle.STARTING, ShowLifecycle.ACTIVE, ShowLifecycle.STOP_REQUESTED, ShowLifecycle.INPUT_STOPPED}:
+                        self._session = current.transition(
+                            ShowLifecycle.FAILED, activity="Show failed closed.", error=error,
+                            control_returned=controller.input_stopped.is_set() and not cleanup_failed,
+                        )
 
 
 def _nearest_image(paths: tuple[Path, ...], frame: int | None) -> Path | None:

@@ -1,5 +1,18 @@
 # Product clarity verification
 
+## September 26 ordinary-workspace cleanup
+
+Current source on local main; synthetic presentation evidence only. The retained B8/B9 candidate is unchanged as evidence and is not this modified checkout.
+
+- [Matched screenshots and measurements](../artifacts/ui-clarity-20260926/review.html): Stardew’s ready-state request field moved from y=2,341 to y=538 at 390×844, and from y=1,917 to y=458 at 1440×900. Desktop Start moved from y=1,137 to y=629. Narrow Start remains below the first viewport at y=1,412; there is no claim that the whole workflow fits on one screen.
+- Requests and plan review precede farm setup and history. The first-use setup disclosure starts open; its link, current blockers, fresh-view action, exact plan targets, resource/return limits and sticky Stop remain available. Mario retains its layout with shorter wording. Shared Starter 02 styling replaces the ordinary farm renderer’s leftover green styling.
+- Matched empty/ready Stardew and Mario plan screens at both widths, plus doubled computed text sizes at 390px: no page-level horizontal overflow. Keyboard focus, history disclosure, draft preservation through polling, disabled empty-state actions and reachable Stop were checked. Failed-refresh feedback warns of stale display data and clears on recovery; action errors are preserved by a focused regression.
+- 63 focused tests passed, along with Ruff, Python compilation, JavaScript syntax and whitespace checks. No production service/game, owner save, live gameplay, release or acceptance was exercised. Native behavior, screen readers and exhaustive contrast pairs remain unverified. Preview assets are local ignored evidence; the report remains readable without its temporary server.
+
+Separate suggestion (confirmed): the Day 5 request example still needs opaque plot IDs. Adding human-readable labels requires a verified target mapping beyond presentation. Prototype labels only for the qualified Day 5 targets, retaining stored IDs.
+
+## Historical September 23 cleanup
+
 September 23, 2026 · Starter 02 presentation cleanup; synthetic engineering evidence only.
 
 - At 390px, Select Mario moved from y=1,103 to y=363; both game-selection actions now fit in the first 844px. Mario's reviewed-plan Send moved from y=953 to y=660, and Start from y=1,692 to y=1,298. At 1440px, the same page's default height moved from 6,438 to 1,886px. No selection, request or execution-authorization steps were added; secondary setup/history details use disclosures. These are measured placements, not a usability or acceptance percentage.
@@ -8,7 +21,7 @@ September 23, 2026 · Starter 02 presentation cleanup; synthetic engineering evi
 - Canonical non-live validation: **842 passed**, plus syntax/lint, file guards, goal/segment/status contracts and player/Lab/Stardew rendering. **107 final focused tests passed**, covering the last presentation refinements and workspace polling. Earlier failed attempts are retained, including setup wording restored for the render contracts.
 - No live games, owner save access, owner review, commit, push, publication, release or installed/frozen build replacement. Native input response, physical-device/browser coverage, screen-reader behavior and exhaustive contrast pairs are not established by these synthetic checks. The prior B2 evidence remains bound to its preserved source archive.
 
-Separate suggestion: **Stardew live foundation (confirmed)** — the public workspace cannot select a disposable save or connect observation/input, so a farm routine cannot start. This is B3 functionality, outside copy/layout work. Begin that tracked slice with disposable-copy setup and synthetic-save checks, then separately qualify live watering. No additional feature backlog was created.
+Historical suggestion, superseded by B3–B8: **Stardew live foundation (then confirmed)** — the public workspace cannot select a disposable save or connect observation/input, so a farm routine cannot start. This is B3 functionality, outside copy/layout work. Begin that tracked slice with disposable-copy setup and synthetic-save checks, then separately qualify live watering. No additional feature backlog was created.
 
 ## Historical Starter 01 adoption
 

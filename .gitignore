@@ -6,6 +6,7 @@ __pycache__/
 
 # Local game files and generated proof artifacts.
 *.nes
+*.fds
 *.sav
 *.state
 *.fc?
@@ -50,3 +51,7 @@ yarn-error.log*
 # Local test and capture output
 /evidence/
 venv/
+
+# Disposable Python packaging output at the repository root.
+/build/
+/dist/

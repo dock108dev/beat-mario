@@ -263,7 +263,8 @@ def test_unexpected_exception_retains_traceback_and_policy_report(tmp_path: Path
     manager.start(_request(tmp_path))
     terminal = _wait_terminal(manager)
     assert terminal.lifecycle is ShowLifecycle.FAILED
-    assert "RuntimeError: boom" in (terminal.error or "")
+    assert "RuntimeError" in (terminal.error or "")
+    assert "boom" not in (terminal.error or "")
     report = yaml.safe_load((terminal.artifacts_dir / "show_report.json").read_text())  # type: ignore[operator]
     assert report["review_only"] is True
     assert report["promotable"] is False
@@ -313,3 +314,55 @@ def test_default_ui_keeps_show_unavailable_without_game_file(monkeypatch: pytest
     assert 'data-testid="mode-show" data-available="false"' in html
     assert "configured game file" in html
     assert "Open Game Companion Lab" in html
+
+
+def test_worker_failure_stops_process_before_failed_report(tmp_path, monkeypatch, caplog):
+    calls = []
+    def stop(controller, **kwargs):
+        calls.append("stop")
+        controller.input_stopped.set()
+    monkeypatch.setattr(ShowProcessController, "request_stop", stop)
+    def broken(request, definition, artifacts, controller, progress):
+        raise RuntimeError("private-payload-token")
+    original = Path.write_text
+    def fail_report(path, *args, **kwargs):
+        if path.name == "failure_traceback.txt":
+            assert calls == ["stop"]
+            raise OSError("private-storage-path")
+        return original(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "write_text", fail_report)
+    manager = ShowSessionManager(runner=broken, artifacts_root=tmp_path / "show")
+    manager.start(_request(tmp_path))
+    terminal = _wait_terminal(manager)
+    assert terminal.lifecycle is ShowLifecycle.FAILED
+    assert terminal.control_returned
+    assert "could not be fully saved" in terminal.error
+    assert "show_execution" in caplog.text and "show_failure_report" in caplog.text
+    assert "private-payload-token" not in caplog.text
+    assert "private-storage-path" not in caplog.text
+
+
+def test_failed_worker_cleanup_blocks_restart_but_allows_stop_retry(tmp_path, monkeypatch, caplog):
+    def broken(request, definition, artifacts, controller, progress):
+        raise RuntimeError("private-token")
+    def failed_stop(controller, **kwargs):
+        raise ShowError("private-cleanup-detail")
+    monkeypatch.setattr(ShowProcessController, "request_stop", failed_stop)
+    manager = ShowSessionManager(runner=broken, artifacts_root=tmp_path / "show")
+    manager.start(_request(tmp_path))
+    terminal = _wait_terminal(manager)
+    assert terminal.lifecycle is ShowLifecycle.FAILED
+    assert not terminal.control_returned
+    assert not manager.invalidate_volatile_state()
+    with pytest.raises(ShowError, match="private-cleanup-detail"):
+        manager.shutdown()  # Cleanup is retried even though the worker is dead.
+    assert "handback is unconfirmed" in terminal.error
+    with pytest.raises(ShowError, match="handback is unconfirmed"):
+        manager.start(_request(tmp_path))
+    assert "show_execution" in caplog.text and "show_cleanup" in caplog.text
+    assert "private-token" not in caplog.text
+    assert "private-cleanup-detail" not in caplog.text
+    def successful_stop(controller, **kwargs):
+        controller.input_stopped.set()
+    monkeypatch.setattr(ShowProcessController, "request_stop", successful_stop)
+    assert manager.stop().control_returned

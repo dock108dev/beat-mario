@@ -645,3 +645,35 @@ def test_specific_boundary_failure_survives_generic_native_and_manager_reclaim(
     live.current.control_owner = "player"
     live.current.takeover_terminal_reason = "reclaimed"
     assert runtime.snapshot()["outcome"] == "boundary_missed"
+
+
+@pytest.mark.parametrize("legacy_shape", ["flat_primitive", "primitive_kind", "alias_kind"])
+def test_runtime_rejects_removed_action_spellings(legacy_shape):
+    payload = plan()
+    action = payload["actions"][0]
+    primitive = action["parameters"]["primitive_id"]
+    if legacy_shape == "flat_primitive":
+        action["primitive_id"] = action["parameters"].pop("primitive_id")
+    elif legacy_shape == "primitive_kind":
+        action["kind"] = action["parameters"].pop("primitive_id")
+    else:
+        action["kind"] = primitive
+    with pytest.raises(ValueError):
+        runtime_fields(payload)
+
+
+@pytest.mark.parametrize("path,stop,supported", [
+    ("default", "world_1_1_opening_end", True),
+    ("default", "world_1_1_exit", True),
+    ("default", "full_route", True),
+    ("opening_hop", "world_1_1_opening_end", True),
+    ("opening_hop", "world_1_1_exit", False),
+    ("opening_hop", "full_route", False),
+])
+def test_runtime_traversal_contract(path, stop, supported):
+    payload = plan(path=path, stop=stop)
+    if supported:
+        assert runtime_fields(payload)["stop_point"] == stop
+    else:
+        with pytest.raises(ValueError, match="opening stop"):
+            runtime_fields(payload)

@@ -591,7 +591,7 @@ def build_parser() -> argparse.ArgumentParser:
     learning_review.add_argument("--root", default="artifacts/learning")
     learning_backfill = learning_subparsers.add_parser(
         "backfill-run-library",
-        help="Idempotently wrap existing V2.6 runs as learning evidence",
+        help="Idempotently wrap existing run-library records as learning evidence",
     )
     learning_backfill.add_argument("--root", default="artifacts/learning")
     learning_backfill.add_argument("--run-library-root", default="artifacts/run-library")
@@ -660,7 +660,7 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("scenario_id", nargs="?" if action == "list" else None)
         command.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
     readiness = scenario_subparsers.add_parser(
-        "final-campaign-readiness", help="Inspect or gate structured V2.14 campaign-entry readiness"
+        "final-campaign-readiness", help="Inspect or gate structured historical campaign-entry readiness"
     )
     readiness.add_argument("--catalog", default=str(DEFAULT_SCENARIO_CATALOG))
     readiness.add_argument("--candidate-manifest", default=None)

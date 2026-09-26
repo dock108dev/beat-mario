@@ -280,3 +280,37 @@ def test_status_poll_caches_history_summaries_preserving_full_evidence(tmp_path,
     assert json.loads(path.read_text())['inputs'] == evidence['inputs']
     monkeypatch.setattr(service.history, 'list', lambda: (_ for _ in ()).throw(AssertionError('history reread during poll')))
     assert service.snapshot()['history'] == state['history']
+
+
+def test_refresh_notice_clears_on_recovery_but_action_failure_stays_visible():
+    import json
+    import shutil
+    import subprocess
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node is required for browser-script checks")
+    harness = r'''const vm=require('node:vm'), assert=require('node:assert/strict');
+let input='';process.stdin.on('data',part=>input+=part);process.stdin.on('end',async()=>{
+ const nodes={}, listeners={};
+ function element(){return {dataset:{},textContent:'',value:'',hidden:false,children:[],
+  replaceChildren(...children){this.children=children;},append(){},querySelectorAll(){return [];},
+  addEventListener(name,fn){listeners[name]=fn;}};}
+ const document={getElementById(id){return nodes[id] ||= element();},createElement:element};
+ document.getElementById('stardew-workspace').dataset={initialState:'{}',csrf:'synthetic'};
+ let poll, failures=1;
+ const fetch=async(url,options={})=>options.method==='POST'
+  ? {ok:false,json:async()=>({error:'Review the changed plan before Start.'})}
+  : {ok:failures--<=0,json:async()=>({runtime:{reason:'Fresh farm view.'}})};
+ vm.runInNewContext(JSON.parse(input),{document,fetch,URLSearchParams,
+  crypto:{randomUUID:()=> 'synthetic'},window:{setInterval:fn=>poll=fn}});
+ const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
+ await settle();const error=nodes['stardew-error'];
+ assert.equal(error.hidden,false);assert.match(error.textContent,/may be outdated/);
+ await poll();assert.equal(error.hidden,true);
+ listeners.click({target:{closest:()=>({dataset:{action:'start'}})}});await settle();
+ assert.equal(error.textContent,'Review the changed plan before Start.');
+ await poll();assert.equal(error.hidden,false);assert.equal(error.textContent,'Review the changed plan before Start.');
+});'''
+    result = subprocess.run([node, "-e", harness], input=json.dumps(STARDEW_CONVERSATION_JS),
+                            text=True, capture_output=True, timeout=10)
+    assert result.returncode == 0, result.stdout + result.stderr

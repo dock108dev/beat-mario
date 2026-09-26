@@ -649,7 +649,7 @@ def parse_observer_line(
 
 
 def _bounded_boot_sentinel(sample: LiveSample, epoch: int) -> bool:
-    """The authenticated, still-uninitialized frame zero after B2 transfer."""
+    """The authenticated, still-uninitialized frame zero after conversation control transfer."""
     return (
         sample.frame == 0
         and sample.world == 255
@@ -1272,7 +1272,7 @@ class LiveObservationManager:
             )
 
     def stop(self) -> LiveObservationSnapshot:
-        # A B2 detach must wait for the process to acknowledge neutral input.
+        # A conversation-session detach must wait for the process to acknowledge neutral input.
         # Keep the follower alive while waiting; it is the acknowledgment reader.
         with self._lock:
             controller = self._takeover_controller

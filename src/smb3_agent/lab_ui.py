@@ -143,6 +143,7 @@ from smb3_agent.route_patch import (
     rollback_route_patch,
     validate_route_patch,
 )
+from smb3_agent.failure_diagnostics import log_failure
 from smb3_agent.run_library import LocalRunLibrary, RunLibraryError
 from smb3_agent.takeover import TakeoverError, supported_solutions
 from smb3_agent.scenarios import (
@@ -162,6 +163,7 @@ PUBLIC_ASSET_DIR = repository_path("public/assets")
 ARTIFACT_DIR = Path("artifacts")
 EXPERIMENTAL_SCAFFOLD_ROOT = Path("experimental-adapters")
 MAX_FORM_BYTES = 64 * 1024
+MAX_FORM_FIELDS = 128
 MAX_SERVED_FILE_BYTES = 50 * 1024 * 1024
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 PLAYER_WORKSPACE_JS = r'''(() => {
@@ -636,8 +638,8 @@ class _Handler(BaseHTTPRequestHandler):
             ExperimentalAdapterError,
         ) as exc:
             self._send_request_failure(exc)
-        except Exception:
-            self._send_internal_error()
+        except Exception as exc:
+            self._send_internal_error(exc)
 
     def _handle_get(self) -> None:
         parsed = urlparse(self.path)
@@ -798,6 +800,7 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         try:
             self._validate_host()
+            self._validate_origin()
             self._handle_post()
         except (
             GoalValidationError,
@@ -817,8 +820,8 @@ class _Handler(BaseHTTPRequestHandler):
             subprocess.TimeoutExpired,
         ) as exc:
             self._send_request_failure(exc)
-        except Exception:
-            self._send_internal_error()
+        except Exception as exc:
+            self._send_internal_error(exc)
 
     def _handle_post(self) -> None:
         path = urlparse(self.path).path
@@ -1401,12 +1404,36 @@ class _Handler(BaseHTTPRequestHandler):
         finally:
             action_lock.release()
 
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
+        # BaseHTTPRequestHandler logs the complete request line, including query
+        # secrets. Retain only method, recognized route and response status.
+        LOGGER.info("route_lab_access method=%s route=%s status=%s",
+                    self._safe_method(), self._log_route(), code)
+
     def log_message(self, format: str, *args: object) -> None:
-        LOGGER.info(
-            "route_lab_access client=%s message=%s",
-            self.client_address[0],
-            format % args,
-        )
+        # Protocol-error arguments can contain an attacker-controlled request
+        # line; never interpolate them into the local log.
+        LOGGER.warning("route_lab_protocol_error")
+
+    def _safe_method(self) -> str:
+        method = getattr(self, "command", None)
+        return method if method in {"GET", "POST", "HEAD", "OPTIONS"} else "other"
+
+    def _log_route(self) -> str:
+        try:
+            path = urlparse(getattr(self, "path", "")).path
+        except ValueError:
+            return "invalid"
+        if path in POST_PATHS or path in {
+            "/", "/mario", "/stardew", "/lab", "/onboarding", "/api/delivery",
+            "/api/summary", "/api/player-workspace",
+        }:
+            return path
+        if path.startswith("/artifacts/"):
+            return "/artifacts/*"
+        if path.startswith("/assets/"):
+            return "/assets/*"
+        return "other"
 
     def end_headers(self) -> None:
         self.send_header(
@@ -1426,16 +1453,17 @@ class _Handler(BaseHTTPRequestHandler):
         super().end_headers()
 
     def _read_form(self) -> dict[str, list[str]]:
-        raw_length = self.headers.get("Content-Length", "0")
-        try:
-            length = int(raw_length)
-        except ValueError as exc:
-            raise LabUiError("Invalid Content-Length header") from exc
-        if length < 0:
-            raise LabUiError("Content-Length cannot be negative")
+        lengths = self.headers.get_all("Content-Length", [])
+        if len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdecimal():
+            raise LabUiError("Invalid Content-Length header")
+        if self.headers.get_all("Transfer-Encoding"):
+            raise LabUiError("Transfer-Encoding is not supported")
+        if len(lengths[0]) > 10:
+            raise LabUiError("Invalid Content-Length header")
+        length = int(lengths[0])
         if length > MAX_FORM_BYTES:
             raise LabUiError(f"Form body exceeds the {MAX_FORM_BYTES}-byte limit")
-        if self.headers.get_content_type() != "application/x-www-form-urlencoded":
+        if len(self.headers.get_all("Content-Type", [])) != 1 or self.headers.get_content_type() != "application/x-www-form-urlencoded":
             raise LabUiUnsupportedMediaType(
                 "Game Companion Lab forms require application/x-www-form-urlencoded"
             )
@@ -1444,18 +1472,44 @@ class _Handler(BaseHTTPRequestHandler):
             raise LabUiError("Incomplete form body")
         try:
             body = payload.decode("utf-8", errors="strict")
+            return parse_qs(body, keep_blank_values=True, errors="strict", max_num_fields=MAX_FORM_FIELDS)
         except UnicodeDecodeError as exc:
-            raise LabUiError("Form body must be valid UTF-8") from exc
-        return parse_qs(body, keep_blank_values=True)
+            raise LabUiError("Form body must be valid UTF-8, including percent-encoded values") from exc
+        except ValueError as exc:
+            raise LabUiError("Form has too many fields") from exc
 
     def _validate_host(self) -> None:
-        raw_host = self.headers.get("Host", "")
+        hosts = self.headers.get_all("Host", [])
+        if len(hosts) != 1 or not re.fullmatch(r"(?:localhost|127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", hosts[0], re.IGNORECASE):
+            raise LabUiForbidden("Invalid Game Companion Lab Host header; a loopback authority is required")
+        parsed = urlparse("//" + hosts[0])
         try:
-            hostname = urlparse(f"//{raw_host}").hostname
+            port = parsed.port or 80
         except ValueError as exc:
-            raise LabUiForbidden("Invalid Game Companion Lab Host header") from exc
-        if hostname not in LOOPBACK_HOSTS:
-            raise LabUiForbidden("Game Companion Lab requests require a loopback Host header")
+            raise LabUiForbidden("Invalid Game Companion Lab Host port") from exc
+        if port != self.server.server_port:
+            raise LabUiForbidden("Game Companion Lab Host port does not match this server")
+
+    def _validate_origin(self) -> None:
+        origins = self.headers.get_all("Origin", [])
+        if not origins:
+            # Local CLI/launcher requests have no browser Origin. CSRF remains
+            # mandatory, including for these callers.
+            return
+        if len(origins) != 1:
+            raise LabUiForbidden("Invalid Game Companion Lab Origin header")
+        try:
+            origin = urlparse(origins[0])
+            host = urlparse("//" + self.headers["Host"])
+            valid = (origin.scheme == "http" and origin.hostname == host.hostname
+                     and (origin.port or 80) == self.server.server_port
+                     and origin.username is None and origin.password is None
+                     and not origin.path and not origin.params and not origin.query and not origin.fragment
+                     and origins[0] == "http://" + origin.netloc)
+        except ValueError:
+            valid = False
+        if not valid:
+            raise LabUiForbidden("Game Companion Lab POST requires a same-origin browser request")
 
     def _csrf_token(self) -> str:
         token = getattr(self.server, "csrf_token", None)
@@ -1465,7 +1519,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _validate_csrf(self, data: dict[str, list[str]]) -> None:
         supplied = _single(data, "csrf_token", default="")
-        if not supplied or not secrets.compare_digest(supplied, self._csrf_token()):
+        if not supplied or not supplied.isascii() or not secrets.compare_digest(supplied, self._csrf_token()):
             raise LabUiForbidden("Invalid or missing Game Companion Lab CSRF token")
 
     def _show_manager(self) -> ShowSessionManager:
@@ -1549,21 +1603,18 @@ class _Handler(BaseHTTPRequestHandler):
             else HTTPStatus.BAD_REQUEST
         )
         LOGGER.warning(
-            "route_lab_request_failed method=%s path=%s status=%d error_type=%s detail=%s",
-            self.command,
-            self.path,
+            "route_lab_request_failed method=%s route=%s status=%d error_type=%s",
+            self._safe_method(),
+            self._log_route(),
             status,
             type(exc).__name__,
-            exc,
         )
-        self._send_html(render_error(str(exc)), status=status)
+        detail = "The local operation timed out; inspect its retained diagnostics." if isinstance(exc, subprocess.TimeoutExpired) else str(exc)
+        self._send_html(render_error(detail), status=status)
 
-    def _send_internal_error(self) -> None:
-        LOGGER.exception(
-            "route_lab_request_crashed method=%s path=%s",
-            self.command,
-            self.path,
-        )
+    def _send_internal_error(self, exc: Exception) -> None:
+        LOGGER.error("route_lab_request_crashed method=%s route=%s", self._safe_method(), self._log_route())
+        log_failure(LOGGER, "route_lab_request", exc)
         self._send_html(
             render_error(
                 "Unexpected Game Companion Lab failure. "
@@ -1630,7 +1681,11 @@ class _Handler(BaseHTTPRequestHandler):
         if file_size > MAX_SERVED_FILE_BYTES:
             self.send_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
             return
-        content = full_path.read_bytes()
+        with full_path.open("rb") as stream:
+            content = stream.read(MAX_SERVED_FILE_BYTES + 1)
+        if len(content) > MAX_SERVED_FILE_BYTES:
+            self.send_error(HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+            return
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))
@@ -5449,6 +5504,8 @@ def _single(data: dict[str, list[str]], key: str, *, default: str | None = None)
         if default is not None:
             return default
         raise LabUiError(f"Missing form field: {key}")
+    if len(values) != 1:
+        raise LabUiError(f"Form field must occur exactly once: {key}")
     return values[0]
 
 

@@ -202,3 +202,18 @@ def test_contrasted_corrections_do_not_invert_the_requested_choice(text, choice)
     result = Planner().plan(text, context())
     assert result.kind == "proposal"
     assert result.plan.actions[0].parameters["path_choice"] == choice
+
+
+@pytest.mark.parametrize("wording,path,stop", [
+    ("Default route; stop after the opening", "default", "world_1_1_opening_end"),
+    ("Default route; stop after World 1-1", "default", "world_1_1_exit"),
+    ("Default route", "default", "full_route"),
+    ("Opening hop; stop after the opening", "opening_hop", "world_1_1_opening_end"),
+])
+def test_planner_output_passes_authoritative_runtime_contract(wording, path, stop):
+    from smb3_agent.mario_plan_runtime import runtime_fields
+
+    plan = Planner().plan(wording, context()).plan
+    fields = runtime_fields(plan)
+    assert fields["path_choice"] == path
+    assert fields["stop_point"] == stop

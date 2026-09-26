@@ -1,6 +1,6 @@
 # Unattended Regression Operator Guide
 
-Game Companion V2.13 implements an optional local regression runner for an
+Game Companion provides an optional local regression runner for an
 adapter that explicitly declares unattended support. It is an engineering
 surface, not a player play mode. Implementation is complete and final
 validation is deferred. Deterministic provider, manifest, lifecycle,

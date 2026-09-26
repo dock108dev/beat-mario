@@ -51,12 +51,11 @@ observe
 -> hand back
 ```
 
-See the [V2 roadmap](v2-roadmap.md) for the slice order and acceptance gates.
-The [live-observation contract](live-observation.md) documents V2.4's exact
+The [live-observation contract](live-observation.md) documents the exact
 visible FCEUX connection, direct player-input source, read-only boundary,
 continuity rules, and retained local evidence.
 
-## B2 typed planning and bounded Mario execution
+## Typed planning and bounded Mario execution
 
 `request_planning.py` owns a registry of adapter planners and a serialized typed
 plan contract. `mario_route_plan.py` and `stardew_planning.py` own actions,
@@ -68,13 +67,13 @@ keeps unsupported clauses explicit; there is no external model dependency.
 exact command acknowledgments, variant compatibility and append-only outcomes.
 `mario_plan_runtime.py` independently validates primitives, process and state,
 then delegates a fresh bounded authority to the existing takeover controller.
-B2 execution permission does not change accepted-solution or route records.
-See [B2 interfaces and B3 extension points](b2-conversation-guide.md).
+Conversation execution permission does not change accepted-solution or route records.
+See [Planning interfaces and adapter extension points](b2-conversation-guide.md).
 
 ## Stardew companion adapter
 
-V2.10 adds `stardew_adapter.py` beside, not inside, the Mario implementation.
-V2.11 adds `stardew_companion.py` above that operator. Its adapter-owned
+`stardew_adapter.py` owns Stardew observations and input independently of Mario.
+`stardew_companion.py` coordinates the operator. Its adapter-owned
 pipeline is:
 
 ```text
@@ -117,16 +116,21 @@ Tell's no-input contract, Show's review-only classification, Do's live
 authorization and per-input revalidation, immediate reclaim, verified neutral
 handback, completion evidence hashes, and reset invalidation.
 
-The responsive renderer is a standalone Stardew surface, not a shared game
-catalog. Adapter capability truth lives in `data/stardew/operator.yaml`;
-fixtures, evidence, and owner-pilot contracts remain separate under
-`data/stardew/` and `data/scenarios/`. V2.12 adds cross-game selection without
-changing Stardew's standalone contract. See the [Stardew companion guide](stardew-operator-guide.md).
+The ordinary `/stardew` route uses `conversation_ui.py` and the shared catalog
+shell. `stardew_runtime.py` connects copied-save setup, fresh observation, plan
+review, bounded execution, and handback; `stardew_setup.py` owns prepared-save
+isolation. The CLI also provides inspection. Low-level safety policy lives in
+`data/stardew/operator.yaml`; `stardew_farm_tasks.py` owns selected farm-action
+ledgers. Fixtures and qualification contracts remain separate under
+`data/stardew/` and `data/scenarios/`. See the
+[Stardew companion guide](stardew-operator-guide.md).
 
-The live Stardew domain objects are not yet wired to a public configuration or
-start command. The CLI and `/stardew` route expose inspection and a safe
-unconfigured render only; constructing a copied-save controller, live window
-backend, and ordinary-input driver remains a separate integration slice.
+The [authority map](ssot.md) identifies current domain owners and retained
+compatibility boundaries. Mario planning and runtime validation share
+`mario_route_contract.py` for traversal IDs, allowed stops, and playback speeds.
+The runtime accepts the planner's `mario_traverse` action with its primitive in
+`parameters.primitive_id`; historical flat/action-kind primitive aliases fail
+validation. Accepted route evidence and live authorization remain separate.
 
 ## Combined catalog and switching
 
@@ -154,7 +158,7 @@ ownership, or unretained failure remains active.
 
 ## Unattended regression runner
 
-V2.13 adds `unattended.py` as a separate adapter-neutral engineering runner.
+`unattended.py` is the adapter-neutral engineering regression runner.
 Its provider registry dispatches through explicit contracts instead of
 shared-core game-id branches. The shared runner owns eligibility, immutable
 manifests, source dirty-state identity, safe paths, sanitized environments,
@@ -181,7 +185,7 @@ proof denials are immutable after creation. See the
 
 ## Local learning and candidate review
 
-The V2.6 run library remains the immutable observed-run source. V2.7 wraps each
+The run library is the immutable observed-run source. The learning layer wraps each
 run in an adapter-neutral `AttemptContract` with the additional compatibility
 and evidence-integrity fields needed for honest comparison. The learning core
 owns compatible sets, comparisons, progress anchors, trouble patterns,
@@ -227,7 +231,7 @@ create a session outcome, send input, or construct a completion handoff.
 ## Review-only Show
 
 Show uses an adapter-neutral request, capability, cue, lifecycle, session,
-outcome, and artifact-reference contract. Mario V2.3 supports exactly
+outcome, and artifact-reference contract. Mario supports exactly
 `world_1_1_clear`. Its definition in `data/show/mario.yaml` is cross-validated
 against the selected goal, solved normal-gameplay segment, Tell knowledge, and
 exact observer events.
@@ -470,7 +474,7 @@ the original passive observer remains a separate no-write path.
 
 ## Mario Product Session
 
-`mario_product.py` is the V2.9 adapter-owned presentation and product-session
+`mario_product.py` is the adapter-owned presentation and product-session
 boundary. It reads `data/mario/product.yaml` for supported identity and
 capability contracts, detects the local game file and FCEUX, persists only safe
 local player preferences/history, maps runtime observation and takeover state
@@ -479,7 +483,7 @@ recovery reasons.
 
 The product manager never persists or restores authorization, control epochs,
 process ownership, reclaim state, or write capability. `lab_ui.py` composes this
-with the V2.4–V2.8 observation, objective, Show, takeover, run-library,
+with the observation, objective, Show, takeover, run-library,
 learning, scenario, and metrics views. The main page is player-first; `/lab`
 exposes capability snapshots, first-use state, process/input ownership,
 scenario readiness, missing final evidence, pilot manifest, and recovery state.
@@ -488,7 +492,7 @@ scenario readiness, missing final evidence, pilot manifest, and recovery state.
 contract. It cannot populate feedback or acceptance and cannot upgrade
 technical evidence.
 
-`scenarios.py` also owns the V2.14 readiness model and candidate-manifest
+`scenarios.py` also owns the campaign readiness model and candidate-manifest
 validation. Catalog status and implementation evidence determine implementation
 readiness; exact clean Git identity, authoritative contract hashes,
 deterministic gate records, fixtures/assets, safety requirements, and blank
@@ -497,7 +501,7 @@ pending owner action are completion blockers, not circular entry blockers.
 
 ## Experimental adapter onboarding and discovery
 
-`experimental_adapters.py` owns the V2.14 versioned contract, deterministic
+`experimental_adapters.py` owns the versioned adapter contract, deterministic
 data-only scaffold, conformance report, source inventory, atomic manifest-owned
 installation, integrity status, exact removal, and installed-provider discovery.
 The shared registry receives discovered provider objects beside the explicit
