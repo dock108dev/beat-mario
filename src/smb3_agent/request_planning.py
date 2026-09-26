@@ -178,7 +178,7 @@ def is_advisory(text: str) -> bool:
 def is_negated(text: str, start: int) -> bool:
     """Negation applies within a clause, including 'leave ... alone' exclusions."""
     prefix = text[:start]
-    prefix = re.split(r"[,;]|\b(?:but|then|and)\b", prefix)[-1]
+    prefix = re.split(r"[.!?;,]|\b(?:but|then|and)\b", prefix)[-1]
     return bool(re.search(r"\b(?:not|never|don't|dont|do not|no|without|avoid|skip|instead of|rather than)\b", prefix))
 
 

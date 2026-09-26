@@ -467,7 +467,10 @@ class MarioPlanRuntime:
                 if path_changed or fields["stop_point"] == "world_1_1_opening_end"
                 else "world_1_1_exit"
             )
-            if sample.world != 0 or (
+            # The authenticated paused power-on sample predates game RAM
+            # initialization. Its opening is upcoming, not already missed.
+            fresh_boot = getattr(live, "checkpoint_id", None) == "fresh_power_on"
+            if (sample.world != 0 and not fresh_boot) or (
                 path_changed and sample.object_set == 1 and sample.x > 64
             ):
                 self._state["outcome"] = "boundary_missed"
@@ -525,7 +528,9 @@ class MarioPlanRuntime:
                     return self.snapshot()
                 live = self.live.snapshot()
                 if live.control_owner != "agent":
-                    if action == "stop" and live.session_id:
+                    if live.session_id:
+                        # Opening for plan review pauses native emulation before
+                        # agent ownership. Reclaim must release that pause too.
                         self.live.stop()
                         self._state.update(
                             state="finished", owner="player", outcome="detached"

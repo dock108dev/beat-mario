@@ -12,7 +12,19 @@ from typing import Any
 from uuid import uuid4
 
 from smb3_agent.custom_variants import CustomVariantStore, PlanAttemptHistory
+from smb3_agent.outcome_review import outcome_review
 from smb3_agent.request_planning import ConversationPlan, Planner, is_advisory, normalized_text
+
+
+def _retain_refusal(service: Any, action: str, payload: dict, reason: str, game: str) -> None:
+    service.history.record("refused-" + uuid4().hex, {
+        "game_id": game, "status": "refused", "reason": reason,
+        "request": str(payload.get("text") or action),
+        "reviewed_plan": deepcopy(service._plan),
+        "input_authorized_by_request": False,
+    })
+    if hasattr(service, "_history_summary_cache"):
+        service._history_summary_cache = None
 
 
 class ConversationService:
@@ -191,7 +203,7 @@ class ConversationService:
                 "pending_plan": deepcopy(self._pending), "runtime": runtime,
                 "messages": deepcopy(self._messages[-60:]), "message": self._last_message,
                 "variants": self.variants.list(), "outcome": deepcopy(self._outcome),
-                "history": self.history.list(), "revisions": deepcopy(list(self._revisions.values())),
+                "history": [{**row, "review": outcome_review({"game_id": "mario", **row})} for row in self.history.list()], "revisions": deepcopy(list(self._revisions.values())),
                 "live": {"session_id": live.session_id,
                          "observation_active": live.observation_active,
                          "process_alive": live.process_alive if live.process_alive is not None else bool(live.emulator_pid),
@@ -243,6 +255,8 @@ class ConversationService:
                 self._dispatch(action, payload, request_id)
             except (ValueError, OSError) as exc:
                 self._message("assistant", str(exc), "error")
+                if action in {"message", "apply", "start"}:
+                    _retain_refusal(self, action, payload, str(exc), "mario")
                 raise
             return self.snapshot()
 
@@ -358,6 +372,20 @@ class ConversationService:
         else:
             raise ValueError("Unsupported conversation action")
 
+    def invalidate_for_switch(self) -> bool:
+        """Retain the terminal result before forgetting session-bound proposals."""
+        with self._lock:
+            self._sync()
+            live = self.live_manager.snapshot()
+            if self._active() or live.control_owner != "player" or not live.input_neutralized:
+                return False
+            self._plan = self._current = self._pending = None
+            self._pending_command_id = None
+            self._cancel_requested = False
+            self._revisions = {}
+            self._message("assistant", "Switched games. Earlier conversation and results are reference only. Open a fresh session and review a new plan before Start.", "switched")
+            return True
+
     def close(self) -> None:
         with self._lock:
             if self._active():
@@ -382,6 +410,7 @@ class StardewConversationService:
         self.history = PlanAttemptHistory(self.root / "outcomes")
         self.planner = Planner()
         self.conversation_id = "stardew-conversation-" + uuid4().hex
+        self._history_summary_cache = None
         self._lock = threading.RLock()
         self._plan: dict[str, Any] | None = None
         self._reviewed: dict[str, Any] | None = None
@@ -400,7 +429,7 @@ class StardewConversationService:
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
-            runtime = deepcopy(self.runtime.snapshot())
+            runtime = deepcopy(getattr(self.runtime, "ui_snapshot", self.runtime.snapshot)())
             outcome = runtime.get("outcome")
             if (isinstance(outcome, dict) and outcome.get("attempt_id")
                     and outcome.get("status") not in {None, "active", "running"}
@@ -408,15 +437,23 @@ class StardewConversationService:
                 identity = str(outcome["attempt_id"])
                 if identity not in self._retained:
                     self.history.record(identity, {**outcome, "game_id": "stardew",
+                                                  "task_ledger": runtime.get("ledger"),
+                                                  "reviewed_plan": deepcopy(runtime.get("current_plan") or self._plan),
                                                   "conversation_id": self.conversation_id})
                     self._retained.add(identity)
+                    self._history_summary_cache = None
+            if self._history_summary_cache is None:
+                self._history_summary_cache = [
+                    {key: value for key, value in row.items()
+                     if key not in {"before_observation", "after_observations", "inputs", "evidence_hashes"}}
+                    for row in self.history.list()]
             return {"schema_version": "game-companion-conversation/v1",
                     "game_id": "stardew", "conversation_id": self.conversation_id,
                     "plan": deepcopy(self._plan), "reviewed": self._reviewed == self._plan and self._plan is not None,
                     "current_plan": runtime.get("current_plan"), "pending_plan": None,
                     "messages": deepcopy(self._messages[-60:]), "runtime": runtime,
                     "selected_target_ids": list(self._selected),
-                    "outcome": outcome, "history": self.history.list()}
+                    "outcome": outcome, "history": [{**row, "review": outcome_review(row)} for row in deepcopy(self._history_summary_cache)]}
 
     def _context(self) -> dict[str, Any]:
         context_value = self.runtime.planning_context(conversation_id=self.conversation_id,
@@ -429,6 +466,17 @@ class StardewConversationService:
         return context
 
     def dispatch(self, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            return self._dispatch_request(action, payload)
+        except ValueError as exc:
+            if action in {"message", "apply", "start"}:
+                with self._lock:
+                    self._reviewed = None
+                    _retain_refusal(self, action, payload or {}, str(exc), "stardew")
+                    self._message("assistant", str(exc), "refused")
+            raise
+
+    def _dispatch_request(self, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = payload or {}
         # Runtime neutralization has priority over setup, persistence and planning locks.
         if action in {"pause", "stop", "reclaim", "focus_lost"}:
@@ -449,7 +497,8 @@ class StardewConversationService:
             if action == "launch_engineering":
                 self._plan = self._reviewed = None
                 self._selected = ()
-                self.runtime.setup({"action": "launch_engineering"})
+                self.runtime.setup({"action": "launch_engineering", **(
+                    {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {})})
                 self._message("assistant", "Engineering launch attempted in a fresh isolated folder. Check the setup status; this does not establish a prepared farm or grant gameplay input.", "setup")
             elif action == "verify_engineering_session":
                 self._plan = self._reviewed = None
@@ -471,7 +520,7 @@ class StardewConversationService:
                 self._plan = self._reviewed = None
                 self._selected = ()
                 connector(profile_id)
-                self._message("assistant", "Screen connection checked. Request and review a task before explicitly authorizing watering.", "setup")
+                self._message("assistant", "Screen connection checked. Request and review a task before explicitly authorizing farm work.", "setup")
             elif action == "setup":
                 if (not isinstance(payload.get("source"), str) or not payload["source"].strip()
                         or not isinstance(payload.get("destination"), str) or not payload["destination"].strip()):
@@ -491,7 +540,8 @@ class StardewConversationService:
             elif action == "observe":
                 self.runtime.observe()
                 self._reviewed = None
-                self._message("assistant", "Observation refreshed. Review the current targets and resources.", "observed")
+                reason = self.runtime.snapshot().get("reason") or "Check readiness before reviewing the current targets and resources."
+                self._message("assistant", "Observation checked. " + reason, "observed")
             elif action == "select_targets":
                 ids = payload.get("target_ids", [])
                 if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids):
@@ -527,7 +577,7 @@ class StardewConversationService:
             elif action == "apply":
                 assert self._plan is not None
                 if self._plan["execution_eligibility"] != "requires_runtime_validation":
-                    raise ValueError("This proposal is unavailable for live watering. Resolve the listed prerequisites first.")
+                    raise ValueError("This proposal is unavailable for live execution. Resolve the listed prerequisites first.")
                 self.runtime.review(ConversationPlan.from_dict(self._plan))
                 self._reviewed = deepcopy(self._plan)
                 self._message("assistant", "Scope reviewed. Start is a separate explicit Do authorization for this exact plan and session.", "reviewed")
@@ -536,12 +586,12 @@ class StardewConversationService:
                     raise ValueError("Review this exact scope before Start.")
                 self.runtime.start(ConversationPlan.from_dict(self._plan))
                 self._reviewed = None
-                self._message("assistant", "Started the reviewed watering scope. Chat focus stops ordinary game input.", "started")
+                self._message("assistant", "Started the reviewed farm scope. Chat focus stops ordinary game input.", "started")
             elif action == "resume":
                 raise ValueError("Refresh the observation, review the remaining work, then explicitly Start; saved permission never resumes.")
             elif action == "cancel_pending":
                 self._reviewed = None
-                self._message("assistant", "Review canceled. Completed watering remains in the outcome.", "cancelled")
+                self._message("assistant", "Review canceled. Confirmed actions and uncertain attempts remain in the outcome.", "cancelled")
             else:
                 raise ValueError("Unsupported Stardew conversation action")
             self._requests.add(request_id)
@@ -552,6 +602,11 @@ class StardewConversationService:
         ledger = state.get("ledger")
         if not ledger:
             return "Remaining work is unknown until a fresh complete planted-set observation is available."
+        if ledger.get("contract") == "selected-farm-actions/v2":
+            steps = "; ".join(f"{s['kind']} {s['target_id']}: {s['status']}" for s in ledger["steps"])
+            return (f"{steps}. Last reconciled energy: {ledger['energy_current']}; "
+                    f"seeds consumed: {ledger['seed_consumed']}; water consumed: {ledger['can_water_consumed']}. "
+                    + str(state.get("reason") or ""))
         observation = state.get("observation") or {}
         tool = observation.get("tool") or {}
         return (f"{ledger.get('watered_count', 'Unknown')} watered; {ledger.get('remaining_count', 'unknown')} remaining. "

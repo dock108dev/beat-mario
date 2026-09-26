@@ -139,6 +139,57 @@ class DisposableSessionSetup:
         self.session = SetupSession(save, "engineering_source", evidence)
         return self.session
 
+    def verify_prepared_view(self, launch: EngineeringLaunch, window: WindowObservation,
+                             *, profile, screenshot: Path) -> SetupSession:
+        """Fresh visual verification of an explicitly registered engineering seed.
+
+        This internal entry point accepts no browser facts. Persistence belongs to
+        the immutable prepared seed; current loading is independently re-observed.
+        Neither this check nor the new session nonce grants execution authority.
+        """
+        import json
+        from PIL import Image
+        from smb3_agent.stardew_adapter import _tree_identity
+
+        _verify_engineering_launch_identity(launch, window)
+        record = json.loads((Path(launch.root) / "prepared-source.json").read_text())
+        registered = next((row for row in prepared_engineering_farms()
+                           if row == record), None)
+        if (registered is None or not profile.qualified()
+                or profile.config.get("seed_sha256") != record["tree_sha256"]):
+            raise StardewAdapterError("prepared farm lacks matching qualified visual calibration")
+        source = Path(record["source"])
+        farm = _engineering_farm(launch, source.name)
+        if any(_tree_identity(path)[0] != record["tree_sha256"] for path in (source, farm)):
+            raise StardewAdapterError("prepared seed or fresh working copy changed before verification")
+        image = _engineering_image(launch, screenshot)
+        frame = profile.decode(Image.open(screenshot).convert("RGB"))
+        from smb3_agent.stardew_farm_perception import FarmPixelProfile
+        if isinstance(profile, FarmPixelProfile):
+            profile.verify_initial_view(frame)
+        elif (len(frame["crops"]) != 15 or any(state is not False for state in frame["crops"].values())
+                or frame["energy"] != 270 or frame["water"] != 40
+                or max(map(abs, frame["player"])) + frame["uncertainty"] > 8):
+            raise StardewAdapterError("show the complete dry prepared farm at the farmhouse with full resources")
+        from dataclasses import replace
+        import secrets
+        frozen = Path(launch.root) / "prepared-sources" / secrets.token_hex(12) / farm.name
+        copied = self.manager.create(farm, frozen)
+        save = replace(copied, primary_path=str(frozen), primary_real_path=str(frozen.resolve()),
+                       disposable_path=str(farm), disposable_real_path=str(farm.resolve()))
+        receipt = Path(launch.root) / f"prepared-view-{save.nonce}.json"
+        receipt.write_text(json.dumps({"classification": "actual_live_prepared_reopen",
+            "session_id": save.nonce, "launch_session_id": launch.session_id,
+            "process_id": window.process_id, "process_started_at": window.process_started_at,
+            "window_id": window.window_id, "seed_sha256": record["tree_sha256"],
+            "screenshot": image, "profile_id": profile.profile_id, "execution_authority": False}, indent=2))
+        metadata = _engineering_save_metadata(farm)
+        evidence = LoadingEvidence(save.nonce, window.process_id, window.process_started_at,
+            window.window_id, (str(farm / farm.name),), tuple(item["path"] for item in metadata),
+            (str(receipt), str(screenshot), str(Path(launch.root) / "prepared-source.json")), "actual_live")
+        self.session = SetupSession(save, "engineering_source", evidence)
+        return self.session
+
     def require_verified(self, window: WindowObservation) -> None:
         session = self.session
         evidence = session.loading if session else None
@@ -228,10 +279,39 @@ class EngineeringLaunch:
                  for path in config.glob('*') if path.is_file() and not path.is_symlink()]
         return {**asdict(self), "classification": "fresh_engineering_namespace",
                 "created_config_metadata": files, "input_ready": False,
-                "blocker": "No prepared engineering farm has been persisted and reloaded; game input remains disabled."}
+                "blocker": ("Prepared seed copied; choose Load and verify this fresh session. Game input remains disabled."
+                            if (Path(self.root) / "prepared-source.json").is_file() else
+                            "No prepared engineering farm has been persisted and reloaded; game input remains disabled.")}
 
 
-def launch_fresh_engineering(installation: Path, destination: Path) -> tuple[EngineeringLaunch, object]:
+def prepared_engineering_farms() -> list[dict]:
+    """Read explicit local engineering registrations, never discover owner saves."""
+    import json
+    registry = Path("artifacts/stardew-prepared-farms.json")
+    if not registry.is_file() or registry.is_symlink():
+        return []
+    try:
+        rows = json.loads(registry.read_text())
+    except (OSError, ValueError):
+        return []
+    if not isinstance(rows, list):
+        return []
+    root = Path("artifacts/stardew-engineering").resolve()
+    result = []
+    for row in rows:
+        if not isinstance(row, dict) or any(not isinstance(row.get(key), str) or not row[key]
+                                            for key in ("id", "label", "source", "tree_sha256")):
+            continue
+        if any(item["id"] == row["id"] for item in result):
+            continue
+        source = Path(row["source"])
+        if (root in source.parents and "prepared-sources" in source.parts
+                and source.is_dir() and source == source.resolve()):
+            result.append(dict(row))
+    return result
+
+
+def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_id: str | None = None) -> tuple[EngineeringLaunch, object]:
     """Launch only to title, with verified .NET6 XDG routing and OS primary deny rules.
 
     This does not certify a loaded save or grant input. The executable and bundled
@@ -244,6 +324,14 @@ def launch_fresh_engineering(installation: Path, destination: Path) -> tuple[Eng
     import secrets
     import subprocess
     import time
+    import shutil
+
+    prepared = None
+    if prepared_id is not None:
+        from smb3_agent.stardew_adapter import _tree_identity
+        prepared = next((row for row in prepared_engineering_farms() if row['id'] == prepared_id), None)
+        if prepared is None or _tree_identity(Path(prepared['source']))[0] != prepared['tree_sha256']:
+            raise StardewAdapterError("Registered engineering seed is missing or changed; it was not opened")
 
     installation = installation.expanduser().absolute()
     if installation != installation.resolve(strict=True):
@@ -285,6 +373,13 @@ def launch_fresh_engineering(installation: Path, destination: Path) -> tuple[Eng
     with (target / 'launch.json').open('x') as stream:
         json.dump({**launch.status(), 'environment_overrides': {'XDG_CONFIG_HOME': str(config_root), 'XDG_DATA_HOME': str(data_root)},
                    'home_unchanged': True, 'primary_paths_accessed': False, 'network_denied': True}, stream, indent=2)
+    if prepared is not None:
+        source = Path(prepared['source'])
+        destination_save = config_root / 'StardewValley/Saves' / source.name
+        shutil.copytree(source, destination_save, copy_function=shutil.copy)
+        if _tree_identity(source)[0] != prepared['tree_sha256'] or _tree_identity(destination_save)[0] != prepared['tree_sha256']:
+            raise StardewAdapterError("Engineering seed changed during copying; launch refused")
+        (target / 'prepared-source.json').write_text(json.dumps(prepared, indent=2))
     log = (target / 'game.log').open('xb')
     try:
         process = subprocess.Popen(['/usr/bin/sandbox-exec', '-f', str(profile), str(executable)],

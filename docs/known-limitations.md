@@ -5,11 +5,9 @@ they are not unverified product promises.
 
 ## Bounded planning and unfinished capabilities
 
-The [conversation guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
+The [conversation guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Resumed play permits only the verified opening stop after fresh observation/review/Start; level-exit or full-base traversal requires fresh power-on. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
 
-Native Stardew input delivery and visible farm loading/persistence still need live verification. A successful isolated title-screen launch does not establish those capabilities.
-
-The ordinary Stardew workspace now routes setup, planning, review and controls into its own runtime. Actual game loading/persistence, calibrated complete-farm perception and real watering are unverified; Start remains unavailable without those prerequisites. No qualified live pixel profile ships. Expanded farming and live verification remain incomplete. See [Stardew integration](b3-integration-contract.md).
+Stardew's retained B3 watering and B4 combined-action successes apply only to the prepared configurations in the [Stardew guide](stardew-operator-guide.md). B5's two return attempts stopped, with return unconfirmed. B6 did not rerun Stardew. Neutral handback is distinct from completing the return. B8 must resolve the delivery evidence gap before advertising a complete current-candidate routine.
 
 ## Live validation requires local assets
 
@@ -34,7 +32,7 @@ either emulator.
 
 ## Stardew live-input prerequisites
 
-The browser workspace routes setup, planning and guarded controls into the Stardew runtime. The CLI remains inspection-only. Start requires verified session isolation, a qualified real-game pixel profile, complete fresh observations and reviewed scope. No qualified profile ships with this checkout. Harvesting, planting and debris clearing are not supported live actions. See the [Stardew guide](stardew-operator-guide.md).
+The browser workspace routes setup, planning and guarded controls into the Stardew runtime. The CLI remains inspection-only. Start requires verified session isolation, a qualified real-game pixel profile, complete fresh observations and reviewed scope. No qualified profile ships with this checkout. Day 5 supports only its selected ordinary parsnip, owned seed and small stone; arbitrary farming and automatic refill remain unsupported. See the [Stardew guide](stardew-operator-guide.md).
 
 ## Route Lab is local-only
 

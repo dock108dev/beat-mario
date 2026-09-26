@@ -95,3 +95,21 @@ def test_calibration_retains_source_and_stays_unqualified(tmp_path):
         assert region.recognize(image) == "planted_dry"
     with pytest.raises(StardewAdapterError, match="already exists"):
         retain_region_calibration(root, box=(0, 0, 8, 8), samples=((source, "watered"),))
+
+
+def test_camera_alignment_preserves_adjacent_uncertainty_and_rejects_duplicates():
+    from smb3_agent.stardew_perception import CameraAlignment
+    patch = Image.new('RGB', (9, 9))
+    patch.putdata([(x*17, y*19, (x+y)*11) for y in range(9) for x in range(9)])
+    patch = patch.resize((27, 27), Image.Resampling.NEAREST)
+    alignment = CameraAlignment.calibrate(patch)
+    frame = Image.new('RGB', (100, 100), 'black')
+    frame.paste(patch, (20, 30))
+    offsets = alignment.offsets(frame)
+    assert (20, 30) in offsets
+    assert len(offsets) > 1  # no fabricated single exact-pixel answer
+    frame.paste(patch, (60, 60))
+    with pytest.raises(StardewAdapterError, match='ambiguous'):
+        alignment.offsets(frame)
+    with pytest.raises(StardewAdapterError, match='not recognized'):
+        alignment.offsets(Image.new('RGB', (100, 100), 'black'))

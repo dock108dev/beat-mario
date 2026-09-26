@@ -1,84 +1,45 @@
-# Mario Player Guide
+# Mario player guide
 
-Game Companion is a local Mario companion. The main page is the player product;
-`/lab` is a secondary engineering surface.
+Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
 
-The ordinary workspace now includes [conversation and custom-route controls](b2-conversation-guide.md): review the real base fallback, start a bounded plan, type while it plays, inspect pending/applied revisions and retain named variants.
+Before opening a session, the setup card must recognize a supported local game file and find FCEUX. If needed, select the local game-file path through first-use setup; the saved selection or `SMB3_GAME_FILE` supplies it on later launches. Confirm normal keyboard/controller mapping for player control. A missing file, unsupported identity or unavailable emulator must be resolved in setup; repeated launch does not bypass the check.
 
-The combined Game Companion catalog is at `/`. Select Mario there to enter this
-same workspace at `/mario`. Switching to or from another adapter is explicit
-and is refused until active modes stop, input is neutral, evidence is retained,
-and player handback is confirmed. No Mario observation, authority, route state,
-or evidence classification transfers to another adapter.
+## Review and Start
 
-## First use
+Choose the existing base, **Quickest**, or **100% clear**, or type a request. All initially load the same existing `world_8_finish_game` base. Quickest is an existing-base fallback, not an optimized route; full-completion coverage remains unknown. Review the actual path and stop, not just the requested objective.
 
-Game Companion uses the existing local Mario configuration and verifies a
-supported identity before starting. The player can select a configured local
-path through the first-use screen when needed.
+Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The local bounded English planner needs no model account or credentials.
 
-FCEUX must be available locally. Confirm that its normal keyboard or controller
-mapping is ready, then choose one session:
+## Supported paths, destinations and changes
 
-- **Observe only** — you play; Companion watches and tracks. This launches the
-  structurally read-only observer and has no agent-input path.
-- **Observe with the option to allow Do later** — adds the takeover-capable
-  controller path, but sends no agent input until you explicitly authorize one
-  goal against the current visible process and state.
+| Choice | Supported destination and entry |
+| --- | --- |
+| Default opening / base path | Opening end, World 1-1 exit, or existing base ending from fresh power-on |
+| Opening hop | Opening end only; later traversal is not qualified |
+| Return from player control at the verified World 1-1 opening | A fresh observation, review and Start may authorize only the opening stop (`world_1_1_opening_end`) |
 
-Setup and launch errors stay in the setup card. Retry refuses to duplicate an
-active product session.
+**Longer traversal after taking control requires a fresh session.** A resumed opening-to-level-exit attempt died in B6 and remains a failed attempt. The current guard refuses that request. Close the old game after handback, open Mario afresh, select/reopen the desired plan, review and Start. Arbitrary map, later-level or manually positioned states cannot substitute for a compatible entry.
 
-## Player workspace
+Useful requests include:
 
-The top workspace keeps the current Mario connection, input owner, checkpoint,
-observation freshness, objective, progress, timing, comparison, next action,
-and mode links together. Normal actions update the workspace in place and
-retain scroll, focus while editing, and open technical details.
-Background refresh also preserves keyboard focus on the same uniquely matched
-link, button, or disclosure without activating it. A removed, disabled, or
-ambiguous control does not transfer focus to a different action.
+- “Take the opening hop, then stop after the opening section.”
+- “Use the base path and stop at the end of World 1-1.”
+- “Actually, use the default opening path.”
+- “What if we take the opening hop?” (advice only).
+- “Cancel the pending change.”
 
-- **Observe** — you play; Companion watches and tracks. Stop observation leaves
-  the game running under player control.
-- **Tell** — ask for advice at Minimal, Guided, or Full detail. Facts are labeled
-  as observed, accepted knowledge, reference facts, derived patterns, candidate
-  suggestions, or unknown.
-- **Show** — start a separate visible review-only demonstration. Use **Stop
-  Demonstration** to end it. Your game is unchanged, and Show cannot claim your
-  completion.
-- **Do** — review the exact session/process, goal, accepted executable solution,
-  scope, stop condition, timeout, protected resources, and stop rules. The
-  action **Hand This Goal to Companion** creates fresh same-process authority.
-- **Take Control Now** — while Do is active, this control remains visible. It
-  requests immediate neutral input and verified handback before play resumes.
-- **History** — review sessions, level runs, player/agent/mixed records,
-  comparison compatibility, deaths/recovery, learning, candidates, rejected or
-  rolled-back changes, and evidence status.
+Opening edits must arrive before their supported boundary; destination changes remain inside the original authorized scope. Inspect pending/applied revision acknowledgments. A late or stale edit is refused or stops at a missed boundary; it never rewinds the game. Canceling a pending change affects only unexecuted work. A material scope change requires the displayed Apply decision.
 
-## Advice and learning truth
+## Speed and player control
 
-Quiet never offers unsolicited help. On-request responds only when asked.
-Proactive may offer deduplicated help only from fresh supported state and the
-selected profile. Ignoring advice is not treated as helpfulness or rejection;
-only an explicit response changes a learned preference.
+Playback offers **1× normal** and **Faster, uncapped**. “Use normal speed” and “Use turbo speed” are supported; fixed 2×/4× rates are not. Inspect requested versus acknowledged speed. Measured frame/wall intervals are approximate, include pauses, and depend on the machine; uncapped speed is not route optimization.
 
-“Fastest locally observed” is not a world record. A candidate is not
-executable. Approval means approved for later validation. Only a separately
-promoted, replay-safe accepted solution can drive Do. The cumulative V2.5–V2.14
-release-candidate validation remains deferred to the consolidated campaign.
+Mario can keep playing its approved plan while you type in Companion: chat keystrokes are isolated from game input. **Pause** holds the current session; **Resume** is usable only while that paused authority remains valid. **Stop** or **Take control** releases input and revokes pending commands. Reclaim while paused also invalidates Resume. Starting again requires fresh compatible observation and review, with the opening-only resumption limit above.
 
-## Failure and recovery
+## Saved variants, results and recovery
 
-Every product recovery card states what happened, whether the game may still
-be running, who owns input, whether agent input stopped, the safe next action,
-whether evidence was retained, and whether retry creates a fresh attempt.
-Unknown ownership, stale observation, unsupported checkpoints, expired
-authorization, protected-resource conflicts, process loss, neutralization or
-handback failure, incompatible references, corrupt local indexes, and evidence
-mismatch fail closed.
+Expand **Save or reopen a route** to save a named variant or Reopen it. A variant stores its base/version, actions and stop; it stores no gameplay permission. Reopen proposes a plan, then checks integrity, compatibility and fresh state. Review and explicitly Start. A saved variant is not automatically accepted, fastest or reliable.
 
-The product persists only appropriate local selections, player preferences,
-and history. It never restores expired authorization, an active control epoch,
-stale process ownership, reclaim state, or a prior write-capable path without
-fresh process verification.
+A completed opening stop means that bounded stop completed; it does not mean the full base or a 100% objective completed. Death, lost process, reclaim and missed boundaries remain distinct partial/stopped results. After process loss, open a fresh session; old edits and Start identities cannot be reused, and no native handback receipt can be supplied by the dead process. See [shared history and recovery](../README.md#history-recovery-and-safe-shutdown).
+
+The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits. Technical evidence: [B6 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b6-engineering-handoff.md). B6 is complete; owner acceptance and delivery remain separate.

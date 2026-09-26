@@ -111,9 +111,9 @@ class StardewCatalogProvider:
             adapter_id=STARDEW_ADAPTER_ID,
             game_id=STARDEW_GAME_ID,
             display_name="Stardew Valley",
-            description="Screen-only companion for one bounded crop-watering task on a verified disposable save copy.",
+            description="Screen-only companion: B3 Day 2 watering or B4 Day 5 selected harvest, plant, water and small-stone clearing on separate disposable copies.",
             adapter_version=STARDEW_COMPANION_VERSION,
-            implementation_status="V2.11 implementation complete; final validation deferred",
+            implementation_status="B3 and B4 technically qualified on their retained bounded configurations; owner acceptance remains open",
             availability=availability,
             availability_reason=reason,
             setup_state=setup,
@@ -254,11 +254,12 @@ def convert_stardew_observation(
     input_owner: InputOwner,
     expected_window: WindowObservation | None = None,
     ledger: WateringLedger | None = None,
+    allow_player_occlusion: bool = False,
 ) -> CompanionObservationEnvelope:
     """Convert screen-only Stardew state without adding Stardew fields to Mario records."""
     stale: list[str] = []
     try:
-        screen.validate(save.disposable_tree_sha256)
+        screen.validate(save.disposable_tree_sha256, allow_player_occlusion=allow_player_occlusion)
     except StardewAdapterError as exc:
         stale.append(str(exc))
     if not save.valid:
@@ -275,14 +276,17 @@ def convert_stardew_observation(
         observed_at = None
         stale.append("invalid_observation_time")
 
-    crop_confidence = min((crop.confidence for crop in screen.crops), default=1.0)
+    crop_confidence = min((crop.confidence for crop in screen.crops if not (allow_player_occlusion and crop.occluded)), default=1.0)
     confidence = min(crop_confidence, screen.position.confidence)
     if screen.energy is None or not screen.tool.exact:
         confidence = 0.0
     planted = tuple(crop for crop in screen.crops if crop.planted)
-    if ledger is not None:
+    from smb3_agent.stardew_farm_tasks import FarmLedger
+    if ledger is not None and not isinstance(ledger, FarmLedger):
         current_ids = {crop.crop_id for crop in planted}
         watered_ids = {crop.crop_id for crop in planted if crop.watered}
+        if allow_player_occlusion:
+            watered_ids |= {crop.crop_id for crop in planted if crop.occluded} & ledger.confirmed_watered_ids
         if current_ids != set(ledger.initial_crop_ids):
             stale.append(FailureCode.ACCOUNTING_MISMATCH.value)
         if not ledger.confirmed_watered_ids.issubset(watered_ids):
@@ -402,6 +406,7 @@ class StardewCompanionProvider:
         input_owner: InputOwner,
         expected_window: WindowObservation | None = None,
         ledger: WateringLedger | None = None,
+        allow_player_occlusion: bool = False,
     ) -> CompanionObservationEnvelope:
         return convert_stardew_observation(
             screen,
@@ -409,6 +414,7 @@ class StardewCompanionProvider:
             input_owner=input_owner,
             expected_window=expected_window,
             ledger=ledger,
+            allow_player_occlusion=allow_player_occlusion,
         )
 
     def mode_capabilities(
@@ -571,13 +577,16 @@ class StardewCompanionController:
     def save(self) -> SaveIdentity:
         return self.operator.save
 
-    def observe(self, screen: ScreenObservation) -> CompanionObservationEnvelope:
+    def observe(self, screen: ScreenObservation, *, allow_player_occlusion: bool = False) -> CompanionObservationEnvelope:
+        if allow_player_occlusion and self.authorization is None:
+            raise StardewCompanionError("partial observations cannot establish execution authority")
         envelope = self.provider.observe(
             screen,
             self.save,
             input_owner=self.operator.owner,
             expected_window=self.operator.window,
             ledger=self.operator.ledger,
+            allow_player_occlusion=allow_player_occlusion,
         )
         if envelope.trusted:
             if self.operator.window is None:
@@ -723,12 +732,23 @@ class StardewCompanionController:
         authorization: StardewAuthorization | None = None
         input_sent = False
         input_recorded = False
+        emission_count = getattr(driver, "gameplay_emission_count", 0)
         try:
-            authorization = self._require_authorization(current, command.kind, driver)
-            refusal = self.provider.safety.first_refusal(command, current)
+            authorization = self._require_authorization(current, command.kind, driver, allow_player_occlusion=True)
+            from smb3_agent.stardew_farm_tasks import FarmLedger
+            farm_task = isinstance(self.operator.ledger, FarmLedger)
+            if farm_task:
+                self.operator.ledger.validate_command(command, current)
+            refusal = None if farm_task else self.provider.safety.first_refusal(command, current)
             if refusal:
                 raise StardewCompanionError(refusal)
-            self.operator.send_input(command, current, driver)
+            if command.purpose == "water_crop" and command.reviewed_crop_id is not None:
+                target = next((crop for crop in current.crops if crop.crop_id == command.reviewed_crop_id), None)
+                if target is None or target.occluded or target.watered or target.confidence != 1:
+                    raise StardewCompanionError("watering requires the reviewed target to be visibly dry")
+            if command.reviewed_crop_id is None and command.purpose != "navigate" and any(c.occluded for c in current.crops):
+                raise StardewCompanionError("partial observations require an exact visible reviewed target")
+            self.operator.send_input(command, current, driver, allow_player_occlusion=True)
             input_sent = True
             driver.neutralize()
             self.operator.input_neutralized = True
@@ -751,14 +771,39 @@ class StardewCompanionController:
                 input_owner=InputOwner.AGENT,
                 expected_window=current.window,
                 ledger=self.operator.ledger,
+                allow_player_occlusion=True,
             )
             if not envelope.trusted:
                 raise StardewCompanionError(envelope.stale_reasons[0])
+            # Historical confirmations remain historical when hidden. They are
+            # not fresh wet-state observations and cannot confirm a new action.
+            if farm_task:
+                self.operator.ledger.verify_postcondition(command, current, after)
+                if command.purpose == "navigate":
+                    self._verify_postcondition(command, current, after)
+                self.operator.record_post_input(after)
+                attempt.input_neutralized = True
+                return after
+            known = self.operator.ledger.confirmed_watered_ids
+            for crop in after.crops:
+                if not crop.occluded and (command.reviewed_crop_id is not None or command.purpose != "water_crop") and crop.crop_id != command.reviewed_crop_id and crop.watered != (crop.crop_id in known):
+                    if command.purpose == "water_crop" and crop.watered:
+                        # Preserve an independently visible partial result while
+                        # still failing the intended action. This validates the
+                        # actual changed crop/resources; it never credits a click.
+                        from dataclasses import replace
+                        self._verify_postcondition(replace(command, reviewed_crop_id=crop.crop_id), current, after)
+                        self.operator.record_post_input(after, allow_player_occlusion=True)
+                    raise StardewCompanionError("an unrelated visible crop changed")
             self._verify_postcondition(command, current, after)
-            self.operator.record_post_input(after)
+            self.operator.record_post_input(after, allow_player_occlusion=True)
             attempt.input_neutralized = True
             return after
         except Exception as exc:
+            # A focus/session check may fail after key/button-down. Preserve that
+            # attempted action as unverified even when driver.send raises; never
+            # present the old resource ledger as proof that nothing happened.
+            input_sent = input_sent or getattr(driver, "gameplay_emission_count", 0) > emission_count
             if input_sent and not input_recorded:
                 attempt.inputs.append(ActorInputRecord(
                     actor="agent",
@@ -936,6 +981,7 @@ class StardewCompanionController:
         current: ScreenObservation,
         input_kind: InputKind,
         driver: OrdinaryInputDriver,
+        *, allow_player_occlusion: bool = False,
     ) -> StardewAuthorization:
         authorization = self.authorization
         if authorization is None or self.operator.epoch is None:
@@ -959,7 +1005,7 @@ class StardewCompanionController:
             or self.operator.observation.observation_id != current.observation_id
         ):
             raise StardewCompanionError("authorization no longer matches the live observation")
-        current.validate(self.save.disposable_tree_sha256)
+        current.validate(self.save.disposable_tree_sha256, allow_player_occlusion=allow_player_occlusion)
         return authorization
 
     @staticmethod
@@ -970,6 +1016,12 @@ class StardewCompanionController:
     ) -> None:
         before_watered = {crop.crop_id for crop in before.crops if crop.planted and crop.watered}
         after_watered = {crop.crop_id for crop in after.crops if crop.planted and crop.watered}
+        hidden = {crop.crop_id for crop in (*before.crops, *after.crops) if crop.occluded}
+        if command.purpose == "water_crop" and command.reviewed_crop_id in hidden:
+            raise StardewCompanionError("watering result is obscured; target remains unconfirmed")
+        # Compare current evidence only where both frames expose the target.
+        before_watered -= hidden
+        after_watered -= hidden
         crop_state_unchanged = before_watered == after_watered
         resources_unchanged = (
             after.tool.tool_uses == before.tool.tool_uses
@@ -1011,8 +1063,21 @@ class StardewCompanionController:
             crop_state_unchanged and resources_unchanged
         ):
             raise StardewCompanionError("navigation or neutralization changed task resources")
-        if command.purpose == "navigate" and after.position == before.position:
+        if command.purpose == "navigate" and after.position == before.position and before.position.world_pixel_x is None:
             raise StardewCompanionError("navigation postcondition is not visibly confirmed")
+        if command.purpose == "navigate" and before.position.world_pixel_x is not None:
+            p, q = before.position, after.position
+            if any(v is None for v in (q.world_pixel_x, q.world_pixel_y, p.world_pixel_y, p.pixel_uncertainty, q.pixel_uncertainty)):
+                raise StardewCompanionError("sub-tile movement observation became unknown")
+            dx, dy = q.world_pixel_x-p.world_pixel_x, q.world_pixel_y-p.world_pixel_y
+            direction = {'d': (1,0), 'a': (-1,0), 's': (0,1), 'w': (0,-1)}.get(command.control)
+            uncertainty = p.pixel_uncertainty+q.pixel_uncertainty
+            if direction is None:
+                raise StardewCompanionError("unqualified navigation key mapping")
+            along = dx*direction[0]+dy*direction[1]
+            across = abs(dx*direction[1]-dy*direction[0])
+            if along < -uncertainty or along > 48 or across > uncertainty+2:
+                raise StardewCompanionError("movement stalled, collided or deviated from the reviewed corridor")
 
     @staticmethod
     def _same_task_state(before: ScreenObservation, after: ScreenObservation) -> bool:
@@ -1024,6 +1089,7 @@ class StardewCompanionController:
             and before.energy_maximum == after.energy_maximum
             and before.tool == after.tool
             and before.position == after.position
+            and before.farm == after.farm
         )
 
     def _fail(
@@ -1079,8 +1145,17 @@ def _hash_required_evidence(root: Path, required: tuple[str, ...]) -> dict[str, 
     return hashes
 
 
-def attempt_payload(attempt: StardewModeAttempt) -> dict[str, object]:
+def attempt_payload(attempt: StardewModeAttempt, *, compact: bool = False) -> dict[str, object]:
     """Serializable evidence payload; Show classifications remain explicit."""
+    if compact:
+        return {"attempt_id": attempt.attempt_id, "mode": attempt.mode.value,
+                "status": attempt.status.value, "stop_reason": attempt.stop_reason,
+                "first_unmet_requirement": attempt.first_unmet_requirement,
+                "input_neutralized": attempt.input_neutralized,
+                "player_ownership_restored": attempt.player_ownership_restored,
+                "review_only": attempt.review_only, "owner_acceptance": attempt.owner_acceptance,
+                "input_count": len(attempt.inputs), "observation_count": len(attempt.after_observations),
+                "evidence_detail": "Full observations and inputs are retained in the attempt evidence files."}
     payload = asdict(attempt)
     payload["mode"] = attempt.mode.value
     payload["status"] = attempt.status.value

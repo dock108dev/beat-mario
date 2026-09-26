@@ -266,3 +266,17 @@ def test_setup_checklist_and_profiles_are_readonly_server_state():
     assert 'id="stardew-connect" type="submit" disabled' in rendered
     assert "run.qualified_profiles || []" in STARDEW_CONVERSATION_JS
     assert "run.setup_steps || []" in STARDEW_CONVERSATION_JS
+
+
+def test_status_poll_caches_history_summaries_preserving_full_evidence(tmp_path, monkeypatch):
+    import json
+    service = StardewConversationService(runtime=FakeStardewRuntime(), artifacts_root=tmp_path)
+    evidence = {'status': 'reclaimed', 'inputs': [{'actual': 'retained'}],
+                'after_observations': [{'crop': 'visible'}]}
+    path = service.history.record('retained-proof', evidence)
+    state = service.snapshot()
+    assert 'inputs' not in state['history'][0]
+    assert state['history'][0]['evidence_path'] == str(path)
+    assert json.loads(path.read_text())['inputs'] == evidence['inputs']
+    monkeypatch.setattr(service.history, 'list', lambda: (_ for _ in ()).throw(AssertionError('history reread during poll')))
+    assert service.snapshot()['history'] == state['history']

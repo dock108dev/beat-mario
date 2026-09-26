@@ -361,3 +361,234 @@ def test_engineering_verify_requires_own_running_launch():
     runtime.status = "running"
     with pytest.raises(StardewAdapterError, match="neutral handback"):
         runtime.verify_engineering_session()
+
+
+def test_subtile_navigation_keeps_waypoint_until_observed_arrival(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    screen = replace(state[0], crops=(replace(state[0].crops[0], tile_x=3),),
+        position=PositionObservation('Farm', 0, 0, False, 1, 0, 0, 1, 100, 100))
+    nav = WateringNavigator({(0,0),(1,0),(2,0)}, {}, (0,0), energy_cost_upper_bound=2)
+    first, _ = nav.next_command(screen, {'crop'})
+    assert first.control == 'd' and nav._waypoint == (1,0)
+    partial = replace(screen, position=replace(screen.position, world_pixel_x=20))
+    second, _ = nav.next_command(partial, {'crop'})
+    assert second.control == 'd' and nav._waypoint == (1,0)
+    arrived = replace(screen, position=replace(screen.position, tile_x=1, world_pixel_x=48))
+    nav.next_command(arrived, {'crop'})
+    assert nav._waypoint == (2,0)
+    for _ in range(7):
+        nav.next_command(arrived, {'crop'})
+    with pytest.raises(StardewAdapterError, match='converge'):
+        nav.next_command(arrived, {'crop'})
+
+
+def test_unreachable_initial_crop_refuses_start_without_authority(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    state[0] = replace(state[0], crops=(replace(state[0].crops[0], tile_x=3),))
+    runtime.observe()
+    plan = replace(plan, observation_id=runtime.screen.observation_id)
+    runtime.review(plan)
+    with pytest.raises(StardewAdapterError, match='no reachable qualified watering position'):
+        runtime.start(plan, background=False)
+    assert runtime.controller.authorization is None
+    assert not commands
+
+
+def test_prepared_main_patch_requires_an_additional_qualified_vantage(tmp_path):
+    # Geometry calibrated from the retained farm: crop (0,4) has three crop
+    # neighbours and a rock at (0,5). Fixture regression, not live qualification.
+    runtime, _, state, _ = configured(tmp_path)
+    crops = tuple(replace(state[0].crops[0], crop_id=f'{x},{y}', tile_x=x, tile_y=y)
+                  for x in (-1, 0, 1) for y in (3, 4))
+    screen = replace(state[0], crops=crops)
+    corridor = {(x, y) for x in range(-3, 4) for y in range(7)} - {(0,5)}
+    nav = WateringNavigator(corridor, {}, (0,0))
+    with pytest.raises(StardewAdapterError, match='crop 0,4 has no reachable'):
+        nav.validate_scope(screen)
+
+
+def test_hidden_confirmed_crop_is_history_not_a_new_watering_result(tmp_path):
+    from smb3_agent.stardew_adapter import InputCommand
+    runtime, _, state, commands = configured(tmp_path)
+    initial = replace(state[0], position=PositionObservation('Farm',0,0,True,1,0,0,2,100,100),
+        crops=(replace(state[0].crops[0], watered=True), replace(state[0].crops[0], crop_id='second',tile_x=2)))
+    controller=runtime.controller
+    controller.authorize_do(initial,owner_confirmation=True,input_driver=InputKind.KEYBOARD,
+        expires_at=(datetime.now(timezone.utc)+timedelta(minutes=1)).isoformat())
+    hidden=replace(initial,observation_id='hidden',position=replace(initial.position,tile_x=1,world_pixel_x=48,at_farmhouse_entrance=False),
+        crops=(replace(initial.crops[0],occluded=True,watered=False,confidence=0),initial.crops[1]),
+        unknown_regions=('player-occluded:crop',))
+    controller.perform_input(InputCommand(InputKind.KEYBOARD,'d','press',80,purpose='navigate'),initial,runtime.driver,lambda:hidden)
+    assert controller.operator.ledger.confirmed_watered_ids == {'crop'}
+    with pytest.raises(StardewAdapterError):
+        hidden.validate(controller.save.disposable_tree_sha256)
+    hidden.validate(controller.save.disposable_tree_sha256,allow_player_occlusion=True)
+    controller.authorization=replace(controller.authorization,input_driver=InputKind.MOUSE)
+    after=replace(hidden,observation_id='watered',energy=18,tool=replace(hidden.tool,watering_can_units=4,tool_uses=1),
+        crops=(hidden.crops[0],replace(hidden.crops[1],watered=True)))
+    controller.perform_input(InputCommand(InputKind.MOUSE,'left_button','click',80,target=(15,5),purpose='water_crop',reviewed_crop_id='second'),
+        hidden,runtime.driver,lambda:after)
+    assert controller.operator.ledger.confirmed_watered_ids == {'crop','second'}
+    assert controller.operator.ledger.can_water_consumed == 1
+    assert controller.operator.ledger.energy_spent == 2
+    # Complete cannot turn historical confirmations into a fully visible final frame.
+    result=controller.complete(after,runtime.driver,evidence_root=tmp_path,required_evidence=())
+    assert result.status.value == 'failed'
+
+
+def test_missing_crop_outside_avatar_cannot_be_relabelled_temporary(tmp_path):
+    runtime,_,state,_=configured(tmp_path)
+    bad=replace(state[0],position=PositionObservation('Farm',0,0,True,1,0,0,2,100,100),
+        crops=(replace(state[0].crops[0],occluded=True,confidence=0),),unknown_regions=('player-occluded:crop',))
+    with pytest.raises(StardewAdapterError,match='not bounded player occlusion'):
+        bad.validate(runtime.controller.save.disposable_tree_sha256,allow_player_occlusion=True)
+
+
+def test_wrong_target_stops_but_preserves_exact_visible_partial_accounting(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    initial = state[0]
+    state[0] = replace(initial, crops=initial.crops+(replace(initial.crops[0],crop_id='other',tile_x=-1),))
+    runtime.observe()
+    plan=replace(plan,observation_id=runtime.screen.observation_id,
+                 actions=(replace(plan.actions[0],target_ids=('crop','other')),))
+    runtime.navigator=WateringNavigator({(0,0)},{(1,0):(15,5),(-1,0):(25,5)},(0,0),energy_cost_upper_bound=2)
+    runtime.review(plan)
+    def wrong(command):
+        before=state[0]
+        state[0]=replace(before,crops=(before.crops[0],replace(before.crops[1],watered=True)),energy=18,
+                         tool=replace(before.tool,watering_can_units=4,tool_uses=1))
+    runtime.driver=OrdinaryInputDriver(keyboard=wrong,mouse=wrong,neutralizer=lambda:None)
+    runtime.start(plan,background=False)
+    runtime.tick()
+    result=runtime.snapshot()
+    assert result['status']=='stopped' and 'unrelated visible crop' in result['reason']
+    assert result['ledger']['confirmed_watered_ids']==['other']
+    assert result['ledger']['remaining_count']==1
+    assert result['ledger']['energy_spent']==2 and result['ledger']['can_water_consumed']==1
+    assert result['handback_confirmed']
+
+
+def test_failure_after_emission_retains_unverified_action_and_neutral_handback(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    def interrupted(command):
+        runtime.driver.gameplay_emission_count += 1
+        commands.append(command)
+        raise StardewAdapterError('focus changed after button-down')
+    runtime.driver = OrdinaryInputDriver(keyboard=interrupted, mouse=interrupted,
+                                        neutralizer=lambda: None)
+    runtime.driver.gameplay_emission_count = 0
+    runtime.start(plan, background=False)
+    runtime.tick()
+    result = runtime.snapshot()
+    assert result['status'] == 'stopped' and result['handback_confirmed']
+    assert len(result['outcome']['inputs']) == 1
+    assert result['outcome']['inputs'][0]['after_observation_id'] == 'missing_or_unverified'
+    assert result['ledger']['watered_count'] == 0
+    assert 'focus changed after button-down' in result['reason']
+
+
+def test_fresh_reconciled_navigation_frame_is_consumed_once(tmp_path):
+    from smb3_agent.stardew_adapter import InputCommand
+    runtime, plan, state, commands = configured(tmp_path)
+    state[0] = replace(state[0], position=replace(state[0].position,
+        world_pixel_x=0, world_pixel_y=0, pixel_uncertainty=2, camera_origin_x=0, camera_origin_y=0))
+    runtime.observe()
+    plan = replace(plan, observation_id=runtime.screen.observation_id)
+    runtime.review(plan)
+    runtime.start(plan, background=False)
+    runtime.navigator = SimpleNamespace(poses={'home': (0, 0)}, energy_cost_upper_bound=2,
+        next_command=lambda screen, remaining: (InputCommand(InputKind.KEYBOARD, 'd', 'press', 15, purpose='navigate'), None))
+    original = runtime.observer
+    calls = []
+    def observe():
+        result = original()
+        calls.append(result)
+        return result
+    runtime.observer = observe
+    runtime.tick()
+    assert len(calls) == 2
+    previous = calls[-1]
+    runtime.tick()
+    assert len(calls) == 3
+    assert runtime.controller.active_attempt.inputs[-1].before_observation_id == previous.observation_id
+    runtime.control('pause')
+    assert runtime._pending_navigation_observation is None
+
+
+def test_old_navigation_frame_requires_new_observation(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    runtime.start(plan, background=False)
+    old = replace(runtime.screen, observed_at=(datetime.now(timezone.utc)-timedelta(seconds=3)).isoformat())
+    runtime.screen = runtime._pending_navigation_observation = old
+    runtime.tick()
+    assert len(commands) == 1
+    assert runtime.controller.active_attempt.inputs[-1].before_observation_id != old.observation_id
+    runtime.tick()
+    assert runtime.status == 'completed'
+
+
+def test_final_independent_frame_has_new_evidence_identity(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    original = runtime.observer
+    def observe():
+        frame = original()
+        return replace(frame, crops=tuple(replace(c, evidence_reference=f'frame-{frame.observation_id}.png') for c in frame.crops))
+    runtime.observer = observe
+    runtime.start(plan, background=False)
+    runtime.tick()
+    runtime.tick()
+    assert runtime.status == 'completed'
+    final = runtime.controller.active_attempt.after_observations[-1]
+    assert final.observation_id == runtime.screen.observation_id
+    assert runtime.controller.operator.ledger.final_position == final.position
+    assert runtime.controller.authorization is None
+    assert runtime.snapshot()['handback_confirmed']
+
+
+@pytest.mark.parametrize('action,status', [('pause','paused'), ('take_control','stopped')])
+def test_canceled_pulse_cannot_overwrite_requested_handback(tmp_path, action, status):
+    runtime, plan, state, commands = configured(tmp_path)
+    def canceled(command):
+        runtime.control(action)
+        raise StardewAdapterError('Input canceled while aiming')
+    runtime.driver = OrdinaryInputDriver(keyboard=canceled, mouse=canceled, neutralizer=lambda:None)
+    runtime.start(plan, background=False)
+    runtime.tick()
+    assert runtime.status == status
+    assert 'input_rejected' not in runtime.reason
+    assert runtime.controller.authorization is None
+    assert runtime.snapshot()['handback_confirmed']
+    assert not runtime.controller.active_attempt.inputs
+
+
+def test_new_start_uses_visible_post_interruption_baseline_without_recredit(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    def released_water(command):
+        commands.append(command)
+        runtime.driver.gameplay_emission_count += 1
+        before = state[0]
+        state[0] = replace(before, crops=(replace(before.crops[0], watered=True),), energy=18,
+                           tool=replace(before.tool, watering_can_units=4, tool_uses=1))
+        runtime.control('pause')
+        raise StardewAdapterError('canceled before post-observation')
+    runtime.driver = OrdinaryInputDriver(keyboard=released_water, mouse=released_water, neutralizer=lambda:None)
+    runtime.driver.gameplay_emission_count = 0
+    runtime.start(plan, background=False)
+    runtime.tick()
+    previous = runtime.controller.active_attempt
+    assert previous.inputs[-1].after_observation_id == 'missing_or_unverified'
+    assert runtime.snapshot()['ledger']['watered_count'] == 0
+    runtime.observe()
+    plan = replace(plan, observation_id=runtime.screen.observation_id, plan_id='fresh-plan')
+    runtime.review(plan)
+    runtime.start(plan, background=False)
+    runtime.tick()
+    result = runtime.snapshot()
+    assert result['status'] == 'completed'
+    assert len(commands) == 1  # Already visibly wet: never water it again.
+    assert result['ledger']['watered_count'] == 1
+    assert result['ledger']['energy_start'] == 18 and result['ledger']['energy_spent'] == 0
+    assert result['ledger']['can_water_consumed'] == 0
+    assert previous.inputs[-1].after_observation_id == 'missing_or_unverified'
+    assert previous.status.value == 'stopped'
+    assert list((tmp_path/'attempt').glob('*reauthorization-baseline*'))

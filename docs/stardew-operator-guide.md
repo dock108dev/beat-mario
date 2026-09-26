@@ -1,180 +1,45 @@
-# Stardew Companion Guide
+# Stardew companion guide
 
-## Setup and live-input prerequisites
+Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. These seeds, profile registrations and retained calibration files already exist on this Mac; they are ignored local assets, not bundled by cloning the source or running the launcher. B8 must account for them in the delivery.
 
-The `/stardew` workspace provides disposable setup, conversation, reviewed scope, explicit Start, observation refresh and pause/reclaim controls. It uses Stardew-owned session/runtime authority. Unconfigured setup and unqualified perception keep live input disabled.
+## Choose the matching farm and profile
 
-Use an explicitly selected disposable farm. The isolated-game launcher redirects configuration and data into a fresh namespace, preserves HOME, and applies OS restrictions against primary-save paths and network access. It accepts only inspected game and runtime hashes. Installation or copying alone does not verify that the game loads and persists within that namespace.
+| Configuration | Prepared source | Matching profile | Qualified work |
+| --- | --- | --- | --- |
+| Pilot / B3Test Farm · Day 2 | `pilot-day2`; 15 dry starter crops | `pilot-day2-75pct-v1` | Water all 15 initially planted crops, reconcile resources, return to farmhouse entrance |
+| Pilot / B4Test Farm · Day 5 | `b4-day5-v1`; two mature parsnips and 13 owned seeds | `b4-day5-screen-v13` | Selected ordinary parsnip harvest, plant owned parsnip seed, water the new crop, clear the selected small stone, reviewed farmhouse return |
 
-On Apple Silicon, an Intel game/runtime may require [Rosetta](https://support.apple.com/en-us/102527). Session verification still requires same-session process/window loading and persistence evidence; the UI cannot bypass it with a manual verified flag.
+Day 2 seed hash: `1a71568b81ebb901c5fc289d4c2bfb0972db8c05325463a7487dad549eae3128`. Day 5 seed hash: `5bddd72e537c6888e3623c5cb66c819bf1add0b28bc75f179fb6b97f25e35eaa`. The local registry is `artifacts/stardew-prepared-farms.json`; profile pointers are `artifacts/stardew-qualified-profile.json` and `artifacts/stardew-qualified-farm-profiles.json`. They reference retained calibration, loading and persistence evidence. Missing or mismatched files block setup; selecting another profile is not a workaround.
 
-The ordinary workspace now offers **Check isolated farm session** and a selection
-of server-registered screen profiles. Verification requires retained real loading
-and persistence proof. Profile connection is limited to the current verified farm
-and retained calibration evidence; missing evidence leaves the selection empty.
-These actions never grant gameplay authority. Review and Start remain separate.
+Both require the qualified display: **Windowed Borderless, 3024×1964 display, 1512×949 capture at (0,33), 75% zoom, 100% UI, locked toolbar, tool-hit location marker, default WASD controls and daylight**. Other lighting, farms, layouts and display settings are unsupported. The local inspected Stardew executable/runtime (bundled .NET 6.0.32) must match the launch guard. On Apple Silicon its Intel runtime may need locally installed Rosetta. Screen capture and ordinary input require the relevant macOS permissions for the launching process.
 
-Automatic recognition is implemented as strict pixel matching for a bounded fixed
-viewport. **No qualified real-game pixel profile ships with this candidate.** A
-profile must identify every tile in the complete planted area, player and farmhouse
-return tile, equipped can and exact resources, with retained calibration/coverage
-evidence. Unknown pixels, scrolling, scale changes, occlusion or unobservable exact
-resource counts stop recognition. Synthetic profiles and manual annotations remain
-development evidence. Refilling is not live-qualified.
+## First use
 
-The unchanged watering contract is:
+1. Close the previous isolated Stardew game after stopping input. Choose the exact prepared farm, then **Open fresh copy of prepared farm**. The launcher creates a new isolated working copy; it preserves the frozen seed, uses a separate configuration/data namespace and denies primary-save access. Never point it at a personal save for this workflow.
+2. In the game, choose **Load**, load the named farm, exit the farmhouse to the porch and select the watering can. Apply the required settings in this isolated session if necessary.
+3. In Companion, choose **Check isolated farm session**, then the matching **Qualified profile for this session** and **Connect qualified screen profile**. These checks bind fresh process/window/copy identity and visible supported state; no permission to play is restored. If a check fails, use its stated reason instead of overriding it.
+4. Observe the farm and type the request. For Day 2: “Water all initially planted crops.” Inspect all 15 targets, resources and farmhouse return. A visible subset is not a replacement for all 15.
+5. For Day 5: “Harvest farm--1-3, then plant parsnip seeds on farm--1-3, then water them and clear farm-0-5 and return to the farmhouse entrance.” Inspect the selected left parsnip (`farm--1-3`), one owned seed, watering of the newly planted crop, selected small stone (`farm-0-5`), protected neighboring crops, zero purchases and return. A correction such as “Leave at least 20 energy” still requires checking the entire plan.
+6. Choose **Review scope**, then **Start reviewed work**. Keep Stardew foreground and let the bounded routine run. The UI brings forward only the verified game process for Start/observation; polling does not steal focus. Chatting in another foreground window during execution stops farm authority, unlike Mario's scoped input path.
 
-> Water every crop planted at the initial exact observation, then return to the
-> visibly confirmed farmhouse entrance.
+## Results, guarded stops and recovery
 
-A visible subset cannot silently replace that complete set. Harvest, planting,
-selected-debris clearing and combined routines remain unavailable for live execution
-until implemented and verified. See [Stardew integration and extension contracts](b3-integration-contract.md).
+Progress counts only when fresh visible evidence confirms the action and its resources. Already wet crops or already satisfied steps in a new observation are a starting condition, not actions performed again. A sent click alone cannot prove a harvest, planting, watering or cleared stone.
 
-The sections below describe controller contracts; they are not a claim that the
-missing real-game calibration, isolation or live watering has passed.
+**Pause**, **Stop** and **Take control** release companion input and revoke authority. Stardew has no automatic resume from refocusing: obtain a fresh complete supported view, Observe, request only remaining work, review and explicitly Start. Pause stops companion input, not the game clock; after handback use the game's Escape menu for a long break.
 
-## Mode separation
+Occlusion, stale screenshots, unknown resources, unsupported positions or changed process/window identity can produce a guarded partial stop. For example, all requested farm actions may be confirmed while the farmhouse return remains unconfirmed. Inspect **Outcome** and **Saved results** separately for confirmed work, remaining work and uncertainty. If stopped between supported viewpoints, take player control to reach a clear supported position before observing/reviewing again, or close unsaved and open a fresh disposable copy. Do not blind-retry the whole routine in a changed farm. A new copy starts from the prepared seed, not from the unsaved stopped attempt.
 
-Observe converts the adapter-owned `ScreenObservation` into the shared
-`CompanionObservationEnvelope`. The shared envelope carries identity,
-freshness, exact confidence, evidence, input owner, and opaque adapter facts;
-Stardew alone interprets its copied-save identity, crop ledger, energy, can,
-refills, and position. Mario records receive no Stardew fields.
+B3's retained all15 watering/return success and B4's retained combined-action/return success belong to their exact candidates. **B5's combined attempt and its recovery both remain stopped, with return unconfirmed.** Neutral input/handback passed separately; that is not proof of reaching the farmhouse. B6 did not rerun Stardew. These older successes cannot be relabeled as current-source rerun results. The remaining delivery gap is assigned explicitly in the [B8 work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md).
 
-Tell is advisory only. It selects the next confirmed unwatered crop, asks for
-the watering can when needed, identifies a visibly safe refill, sends the
-player back to the farmhouse entrance, or names the first reason to stop. Every
-factual item cites retained screen evidence, the exact watering ledger, or the
-Stardew safety policy. Tell never sends input, grants authority, fills unknowns,
-recommends protected actions, or infers completion.
-
-Show demonstrates only the bounded watering task on a fresh disposable copy.
-It requires a fresh exact observation, uses only ordinary configured input, and
-stops on completion, reclaim, timeout, failure, ambiguity, continuity loss,
-save mismatch, or protected-action risk. Its retained attempt is always
-`review_only`; player completion, authoritative evidence, owner acceptance,
-reliability promotion, and transfer into Do are false.
-
-Do starts only after the owner explicitly authorizes the exact task in the
-currently observed live session. The volatile authorization binds the copied
-save and nonce, process start, window, starting observation, expiry, supported
-input driver, stop point, and stop conditions. It is never restored from disk.
-Before every input, the controller rechecks authority, current observation,
-save/process/window continuity, driver availability, and safety. Progress
-advances only after a new exact screen observation proves the purpose-specific
-postcondition.
-
-## Freshness and screen-only truth
-
-The usable state remains visible-screen-only. No process memory, hidden game
-API, save parsing as live truth, invisible capture, or invisible automation is
-accepted. The observation becomes stale immediately on copied-save mismatch,
-process-start or window change, window trust loss, occlusion, incomplete crop
-coverage, missing screenshot evidence, crop confidence below exact, or unknown
-energy/can/position state. Stale or unknown state disables Tell, Show, and Do.
-
-## Reclaim, handback, and failure
-
-Immediate reclaim neutralizes the configured driver first, invalidates the
-active epoch, restores player ownership, and preserves the partial Show or Do
-attempt. The same ordering applies to completion, timeout, cancellation,
-ambiguity, protected-action refusal, save mismatch, process/window loss,
-ordinary-input loss, evidence loss, and unexpected failure.
-If input dispatch and neutralization both fail, both causes remain in the
-failure record, authority is cleared, and player handback remains unconfirmed.
-Operational details are in [Error handling and operations](error-handling.md).
-
-Every stopped attempt records its mode/classification, before and after screen
-observations, actor-labeled inputs, crop/resource/position ledger, stop reason,
-first unmet requirement, neutralization, handback, primary-save result, reset
-status, and evidence hashes. A failure never resumes from persisted authority or
-retries in place.
-
-## Exact completion
-
-Completion requires the initial crop set to remain exact, every initially
-planted crop to be visibly reconciled as watered, monotonic tool/refill and
-energy accounting, exact can state, the visibly confirmed farmhouse entrance,
-neutral input, player ownership, an unchanged primary save, and every required
-evidence file present and hashed. Implementation completion does not satisfy
-these runtime facts.
-
-## Disposable-copy reset
-
-Reset operates only by creating a fresh attempt-owned destination from the
-unchanged primary. The manager verifies the primary before and after, refuses
-existing, symlinked, nested, aliased, mismatched, or reused destinations, and
-never overwrites, modifies, renames, deletes, or launches the primary. The old
-copy and attempt remain preserved.
-
-A successful reset creates a fresh save identity and invalidates all prior
-observations, Tell cards, Show sessions, Do attempts, authority epochs, and
-resumability. An active reset first requires input neutralization and player
-handback.
-
-## Stardew safety policy
-
-Only navigation, watering-can selection, crop watering, visibly safe refill,
-return to the entrance, and neutralization are valid purposes. The adapter
-continues refusing purchases, sales, discards/trash, gifts, consequential
-dialogue or story choices, sleep/bed interaction, save/overwrite behavior,
-unknown refill locations, and any input outside the watering contract. Any
-uncertainty in state, resources, ownership, identity, continuity, or evidence
-also stops input.
-
-## Standalone operator surface
-
-The separate Stardew surface shows current mode and availability reason,
-observation freshness and evidence, contextual Tell, Show start/stop/status with
-review-only labeling, Do scope and expiry, current input owner, immediate
-reclaim, neutralization and handback, reset status, crop/energy/can/refill/
-position reconciliation, protected-action refusal, and first failure with safe
-recovery. Controls remain disabled when their exact preconditions are absent.
-The combined shell links this surface while preserving adapter-owned controls. Render checks cover desktop and 390-pixel widths.
-
-The ordinary workspace provides setup, conversation and review actions. Start
-remains disabled until verified loading/persistence, fresh automatic observation,
-complete reviewed scope and ordinary input are available. Native input code uses
-bounded process-targeted pulses with foreground checks; actual delivery and visible
-effects remain unverified without the game. Chat focus stops gameplay authority.
-Pause preserves the partial outcome; continuation requires fresh observation,
-review and explicit Start. Saved information never restores permission.
-
-Launch from the repository:
-
-```bash
-.venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
-```
-
-Open `http://127.0.0.1:8765/stardew`. Use **Open isolated engineering game** to request
-a fresh title-screen attempt. Existing-save copying is under **Advanced** and needs
-an explicit source and copying authorization. Describe “water these crops” only after
-the engineering farm, isolation and visible perception are qualified. Missing
-prerequisites remain visible and Start stays disabled; a screenshot or copied folder
-does not bypass them. Focus/observation and Start explicitly activate only the verified
-engineering PID; polling and questions never steal focus.
-
-The public CLI remains inspection-only. These commands do not select or copy a save,
-detect or open a game, reset a session, or operate Stardew:
+The public CLI remains inspection-only. Inspection commands do not select or copy a save, open a game or send input:
 
 ```bash
 .venv/bin/python -m smb3_agent stardew status
-.venv/bin/python -m smb3_agent stardew operator-render --output /tmp/stardew-operator.html
-.venv/bin/python -m smb3_agent companion catalog-status
-.venv/bin/python -m smb3_agent companion render --output /tmp/game-companion.html
 ```
 
-## Deterministic coverage and deferred evidence
+## Limits and evidence
 
-`data/stardew/fixtures.yaml`, `data/stardew/evidence-contract.yaml`, and the
-Stardew test modules cover Observe conversion/freshness, adapter
-isolation, Tell provenance/refusal, Show classification/lifecycle, Do binding
-and per-input revalidation, reclaim across every phase, neutral handback,
-timeout/cancellation/continuity/input loss, protected actions, reset and stale
-authority, exact reconciliation, evidence hashes, first-unmet reporting,
-desktop/narrow presentation, and Mario contract preservation. They were not
-used with an owner save or live Stardew process. Catalog/switching and render
-contracts are also exercised by the non-live suite.
+Qualified Day 5 targets are the selected left ordinary parsnip and small stone only. Other plots/crops, regrowth, quality/bonus yields, other debris/tools, automatic refill, purchases, sales, gifts, discards, story choices and sleeping/saving are outside this live scope. Unknown resources stay unknown. Tell is input-free; Show is review-only; neither establishes completion or Do authority. Setup copying is not live game observation: current truth comes from supported visible screenshots, never save parsing or hidden game state.
 
-Live verification must use the exact tested source and assets with an isolated farm. Fixture, catalog and render checks do not establish real input delivery, visible watering or gameplay usefulness.
+[Shared history and shutdown](../README.md#history-recovery-and-safe-shutdown) explains switching and canceled reviews. [B3 integration contract](b3-integration-contract.md) owns engineering interfaces. Exact historical reports remain unchanged: [B3 qualification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b3-engineering/20260925-integrated/qualification-report.md), [B4 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b4-engineering-handoff.md), [B5 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b5-engineering-handoff.md). The former guide's chronological investigation notes are preserved verbatim in the [B7 pre-edit archive](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/stardew-guide-before.md); use this guide for current instructions.

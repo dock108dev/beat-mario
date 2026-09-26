@@ -240,6 +240,8 @@ class StardewPlanningAdapter:
                     # 'water them' after planting refers to those planned plot IDs.
                     if re.search(r"\b(?:them|those|newly planted)\b", clause):
                         targets = new_plant_ids
+                    elif re.search(r"\ball\b", clause):
+                        targets = tuple(dict.fromkeys((*targets, *new_plant_ids)))
             elif kind == "clear":
                 params["selected_debris_only"] = True
             if previous_same and len(positive) == 1 and not append:
@@ -301,7 +303,17 @@ class StardewPlanningAdapter:
                 and context.observation.get("complete_initial_set") is True
                 and context.observation.get("isolation_verified") is True)
         watering_only = bool(actions) and all(action.kind == "water" for action in actions)
-        if live and watering_only:
+        from smb3_agent.stardew_farm_tasks import FARM_CONTRACT
+        farm_live = (live and context.observation.get("farm_contract") == FARM_CONTRACT
+                     and bool(actions) and all(a.kind in context.observation.get("supported_actions", ()) for a in actions))
+        if farm_live:
+            if stop != context.observation.get("return_point"):
+                ambiguities.append("Use the visibly confirmed farmhouse entrance return point.")
+            actions = [replace(action, parameters={**action.parameters, "capability_status": "requires_runtime_validation",
+                               "farm_contract": FARM_CONTRACT},
+                               preconditions=tuple(item for item in action.preconditions if item != "live_perception_and_input_not_yet_available"))
+                       for action in actions]
+        if live and watering_only and not farm_live:
             initial_ids = set(context.observation.get("initial_target_ids", ()))
             requested_ids = {identity for action in actions for identity in action.target_ids}
             if not initial_ids or requested_ids != initial_ids:
@@ -314,8 +326,9 @@ class StardewPlanningAdapter:
                        "watering_contract": "initial-planted-set/v1"},
                        preconditions=tuple(item for item in action.preconditions if item != "live_perception_and_input_not_yet_available"))
                        for action in actions]
-        eligibility = "requires_runtime_validation" if live and watering_only else "unavailable_live"
-        explanation = ("Review every initially planted crop and the farmhouse return point. Start requires fresh Stardew authority; focusing chat pauses game input."
+        eligibility = "requires_runtime_validation" if farm_live or live and watering_only else "unavailable_live"
+        explanation = ("Review the ordered selected targets, owned items, dependencies, limits and farmhouse return. Each action requires fresh visible eligibility and reconciled postconditions; interruptions retain partial work and require new review."
+                       if farm_live else "Review every initially planted crop and the farmhouse return point. Start requires fresh Stardew authority; focusing chat pauses game input."
                        if live and watering_only else
                        "Live watering requires verified disposable setup and automatic complete-set perception. Harvest, planting, clearing and combined routines remain unavailable until B4.")
         return AdapterProposal(

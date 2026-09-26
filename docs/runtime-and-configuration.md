@@ -2,9 +2,7 @@
 
 This repository is a local Python command-line application with a loopback-only
 player and engineering UI. Mario uses FCEUX for supported live execution and
-retains a separate Mednafen diagnostic path. Stardew currently provides a
-copied-save/domain implementation and a safe unconfigured surface; its public
-CLI and server do not launch or operate Stardew. Experimental adapters are
+retains a separate Mednafen diagnostic path. Stardew provides isolated prepared-copy setup and guarded live browser controls for the locally qualified Day 2/Day 5 configurations; its public CLI remains inspection-only. Experimental adapters are
 declarative, fixture-only catalog entries. There is no database, migration,
 cloud API, or production deployment target.
 
@@ -21,8 +19,7 @@ commands and the loopback UI route into these current subsystems:
 3. Mario observation, Show, takeover, product-session, run-library, learning,
    and coaching modules keep their state and authority boundaries separate.
 4. Stardew modules define disposable-copy safety, visible-window observation,
-   exact task accounting, and Observe/Tell/Show/Do controllers. Only
-   inspection and safe rendering are wired into the public entry points.
+   exact task accounting, and Observe/Tell/Show/Do controllers. The browser also owns prepared launch, profile connection, reviewed Start and input release; see the [Stardew guide](stardew-operator-guide.md).
 5. Attempt Lab records runs, notes, reviews, issue ledgers, and task packets as
    local files. Route Lab serves those records and the player/catalog surfaces
    through Python's threaded HTTP server.

@@ -372,3 +372,59 @@ def retain_region_calibration(destination: Path, *, box: tuple[int, int, int, in
                 "automatic_live_qualified": False, "complete_farm_coverage": False}
     (destination / "calibration.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
     return MaskedTemplateRegion(box, tuple(templates))
+
+
+@dataclass(frozen=True)
+class CameraAlignment:
+    """Find all exact stable-feature translations, retaining raster uncertainty.
+
+    Adjacent offsets are not silently promoted to one exact pixel coordinate.
+    Consumers must agree over every returned offset. Separated matches, missing
+    features and excessive uncertainty reject the frame.
+    """
+    template: MaskedPixelTemplate
+    maximum_span: int = 3
+
+    def offsets(self, image: Image.Image) -> tuple[tuple[int, int], ...]:
+        import numpy as np
+        from collections import Counter
+        a = np.asarray(image.convert('RGB'))
+        width, height = self.template.size
+        t = np.frombuffer(self.template.rgb, dtype=np.uint8).reshape(height, width, 3)
+        mask = np.frombuffer(self.template.mask, dtype=np.uint8).reshape(height, width) > 0
+        colors = Counter(map(tuple, t[mask]))
+        # Count packed RGB colors once, rather than scanning the full frame for
+        # each template color. Candidate enumeration and full-mask verification
+        # remain exhaustive, including every ambiguous alignment.
+        packed = (a[:, :, 0].astype(np.uint32) << 16) | (a[:, :, 1].astype(np.uint32) << 8) | a[:, :, 2]
+        counts = np.bincount(packed.ravel(), minlength=1 << 24)
+        color = min(colors, key=lambda c, histogram=counts: int(histogram[(int(c[0]) << 16) | (int(c[1]) << 8) | int(c[2])]) or a.size)
+        del packed, counts
+        ty, tx = np.argwhere(np.all(t == color, axis=2) & mask)[0]
+        matches = []
+        for y, x in np.argwhere(np.all(a == color, axis=2)):
+            x, y = int(x - tx), int(y - ty)
+            if x < 0 or y < 0 or x + width > image.width or y + height > image.height:
+                continue
+            if np.array_equal(a[y:y+height, x:x+width][mask], t[mask]):
+                matches.append((x, y))
+        if not matches:
+            raise StardewAdapterError('camera anchor not recognized')
+        if any(max(p[axis] for p in matches) - min(p[axis] for p in matches) > self.maximum_span for axis in (0, 1)):
+            raise StardewAdapterError('camera alignment has separated or excessive ambiguous offsets')
+        return tuple(sorted(matches))
+
+    @classmethod
+    def calibrate(cls, image: Image.Image, *, maximum_span: int = 3):
+        """Exclude only feature boundaries affected by raster phase, not content."""
+        import numpy as np
+        a = np.asarray(image.convert('RGB'))
+        mask = np.ones(a.shape[:2], dtype=bool)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                mask &= np.all(a == np.roll(a, (dy, dx), (0, 1)), axis=2)
+        mask[[0, -1], :] = False
+        mask[:, [0, -1]] = False
+        rgba = image.convert('RGBA')
+        rgba.putalpha(Image.fromarray((mask * 255).astype('uint8')))
+        return cls(MaskedPixelTemplate.from_image(rgba, True), maximum_span)

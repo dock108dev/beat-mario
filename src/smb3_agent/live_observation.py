@@ -1118,6 +1118,12 @@ class LiveObservationManager:
                 raise LiveObservationError(
                     "The full route requires fresh power-on; review a World 1-1 stop for this entry"
                 )
+            if not fresh and fields["stop_point"] != "world_1_1_opening_end":
+                raise LiveObservationError(
+                    "Returning from player control at the World 1-1 opening supports only "
+                    "the opening stop. Review that bounded stop, or open a fresh session "
+                    "and review the level-exit plan. Later traversal from this entry is unqualified."
+                )
             if (
                 fields["path_choice"] != "default"
                 and fields["stop_point"] == "full_route"

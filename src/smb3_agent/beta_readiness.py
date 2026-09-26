@@ -14,8 +14,8 @@ import yaml
 from smb3_agent.paths import repository_path
 
 
-CONTRACT_PATH = repository_path("data/scenarios/personal-beta-v2.yaml")
-MANIFEST_SCHEMA = "game-companion-beta-evidence/v2"
+CONTRACT_PATH = repository_path("data/scenarios/personal-beta-v3.yaml")
+MANIFEST_SCHEMA = "game-companion-beta-evidence/v3"
 
 
 def source_identity(root: Path | None = None) -> dict[str, Any]:
@@ -72,7 +72,7 @@ def inspect_beta(manifest: dict[str, Any] | None = None, *, evidence_root: Path 
     owner_decision = manifest.get("owner_acceptance")
     owner_ok = owner_decision == "ACCEPT PERSONAL BETA" and not failures["B9"]
     return {
-        "schema_version": "game-companion-beta-readiness/v2",
+        "schema_version": "game-companion-beta-readiness/v3",
         "source_sha256": candidate["source_sha256"],
         "manifest_matches_candidate": manifest_ok,
         "b2_complete": not b2_failures,
@@ -80,7 +80,12 @@ def inspect_beta(manifest: dict[str, Any] | None = None, *, evidence_root: Path 
         "b3_complete": not b3_failures,
         "ready_for_b4": not b3_failures,
         "first_unmet_b3_requirement": b3_failures[0] if b3_failures else None,
+        "b6_technical_complete": not failures["B6"],
+        "b7_guidance_complete": not failures["B7"],
+        "b8_delivery_ready": not any(values for stage, values in failures.items() if stage != "B9"),
+        "ready_for_b9": not any(values for stage, values in failures.items() if stage != "B9"),
         "beta_ready": not all_failures and owner_ok,
+        "owner_usefulness": manifest.get("owner_usefulness"),
         "first_unmet_b2_requirement": b2_failures[0] if b2_failures else None,
         "remaining": failures,
         "owner_acceptance": owner_decision,

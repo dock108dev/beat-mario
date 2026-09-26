@@ -81,6 +81,31 @@ def setup_runtime(tmp_path):
     return live, runtime
 
 
+@pytest.mark.parametrize("action", ["reclaim", "stop"])
+def test_player_control_detaches_initial_review_pause(tmp_path, action):
+    live = FakeLive(tmp_path)
+    runtime = MarioPlanRuntime(live)
+    result = runtime.control(action)
+    assert live.calls == [("stop",)]
+    assert result["owner"] == "player"
+    assert result["outcome"] == "detached"
+
+
+def test_early_edit_uses_authenticated_boot_instead_of_uninitialized_world(tmp_path):
+    live, runtime = setup_runtime(tmp_path)
+    live.current.checkpoint_id = "fresh_power_on"
+    live.current.samples[-1].world = 255
+    result = runtime.queue_edit(plan(revision=2, parent=1, stop="world_1_1_exit"))
+    assert result["pending"]["effective_boundary"] == "world_1_1_exit"
+    assert not any(call[0] == "reclaim" for call in live.calls)
+    # The exemption belongs only to the observed boot checkpoint.
+    live.current.checkpoint_id = "unknown"
+    runtime._state["pending"] = None
+    with pytest.raises(ValueError, match="boundary has been missed"):
+        runtime.queue_edit(plan(revision=3, parent=1, stop="world_1_1_exit"))
+    assert live.calls[-1] == ("reclaim",)
+
+
 def emit(runtime, event, **fields):
     row = {
         "event": event,
@@ -313,7 +338,10 @@ def test_supported_opening_resume_is_same_process_and_never_accepted_route(tmp_p
     accumulator.ingest(sample(frame=600))
     accumulator.ingest(sample(2, frame=820, object_set=1, x=24, y=384))
     manager._accumulator = accumulator
-    auth = manager.begin_session_plan(runtime_fields(plan(stop="world_1_1_exit")))
+    with pytest.raises(ValueError, match="supports only the opening stop"):
+        manager.begin_session_plan(runtime_fields(plan(stop="world_1_1_exit")))
+    assert not (tmp_path / "control.request").exists()
+    auth = manager.begin_session_plan(runtime_fields(plan(stop="world_1_1_opening_end")))
     assert auth.emulator_pid == 42 and auth.authority_kind == "bounded_session_plan"
     assert "policy=b2_world_1_1_plan_v1" in (tmp_path / "control.request").read_text()
 

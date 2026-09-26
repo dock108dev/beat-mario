@@ -63,11 +63,12 @@ def test_discovery_only_inspects_explicit_metadata(tmp_path):
 
 
 class QuartzFixture:
+    kCGHIDEventTap = "hid"
     def __init__(self):
         self.events = []
     def CGEventCreateKeyboardEvent(self, _, code, down):
         return code, down
-    def CGEventPostToPid(self, pid, event):
+    def CGEventPost(self, pid, event):
         self.events.append((pid, event))
 
 
@@ -100,13 +101,13 @@ def test_neutral_reclaim_interrupts_held_key_and_no_queued_actions():
     d.neutralize()
     thread.join(1)
     assert not thread.is_alive() and errors == ["Input canceled"]
-    assert q.events == [(123, (13, True)), (123, (13, False))]
+    assert q.events == [("hid", (13, True)), ("hid", (13, False))]
     with pytest.raises(StardewAdapterError, match="canceled"):
         d.send(InputCommand(InputKind.KEYBOARD, "w", "press", 0))
     assert len(q.events) == 2
 
 
-def test_focus_loss_releases_original_process():
+def test_focus_loss_releases_held_system_input():
     q = QuartzFixture()
     calls = []
     def provider():
@@ -115,7 +116,7 @@ def test_focus_loss_releases_original_process():
     d = driver(q, provider=provider)
     with pytest.raises(StardewAdapterError, match="Foreground"):
         d.send(InputCommand(InputKind.KEYBOARD, "w", "hold", 60))
-    assert q.events == [(123, (13, True)), (123, (13, False))]
+    assert q.events == [("hid", (13, True)), ("hid", (13, False))]
 
 
 def test_engineering_source_classification_is_preserved_on_reset(tmp_path):
@@ -269,3 +270,260 @@ def test_engineering_review_adopts_actual_path_and_preserves_seed(tmp_path, monk
     assert setup.manager.verify_primary_unchanged(session.save)
     with pytest.raises(StardewAdapterError, match='Disposable persistence identity changed'):
         setup.require_verified(window())
+
+
+def test_mouse_uses_system_events_and_releases_at_reviewed_point():
+    class MouseQuartz(QuartzFixture):
+        kCGEventLeftMouseDown, kCGEventLeftMouseUp = 1, 2
+        kCGEventRightMouseDown, kCGEventRightMouseUp = 3, 4
+        kCGEventMouseMoved, kCGMouseButtonLeft, kCGMouseButtonRight = 5, 0, 1
+        kCGMouseEventClickState = 1
+
+        def CGEventCreateMouseEvent(self, _, kind, point, button):
+            return (kind, point, button)
+
+        def CGEventSetIntegerValueField(self, event, field, value):
+            assert value == 1
+
+    q = MouseQuartz()
+    d = driver(q)
+    d.send(InputCommand(InputKind.MOUSE, 'left_button', 'click', 0, target=(40, 50)))
+    assert q.events == [('hid', (1, (40, 50), 0)), ('hid', (2, (40, 50), 0))]
+    with pytest.raises(StardewAdapterError, match='outside'):
+        d.send(InputCommand(InputKind.MOUSE, 'left_button', 'click', 0, target=(140, 50)))
+    assert len(q.events) == 2
+
+
+def test_prepared_farm_registry_never_discovers_external_sources(tmp_path, monkeypatch):
+    import json
+    from smb3_agent.stardew_setup import prepared_engineering_farms
+    monkeypatch.chdir(tmp_path)
+    root = tmp_path / 'artifacts/stardew-engineering/session/prepared-sources/seed/Farm'
+    root.mkdir(parents=True)
+    external = tmp_path / 'external'
+    external.mkdir()
+    registry = tmp_path / 'artifacts/stardew-prepared-farms.json'
+    registry.write_text(json.dumps([
+        {'id': 'allowed', 'source': str(root), 'label': 'Test', 'tree_sha256': 'x'},
+        {'id': 'external', 'source': str(external), 'label': 'No', 'tree_sha256': 'x'},
+    ]))
+    assert [r['id'] for r in prepared_engineering_farms()] == ['allowed']
+
+
+def test_changed_prepared_seed_refuses_before_launch(tmp_path, monkeypatch):
+    import json
+    from smb3_agent.stardew_setup import launch_fresh_engineering
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / 'artifacts/stardew-engineering/session/prepared-sources/seed/Farm'
+    source.mkdir(parents=True)
+    (source / 'Farm').write_bytes(b'changed')
+    (tmp_path / 'artifacts/stardew-prepared-farms.json').write_text(json.dumps([
+        {'id': 'farm', 'source': str(source), 'label': 'Test', 'tree_sha256': 'bad'},
+    ]))
+    with pytest.raises(Exception, match='seed is missing or changed'):
+        launch_fresh_engineering(tmp_path / 'absent-installation', tmp_path / 'new', prepared_id='farm')
+    assert not (tmp_path / 'new').exists()
+
+
+@pytest.mark.parametrize('contents', ['broken json', '{}', '[null, {}, 12]'])
+def test_malformed_prepared_registry_does_not_break_ordinary_setup(tmp_path, monkeypatch, contents):
+    from smb3_agent.stardew_setup import prepared_engineering_farms
+    monkeypatch.chdir(tmp_path)
+    registry = tmp_path / 'artifacts/stardew-prepared-farms.json'
+    registry.parent.mkdir()
+    registry.write_text(contents)
+    assert prepared_engineering_farms() == []
+
+
+def test_foreground_identity_is_fresh_and_native_failure_is_unknown(monkeypatch):
+    import ctypes
+    import ctypes.util
+    from types import SimpleNamespace
+    from smb3_agent.stardew_adapter import _foreground_process_id
+    active = [123]
+    status = [0]
+    def front(serial):
+        return status[0]
+    def pid(serial, output):
+        ctypes.cast(output, ctypes.POINTER(ctypes.c_int32))[0] = active[0]
+        return status[0]
+    monkeypatch.setattr(ctypes.util, 'find_library', lambda name: 'fixture')
+    monkeypatch.setattr(ctypes, 'CDLL', lambda name: SimpleNamespace(GetFrontProcess=front, GetProcessPID=pid))
+    assert _foreground_process_id() == 123
+    active[0] = 456
+    assert _foreground_process_id() == 456
+    status[0] = -1
+    with pytest.raises(StardewAdapterError, match='foreground identity is unavailable'):
+        _foreground_process_id()
+
+
+def test_input_deadline_releases_even_while_guard_is_blocked():
+    entered, unblock, released = threading.Event(), threading.Event(), threading.Event()
+    q = QuartzFixture()
+    post = q.CGEventPost
+    def record(pid, event):
+        post(pid, event)
+        if event[1] is False:
+            released.set()
+    q.CGEventPost = record
+    calls = []
+    def isolation(_):
+        calls.append(True)
+        if len(calls) > 1:
+            entered.set()
+            assert unblock.wait(2)
+    d = driver(q, isolation=isolation)
+    thread = threading.Thread(target=lambda: d.send(InputCommand(InputKind.KEYBOARD, 's', 'press', 80)))
+    thread.start()
+    assert entered.wait(1)
+    try:
+        assert released.wait(.5), 'release must not wait for the blocked identity guard'
+        assert not d._held
+    finally:
+        unblock.set()
+        thread.join(2)
+    assert not thread.is_alive()
+
+
+def test_short_pulse_does_not_start_guard_at_release_deadline():
+    q = QuartzFixture()
+    calls = []
+    def provider():
+        calls.append(time.monotonic())
+        return window()
+    d = driver(q, provider=provider)
+    d.send(InputCommand(InputKind.KEYBOARD, 's', 'press', 5))
+    assert len(calls) == 1
+    assert q.events == [('hid', (1, True)), ('hid', (1, False))]
+
+
+def test_prepared_view_requires_exact_registered_seed_and_full_initial_observation(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+    from PIL import Image
+    import smb3_agent.stardew_setup as module
+    from smb3_agent.stardew_adapter import _tree_identity
+    launch = module.EngineeringLaunch('fresh', str(tmp_path), '/fixture', '/fixture/bin', str(tmp_path/'config'), str(tmp_path/'data'), str(tmp_path/'isolation.sb'), {}, 123, 'start')
+    monkeypatch.setattr(module, '_verify_engineering_launch_identity', lambda *_: None)
+    farm = tmp_path/'config/StardewValley/Saves/Test_1'
+    farm.mkdir(parents=True)
+    for name in (farm.name, 'SaveGameInfo'):
+        (farm/name).write_bytes(b'synthetic identity only')
+    source = tmp_path/'seed/Test_1'
+    import shutil
+    shutil.copytree(farm, source)
+    record = {'id':'fixture', 'source':str(source), 'tree_sha256':_tree_identity(source)[0]}
+    (tmp_path/'prepared-source.json').write_text(json.dumps(record))
+    monkeypatch.setattr(module, 'prepared_engineering_farms', lambda: [record])
+    capture = tmp_path/'visible.png'
+    Image.new('RGB',(100,100)).save(capture)
+    frame = {'crops':{(i,0):False for i in range(15)}, 'energy':270, 'water':40, 'player':(0,0), 'uncertainty':2}
+    profile = SimpleNamespace(qualified=lambda:True, config={'seed_sha256':record['tree_sha256']}, decode=lambda _:frame, profile_id='fixture')
+    setup = module.DisposableSessionSetup()
+    first = setup.verify_prepared_view(launch, window(), profile=profile, screenshot=capture)
+    second = setup.verify_prepared_view(launch, window(), profile=profile, screenshot=capture)
+    assert first.session_id != second.session_id
+    assert setup.manager.verify_primary_unchanged(first.save)
+    frame['crops'][(0,0)] = None
+    with pytest.raises(StardewAdapterError, match='complete dry'):
+        setup.verify_prepared_view(launch, window(), profile=profile, screenshot=capture)
+    frame['crops'][(0,0)] = False
+    (farm/farm.name).write_bytes(b'changed')
+    with pytest.raises(StardewAdapterError, match='working copy changed'):
+        setup.verify_prepared_view(launch, window(), profile=profile, screenshot=capture)
+
+
+def test_watering_aim_guard_precedes_mouse_down_and_can_cancel():
+    class MouseQuartz(QuartzFixture):
+        kCGEventLeftMouseDown, kCGEventLeftMouseUp, kCGMouseButtonLeft = 1,2,0
+        kCGEventRightMouseDown, kCGEventRightMouseUp, kCGMouseButtonRight = 3,4,1
+        kCGEventMouseMoved, kCGMouseEventClickState = 5,6
+        def CGEventCreateMouseEvent(self, _, kind, point, button):
+            return (kind, point)
+        def CGEventSetIntegerValueField(self, *args):
+            pass
+    q=MouseQuartz()
+    def reject(command, current):
+        assert command.reviewed_crop_id=='crop'
+        assert all(event[1][0]==q.kCGEventMouseMoved for event in q.events)
+        raise StardewAdapterError('wrong visible target')
+    d=MacOrdinaryInputDriver(window_provider=window,isolation_guard=lambda _:None,authority_guard=lambda:None,
+                             quartz=q,before_mouse_press=reject)
+    with pytest.raises(StardewAdapterError,match='wrong visible target'):
+        d.send(InputCommand(InputKind.MOUSE,'left_button','click',80,target=(20,20),purpose='water_crop',reviewed_crop_id='crop'))
+    assert all(event[1][0]==q.kCGEventMouseMoved for event in q.events)
+    assert not d._held
+
+
+def test_native_capture_timeout_and_post_capture_focus_are_rejected(tmp_path,monkeypatch):
+    import subprocess
+    from smb3_agent.stardew_adapter import MacVisibleStardewBackend
+    from PIL import Image
+    backend=MacVisibleStardewBackend(process_id=123,process_started_at='start')
+    monkeypatch.setattr(backend,'detect_window',window)
+    def timeout(*args,**kwargs):
+        raise subprocess.TimeoutExpired(args[0],1.5)
+    monkeypatch.setattr(subprocess,'run',timeout)
+    with pytest.raises(StardewAdapterError,match='freshness bound'):
+        backend.capture(window(),tmp_path/'timeout.png')
+    assert not (tmp_path/'timeout.png').exists()
+    def capture(args,**kwargs):
+        Image.new('RGB',(200,200),'red').save(args[-1])
+        return type('Result',(),{'returncode':0})()
+    monkeypatch.setattr(subprocess,'run',capture)
+    backend.capture(window(),tmp_path/'success.png')
+    assert Image.open(tmp_path/'success.png').size==(100,100)
+    states=iter([window(),replace(window(),window_id='replaced')])
+    monkeypatch.setattr(backend,'detect_window',lambda:next(states))
+    with pytest.raises(StardewAdapterError,match='changed during'):
+        backend.capture(window(),tmp_path/'changed.png')
+
+
+def test_fast_pulse_focus_guard_stops_and_full_identity_rechecks_after_release():
+    q = QuartzFixture()
+    def lost(_):
+        raise StardewAdapterError('fresh focus lost')
+    d = MacOrdinaryInputDriver(window_provider=window, isolation_guard=lambda _: None,
+                              authority_guard=lambda: None, quartz=q, pulse_guard=lost)
+    with pytest.raises(StardewAdapterError, match='fresh focus lost'):
+        d.send(InputCommand(InputKind.KEYBOARD, 'w', 'press', 80))
+    assert q.events[-1][1] == (13, False) and not d._held
+    q = QuartzFixture()
+    states = iter([window(), replace(window(), window_id='new')])
+    def full():
+        value = next(states)
+        if value.window_id == 'new':
+            assert q.events[-1][1] == (13, False)
+        return value
+    d = MacOrdinaryInputDriver(window_provider=full, isolation_guard=lambda _: None,
+                              authority_guard=lambda: None, quartz=q, pulse_guard=lambda _: None)
+    with pytest.raises(StardewAdapterError, match='Process/window changed'):
+        d.send(InputCommand(InputKind.KEYBOARD, 'w', 'press', 25))
+    assert not d._held
+
+
+def test_posting_delay_consumes_hold_budget(monkeypatch):
+    clock = [10.0]
+    monkeypatch.setattr('smb3_agent.stardew_input.time.monotonic', lambda: clock[0])
+    class DelayedPost(QuartzFixture):
+        def CGEventPost(self, pid, event):
+            super().CGEventPost(pid, event)
+            if event[1]:
+                clock[0] += .1
+    q = DelayedPost()
+    intervals = []
+    class Timer:
+        def __init__(self, interval, callback):
+            intervals.append(interval)
+            self.callback = callback
+        def start(self):
+            self.callback()
+        def cancel(self):
+            pass
+        def join(self):
+            pass
+    monkeypatch.setattr('smb3_agent.stardew_input.threading.Timer', Timer)
+    d = driver(q)
+    d.send(InputCommand(InputKind.KEYBOARD, 'w', 'press', 80))
+    assert intervals == [0]
+    assert q.events[-1][1] == (13, False) and not d._held

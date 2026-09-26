@@ -1,12 +1,6 @@
 # Personal beta engineering packet
 
-Updated September 24, 2026. **B2 engineering is complete on its retained candidate. B3 is incomplete and paused by the user; B4 and owner acceptance remain pending.** Rosetta and isolated title-screen launch work. Latest retained engineering checks passed 903 repository tests and 240 focused tests; no real farm creation, persistence/reload, automatic farm perception or watering is proved. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status and exact tested-source identity.
-
-The implemented module/API mapping, launch flow and B3 prerequisites are in the [B2 conversation guide](b2-conversation-guide.md). Exact integrated results and retained evidence are recorded in the Desktop tracker; code presence does not establish B2 PASS.
-
-## Current pause and next action
-
-The test UI server and task-owned game were stopped. Remaining live checks require a visible foreground game; no headless completion or overnight run is scheduled. On resume, verify ordinary setup input delivery, prepare and visibly reload the dedicated farm under the existing authorization, qualify complete automatic screen perception, then prove reviewed watering/resources/return/reclaim. The previous setup mouse pulses did not visibly advance past the title screen. New launches require fresh process/window/session identity. This status-only documentation update does not extend the retained test results to a new source hash.
+Updated September 26, 2026 UTC. **B2 and B3 are complete on their retained candidates. B4.1–B4.4 are technically complete for the documented Day5 configuration.** Original B3 attempt27 owns all15 watering,270→240 energy,40→25 water,farmhouse return and neutral handback. The [B4 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b4-engineering-handoff.md) owns its ordinary combined proof, live safeguards, affected regression and exact source. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current stage status. B5 shared-workflow engineering is complete within the documented guarded-stop limits; exact integrated proof is recorded in the [B5 handoff](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b5-engineering-handoff.md). B6 Mario technical qualification and B7 guidance are complete. B8 delivery and B9 owner review remain unfinished; use the [B8 work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md).
 
 ## Product loop and scope
 
@@ -87,7 +81,7 @@ Prove Mario's process-specific emulator input while the text field has keyboard 
 
 ## Stardew live and farm contract — B3 and B4
 
-B3 must deliver actual setup: owner-selected save source, separately identified disposable copy, clear launch/selection instructions, visible supported game/window, screen observations and configured ordinary-input driver. Reuse copy verification and hashes. Never inspect/migrate a primary save merely to manufacture proof of isolation. Do not assume the game can directly load an arbitrary copy path: verify the actual supported save-selection workflow and persistence location before enabling input. The original planning-only boundary is historical. Subsequent B3 engineering and isolated title launch are authorized and implemented. The user also authorized dedicated disposable farm creation, free starter-seed planting and sleeping only for save/reload, then paused visible work for tonight. Resume only when requested; do not repeat that preparation approval or inspect personal saves.
+B3 must deliver actual setup: owner-selected save source, separately identified disposable copy, clear launch/selection instructions, visible supported game/window, screen observations and configured ordinary-input driver. Reuse copy verification and hashes. Never inspect/migrate a primary save merely to manufacture proof of isolation. Do not assume the game can directly load an arbitrary copy path: verify the actual supported save-selection workflow and persistence location before enabling input. The original planning-only boundary is historical. Subsequent B3 engineering and isolated title launch are authorized and implemented. The user authorized dedicated disposable farm creation, free starter-seed planting and sleeping only for save/reload. The earlier pause was lifted by the September 25 continuation. Visible engineering remains authorized; preserve the prepared seed and do not repeat preparation approval or inspect personal saves.
 
 Screen-only perception is a real implementation dependency. Fixtures and manual annotations may support development but cannot be represented as automatic live observation. Bound the supported farm/viewport state, identify crops/plots/debris, tools/seeds/inventory and relevant resources from actual visible evidence, handle scrolling/occlusion, and stop on insufficient confidence. If reliable coverage is not yet possible, retain partial engineering and the exact missing perception capability rather than marking the adapter usable.
 
@@ -119,11 +113,11 @@ Keep the existing B-stage IDs. B2 now includes the required Mario custom-route e
 | B4.4 | Combined farm routine and conversational adjustment | Useful ordered routine, including newly planted crop watering, partial results, stop/return and safe handback |
 | B5 | Shared game switching, conversation/plan/history integration and recovery | Mario edit session → neutral switch → Stardew routine → saved histories, with no game-state/authority leakage |
 | B6 | Mario live proof and focused repairs | Base fallback, actual path edits, speed changes, manual/agent transitions, recoverable errors and unchanged accepted-route regressions where affected |
-| B7 | Expansion/setup guidance | Explain supported games and future adapter work; no third working game gate |
+| B7 — COMPLETE | Expansion/setup guidance | Consolidated launch/history, Mario and Day 2/Day 5 guides plus future-adapter/testing guidance; no third working game gate |
 | B8 | Versioned beta scenarios/readiness, exact candidate and usable personal Mac delivery | Required engineering/visible evidence, launch/relaunch, prerequisites, cleanup and known limits bound to the delivered source/artifact |
 | B9 | Complete owner review, repairs and personal-beta handoff | Owner judges Mario conversation/editing and Stardew usefulness on identified candidate; explicit ACCEPT PERSONAL BETA / REVISE / STOP |
 
-Execute B2.1 → B2.2 → B2.3 → B2.4 → B3 → B4 → B5, with focused checks and slice status updated as each becomes useful. Begin scenario contract reconciliation in B2.1 and extend it with each delivered feature; B8 closes the cumulative qualification rather than discovering missing cases. Carry B6's Mario proof checklist while implementing B2. B7 is a small guide, not a detour into adapter infrastructure. Finish B6–B9 once the product paths exist. Tonight is the intended work session, not a promised release deadline.
+Execute B2.1 → B2.2 → B2.3 → B2.4 → B3 → B4 → B5, with focused checks and slice status updated as each becomes useful. Begin scenario contract reconciliation in B2.1 and extend it with each delivered feature; B8 closes the cumulative qualification rather than discovering missing cases. Carry B6's Mario proof checklist while implementing B2. B7 is a small guide, not a detour into adapter infrastructure. B6 technical qualification and B7 guidance are complete; the remaining order is B8 delivery then B9 owner review.
 
 ## Qualification reconciliation and focused checks
 
@@ -148,13 +142,8 @@ The current app is a local loopback Python/UI product with external game prerequ
 
 ## Current engineering handoff
 
-B2.1–B2.4 are complete on their retained historical candidate. B3 is the active
-engineering stage; its candidate and current limitations are recorded in the
-Desktop tracker and [B3 integration contract](b3-integration-contract.md).
-Finish actual isolated-game setup, automatic visible perception, ordinary watering
-and resource/return reconciliation before claiming B3 complete. Missing game access
-does not prevent independent implementation, but unit/browser checks cannot replace
-that live proof. B4 remains gated on B3, and owner acceptance remains blank.
+B2–B4 retain their exact qualified configurations. [B5 shared workflow](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b5-engineering-handoff.md) is complete within guarded-stop limits; its two Stardew returns remain unconfirmed. [B6 Mario qualification](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b6-engineering-handoff.md) is technically complete, including opening-stop-only resumed entry; longer traversal requires fresh power-on. Neither owner review nor a current-source Stardew return is inferred.
 
-Preserve source work, retained attempts and historical route/game inputs. No commit,
-push, publication, primary-save access or owner verdict is implied by this packet.
+B7 is complete: [first use and history](../README.md#launch-and-first-use), [Mario](mario-player-guide.md), [Stardew](stardew-operator-guide.md), [future adapter contribution](new-game-onboarding.md#adding-an-actual-game-adapter). The [B7 closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/closeout.md) retains exact source continuity and documentation checks.
+
+Proceed only through the bounded [B8 delivery work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md): launch/package and assets, exact identity, versioned scenario/readiness reconciliation, affected current-candidate checks and the explicit Stardew return delivery gap. B8 implementation and B9 owner review are separate from this documentation task. Preserve all uncommitted work, frozen seeds and historical evidence; no commit, push or owner verdict.

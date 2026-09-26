@@ -5,6 +5,19 @@ the Lab. It creates declarative fixture-only adapters; it does not generate
 Python, JavaScript, shell scripts, controller drivers, observation code, or
 network dependencies, and it never launches or controls a game.
 
+## Adding an actual game adapter
+
+A live adapter is separate engineering work; the scaffold does not create its observation or controller implementation. Start with one useful, bounded task and an explicit unsupported list.
+
+1. **Own the game facts and actions.** Implement detection, session/process/window continuity, fresh observations and ordinary input in adapter-owned modules. Use `CompanionObservationEnvelope` for shared identity, freshness, evidence and ownership; keep game-specific facts opaque to the shared shell. Do not teach the core to interpret farm tiles or Mario RAM for a third game.
+2. **Integrate the shared lifecycle.** Add a provider to the catalog, typed actions and clarification through `Planner.plan(text, PlanningContext)`, and adapter validation of reviewed proposals. Reuse conversation, outcomes, read-only history and neutral switching. A parsed plan, installed provider or reopened result never grants input authority.
+3. **Isolate sessions and evidence.** Use explicit disposable inputs and attempt-owned storage. Bind fresh authority to game, source/copy identity, process/window, observation, reviewed scope and expiry. Never discover or modify personal saves to prove isolation; persist history, not execution permission.
+4. **Specify eligibility and postconditions per action.** Name observable targets, tools/resources, protected choices, timing and stop point before enabling Start. Confirm each effect from fresh game-owned evidence; input dispatch is not success. Preserve unknowns and distinguish already-satisfied work from newly executed work. Refuse unsupported actions rather than borrowing another adapter's controller.
+5. **Stop before handback.** Pause/reclaim, focus or identity loss, stale evidence, missed boundaries and failure must release input, revoke authority and retain partial outcomes. Require confirmed handback for switching; record missing receipts honestly when the process is gone. Recovery requires fresh eligibility, review and Start.
+6. **Test in layers.** Use deterministic fixtures for parsing/corrections, eligibility, postconditions, shortages, stale/replayed authority, cancellation, session isolation, switching and history. Test rendered controls separately. Then qualify the actual game on the exact source with fresh isolated sessions: ordinary request/review/Start, observed work and resources, reviewed stop/return, neutral handback, interruption and recovery. Select regressions for changed shared contracts and existing adapters. Fixture conformance never becomes actual-game success, owner feedback or release acceptance.
+
+Use [architecture](agent-architecture.md), [B2 integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
+
 ## State vocabulary
 
 - **Declared:** the versioned contract is structurally valid.
@@ -95,5 +108,4 @@ returned. If that bounded cleanup also fails, the operation fails explicitly
 and reports the retained staging path; it never silently claims rollback. See
 [Error handling and operations](error-handling.md).
 
-Final acceptance remains deferred. The first next action is to freeze the
-cumulative release candidate and begin deterministic contract validation.
+This scaffold remains optional expansion infrastructure. B7 requires guidance only; no third adapter, installation or onboarding campaign is required. Current delivery work is assigned in the [B8 work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md).

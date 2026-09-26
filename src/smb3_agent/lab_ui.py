@@ -263,6 +263,7 @@ PLAYER_WORKSPACE_JS = r'''(() => {
 '''
 POST_PATHS = frozenset(
     {
+        "/api/delivery/shutdown",
         "/api/conversation",
         "/api/stardew/conversation",
         "/notes",
@@ -361,18 +362,21 @@ class _ThreadingHTTPServer(ThreadingHTTPServer):
         super().server_close()
 
 
-def _shutdown_session_managers(server: ThreadingHTTPServer) -> None:
+def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
+    failures = []
     stardew = getattr(server, "stardew_conversation_service", None)
     if stardew is not None:
         try:
             stardew.close()
         except Exception:
+            failures.append("Stardew cleanup unconfirmed")
             LOGGER.exception("Stardew neutralization failed during shutdown")
     conversation = getattr(server, "conversation_service", None)
     if isinstance(conversation, ConversationService):
         try:
             conversation.close()
         except Exception:
+            failures.append("Mario conversation cleanup unconfirmed")
             LOGGER.exception("Conversation stop failed during shutdown; continuing input cleanup")
     for name, kind in (("show_manager", ShowSessionManager),
                        ("live_observation_manager", LiveObservationManager)):
@@ -381,12 +385,22 @@ def _shutdown_session_managers(server: ThreadingHTTPServer) -> None:
             try:
                 manager.shutdown()
             except Exception:
+                failures.append(name + " cleanup unconfirmed")
                 LOGGER.exception("Session manager %s failed during shutdown", name)
     if isinstance(conversation, ConversationService):
         try:
             conversation.snapshot()
         except Exception:
+            failures.append("Mario outcome retention failed")
             LOGGER.exception("Conversation outcome could not be retained after shutdown")
+    owned = getattr(server, "delivery_game_processes", None)
+    if owned is not None:
+        try:
+            owned.close()
+        except Exception:
+            failures.append("Owned Mario process closure unconfirmed")
+            LOGGER.exception("Owned Mario process closure failed")
+    return failures
 
 
 def run_lab_ui_server(host: str = "127.0.0.1", port: int = 8765, *, open_browser: bool = False) -> None:
@@ -419,12 +433,18 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
             "Game Companion Lab may bind only to 127.0.0.1, ::1, or localhost"
         )
     server_class = _ThreadingHTTPServerV6 if host == "::1" else _ThreadingHTTPServer
+    from smb3_agent.delivery import delivery_identity, OwnedGameProcesses
+    identity = delivery_identity()
     server = server_class((host, port), _Handler)
+    server.delivery_identity = identity
+    server.delivery_stopping = False
     setattr(server, "csrf_token", secrets.token_urlsafe(32))
     setattr(server, "action_lock", threading.Lock())
     setattr(server, "show_manager", ShowSessionManager())
     learning_store = LocalLearningStore()
-    setattr(server, "live_observation_manager", LiveObservationManager(learning_store=learning_store))
+    server.delivery_game_processes = OwnedGameProcesses()
+    setattr(server, "live_observation_manager", LiveObservationManager(
+        learning_store=learning_store, launcher=server.delivery_game_processes.launch))
     setattr(server, "conversation_service", ConversationService(
         getattr(server, "live_observation_manager"),
         artifacts_root=ARTIFACT_DIR / "conversation",
@@ -578,6 +598,8 @@ def _retain_mario_catalog_state(server: ThreadingHTTPServer) -> bool:
 def _invalidate_mario_catalog_state(server: ThreadingHTTPServer) -> bool:
     live_manager = getattr(server, "live_observation_manager")
     show_manager = getattr(server, "show_manager")
+    if not server.conversation_service.invalidate_for_switch():
+        return False
     if not live_manager.invalidate_volatile_state():
         return False
     if not show_manager.invalidate_volatile_state():
@@ -586,6 +608,8 @@ def _invalidate_mario_catalog_state(server: ThreadingHTTPServer) -> bool:
     product = getattr(server, "product_session_manager")
     product.clear_error()
     product.mark_stage(ProductStage.IDLE)
+    from smb3_agent.mario_plan_runtime import MarioPlanRuntime
+    server.conversation_service.runtime = MarioPlanRuntime(live_manager)
     return True
 
 
@@ -618,6 +642,9 @@ class _Handler(BaseHTTPRequestHandler):
     def _handle_get(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/delivery":
+            self._send_json({**self.server.delivery_identity, "csrf_token": self._csrf_token()})
+            return
         if path == "/":
             self._send_html(
                 render_combined_catalog(
@@ -664,7 +691,8 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/stardew":
             self._send_html(render_stardew_conversation_workspace(
-                self.server.stardew_conversation_service.snapshot(), csrf_token=self._csrf_token()))
+                self.server.stardew_conversation_service.snapshot(), csrf_token=self._csrf_token(),
+                selected=self._catalog_session().selected_adapter_id in {None, "stardew"}))
             return
         if path == "/lab":
             query = parse_qs(parsed.query)
@@ -799,33 +827,46 @@ class _Handler(BaseHTTPRequestHandler):
             return
         data = self._read_form()
         self._validate_csrf(data)
-        if path == "/api/stardew/conversation":
-            try:
-                payload = json.loads(_single(data, "payload", default="{}"))
-                if not isinstance(payload, dict):
-                    raise ValueError("Conversation payload must be an object")
-                action = _single(data, "action")
-                if (self._catalog_session().selected_adapter_id not in {None, "stardew"}
-                        and action not in {"pause", "stop", "reclaim", "focus_lost"}):
-                    raise ValueError("Select Stardew from Games before changing its session")
-                self._send_json(self.server.stardew_conversation_service.dispatch(action, payload))
-            except ValueError as exc:
-                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+        if path == "/api/delivery/shutdown":
+            if _single(data, "instance") != self.server.delivery_identity["instance"]:
+                raise LabUiError("Delivery process changed; inspect its identity again")
+            with self.server.action_lock:
+                self.server.delivery_stopping = True
+            failures = _shutdown_session_managers(self.server)
+            if failures:
+                self._send_json({"stopping": False, "failures": failures}, status=HTTPStatus.CONFLICT)
+                return
+            self._send_json({"stopping": True, "cleanup_confirmed": True,
+                             "instance": self.server.delivery_identity["instance"]})
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
             return
-        if path == "/api/conversation":
-            # Control priority and serialization belong to the conversation/runtime
-            # service; a long-running legacy Lab action must not block reclaim.
+        if self.server.delivery_stopping:
+            raise LabUiError("Delivery is shutting down; no new actions are accepted")
+        if path in {"/api/stardew/conversation", "/api/conversation"}:
+            # Serialize new authority with switching, while stop/reclaim bypass
+            # this lock so they can revoke an in-flight operation immediately.
+            action_lock = self.server.action_lock
+            acquired = False
             try:
                 payload = json.loads(_single(data, "payload", default="{}"))
                 if not isinstance(payload, dict):
                     raise ValueError("Conversation payload must be an object")
                 action = _single(data, "action")
-                if (self._catalog_session().selected_adapter_id not in {None, "smb3"}
-                        and action not in {"pause", "stop", "reclaim"}):
-                    raise ValueError("Select Mario from Games before changing its plan or control")
-                self._send_json(self._conversation_service().dispatch(action, payload))
+                priority = action in {"pause", "stop", "reclaim", "focus_lost"}
+                adapter = "stardew" if path == "/api/stardew/conversation" else "smb3"
+                if not priority:
+                    acquired = action_lock.acquire(blocking=False)
+                    if not acquired:
+                        raise ValueError("A game transition is in progress. Wait for handback, then review again.")
+                    if self._catalog_session().selected_adapter_id not in {None, adapter}:
+                        raise ValueError("Select " + ("Stardew" if adapter == "stardew" else "Mario") + " from Games before changing its session")
+                service = self.server.stardew_conversation_service if adapter == "stardew" else self._conversation_service()
+                self._send_json(service.dispatch(action, payload))
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            finally:
+                if acquired:
+                    action_lock.release()
             return
         action_lock = getattr(self.server, "action_lock", None)
         if not isinstance(action_lock, type(threading.Lock())):
@@ -835,7 +876,18 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             try:
                 if path == "/catalog-switch":
-                    event = self._catalog_session().switch(_single(data, "adapter_id"))
+                    catalog = self._catalog_session()
+                    target_id = _single(data, "adapter_id")
+                    target = catalog.registry.entry(target_id)
+                    if target_id != catalog.selected_adapter_id and target.availability != "unavailable":
+                        if catalog.selected_adapter_id == "stardew":
+                            self.server.stardew_conversation_service.dispatch("stop")
+                        elif catalog.selected_adapter_id == "smb3":
+                            live = self.server.live_observation_manager
+                            if live.snapshot().session_id:
+                                live.stop()  # waits for native neutral acknowledgment
+                            self.server.conversation_service.snapshot()
+                    event = catalog.switch(target_id)
                     target = self._catalog_session().registry.entry(event.to_adapter_id)
                     self._redirect(target.standalone_surface)
                     return
@@ -2467,8 +2519,8 @@ def render_combined_catalog(
         f'<div><dt>Active mode</dt><dd>{_esc(runtime.active_mode or "none")}</dd></div>'
         f'<div><dt>Companion input</dt><dd>{"Stopping" if runtime.pending_neutralization else "Active" if runtime.active_agent_input or runtime.active_show else "Stopped"}</dd></div>'
         f'<div><dt>Control returned</dt><dd>{"confirmed" if runtime.handback_confirmed else "unconfirmed"}</dd></div></dl>'
-        f'<p role="status">{_esc("Cannot switch yet: " + "; ".join(runtime.refusal_reasons()).replace("adapter", "game")) if runtime.refusal_reasons() else ""}</p>'
-        f'<p class="callout">Before switching games, stop companion play and take control. A new observation is required in the next game.</p>'
+        f'<p role="status">{_esc("Switch will first resolve: " + "; ".join(runtime.refusal_reasons()).replace("adapter", "game")) if runtime.refusal_reasons() else ""}</p>'
+        f'<p class="callout">Switching stops companion input first. The next game opens only after control is returned and history retained. A new observation is required in the next game, followed by review and Start.</p>'
         f'<details><summary>Switching checks and recovery</summary><p>Input must be stopped, control returned, history saved and the current game state confirmed.</p><p><strong>Recovery guidance:</strong> {_esc(selected.recovery_guidance)}</p></details></section>'
         if selected and runtime
         else '<p class="meta" data-testid="safe-catalog-only">Nothing is playing.</p>'

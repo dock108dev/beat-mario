@@ -1,12 +1,10 @@
 # Documentation index
 
-The root [README](../README.md) is the verified first-use path: install the
-locked environment, run the non-live gate, inspect the command surface, and
-start the local UI. Use this index to find the next task-specific guide.
+The root [README](../README.md) owns launch, first use, shared history and safe shutdown. Install the locked environment only when missing; the non-live gate is an engineering check, not an every-launch requirement. Use this index to find the next task-specific guide.
 
 ## Player workflows
 
-Use the [Mario conversation and route guide](b2-conversation-guide.md) for bounded planning and supported edits. The [Stardew guide](stardew-operator-guide.md) describes disposable setup, watering and the verification required before live input. See [known limitations](known-limitations.md) for unfinished capabilities.
+Use the [Mario player guide](mario-player-guide.md) for bounded planning, edits and fresh-session limits. The [Stardew guide](stardew-operator-guide.md) distinguishes Day 2 watering from Day 5 combined work, setup and guarded recovery. See [known limitations](known-limitations.md) for unfinished capabilities.
 
 ## Understand the system
 
@@ -65,6 +63,8 @@ locked Python 3.11 environment.
   engineering runs that can never become player or acceptance evidence.
 - [New Game Onboarding](new-game-onboarding.md) covers data-only Experimental
   scaffolds, fixture conformance, installation, discovery, and safe removal.
+
+B7 guidance is complete. The next engineering stage is the [B8 delivery work order](/Users/michaelfuscoletti/Desktop/beat-mario/docs/b8-delivery-work-order.md); owner review remains separate.
 
 ## Release-candidate and historical planning material
 
