@@ -1,5 +1,7 @@
 # New Game Onboarding and Experimental Adapter Contributor Guide
 
+The planned player-facing playable-profile wizard is specified in [private-beta engineering PB5/PB6](private-beta-engineering.md#pb5--player-setup-and-demonstration-teaching). It requires a reusable model/vision/skill runtime first and is not implemented by the contributor scaffold below.
+
 Experimental adapters have a local, data-only contributor flow at `/onboarding` and under
 the Lab. It creates declarative fixture-only adapters; it does not generate
 Python, JavaScript, shell scripts, controller drivers, observation code, or

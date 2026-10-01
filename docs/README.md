@@ -2,6 +2,10 @@
 
 The root [README](../README.md) owns launch, first use, shared history and safe shutdown. Install the locked environment only when missing; the non-live gate is an engineering check, not an every-launch requirement. Use this index to find the next task-specific guide.
 
+## Next engineering work
+
+The [private-beta engineering plan](private-beta-engineering.md) owns technical contracts and release needs for configurable natural-language gameplay. Start with PB1 model/vision/control feasibility, then the reusable host/skills, player setup, third/unfamiliar-game proof and portable delivery. The [Desktop next-steps tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns remaining stage status. Existing B-series guides describe the narrower personal pilot.
+
 ## Player workflows
 
 Use the [Mario player guide](mario-player-guide.md) for bounded planning, edits and fresh-session limits. The [Stardew guide](stardew-operator-guide.md) distinguishes Day 2 watering from Day 5 combined work, setup and guarded recovery. See [known limitations](known-limitations.md) for unfinished capabilities.
@@ -64,14 +68,11 @@ locked Python 3.11 environment.
 - [New Game Onboarding](new-game-onboarding.md) covers data-only Experimental
   scaffolds, fixture conformance, installation, discovery, and safe removal.
 
-Use the [delivery guide](b8-personal-delivery.md) for launch identity and review boundaries. A retained build has begun owner review; acceptance remains pending. Later source changes are not automatically qualified by that review.
+Use the [personal-pilot delivery guide](b8-personal-delivery.md) for retained in-place launch identity and review boundaries. Private-beta portable delivery is PB10 in the active engineering plan. A retained build has begun owner review; acceptance remains pending. Later source changes are not automatically qualified by that review.
 
 ## Release-candidate and historical planning material
 
-- [Consolidated final campaign](final-campaign-guide.md) maps the revised beta
-  requirements and preserves the still-unrun V2 workflow. Its existing executable
-  contracts require versioned reconciliation before they can qualify this beta;
-  automatic execution remains disabled.
+- [Consolidated final campaign](final-campaign-guide.md) records the earlier V2/personal-pilot campaign. Private-beta requirements use the separate PB9 contract and validator specified in the active engineering plan.
 - [Game Companion V2 roadmap](v2-roadmap.md) records slice status through V2.14.
   It is a status/evidence document, not the setup guide.
 - [Local UI assets](local-assets.md) explains optional ignored artwork.

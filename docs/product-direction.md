@@ -1,10 +1,14 @@
 # Product Direction
 
+## Private-beta direction
+
+The next product milestone is guided configuration of eligible single-player games by a technically comfortable nonprogrammer, followed by useful typed natural-language play. The [private-beta engineering plan](private-beta-engineering.md) requires a reusable grounded gameplay backend, verified skill profiles, a third reference game, unfamiliar fourth-game setup, measured operating limits and portable Mac delivery. PB1 feasibility is next; current contributor onboarding does not provide this playable configuration path. Game Companion remains the working name.
+
 ## Current capabilities and planned work
 
 Mario supports shared typed planning, a conversation surface, revision-bound controller changes and custom variant history. Faster, quickest and 100% intents initially load the same base route; speed does not imply route optimization or full completion. See the [conversation guide](b2-conversation-guide.md).
 
-Stardew session setup and watering execution are under development and require verified isolation and qualified perception before live input. Harvesting, planting and selected-debris clearing remain planned live capabilities. See the [Stardew guide](stardew-operator-guide.md).
+Stardew has retained technical qualification for Day 2 watering and the selected Day 5 harvest/plant/water/small-stone routine, including the B8 final-return repair. Those results apply to their exact prepared farms, settings and candidates; owner usefulness/acceptance remains pending and later source changes need affected qualification. See the [Stardew guide](stardew-operator-guide.md) and [personal-pilot delivery](b8-personal-delivery.md).
 
 ## Product
 
@@ -62,13 +66,9 @@ Existing compatibility remains deliberate:
 - Game Companion is the user-facing product and shared cross-game contract;
 - Mario becomes one adapter behind that contract.
 
-## Implemented second adapter; live proof pending: Stardew Valley
+## Bounded second-adapter proof: Stardew Valley
 
-The first modern-game proof uses the visible, windowed game, ordinary player
-input, and a disposable copy of an owner-provided local save. The existing implemented bounded
-goal is:
-
-> Water every currently planted crop, then return to the farmhouse entrance.
+The retained modern-game proof uses the visible windowed game, ordinary player input and dedicated disposable engineering farms. Qualified bounded tasks cover watering all 15 crops in the prepared Day 2 farm and the selected harvest → plant → water → small-stone-clear routine in the prepared Day 5 farm, each with resource accounting and farmhouse return/neutral handback on its identified candidate. This does not establish arbitrary-farm support or owner-save-copy validation.
 
 The proof reconciles crops observed with crops watered and reports time, energy,
 tool use, refills, final position, and protected actions. It does not purchase,
@@ -138,19 +138,17 @@ bounded, namespaced presentation preferences persist locally.
 
 ## Catalog growth
 
-The existing barebones New Game Onboarding flow is retained for collaborators; completing its campaign is not required for the revised personal beta. It can
+The existing barebones New Game Onboarding flow is contributor infrastructure; its fixture conformance does not create live gameplay. Third-game onboarding was optional in the narrower B-series personal-pilot contract. The private-beta plan now requires executable profile creation, third-game proof and unfamiliar-game setup. It can
 scaffold an experimental adapter, declare its capabilities and safety rules,
 attach fixtures, run conformance checks, and install it locally. Experimental
 adapters expose only proven capabilities and cannot enter the trusted supported
 catalog without explicit review and game-specific live evidence.
 
-The current engineering order and acceptance cases are in the
-[personal-beta engineering packet](personal-beta-engineering.md); the
-[Game Companion V2 roadmap](v2-roadmap.md) preserves earlier slice history.
+The current engineering order and acceptance cases are in the [private-beta engineering plan](private-beta-engineering.md). The [personal-pilot packet](personal-beta-engineering.md) and [Game Companion V2 roadmap](v2-roadmap.md) contain the existing integration contracts and earlier evidence boundaries.
 
 ## Boundaries
 
-- Local-only by default; no cloud telemetry.
+- Local application and local diagnostics by default; no cloud telemetry. The private-beta backend decision may permit explicitly consented model screen/context transport with bounded usage and secure local credentials.
 - Offline, owner-controlled, single-player games only.
 - No multiplayer, competitive play, anti-cheat environments or unauthorized
   permanent decisions. The beta farm routine uses owned tools/seeds and excludes

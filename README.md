@@ -1,5 +1,7 @@
 # Game Companion
 
+Private-beta engineering is planned around guided setup for additional games and natural-language task execution. The [private-beta technical plan](docs/private-beta-engineering.md) defines the reusable gameplay backend, player profiles, unfamiliar-game proof and portable Mac release. **PB1 feasibility is next; configurable live game support is not implemented yet.**
+
 Local launch: double-click **Open Game Companion.command**, then choose a game. Use the first-use steps below and the game-specific guides.
 
 Game Companion is a local, player-controlled assistant for single-player games.
