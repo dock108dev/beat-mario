@@ -1,5 +1,7 @@
 # Personal Mac delivery
 
+Retained September 26 B8 in-place delivery guide and evidence record. The [private-beta engineering plan](private-beta-engineering.md) owns current delivery scope; use the [private-beta quick start](private-beta-quick-start.md) for the current tester-build setup and the [PM handoff](private-beta-pm-handoff.md) for remaining work.
+
 This is an in-place delivery at `/Users/michaelfuscoletti/Desktop/beat-mario`. Keep this repository, its installed `.venv`, and the registered local engineering assets at their existing paths. It is not a portable package or an app bundle. No proprietary game files are bundled.
 
 ## Launch and stop

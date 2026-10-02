@@ -6,6 +6,7 @@ from uuid import uuid4
 from smb3_agent.player_store import PlayerStore, TEMPLATES, VERSION
 from smb3_agent.minecraft_skills import wall_cells
 from smb3_agent.skill_runtime import SIGNATURES
+from smb3_agent.player_onboarding import minecraft_onboarding
 
 
 class PlayerSetupService:
@@ -28,6 +29,7 @@ class PlayerSetupService:
         self.reason = "Choose a game template and save your setup. Opening a profile never starts gameplay."
 
     def snapshot(self):
+        native = self.minecraft.snapshot() if self.minecraft else None
         return {
             "version": VERSION,
             "templates": TEMPLATES,
@@ -38,9 +40,10 @@ class PlayerSetupService:
             "plan": self.plan,
             "reviewed": self.reviewed,
             "history": self.store.history(self.selected["id"]) if self.selected else [],
-            "minecraft": self.minecraft.snapshot() if self.minecraft else None,
+            "minecraft": native,
+            "minecraft_onboarding": minecraft_onboarding(self.selected, native),
             "native_minecraft_available": bool(
-                self.minecraft and self.minecraft.snapshot()["features"].get("camera")
+                native and native["features"].get("camera")
             ),
             "native_reason": self.minecraft.reason
             if self.minecraft

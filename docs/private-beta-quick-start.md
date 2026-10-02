@@ -1,6 +1,10 @@
-# Game Companion private beta 0.2.0-private.2
+# Game Companion private-beta quick start
 
-This is a local Apple Silicon Mac review candidate. Its adjacent `build-manifest.json` identifies the exact source, signing and checked gameplay families; the owner review records actual smoke results. Preserve the native-tested private.1 app separately. Do not distribute this candidate yet.
+Reviewed October 1, 2026. This guide covers the local Apple Silicon Mac review path. The retained `0.2.0-private.2` app supports Minecraft calibration and small camera tasks; aiming, movement, placement and wall Start are unavailable. It is an engineering review candidate, with owner release approval pending.
+
+The current repository source adds setup progress, protected-block persistence, independent direct controls, drafting locks and stricter observation/deadline checks. Its canonical local gate passed **1,327 tests**. Those changes have not been packaged or checked through a new native Minecraft task. The adjacent manifest and supplied guide identify each app's actual source and abilities; a current repository guide does not update a retained app. See the [PM handoff](private-beta-pm-handoff.md) for current release work and the [review records](private-beta-review.md) for exact retained results.
+
+The first-use goal is to create a Minecraft profile through the app, connect a disposable Creative world, check a building region, finish the supported wall, receive the observed result and control, then reopen the profile/history. The useful building step remains unfinished in the delivered review app.
 
 ## Install and permissions
 
@@ -10,7 +14,7 @@ This is a local Apple Silicon Mac review candidate. Its adjacent `build-manifest
 4. Install the game separately. No game assets, worlds, account credentials or model weights are bundled. Minecraft's narrow typed requests do not require cloud inference. OpenTTD additionally requires local Ollama with **gemma3:4b**, installed through Ollama and running locally.
 5. Choose a game, name your setup and **Save profile**. Open, rename/change notes, duplicate, export/inspect and import through the app. Profile edits cannot add an unsupported capability.
 
-**Current review limit:** calibration and camera tasks are available. Aiming, nearby movement, additions and wall Start are still unavailable; their implementation and development observations are retained, but the packaged wall smoke is unfinished. Treat the examples below for those families as future requests until the app marks them Available.
+**Current review limit:** calibration and camera tasks are available. Aiming, nearby movement, additions and wall Start are unavailable in both retained private.2 and the current source. Treat the building preparation and requests below as engineering preparation for a future building-capable app. The first executable Minecraft practice in this review app is the small camera task.
 
 ## Minecraft: connect and practice
 
@@ -21,7 +25,9 @@ This is a local Apple Silicon Mac review candidate. Its adjacent `build-manifest
 5. When the Mac is available for exclusive input, check **disposable Creative world / exclusive input**, choose **Calibrate camera**, keep the page open and do not touch mouse/keyboard. Calibration measures eight small signed responses, checks cancellation and settling, and preserves an inspectable attempt on failure. Connect the resulting current calibration. Old engineering receipts are unnecessary.
 6. Begin with **Enter chat safely** → “Look right 2 degrees, then stop.” → read the actual angles and whole-task budget → **Review current scope** → **Start reviewed task**. Only families listed as available can Start. Questions never issue input. Stop and Take control remain directly available.
 
-## Minecraft: work region and first additions
+## Minecraft: building preparation for the next app
+
+This section explains the intended first building task. It is not an enabled wall walkthrough for private.2. In the corrected source, **Minecraft setup progress** shows what is completed, the next setup action and available tasks. The retained app predates that progress display.
 
 For block work, select a supported full cube manually. Point near the center of a reachable ground-block top and choose **Check visible block and scope**. The selected ground block is the center beneath the doorway; direction **X** means east/west and **Z** north/south. Review the actual world coordinates, held material, protected cells and nearby stop point. **Save checked region** stores configuration only.
 
@@ -50,6 +56,8 @@ Changes or corrections cancel the old review. Send a new request and review its 
 ## Stop, recovery and troubleshooting
 
 **Stop / Take control** revoke authority before task locks and inference. Wait for confirmed release. To type, use **Enter chat safely** first. Closing/leaving the workspace or missing its heartbeat stops native work. **Quit Game Companion** performs verified cleanup. Unconfirmed release blocks new work until Take control establishes release; inspect diagnostics before continuing.
+
+The corrected source locks the request field when native work starts and keeps pointed protection through a fresh scope check. It also lets immediate controls bypass malformed advanced coordinates. These fixes await a separately identified package; in retained private.2, keep advanced coordinate input valid and use Take control before returning to typing.
 
 After a partial result: Take control → inspect the visible world yourself → restore the disposable world if effects are unknown → reconnect the exact window/calibration → inspect fresh scope → send and review a new request. Never assume that retrying an unknown addition is harmless.
 

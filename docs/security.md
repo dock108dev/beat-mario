@@ -3,8 +3,15 @@
 Game Companion is a single-operator, local game-assistance and automation tool.
 It has no user accounts, authenticated web sessions, database, cloud service,
 webhook, or third-party callback.
-Its important trust boundaries are the local Route Lab HTTP server, ignored
-gameplay artifacts, emulator subprocesses, and reviewed route-patch workflow.
+Its important trust boundaries are the local player/Route Lab HTTP server,
+selected-window capture/native input, local model proposals, player configuration
+and ignored gameplay evidence, helper/emulator subprocesses, and reviewed route-patch workflow.
+
+This describes current source controls. October 1 source corrections passed the
+1,327-test canonical local gate; retained private.1/private.2 packages have their
+own manifests and review limits. The [PM handoff](private-beta-pm-handoff.md) and
+[review status](private-beta-review.md) separate corrected source from packaged
+evidence. Minecraft aim/move/place/wall remain disabled.
 
 ## First use and product persistence
 
@@ -18,6 +25,49 @@ input-readiness confirmation, session choice, coaching/detail preferences, and
 timestamps. It never persists or restores authorization, nonce, control epoch,
 process ownership, reclaim state, or write capability. Every takeover still
 requires fresh exact-process verification and explicit authorization.
+
+## Ordinary player, model and native-input boundaries
+
+- The Mac app opens only its local setup surface and verifies source identity
+  before reusing an existing instance. Shutdown requires the current server token
+  and matching instance identity. An unknown app/port owner is not killed.
+- Player profiles use bounded, validated data schemas and controlled local IDs.
+  Imports cannot carry code, live observations, window connection, reviewed plans
+  or authority. The implemented OpenTTD executable profile is a finite declarative
+  capability. Save/reopen/edit/duplicate/import preserve configuration without
+  restoring execution permission.
+- Minecraft setup writes supported options/debug preferences only after checking
+  that the game is closed and preserving backups. It refuses concurrent settings
+  changes and does not edit worlds. The user selects a disposable Creative world
+  and manually prepares the supported visible region/material.
+- Native input binds the selected process/window, compatible settings, current
+  pixel observations, explicit review/Start and finite budgets. Camera/movement
+  feedback, material/reach/occupancy and outcome checks supply facts independently
+  of text or model confidence. Changed, missing, contradictory or expired evidence
+  stops the affected task and retains partial work.
+- Current source checks child/parent deadlines after observations and includes
+  observation uncertainty in aiming completion. Inspection reuse requires the
+  compatible pose/window/settings and unchanged position; stale reuse cannot
+  replace a fresh check before an addition.
+- Stop, Take control and safe chat revoke authority before blocking work. In the
+  corrected setup UI they bypass unrelated draft/coordinate parsing; native work
+  immediately locks drafting until successful safe-chat handback. Page heartbeat,
+  cancellation epochs, bounded input workers and shutdown protect against stale
+  execution. Unconfirmed input release blocks new authority. Key release alone
+  does not establish gameplay stillness.
+- OpenTTD's gateway sends a selected-window image and bounded task context only
+  to local Ollama at `127.0.0.1:11434`, without proxies. The installed model identity
+  must be local and multimodal. Structured proposals are constrained by finite
+  profiles and independently read targets/values. Canceling kills the request
+  worker and discards late replies; it cannot prove Ollama stopped GPU computation.
+  No cloud inference provider is enabled. Current Minecraft typed requests do not
+  need model inference.
+- Profiles, history, reports, settings backups and session diagnostics live outside
+  installation in the user data root. Normal report export includes selected
+  configuration, sanitized recent outcomes and the user's text; raw screenshots,
+  credentials and unrelated save contents are excluded. Native diagnostic folders
+  may contain game captures and must be inspected before manual sharing. Nothing
+  is uploaded automatically.
 
 ## Trust boundaries
 
@@ -95,8 +145,10 @@ Exactly one decimal Content-Length and one supported Content-Type are required;
 Transfer-Encoding is unsupported. Forms are limited to 128 fields. Scalar
 fields (including CSRF and action) must occur exactly once; declared list fields
 retain their repeated-value behavior. A non-ASCII CSRF value is refused as an
-invalid token. Only known POST routes are accepted,
-and one state-changing action may execute at a time.
+invalid token. Only known POST routes are accepted.
+New authority and ordinary mutations share the action lock; direct Stop/Take control,
+safe-chat/edit/disconnect and heartbeat paths bypass that lock so an in-flight
+operation cannot prevent revocation.
 
 Responses use a restrictive Content Security Policy, deny framing, disable
 MIME sniffing, prevent caching and referrer disclosure, isolate the browsing

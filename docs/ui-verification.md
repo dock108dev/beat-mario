@@ -1,15 +1,17 @@
 # Product clarity verification
 
-## September 26 ordinary-workspace cleanup
+Retained visual and interaction checks for their recorded source snapshots. The [private-beta engineering plan](private-beta-engineering.md) owns the current workflow and the [PM handoff](private-beta-pm-handoff.md) records current candidate checks and remaining work.
 
-Current source on local main; synthetic presentation evidence only. The retained B8/B9 candidate is unchanged as evidence and is not this modified checkout.
+## Historical September 26 ordinary-workspace cleanup
+
+Source on local main as reviewed September 26; synthetic presentation evidence only. The retained B8/B9 candidate remains distinct from that modified checkout.
 
 - Matched screenshots and measurements are retained locally at `artifacts/ui-clarity-20260926/review.html` (repository-relative path; ignored evidence, unavailable in a standalone checkout): Stardew’s ready-state request field moved from y=2,341 to y=538 at 390×844, and from y=1,917 to y=458 at 1440×900. Desktop Start moved from y=1,137 to y=629. Narrow Start remains below the first viewport at y=1,412; there is no claim that the whole workflow fits on one screen.
 - Requests and plan review precede farm setup and history. The first-use setup disclosure starts open; its link, current blockers, fresh-view action, exact plan targets, resource/return limits and sticky Stop remain available. Mario retains its layout with shorter wording. Shared Starter 02 styling replaces the ordinary farm renderer’s leftover green styling.
 - Matched empty/ready Stardew and Mario plan screens at both widths, plus doubled computed text sizes at 390px: no page-level horizontal overflow. Keyboard focus, history disclosure, draft preservation through polling, disabled empty-state actions and reachable Stop were checked. Failed-refresh feedback warns of stale display data and clears on recovery; action errors are preserved by a focused regression.
 - 63 focused tests passed, along with Ruff, Python compilation, JavaScript syntax and whitespace checks. No production service/game, owner save, live gameplay, release or acceptance was exercised. Native behavior, screen readers and exhaustive contrast pairs remain unverified. Preview assets are local ignored evidence; the report remains readable without its temporary server.
 
-Separate suggestion (confirmed): the Day 5 request example still needs opaque plot IDs. Adding human-readable labels requires a verified target mapping beyond presentation. Prototype labels only for the qualified Day 5 targets, retaining stored IDs.
+Recorded follow-up: the Day 5 request example needed opaque plot IDs at this snapshot. Human-readable labels would require a verified target mapping while retaining stored IDs. Current prioritization belongs in the PM handoff.
 
 ## Historical September 23 cleanup
 
@@ -31,7 +33,7 @@ September 21, 2026 · source implementation and engineering review only.
 
 ## Retained review
 
-Screenshots and browser check results are retained in `review.html` in the optional shared `UI Templates` folder described in [UI design](ui-design.md). That gallery is outside this repository and is not available in a standalone checkout. Browser specimens are local fixtures or isolated startup states. Web review checked representative 1440px/390px layouts, page exceptions, and page-level horizontal overflow; it is not an exhaustive audit of every state, contrast pair, screen reader, browser, installed build, or physical phone.
+Screenshots and browser check results are retained in `review.html` in the optional shared `UI Templates` folder. That gallery is outside this repository and is not available in a standalone checkout. Browser specimens are local fixtures or isolated startup states. Web review checked representative 1440px/390px layouts, page exceptions, and page-level horizontal overflow; it is not an exhaustive audit of every state, contrast pair, screen reader, browser, installed build, or physical phone. [UI design](ui-design.md) records the repository's active interface guidance.
 
 Template gallery search, form submit feedback, dialog opening, and Escape dismissal were exercised. Shared styles include keyboard focus, reduced-motion, and reduced-transparency handling. Native Godot is a basic translucent fallback, not a true blur material. Native games retain their desktop layout and illustrated artwork.
 

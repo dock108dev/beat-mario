@@ -1,5 +1,7 @@
 # World 8 Reliability Gates
 
+Mario route qualification reference with retained profile-specific acceptance rules. The [private-beta engineering plan](private-beta-engineering.md) owns current application delivery and focused checking.
+
 Reliability is profile-driven by goal. The default Rank 27 profile proves
 repeatable arrival at the accepted World 8 map boundary. The separate Rank 28
 profile reuses that complete prefix, clears Big Tanks, and proves the normal

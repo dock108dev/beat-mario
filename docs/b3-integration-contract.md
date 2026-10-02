@@ -1,5 +1,7 @@
 # Stardew integration and evidence contract
 
+Adapter interface and evidence reference for the bounded Stardew path. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope; the B3 evidence classes below retain their original task and candidate boundaries.
+
 Stardew integration owns disposable-session setup, visible perception, ordinary input and watering.
 Qualification requires actual isolated-game evidence on the tested source candidate.
 A working browser, fixture, copied directory or parsed request cannot satisfy it.

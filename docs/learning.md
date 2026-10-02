@@ -1,5 +1,7 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
+Engineering reference for local learning records and their evidence classifications. The [private-beta engineering plan](private-beta-engineering.md) owns current user-facing delivery scope.
+
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
 All data stays local under `artifacts/learning`; no credentials,

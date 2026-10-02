@@ -1,16 +1,18 @@
 # Game Companion V2 Roadmap
 
-## Current personal-beta scope — September 23, 2026
+This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. Current work completes the ordinary Minecraft onboarding and useful building path while preserving the implemented adapters.
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns current status; the [personal-beta engineering packet](personal-beta-engineering.md) supplies the implementation contracts. Required: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing.
+## Historical personal-beta scope — September 23, 2026
+
+The September 23 [personal-beta engineering packet](personal-beta-engineering.md) records the implementation contracts for this stage: natural-language requests and corrections; Mario custom path editing while typing during visible play at a selected supported speed; and Stardew watering, harvesting, planting and selected-debris clearing. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) records current status.
 
 Mario intent presets such as faster/quickest/100% initially load the single existing base route with an explicit fallback. They are not existing optimized or full-completion routes. Playback speed is separate from route optimization, and edits must cause real supported path changes. Saved variants retain their actual execution/evidence status. New-game guidance is required; a third working adapter and completed Experimental onboarding campaign are not beta gates.
 
-B1 is complete. B2 now implements shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. Engineering verification is tracked separately in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md); see the [B2 operating and B3 interface guide](b2-conversation-guide.md). The new `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. B3/B4 live Stardew work and later beta stages remain incomplete.
+At this stage, B1 was complete and B2 implemented shared typed planning, the ordinary Mario conversation surface, revision-bound controller changes and custom variant history. See the [B2 operating and B3 interface guide](b2-conversation-guide.md). The `personal-beta-v2.yaml` contract and `beta_readiness.py` gate preserve the historical V2 contracts and blank owner verdicts. Later B3–B8 reports retain their subsequent implementation and qualification results.
 
 ## Historical V2 outcome and sequencing
 
-The sequence and V2 slice records below describe the prior implementation plan. Current B2–B9 ordering and added Mario/NLP/Stardew requirements are in the engineering packet above; do not restart completed V2 slices or use the old sequence as a new beta gate.
+The sequence and V2 slice records below describe the prior implementation plan. B2–B9 ordering and added Mario/NLP/Stardew requirements belong to that historical engineering packet. Current release planning is in the private-beta engineering plan linked above.
 
 V2 turns the accepted Mario automation system into a player-facing companion,
 proves the same contract in Stardew Valley, combines both games in one catalog,
@@ -60,7 +62,7 @@ Status: **complete / non-live validated**.
 Rename the user-facing product and workbench to Game Companion, document Mario
 as the first adapter, preserve existing technical identifiers, and establish this
 roadmap as the V2 implementation record. Current beta status is owned by the
-Desktop tracker and engineering packet.
+Desktop tracker and private-beta engineering plan.
 
 Acceptance:
 
@@ -278,7 +280,7 @@ cleanup, and evidence.
 The CLI and Lab expose truthful capability, planning, manifest, lifecycle,
 cancellation, cleanup, retained-artifact, failure, and comparison surfaces.
 Prepared contracts, tests, and campaign hooks pass non-live validation. No live
-unattended attempt has run for the current candidate, and no unattended output
+unattended attempt was recorded for the V2 candidate, and no unattended output
 can count as visible, Show, reliability, authoritative, usefulness, acceptance,
 or campaign proof. See the
 [operator guide](unattended-regression.md).
@@ -304,7 +306,7 @@ campaign phases.
 
 ## Historical V2 completion contract
 
-The following describes the earlier V2 target, retained for evidence interpretation. The September 23 personal-beta scope above replaces it for current beta planning; the B1 packet maps required gate changes, and implementation must version/reconcile those executable gates alongside the features.
+The following describes the earlier V2 target, retained for interpreting its evidence and versioned contracts. The private-beta engineering plan owns current beta scope.
 
 The earlier V2 contract required completion only when Mario has owner-accepted `Tell`, `Show`, and bounded
 `Do`; Stardew has the accepted visible task through the same companion contract;

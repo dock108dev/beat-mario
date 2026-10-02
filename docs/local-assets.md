@@ -1,5 +1,7 @@
 # Local Game Companion Lab Assets
 
+Optional artwork and engineering-asset reference. The [private-beta engineering plan](private-beta-engineering.md) and [quick start](private-beta-quick-start.md) describe the current tester build and its actual prerequisites.
+
 Game Companion Lab can use local-only images from:
 
 ```text

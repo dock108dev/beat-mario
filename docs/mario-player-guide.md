@@ -1,5 +1,7 @@
 # Mario player guide
 
+Guide for the implemented Mario adapter. For the current private-beta build and Minecraft first use, begin with the [private-beta quick start](private-beta-quick-start.md). Release scope is in the [private-beta engineering plan](private-beta-engineering.md).
+
 Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
 
 Before opening a session, the setup card must recognize a supported local game file and find FCEUX. If needed, select the local game-file path through first-use setup; the saved selection or `SMB3_GAME_FILE` supplies it on later launches. Confirm normal keyboard/controller mapping for player control. A missing file, unsupported identity or unavailable emulator must be resolved in setup; repeated launch does not bypass the check.

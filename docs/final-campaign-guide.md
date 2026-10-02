@@ -2,8 +2,10 @@
 
 This document retains the earlier versioned campaign workflow. It is an
 engineering history record, not the current setup guide or current delivery
-qualification. Use the [README](../README.md) to run the application and the
-[delivery record](b8-personal-delivery.md) for identified build and review limits.
+qualification. Use the [private-beta quick start](private-beta-quick-start.md)
+to run the current tester build and the [private-beta engineering plan](private-beta-engineering.md)
+for current release scope. The [B8 delivery record](b8-personal-delivery.md)
+retains the earlier personal-Mac build and review limits.
 Historical schema names and phase identifiers below are retained for interpreting
 existing contracts; they do not establish current-source readiness.
 

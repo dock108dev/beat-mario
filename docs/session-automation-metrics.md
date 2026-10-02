@@ -1,5 +1,7 @@
 # Session Automation and Local Product Metrics
 
+Engineering scenario/metrics reference. Historical V2 campaign hooks below retain their own classifications. The [private-beta engineering plan](private-beta-engineering.md) owns the current beta learning and delivery path.
+
 Scenario contracts define repeatable, adapter-neutral session scenarios and a local event and
 metrics pipeline. This implementation is not a validation result. A scenario is
 not made true by being defined, planned, or technically completed.
@@ -151,8 +153,8 @@ missing, mismatched, ambiguous, post-handback, unattended-owner, cleanup,
 adapter-leakage, and incomplete-rebuild cases.
 
 The deterministic and negative hooks are exercised by the non-live suite.
-The unattended runner implements unattended emulator execution, but no live unattended attempt
-has run for the current candidate. Owner-pilot fields remain blank and the
+The unattended runner implements unattended emulator execution. The retained V2
+record has no live unattended attempt, owner-pilot fields remain blank and the
 disabled final campaign has not run. Historical backfill and candidate
 promotion/rollback remain separate explicit operator actions rather than
 automatic scenario behavior.

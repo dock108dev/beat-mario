@@ -2,9 +2,13 @@
 
 ## Private-beta direction
 
-The next product milestone is guided configuration of eligible single-player games by a technically comfortable nonprogrammer, followed by useful typed natural-language play. The [private-beta engineering plan](private-beta-engineering.md) requires a reusable grounded gameplay backend, verified skill profiles, a third reference game, unfamiliar fourth-game setup, measured operating limits and portable Mac delivery. PB1 feasibility is next; current contributor onboarding does not provide this playable configuration path. Game Companion remains the working name.
+The private beta should let a technically comfortable nonprogrammer open the Mac app, connect Minecraft Java, follow understandable settings/calibration and practice, save a profile, ask for a supported task through typed conversation, Review/Start, Stop or take control, and reopen the profile and result. The [private-beta engineering plan](private-beta-engineering.md) and [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) own implementation and launch checks. Game Companion remains the working name.
+
+The first useful Minecraft task is a 7-wide × 3-high × 1-thick Creative wall with a centered 1-wide × 2-high doorway, preserving marked protected blocks. The user follows guided preparation of a disposable, flat clear practice area and reachable work region. The app must explain and visibly check the required start, material and clearance, and give a concrete remedy when they are missing. Setup uses ordinary app controls rather than developer scripts or authored coordinates.
 
 ## Current capabilities and planned work
+
+Minecraft profile/setup/help/history/local-feedback and app-created calibration/bounded camera requests are implemented. Current source adds state-derived setup progress/remedies and affected control, protection, aiming and deadline repairs. These changes have local checks and have not been rebuilt into private.2. Aiming, nearby movement, additions and wall Start remain unavailable in both the current source feature flags and that retained package. Finish the useful path, enable checked task families, and verify the packaged setup → task → outcome/handback → Stop → reopening workflow. The [quick start](private-beta-quick-start.md) and [review](private-beta-review.md) distinguish current settings and retained package evidence. Broader onboarding usability, task variation and sustained reliability are private-beta evaluation.
 
 Mario supports shared typed planning, a conversation surface, revision-bound controller changes and custom variant history. Faster, quickest and 100% intents initially load the same base route; speed does not imply route optimization or full completion. See the [conversation guide](b2-conversation-guide.md).
 
@@ -111,7 +115,7 @@ branch. Every such entry remains Experimental, installed, and live-unproven.
 
 ## Combined product
 
-Mario and Stardew must use the same session contract:
+Existing adapters and profile-backed games use the same session contract, with their own supported task and mode labels:
 
 ```text
 Select game and goal
@@ -128,7 +132,7 @@ Game-specific adapters own observation, actions, capabilities, goals, safety
 rules, and success predicates. The companion core owns session state,
 authorization, mode behavior, handoff, evidence references, and local metrics.
 
-The root product now shows both adapter-owned catalog entries without flattening
+The root product shows adapter/profile-owned catalog entries without flattening
 their capability truth. Explicit switching fails closed until input is neutral,
 player handback is confirmed, the current attempt is retained, and continuity
 is known. Catalog-switch evidence has its own classification; no observation,
@@ -138,7 +142,7 @@ bounded, namespaced presentation preferences persist locally.
 
 ## Catalog growth
 
-The existing barebones New Game Onboarding flow is contributor infrastructure; its fixture conformance does not create live gameplay. Third-game onboarding was optional in the narrower B-series personal-pilot contract. The private-beta plan now requires executable profile creation, third-game proof and unfamiliar-game setup. It can
+The New Game Onboarding flow is contributor infrastructure; its fixture conformance does not create live gameplay. Player setup/profile creation is a separate implemented app surface, with available Minecraft calibration/camera tasks and the useful wall path still unfinished. Additional eligible-game configuration and task breadth are beta evaluation and future integration work. The contributor flow can
 scaffold an experimental adapter, declare its capabilities and safety rules,
 attach fixtures, run conformance checks, and install it locally. Experimental
 adapters expose only proven capabilities and cannot enter the trusted supported

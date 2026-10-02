@@ -1,10 +1,12 @@
 # PB1 — Reusable gameplay feasibility
 
+Historical PB1 feasibility report. All candidate identities, counts, limits and handoffs below describe that recorded experiment. Current integration and delivery work follows the [private-beta engineering plan](private-beta-engineering.md).
+
 September 30, 2026. **PB1 engineering feasibility is complete for the bounded menu interaction described here.** The final eight declared real-game cases passed on one engineering Mac. Three fresh processes repaid exactly £10,000 and independently verified both balances. Correction, ambiguity refusal, Stop, Take control and cancellation during a dispatched inference request passed. This establishes one reusable task family; PB2–PB11, including Minecraft PB7M, remain open.
 
 ## Candidate and evidence
 
-The checkout entered and remains at HEAD `719009c4fa2f17c6d28790d0676c50ffb23bfe2c`; implementation is uncommitted. Exact executable source maps, profile/configuration/checkpoint identities and backend identity live in `artifacts/private-beta/pb1/candidate.json`. All final trial manifests match the historical PB1 runtime source map SHA-256 `256cb244e1ae45dbc693df106650f86c8fdac07fe9fa185b6256cb0a9238dd3a`. Documentation edits do not change that executable identity. PB2 modifies the application and records a separate candidate in `docs/pb2-integration.md`; original PB1 source bytes are preserved under `artifacts/private-beta/pb2/baseline/`.
+The PB1 checkout entered and was retained at HEAD `719009c4fa2f17c6d28790d0676c50ffb23bfe2c`, with uncommitted implementation. Exact executable source maps, profile/configuration/checkpoint identities and backend identity live in `artifacts/private-beta/pb1/candidate.json`. All final trial manifests match the historical PB1 runtime source map SHA-256 `256cb244e1ae45dbc693df106650f86c8fdac07fe9fa185b6256cb0a9238dd3a`. Documentation edits do not change that executable identity. PB2 recorded a separate candidate in `docs/pb2-integration.md`; original PB1 source bytes are preserved under `artifacts/private-beta/pb2/baseline/`.
 
 Evidence is retained locally under `artifacts/private-beta/pb1/`: experiment declarations, `trial-01` through `trial-34`, `summary.json`, `candidate.json` and `preflight/`. Each trial owns frame pixels and hashes, selected PID/start/window, timestamped observations, structured proposal/review, input acknowledgments where available, outcomes/history, native release receipts, model usage and resource samples. Setup and retained-image probes have separate evidence classes and do not qualify gameplay. These artifacts are ignored local evidence, not a distributed package.
 
@@ -51,7 +53,7 @@ The model receives the selected window and bounded request/skill/current-observa
 
 Authority is absent until the exact current finite plan is reviewed and explicitly started. Stop/Take control first revoke authority, change the epoch, cancel pending work and neutralize independently of planner/persistence locks. The gateway kills/reaps its request worker; late results cannot restore authority. Disconnect does not prove cancellation of Ollama's underlying GPU computation or reveal canceled-call tokens. The direct path records unavailable release truthfully and blocks fresh authority until neutral state is confirmed.
 
-`begin_chat()` is the host/UI seam to call **before** typed chat takes foreground focus. The prototype invokes it before proposals. Integrating that transition, visible Review/Start, lifecycle controls and catalog discovery into the ordinary product UI remains PB2/PB4/PB6 work. This runner is an engineering surface, not the shipped conversational wizard.
+`begin_chat()` is the host/UI seam to call **before** typed chat takes foreground focus. The prototype invoked it before proposals. Its closeout handed that transition, visible Review/Start, lifecycle controls and catalog discovery to PB2/PB4/PB6 integration. This runner was the engineering surface for that experiment.
 
 ## Actual results and every gameplay attempt
 
@@ -115,7 +117,7 @@ The paused game's financial effect was visible at the first valid post-action ob
 
 Gameplay used **38 model calls**: 35 returned with known usage, three canceled with unavailable token usage. Known totals are **25,097 prompt tokens + 3,540 output tokens** across all gameplay revisions. The three retained warmup records add 2,163 prompt + 321 output tokens; one additional warmup's usage is unknown. Local provider fee is $0 per attempt and $0 per completed task, including warmups. Electricity, hardware cost and canceled compute are unknown; $0 is not a total operating-cost estimate.
 
-Keep the measured settings and current conservative runtime budgets for subsequent engineering. The proposed 8 GiB sampled-RSS and 250 ms control bounds passed this final matrix. PB9 must freeze tester-machine, sustained-session, call/latency/resource/cost acceptance rules before release qualification; these samples alone cannot set that release envelope.
+The measured settings and conservative runtime budgets were retained for subsequent engineering. The proposed 8 GiB sampled-RSS and 250 ms control bounds passed this final matrix. The original follow-on design proposed PB9 tester-machine, sustained-session and resource acceptance rules; these samples describe only this experiment. Current beta measurements and release scope follow the private-beta engineering plan.
 
 ## Executable-profile schema and configuration boundary
 
@@ -133,6 +135,6 @@ Focused checks: **33 passed** in `tests/test_profile_runtime.py`. They exercise 
 
 The final executable candidate passed `PYTHON=.venv/bin/python scripts/validate_phase0.sh`: **1087 passed**, lint, credential/game-asset scan, goal/segment validation and player/Lab/Stardew render contracts. Log: `artifacts/private-beta/pb1/preflight/non-live-gate-v7.log`. An initial gate found existing Markdown links to ignored personal-beta evidence; the documentation now describes those as retained local paths without changing existing qualification facts. That repair is distinct from gameplay. Shared Mario/Stardew behavior was not modified, so unrelated accepted real campaigns were not repeated.
 
-**Next bounded action is PB2 with the PB3 interfaces defined alongside it:** integrate exact window selection, chat-before-focus neutralization, fresh review/Start and direct Stop/Take control into the ordinary shell; extract host capture/coordinate/input contracts while preserving existing adapters; add independent watchdog/shutdown and permission/process-loss qualification. Separate capture/OCR/planning/action telemetry and native acknowledgment evidence must remain available to the UI.
+**Historical PB1 handoff to PB2:** integrate exact window selection, chat-before-focus neutralization, fresh review/Start and direct Stop/Take control into the ordinary shell; extract host capture/coordinate/input contracts while preserving existing adapters; add independent watchdog/shutdown and permission/process-loss qualification. Separate capture/OCR/planning/action telemetry and native acknowledgment evidence remain part of the recorded design. The subsequent PB2 report records that integration.
 
 PB3 then versions detector/skill registries and independent verifiers around the implemented text/integer/click family, adds required feedback primitives and observable failure examples, and rejects unsupported profile capabilities. Relative camera capture, navigation and block-placement verification require new reusable engineering before Minecraft PB7M. The onboarding wizard must select qualified capabilities rather than generate executable semantics. Three-task reference-game qualification, unfamiliar-game configuration, portable package, tester usefulness and owner/release verdicts remain separate later gates. Nothing was committed, pushed, sent to testers or distributed.

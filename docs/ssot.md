@@ -2,8 +2,39 @@
 
 This map describes code ownership and supported interfaces. Source identity and
 qualification evidence are separate: changing an implementation does not qualify
-a new delivery. See the [delivery record](b8-personal-delivery.md) for retained
-build identity and review limits.
+a new delivery. The [private-beta engineering plan](private-beta-engineering.md)
+owns release scope; the [PM handoff](private-beta-pm-handoff.md) records the current
+delivery candidate, limitations and next work. The [B8 delivery record](b8-personal-delivery.md)
+retains its September 26 build identity.
+
+Domain: Ordinary player setup and Minecraft onboarding progress
+SSOT module/file: `src/smb3_agent/player_setup.py`, with read-only progress in `player_onboarding.py`
+Why this is authoritative: Coordinates profile operations, conversation, current
+Minecraft state and prioritized direct controls. Setup progress derives from the
+selected profile and actual session/feature state.
+Known callers: `lab_ui.py` at `/setup`, `/minecraft` and `/help`; `player_setup_ui.py`.
+
+Domain: Minecraft feature eligibility and live lifecycle
+SSOT module/file: `src/smb3_agent/minecraft_session.py` (`CHECKED_FEATURES`, `MinecraftPlayerSession`)
+Why this is authoritative: Owns available task families, volatile connection,
+review, cancellation epoch and active input owner. The current flags enable
+calibration/camera; aim/move/place/wall await practical integration checks.
+Known callers: Player setup service, Minecraft planner, native runtime.
+
+Domain: Finite Minecraft execution and observed outcomes
+SSOT module/file: `src/smb3_agent/minecraft_native.py`, `skill_runtime.py`, `minecraft_wall.py`
+Why this is authoritative: Selected-window observations and independently checked
+outcomes drive finite execution. Child and composite deadlines, position/settings
+guards and neutralization constrain work; model output and saved configuration
+cannot establish a gameplay fact.
+Known callers: `MinecraftPlayerSession`, calibrated camera provider, spatial skill provider.
+
+Domain: Player profiles, local outcomes and issue reports
+SSOT module/file: `src/smb3_agent/player_store.py`
+Why this is authoritative: Validates bounded configuration, saves profiles and
+sanitized history/reports outside the application installation, and restores no
+live window, reviewed plan or input authority.
+Known callers: Player setup service, Minecraft session and packaged launch.
 
 Domain: Mario traversal feature policy
 SSOT module/file: `src/smb3_agent/mario_route_contract.py`

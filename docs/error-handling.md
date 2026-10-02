@@ -1,5 +1,7 @@
 # Error Handling and Operations
 
+Engineering operations reference. Current build readiness and the complete user path are tracked in the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md). The maintenance records below keep their original source/evidence scope.
+
 This document is the source of truth for failure handling outside the gameplay
 observer contract. Gameplay success and failure rules remain in the goal,
 catalog, and reliability documentation.

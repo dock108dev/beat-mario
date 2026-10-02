@@ -1,5 +1,7 @@
 # Game Companion Lab — Mario
 
+Mario engineering review guide. Player onboarding and current release work follow the [private-beta engineering plan](private-beta-engineering.md); the Lab remains a separate route/evidence tool.
+
 Game Companion Lab is the local evidence-first Mario route review surface. It
 is the engineering view beneath the existing player-facing companion session.
 The [conversational custom-route flow](b2-conversation-guide.md)

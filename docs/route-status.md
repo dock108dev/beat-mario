@@ -1,10 +1,12 @@
 # Route Status
 
+Historical Mario route-status record, last updated August 11, 2026. Its goals, ranks and results retain their original evidence boundaries. Current application release work follows the [private-beta engineering plan](private-beta-engineering.md).
+
 Last updated: 2026-08-11.
 
 ## Default goal
 
-`world_8_double_whistle` is the product source of truth. It ends only on a
+`world_8_double_whistle` is the default Mario route-goal source of truth. It ends only on a
 genuine World 8 map observation. The owner corrected the route boundary during
 live investigation: Mario must clear the final World 1 castle/airship, arrive
 safely in World 2 with both whistles, and use the first whistle from World 2.

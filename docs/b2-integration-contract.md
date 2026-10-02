@@ -1,5 +1,7 @@
 # Mario planning and runtime interfaces
 
+Adapter interface reference. Current release work follows the [private-beta engineering plan](private-beta-engineering.md); these Mario contracts remain available for maintenance and reuse.
+
 The ordinary conversation flow separates proposals, execution and presentation.
 See the [Stardew integration contract](b3-integration-contract.md) for farm interfaces.
 

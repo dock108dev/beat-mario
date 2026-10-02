@@ -2,7 +2,7 @@
 
 > This guide documents contributor adapter scaffolding, not the private-beta player setup wizard. Player-facing setup, profiles, Minecraft integration and launch work are specified in [the private-beta engineering plan](private-beta-engineering.md). Schema/conformance results here do not establish playable generic game support.
 
-The planned player-facing playable-profile wizard is specified in [private-beta engineering PB5/PB6](private-beta-engineering.md#pb5--player-setup-and-demonstration-teaching). It requires a reusable model/vision/skill runtime first and is not implemented by the contributor scaffold below.
+Player-facing setup/profile lifecycle, permissions/settings guidance, app-created Minecraft calibration and bounded camera requests are implemented in the ordinary app. Current source also shows setup progress, actual task availability and the next remedy; these source repairs are not in retained private.2. Aiming, nearby movement, additions and wall Start remain unavailable. The [guided setup plan](private-beta-engineering.md#guided-setup-and-how-to--pb5) and [private-beta quick start](private-beta-quick-start.md) describe that separate player path; the contributor scaffold below does not provide gameplay.
 
 Experimental adapters have a local, data-only contributor flow at `/onboarding` and under
 the Lab. It creates declarative fixture-only adapters; it does not generate

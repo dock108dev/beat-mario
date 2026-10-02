@@ -1,6 +1,8 @@
 # Objective profiles and live coaching
 
-## September 23 beta requirement
+Mario objective/coaching and run-library reference. The September 23 requirement below records that adapter stage; current release scope follows the [private-beta engineering plan](private-beta-engineering.md).
+
+## Recorded September 23 adapter requirement
 
 Conversation supports route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
 

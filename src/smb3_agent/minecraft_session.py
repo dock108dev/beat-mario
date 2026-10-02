@@ -67,6 +67,7 @@ class MinecraftPlayerSession:
             "result": self.result,
             "displays": self.displays,
             "release_blocked": self.release_blocked,
+            "connected": bool(self.camera.selected) and not self.release_blocked,
         }
 
     def _client(self, payload):

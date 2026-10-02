@@ -1,5 +1,7 @@
 # B5 shared workflow handoff — September 26, 2026
 
+Historical September 26 shared-workflow handoff for its identified candidate. Results and remaining gaps below preserve the state recorded then. Current release work follows the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md).
+
 B5 shared-workflow engineering is complete within the documented configurations and guarded-stop behavior. The current B5 source is distinct from the retained B3 and B4 candidates. The exact source, integration attempts, checks and completion verdict are in [B5 qualification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b5-engineering/20260926-integration/qualification-report.md). Owner acceptance and full-beta readiness remain open.
 
 ## Reconciliation and changes

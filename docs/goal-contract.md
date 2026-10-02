@@ -1,10 +1,12 @@
 # Goal Contract
 
-A goal contract is the machine-readable source of truth for a user objective.
-The default product contract remains
+Mario route-goal reference. These versioned route contracts define their selected diagnostic or gameplay objective. The [private-beta engineering plan](private-beta-engineering.md) owns application release scope.
+
+A goal contract is the machine-readable source of truth for a selected Mario route objective.
+The default Route Lab contract remains
 `data/goals/world_8_double_whistle.yaml`. Rank 28 adds the explicitly selected
 `data/goals/world_8_big_tanks.yaml` contract without changing that default.
-`data/goals/world_8_battleships.yaml` is the next cumulative product contract.
+`data/goals/world_8_battleships.yaml` supplies a separately selected cumulative extension.
 
 Goal contracts are also authoritative for supported product-goal ids, prefix
 order, and Route Lab display metadata. Every contract declares `display.name`

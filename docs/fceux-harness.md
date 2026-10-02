@@ -1,5 +1,7 @@
 # FCEUX Harness
 
+Mario backend reference for explicit route diagnostics and retained reliability work. The [private-beta engineering plan](private-beta-engineering.md) owns the integrated application release path.
+
 FCEUX is the current reliable backend for SMB3 route work. It gives the project
 direct controller input, stable state reads, route logs, and optional screenshot
 captures.

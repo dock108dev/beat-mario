@@ -1,5 +1,7 @@
 # B4 engineering handoff — September 25, 2026
 
+Historical September 25 engineering handoff for its identified Stardew candidate. Its instructions and results describe that stage. Use the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md) for current release work.
+
 B4.1–B4.4 are technically complete for the bounded Day5 configuration below. Ordinary real work, combined return/handback, live safeguards, cumulative checks and affected regressions are complete. Owner acceptance and full-beta readiness remain open.
 
 The combined typed request, exact review and Start completed in attempt `stardew-do-b8178678367d3c50` on source `eddec8828933c64c77dbc336924ce336b5182b1651ec47f1bb2885bea127c972` (HEAD `c61de17668dce092b26990c18493c4bfb92eeb41`, 214-file uncommitted tree). See [combined proof](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b4-engineering/20260925-live/combined-substage-proof.json) and [fresh handback verification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b4-engineering/20260925-live/attempt18-handback.json). Cumulative971 tests, lint, security, goal/segment and shared renders passed on that source. No commits or pushes.

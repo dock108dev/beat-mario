@@ -1,5 +1,7 @@
 # Live Mario observation
 
+Mario adapter observation reference. Minecraft selected-window observations and current release work are described in the [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path) and [private-beta engineering plan](private-beta-engineering.md).
+
 Valid completed observations also create an adapter-neutral learning
 attempt referencing the original run, input trace, and observation evidence.
 This derived envelope never rewrites the raw session. Candidate derivation is

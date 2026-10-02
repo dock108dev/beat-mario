@@ -1,10 +1,12 @@
 # PB2 — Ordinary app integration
 
+Historical PB2 integration report. All candidate identities, counts, limits and handoffs below describe that recorded OpenTTD experiment. Current integration and delivery work follows the [private-beta engineering plan](private-beta-engineering.md).
+
 October 1, 2026. **PB2 engineering qualification passed for the isolated OpenTTD repayment task on the identified Mac.** The normal Game Companion catalog now opens OpenTTD's conversation workspace. Three fresh processes completed the typed-request → Review → Start → verified outcome → neutral handback sequence. The initial PB3 text/integer/click contracts are implemented; full PB3 and Minecraft feasibility remain open.
 
 ## Exact candidate and retained evidence
 
-HEAD remains `719009c4fa2f17c6d28790d0676c50ffb23bfe2c`; changes are uncommitted and unpushed. PB2 executable source-map SHA-256 is `64d258a7b35db27f60a5578954dee5a3414d601c9011acc74c9fb530c44881b7`. It hashes the sorted JSON map of every Python source under `src/` plus `data/private-beta/openttd-pb2.json`. Ordinary delivery identity is separately `e28a208a0b9850a437f245bb579aac9aea69ad1f4055c49fb6c56e8af3cb843c`. The canonical profile-object hash is `8d716c04d0acb5cc07026698681a56c232b72ade8838f3a6b5412b0ac3c30eea`.
+The recorded PB2 HEAD is `719009c4fa2f17c6d28790d0676c50ffb23bfe2c`, with uncommitted and unpushed changes. PB2 executable source-map SHA-256 is `64d258a7b35db27f60a5578954dee5a3414d601c9011acc74c9fb530c44881b7`. It hashes the sorted JSON map of every Python source under `src/` plus `data/private-beta/openttd-pb2.json`. Ordinary delivery identity is separately `e28a208a0b9850a437f245bb579aac9aea69ad1f4055c49fb6c56e8af3cb843c`. The canonical profile-object hash is `8d716c04d0acb5cc07026698681a56c232b72ade8838f3a6b5412b0ac3c30eea`.
 
 Local ignored evidence is in `artifacts/private-beta/pb2/`: `baseline/`, `candidate.json`, `sessions/`, and `qualification/r1/`. The declaration and exact source map are `qualification/r1/candidate.json`; `results.json` contains case identities, outcomes, native receipts and measurements. Each connection owns its source/backend/isolation manifest, immutable selected-window frames, phase/control/timing/resource events, independent guardian log, and existing outcome/history records. UI screenshots and sanitized read-only snapshots are retained per case. Documentation is outside the executable source-map identity.
 
@@ -14,7 +16,7 @@ At entry, all PB1 manifest source hashes matched its qualified map `256cb244e1ae
 
 `lab_ui.py` serves the OpenTTD workspace through the existing catalog and local HTTP conversation interface. `conversation_service.py` exposes `ProfileConversationService`; it composes the existing `Planner`, `ConversationPlan`, `CompanionSession`, observation envelope, `SessionOutcome`, `PlanAttemptHistory` and catalog provider contracts. There is no second product server or gameplay state reader.
 
-The player explicitly opens a disposable paused test game, opens Finances, selects the profile and exact PID/start/window, and connects. Readiness shows screen/input permission separately. Enter chat receives a confirmed native neutralization acknowledgment before enabling and focusing the text field. Routine polling preserves the draft, cursor and selected option. Edits immediately disable execution and invalidate the reviewed revision. Review recaptures state; Start disables typing, focuses only the selected game, and grants finite authority after fresh validation. Completion records both actual balances and native handback. Results remain on disk; restoration/import/export of saved profiles and history across application restarts remains PB6 work.
+The player explicitly opens a disposable paused test game, opens Finances, selects the profile and exact PID/start/window, and connects. Readiness shows screen/input permission separately. Enter chat receives a confirmed native neutralization acknowledgment before enabling and focusing the text field. Routine polling preserves the draft, cursor and selected option. Edits immediately disable execution and invalidate the reviewed revision. Review recaptures state; Start disables typing, focuses only the selected game, and grants finite authority after fresh validation. Completion records both actual balances and native handback. Results remained on disk; this PB2 closeout assigned saved-profile/history restoration and import/export to PB6.
 
 | Owner | Responsibility |
 | --- | --- |
@@ -83,6 +85,6 @@ Declared control attempts whose inference had already returned remain supporting
 
 This engineering envelope is one Mac, one paused checkpoint, one menu task and one exact model/settings combination. Strict freshness can reject a connection under scheduling load; reconnect from the same disposable checkpoint rather than relaxing the limit. Installed experimental support does not establish owner acceptance, portable delivery, onboarding, unfamiliar-game transfer, Minecraft gameplay or private release.
 
-## Next bounded handoff
+## Historical PB2 handoff
 
 Begin PB3 feedback primitives and PB7M.1 camera feasibility: define frame-bound feedback/calibration evidence, settings invalidation and finite motion/stop contracts, then test ordinary relative/captured mouse input in a disposable Minecraft Java environment with a predeclared calibration matrix. Qualify turning, pitch, menu transitions, short correction/overshoot and native release before enabling a camera capability. Keep navigation, block placement, wall construction, onboarding, packaging and release as their separate later gates.

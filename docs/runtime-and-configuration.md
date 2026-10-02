@@ -1,15 +1,27 @@
 # Runtime, configuration, and data
 
-This repository is a local Python command-line application with a loopback-only
-player and engineering UI. Mario uses FCEUX for supported live execution and
+Game Companion is a local Mac application with a loopback-only player UI, plus
+Python engineering commands. The packaged app bundles its runtime; ordinary
+player setup does not require terminal commands or YAML editing. Minecraft
+Creative uses selected-window capture, app calibration and finite native skills.
+OpenTTD uses visible observations, a local Ollama proposal and one reviewed
+repayment. Mario uses FCEUX for supported live execution and
 retains a separate Mednafen diagnostic path. Stardew provides isolated prepared-copy setup and guarded live browser controls for the locally qualified Day 2/Day 5 configurations; its public CLI remains inspection-only. Experimental adapters are
 declarative, fixture-only catalog entries. There is no database, migration,
 cloud API, or production deployment target.
 
+The [PM handoff](private-beta-pm-handoff.md) records current private-beta readiness.
+Current source and retained private.2 enable Minecraft calibration/camera only;
+the building task is unfinished. Source corrections passed 1,327 canonical local
+tests and await a new package/native useful-task check. The [review records](private-beta-review.md)
+identify retained packages and their exact evidence.
+
 ## Runtime components
 
-The `smb3_agent` CLI in `src/smb3_agent/cli.py` is the public entry point. Its
-commands and the loopback UI route into these current subsystems:
+The packaged `Game Companion.app` enters through `app_runtime.py` and opens
+`http://127.0.0.1:8765/setup`. For source development the same entry is
+`python -m smb3_agent.app_runtime`; `smb3_agent/cli.py` owns engineering commands.
+Both paths route into these current subsystems:
 
 1. Goal and segment loaders read tracked YAML contracts under `data/goals/`
    and `data/segments/`.
@@ -31,6 +43,19 @@ commands and the loopback UI route into these current subsystems:
    reliability, visible, and owner evidence classifications distinct.
 8. Experimental onboarding validates, scaffolds, installs, discovers, inspects,
    and removes bounded data-only adapters.
+9. `player_setup.py`, `player_onboarding.py` and `player_setup_ui.py` own ordinary
+   template/profile setup, read-only Minecraft progress, requests, local reports
+   and safe-chat/direct controls. `player_store.py` persists bounded configuration
+   and sanitized outcomes outside the app installation.
+10. `minecraft_session.py` owns selected-window calibration connection, scope,
+    review, task cancellation and page heartbeat. `minecraft_native.py` composes
+    visible pose/material/cell observations, bounded camera/movement/addition
+    providers and `minecraft_wall.py`. Availability comes from actual checked
+    feature flags, independently of saved profiles.
+11. `profile_conversation.py` and `profile_runtime.py` provide OpenTTD's narrow
+    ordinary-app task; `model_gateway.py` sends a selected-window image and bounded
+    task context to local Ollama at `127.0.0.1:11434`. The model proposes a finite
+    plan and cannot post input or declare gameplay success.
 
 The legacy Mednafen adapter is a separate macOS diagnostic path. It starts the
 local `mednafen` executable, uses AppleScript to focus it, Quartz to locate and
@@ -39,9 +64,10 @@ reliability gate.
 
 There is no independent scheduler, queue, worker service, or daemon. An
 operator starts each CLI, emulator, or Route Lab process directly. While Route
-Lab is running, it owns bounded Show/live-observation threads and child
-processes; server shutdown asks those managers to stop and closes the only
-persistent server process.
+Lab or the packaged player app is running, it owns bounded observation/task/watchdog
+threads and helper/game child processes. The input guardian and camera emitter
+are task-owned helpers. Server shutdown asks every session manager to stop;
+unconfirmed cleanup is reported instead of permitting new authority.
 
 ## Conversation and plan runtime
 
@@ -63,12 +89,15 @@ without altering historical campaign manifests. See the [conversation guide](b2-
 ## Operator configuration
 
 The application does not load `.env` files and does not need a sample env file.
-There are no credentials or network service endpoints to configure.
+There are no cloud credentials to configure. OpenTTD requires separately installed
+local Ollama with `gemma3:4b` at its fixed loopback endpoint. Minecraft's current
+narrow typed requests do not require a model installation.
 
 | Setting | Used by | Behavior |
 | --- | --- | --- |
 | `SMB3_GAME_FILE` | Live Mario goal, reliability, task, command, observation, and Route Lab actions | Absolute or repository-relative path to the operator's local game file. An explicit `--game-file` wins where the command exposes that option. |
 | `GAME_COMPANION_EXPERIMENTAL_ROOT` | Experimental adapter installation, discovery, status, and removal | Optional local installation root. The default is `~/Library/Application Support/Game Companion/Experimental Adapters`. |
+| `GAME_COMPANION_USER_DATA` | Player profiles, history, reports, settings backups and native sessions | Optional local data root, defaulting to `~/Library/Application Support/Game Companion`. Development checks should use disposable storage. Ordinary players use the in-app data location. |
 | `PYTHON` | `scripts/validate_phase0.sh` | Interpreter used by the repository gate; defaults to `python`. This is a development-script setting, not application configuration. |
 
 Authoritative reliability runs sanitize inherited variables whose names begin
@@ -95,6 +124,8 @@ Other behavior is selected through CLI arguments and tracked configuration:
 - Stardew safety/evidence declarations: `data/stardew/`;
 - catalog, scenario, metric, campaign, and unattended contracts:
   `data/companion/` and `data/scenarios/`;
+- finite private-beta OpenTTD profile and Minecraft settings/practice declarations:
+  `data/private-beta/`, `minecraft_settings.py` and the app's supported templates;
 - Experimental adapter schema, fixture, and artifact contract:
   `data/experimental-adapters/`.
 
@@ -112,8 +143,15 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 - The macOS Stardew backend can inspect one visible foreground window and
   capture its pixels using Quartz and `mss`, and the browser setup connects the live controller and ordinary-input driver
   after checking isolation and profile compatibility. CLI commands remain inspection-only.
-- The standard-library web server and optional default-browser launch are the
-  only Route Lab integrations. Route Lab makes no cloud or external HTTP calls.
+- Minecraft and OpenTTD native input require macOS Screen & System Audio Recording
+  and Accessibility permissions, the exact selected supported game window and
+  exclusive input while a reviewed task runs. The native path uses bounded
+  input/guardian workers; changing window/settings requires fresh checks.
+- OpenTTD additionally requires local Ollama/`gemma3:4b`; local model HTTP calls
+  remain on loopback. Current Minecraft requests are parsed into finite skills.
+- Packaged review builds include Python dependencies and OCR resources. Games,
+  worlds, model weights and account credentials are separately owned prerequisites.
+  No cloud or external HTTP provider is implemented in this beta path.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions
@@ -145,6 +183,9 @@ Generated state is filesystem-only and ignored by Git:
 | `artifacts/unattended-regression/` | Immutable regression-only manifests, run directories, reports, cleanup evidence, and comparisons. |
 | `artifacts/campaigns/<exact-commit>/` | Ignored candidate-bound entry manifest with clean Git identity, contract hashes, deterministic totals, blank-owner guarantee, and proof limits. |
 | `public/assets/local/` | Optional ignored local artwork used by Route Lab. |
+| `~/Library/Application Support/Game Companion/profiles/`, `history/` and `reports/` | Player configurations, sanitized outcome history and inspectable feedback; `GAME_COMPANION_USER_DATA` can select another local root. |
+| `~/Library/Application Support/Game Companion/sessions/` and `settings-backups/` | Calibration/native attempt diagnostics and backed-up Minecraft options/debug preferences; preserved outside installation. |
+| `dist/private-beta/` | Ignored versioned review apps, manifests, supplied guides and retained package evidence. Existing identified packages must be preserved when preparing a successor. |
 
 Experimental scaffolds default to repository-local `experimental-adapters/`.
 Installed Experimental adapters live under the configured installation root,
@@ -154,16 +195,31 @@ Treat `artifacts/` as local evidence, not as a durable shared store. Back it up
 separately if a run must be retained. Never commit game files, savestates,
 screenshots, logs, generated evidence, or copyrighted local UI assets.
 
+Saved player profiles restore configuration and notes only. They never restore a
+live connection, current observation, calibration authority or reviewed plan.
+Imports are bounded declarative data. Report previews exclude raw screenshots and
+unrelated game data; native diagnostic folders may contain captures and require
+inspection before sharing. Applying supported Minecraft settings backs up options
+and debug preferences after checking that the game is closed; it does not edit worlds.
+
 ## Deployment and operations boundary
 
 There is no production service deployment, container image, package registry
 release, database bootstrap, or service-manager definition. The local
 `/api/delivery` endpoint reports server identity; `/api/delivery/shutdown`
 requires the server token and matching instance identity.
-The supported operating model is a repository checkout on an engineer's
-machine. Route Lab is an operator convenience surface, not a deployable web
-application: it has no TLS, user accounts, or remote-access authentication and
+The supported beta operating model is a local reviewed Mac app with ordinary
+browser setup and separately installed game/model prerequisites. Engineers also
+use the source checkout and CLI. Retained builds are locally ad-hoc signed, not
+notarized; broader installation and machine compatibility remain untested.
+The local UI has no TLS, user accounts, or remote-access authentication and
 must remain on loopback.
+
+The app checks source identity before reusing an instance on port 8765. A different
+app/build must be quit through its own verified shutdown path; an unknown port
+owner is not stopped. Closing a native workspace revokes that page's task lease;
+**Quit Game Companion** performs server/session cleanup. Use the [quick start](private-beta-quick-start.md)
+for permissions, first practice, recovery and feedback.
 
 For development checks, use the focused workflow in the
 [development guide](development.md). For a

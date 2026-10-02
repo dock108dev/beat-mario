@@ -1,11 +1,13 @@
 # Unattended Regression Operator Guide
 
+Engineering runner reference with retained V2 validation status. Current release work follows the [private-beta engineering plan](private-beta-engineering.md) and its ordinary user workflow.
+
 Game Companion provides an optional local regression runner for an
 adapter that explicitly declares unattended support. It is an engineering
-surface, not a player play mode. Implementation is complete and final
-validation is deferred. Deterministic provider, manifest, lifecycle,
-cancellation, cleanup, and comparison tests pass; no live unattended emulator
-or Stardew attempt has been run for the current release candidate.
+surface. The retained V2 implementation record reports deterministic provider,
+manifest, lifecycle, cancellation, cleanup and comparison tests, with live
+unattended validation deferred. Any run must retain its own candidate and
+classification independently of the ordinary private-beta workflow.
 
 ## What its results mean
 

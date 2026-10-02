@@ -291,7 +291,7 @@ class MinecraftNativeRuntime:
         for _ in range(24):
             stationary(obs)
             dh, dp = heading_delta(heading, obs.heading), pitch - obs.pitch
-            if max(abs(dh), abs(dp)) <= 0.35:
+            if max(abs(dh), abs(dp)) + obs.uncertainty_degrees <= 0.35:
                 return obs
             # One axis per child keeps each <=24-degree turn within the
             # child's 192-unit budget and avoids repeated worker setup/settling.
@@ -509,11 +509,19 @@ class MinecraftNativeRuntime:
     def place(self, cell, material, budget=None):
         self.approach(cell)
         cached = getattr(self, "latest_inspection", None)
+        current = getattr(self, "last_spatial", None)
+        now = time.monotonic()
         before = (
             cached[0]
             if cached
+            and current is not None
             and cached[0].cell == tuple(cell)
-            and 0 <= time.monotonic() - cached[0].captured_at <= 0.8
+            and 0 <= now - cached[0].captured_at <= 0.8
+            and 0 <= now - current.captured_at <= 0.8
+            and current.captured_at >= cached[0].captured_at
+            and current.window_identity == cached[0].window_identity
+            and current.settings == cached[0].settings
+            and math.dist(current.position, cached[1]) <= 0.02
             else self.inspect(cell)
         )
         if before is not None and before.material == material:

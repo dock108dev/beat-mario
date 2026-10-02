@@ -1,5 +1,12 @@
 # Development and repository structure
 
+For current private-beta work, start with the [PM handoff](private-beta-pm-handoff.md).
+The ordinary Minecraft setup implementation exists; the remaining delivery is its
+useful building task through a separately identified Mac package. The October 1
+corrected source passed **1,327 canonical local tests**. Retained private.1/private.2
+packages and their native results qualify their own identities, not subsequent
+source changes; see [review status](private-beta-review.md).
+
 ## Local environment
 
 Use Python 3.11 or newer and create the locked environment from the repository
@@ -76,6 +83,11 @@ to retained local-only evidence, which a fresh clone does not include.
   remove declarative Experimental adapters.
 - `python -m smb3_agent task ...`: bounded low-level diagnostics.
 - `scripts/validate_phase0.sh`: canonical non-live repository gate.
+- `python -m smb3_agent.app_runtime`: source version of the ordinary setup app;
+  opens `/setup` on the identified local instance.
+- `scripts/build_private_beta.py`: local Mac review-package builder. The packaged
+  executable enters `app_runtime.py` and provides an explicit `--smoke` HTTP/profile
+  lifecycle check that does not capture or control a game.
 
 Use `python -m smb3_agent COMMAND --help` for the current command surface. Do
 not copy old command inventories into documentation.
@@ -99,7 +111,8 @@ PYTHON=.venv/bin/python scripts/validate_phase0.sh
 ```
 
 Ruff is the configured Python linter. The repository has no separate formatter,
-type-checker, package build, or browser-test command. GitHub Actions runs the
+type-checker or standalone browser-test command. The local review-package builder
+is separate from the canonical gate. GitHub Actions runs the
 canonical gate on Python 3.11 without a game file or emulator. Pull requests also receive a
 dependency-review check that rejects newly introduced dependencies with known
 moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
@@ -111,16 +124,43 @@ runner image to provide Node. No npm packages or npm cache are required.
 Locally, tests that need Node are explicitly skipped when it is unavailable. Pre-walkthrough qualification requires those cases to run,
 plus actual browser keyboard/focus verification across background refreshes.
 
+For Minecraft/player changes, affected checks include `test_player_setup_ui.py`,
+`test_player_onboarding.py`, `test_player_beta.py`, `test_minecraft_integration.py`,
+`test_minecraft_native_aim.py`, scene/camera/settings tests and the shared
+feedback/skill runtime. Select the checks for the actual change. UI regressions
+exercise priority controls, malformed drafts, protection persistence, input locks
+and late responses. Use disposable user data; do not post native game input during
+offline verification. A native behavior change additionally needs one short
+integrated check of the affected useful path and handback.
+
 The stable repository jobs are `verify` and `dependency-review`; the latter runs
 only on pull requests and is intentionally skipped on pushes/manual runs.
 GitHub also supplies managed CodeQL checks outside the workflow file:
 `Analyze (actions)`, `Analyze (python)`, and `Analyze (javascript-typescript)`.
-Hosted
-passes at a committed baseline do not qualify subsequent uncommitted edits.
+Hosted passes at a committed baseline do not qualify subsequent uncommitted edits.
 
 For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
 and keep watchable playback separate from authoritative evidence.
+
+## Preparing a Mac review package
+
+`scripts/build_private_beta.py` uses `player_store.VERSION` for its build/output
+directories and includes the current source identity, checked Minecraft flags,
+guide, runtime and OCR resources in the manifest/package. The current local script
+uses `--noconfirm` and local Homebrew OCR paths. Prepare a distinct version/output
+before invoking it so retained private.1/private.2 apps and evidence remain intact.
+It requires PyInstaller and the declared local OCR inputs in addition to the
+project environment; this is a machine-specific review build, not a portable
+release pipeline.
+
+The app keeps player configuration/history outside installation. Verify the
+new manifest, launch/permissions, useful task, direct control/shutdown and fresh
+profile/history reopening against that exact package. Offline `--smoke` verifies
+HTTP/profile/report behavior only. Native source probes do not qualify a packaged
+user walkthrough. Record actual settings and engineering assistance, and leave
+unchecked gameplay families disabled. See the [engineering plan](private-beta-engineering.md)
+and [quick start](private-beta-quick-start.md) for the current task and user path.
 
 ## Conversation and route verification
 

@@ -1,10 +1,12 @@
 # PB3 feedback contracts / PB7M.1 Minecraft camera
 
+Engineering history for the PB3/PB7M camera campaign and later private.2 development observations. The [private-beta engineering plan](private-beta-engineering.md) owns current task sequencing, input availability and release scope; the [PM handoff](private-beta-pm-handoff.md) identifies the next candidate work.
+
 October 1, 2026. **Historical camera campaign retained; exhaustive qualification is stopped. The missing first response was repaired with observed readiness preparation. The private.2 integrated player path now has focused calibration and camera evidence; live building integration remains in progress.**
 
-## Current planning policy — October 1, 2026
+## Planning policy recorded October 1, 2026
 
-The owner has moved onboarding and broad gameplay/reliability testing into the private beta. The 48-core/30-fault matrix and complete-restart rule below describe the historical engineering campaign; they are no longer prerequisites for integration or private-beta invitations. Preserve all results, failures and unresolved movement without upgrading their evidence status. Native work is paused while the owner uses the Mac. Continue ordinary setup/profile integration, useful tasks, guidance and delivery, with focused affected checks and a short scheduled integrated smoke. Existing camera eligibility is not changed by this documentation edit. See the active engineering plan and Desktop tracker for current work.
+The owner moved onboarding and broad gameplay/reliability testing into the private beta. The 48-core/30-fault matrix and complete-restart rule below describe the historical engineering campaign. This checkpoint paused native work while the owner used the Mac and continued ordinary setup/profile integration, useful tasks, guidance and delivery. Current scheduling and eligibility follow the active engineering plan and Desktop tracker; results below retain their recorded classifications.
 
 ## Candidate and preservation
 
@@ -60,7 +62,7 @@ The October 1 integration uses the same finite event owner, with exact process/s
 
 Retained defects and bounded repairs include delayed inventory rendering (poll visible transition without repeating E), tooltip occlusion of a mode-check separator, inventory versus gameplay icon lighting/offset, stale feedback reuse between task pulses, and equality at touching air/ground ray intervals. Input releases were confirmed after refused or partial attempts. A separate large view change during an aim attempt was explicitly identified by the owner as their interruption; that explanation applies to this occurrence only. The historical r7 settling change above remains unattributed. The first task pulse now requires an unchanged newly captured view, and subsequent pulses refresh only independently stable current feedback. No whole matrix restarted, and no posted event is treated as completed gameplay.
 
-Current evidence lives under `artifacts/private-beta/private2-checkpoint/brief-state4/`. The current integrated candidate and exact enabled gameplay families will be recorded in the rebuilt manifest and private-beta review. Earlier candidate identities and denominators above remain historical. No commit, push, distribution or tester contact has occurred.
+Evidence for this checkpoint lives under `artifacts/private-beta/private2-checkpoint/brief-state4/`. The rebuilt manifest and private-beta review identify each later integrated candidate and enabled gameplay family. Earlier candidate identities and denominators above remain historical. This checkpoint performed no commit, push, distribution or tester contact.
 
 ### Retained short checks after the clearance repair
 
@@ -70,4 +72,4 @@ A nearby-movement inspection stopped on changed player position before any movem
 
 Key-up-only recovery did not establish stillness. A retained frame shows a large animal next to the player; collision is a plausible source of the current displacement, not proof of its cause or of the historical r7 motion. A later bounded disposable setup move ended one block lower than expected and preparation stopped. No jump or wall placement followed. The area needs a clear, flat starting position before further useful checks. Input was released after every attempt; no worker or held key/button remained.
 
-Current native evidence is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. Camera/calibration are available; aiming, nearby movement, additions and wall Start remain unavailable pending their remaining affected checks and the packaged ordinary Minecraft smoke. This is unfinished integration, not launch acceptance. Native input is paused awaiting the next agreed brief window. The preserved private.1 packaged OpenTTD smoke is unchanged.
+Native evidence for this checkpoint is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. At closeout, camera/calibration were available; aiming, nearby movement, additions and wall Start remained unavailable pending their affected checks and the packaged ordinary Minecraft smoke. Native input paused pending the next agreed brief window. The preserved private.1 packaged OpenTTD smoke remains unchanged. Current continuation and build status follow the PM handoff.

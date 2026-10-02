@@ -82,12 +82,18 @@ class CompositeBudget:
         )
         self.steps = self.input_ms = 0
 
+    def check(self):
+        """Check authority and elapsed time without consuming additional work."""
+        if self.canceled() or not 0 <= self.clock() - self.started < self.max_seconds:
+            raise FeedbackError(
+                "Composite task canceled or total work budget exhausted"
+            )
+
     def consume(self, input_ms=0):
+        self.check()
         if (
             type(input_ms) is not int
             or input_ms < 0
-            or self.canceled()
-            or not 0 <= self.clock() - self.started < self.max_seconds
             or self.steps + 1 > self.max_steps
             or self.input_ms + input_ms > self.max_input_ms
         ):
@@ -205,6 +211,7 @@ class WallCoordinator:
             self.approach(scope.stop_point, budget)
             budget.consume()
             position = self.observe_position()
+            budget.check()
             if math.dist(position, scope.stop_point) > 0.12:
                 raise FeedbackError("Nearby stop point was not independently observed")
             result["stop_point_observed"] = True

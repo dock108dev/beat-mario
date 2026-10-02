@@ -1,6 +1,8 @@
 # B8 delivery work order
 
-**Historical work order prepared by B7; B8 has since completed on retained source `ed84e02a…`, and B9 has started with owner observations/acceptance pending.** See [current delivery guidance](b8-personal-delivery.md). The repair closeout is retained locally at `artifacts/b8-final-return-repair/20260926/closeout.md` (repository-relative path; ignored evidence, unavailable in a standalone checkout). The requirements and pre-delivery gap descriptions below preserve the original work order, not new instructions to repeat completed work. Later maintenance does not inherit B8 qualification. B6 technical qualification and the [B7 closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/closeout.md) remain separate evidence. This is one bounded engineering delivery stage, not a new game-development or broad gameplay campaign.
+Historical B8 work order for the September 26 personal-Mac delivery. Its packaging and sequencing instructions apply to that stage. The [private-beta engineering plan](private-beta-engineering.md) owns the current versioned tester-build path.
+
+**Historical work order prepared by B7; B8 completed on retained source `ed84e02a…`, and B9 began with owner observations/acceptance pending.** See [retained B8 delivery guidance](b8-personal-delivery.md). The repair closeout is retained locally at `artifacts/b8-final-return-repair/20260926/closeout.md` (repository-relative path; ignored evidence, unavailable in a standalone checkout). The requirements and pre-delivery gap descriptions below preserve the original work order. Later maintenance has separate qualification. B6 technical qualification and the [B7 closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/closeout.md) remain separate evidence.
 
 ## Entry and exact identity
 

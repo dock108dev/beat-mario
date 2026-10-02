@@ -48,6 +48,9 @@ class FiniteSkillRuntime:
                 if budget is not None:
                     budget.consume()
                 before = self.observe()
+                self._guard(started, contract)
+                if budget is not None:
+                    budget.check()
                 provider.require_fresh(before, self.clock())
                 decision = provider.next(signature, parameters, before, result)
                 if decision is None:
@@ -75,6 +78,9 @@ class FiniteSkillRuntime:
                 if budget is not None:
                     budget.consume()
                 after = self.observe()
+                self._guard(started, contract)
+                if budget is not None:
+                    budget.check()
                 provider.require_fresh(after, self.clock())
                 if (
                     self._captured_at(after) <= self._captured_at(before)

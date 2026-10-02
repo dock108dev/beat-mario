@@ -1,9 +1,10 @@
 # Game Companion Architecture
 
-The system is a local game companion, not a pile of one-off route scripts. The
-FCEUX runner is the supported live Mario execution backend. The shared
-player-session layer now also contains Stardew domain contracts, a combined
-catalog, regression-only orchestration, and declarative Experimental adapters.
+Game Companion is a local application with typed plans, explicit player control,
+game-owned observations and retained outcomes. FCEUX supplies the Mario backend;
+Stardew, profile-based reference work and Minecraft have their own runtime
+semantics. The [private-beta engineering plan](private-beta-engineering.md) owns
+current release scope and the [PM handoff](private-beta-pm-handoff.md) owns remaining delivery work.
 
 ## Components
 
@@ -55,13 +56,42 @@ The [live-observation contract](live-observation.md) documents the exact
 visible FCEUX connection, direct player-input source, read-only boundary,
 continuity rules, and retained local evidence.
 
+## Ordinary player setup and Minecraft path
+
+`lab_ui.py` serves `/setup`, `/minecraft` and `/help` through the existing local
+server. `PlayerSetupService` in `player_setup.py` coordinates saved profiles,
+questions/corrections, review and direct controls. `player_onboarding.py` derives
+the visible setup step and available task list from the selected profile and
+current Minecraft session. `player_store.py` retains bounded configuration,
+outcomes and inspectable local reports outside the installed build; reopening
+starts with fresh runtime authority.
+
+`MinecraftPlayerSession` in `minecraft_session.py` owns the exact current
+connection, review, page lease, cancellation epoch and active input owner.
+`CHECKED_FEATURES` enables calibration and camera on the current candidate;
+aiming, movement, additions and wall remain disabled pending their useful-path
+checks. The source feature flags are the runtime eligibility authority.
+
+`minecraft_native.py` composes selected-window capture, visible HUD pose/target
+and inventory evidence, calibrated camera feedback and finite input owners.
+`skill_runtime.py` checks fresh observations, child and parent deadlines,
+independent post-input results and release. `minecraft_wall.py` accounts one
+shared budget while coordinating work cells, doorway air, protected cells and
+the observed stop point. These implemented ports supply the ongoing building
+integration; their existence does not substitute for a successful packaged task.
+
+`model_gateway.py` and profile conversation provide bounded local model
+proposals for supported reference-game work. Immediate controls and Minecraft's
+fast feedback loop remain independent of inference. Game/provider semantics
+select supported skills and outcome predicates.
+
 ## Typed planning and bounded Mario execution
 
 `request_planning.py` owns a registry of adapter planners and a serialized typed
 plan contract. `mario_route_plan.py` and `stardew_planning.py` own actions,
 capabilities, protected choices and target semantics. Advisory proposals cannot
-grant permission. The local grammar supports bounded contextual requests and
-keeps unsupported clauses explicit; there is no external model dependency.
+grant permission. The Mario/Stardew local grammar supports bounded contextual requests and
+keeps unsupported clauses explicit; these adapter planners need no model account.
 
 `conversation_service.py` coordinates the ordinary Mario UI, reviewed plans,
 exact command acknowledgments, variant compatibility and append-only outcomes.
@@ -77,7 +107,7 @@ See [Planning interfaces and adapter extension points](b2-conversation-guide.md)
 pipeline is:
 
 ```text
-owner primary-save selection
+explicit source or prepared-farm selection
 -> verified attempt-owned disposable copy
 -> visible process/window identity
 -> complete screen-only farm sweep
@@ -302,8 +332,9 @@ Each segment needs:
 - Retry/recovery policy.
 - Evidence artifacts.
 
-The current Lua route runner already has several implicit segments. The next
-step is to promote those into an explicit segment catalog.
+`segments.py` loads and validates explicit segment catalogs referenced by the
+selected goal's `segments.catalog`. The goal supplies ordered route membership;
+the catalog supplies each segment's conditions, strategy and evidence metadata.
 
 ## Emulator Adapter
 
@@ -492,12 +523,13 @@ scenario readiness, missing final evidence, pilot manifest, and recovery state.
 contract. It cannot populate feedback or acceptance and cannot upgrade
 technical evidence.
 
-`scenarios.py` also owns the campaign readiness model and candidate-manifest
+`scenarios.py` also owns the retained V2 campaign readiness model and candidate-manifest
 validation. Catalog status and implementation evidence determine implementation
 readiness; exact clean Git identity, authoritative contract hashes,
 deterministic gate records, fixtures/assets, safety requirements, and blank
 owner fields determine campaign entry. Scheduled technical validation and
-pending owner action are completion blockers, not circular entry blockers.
+pending owner action are completion blockers for that versioned campaign. The
+active private-beta delivery path follows the engineering plan linked above.
 
 ## Experimental adapter onboarding and discovery
 

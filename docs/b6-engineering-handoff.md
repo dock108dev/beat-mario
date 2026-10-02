@@ -1,5 +1,7 @@
 # B6 Mario qualification and repair handoff — September 26, 2026 UTC
 
+Historical September 26 Mario handoff for its identified candidate. Its technical results retain that scope. Current release work follows the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md).
+
 The exact B6 verdict, source identity, attempt table, measured intervals, checks and limitations are retained in [the qualification report](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b6-engineering/20260926-mario/qualification-report.md) and [readiness record](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b6-engineering/20260926-mario/b6-readiness.json). B6 is technically complete within the supported boundaries below; these records retain its verification. Owner feedback and acceptance remain unrecorded; B8 delivery readiness and full-beta approval are separate.
 
 ## Candidate and preserved evidence

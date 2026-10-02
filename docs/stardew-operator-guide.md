@@ -1,5 +1,7 @@
 # Stardew companion guide
 
+Guide for the implemented, locally prepared Stardew adapter configurations. The [private-beta quick start](private-beta-quick-start.md) covers the current tester build; the [private-beta engineering plan](private-beta-engineering.md) owns release scope.
+
 Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. Live setup requires prepared seeds, profile registrations and their matching calibration files. These are ignored local assets and are not bundled by cloning the source or running the launcher. Without them, the CLI can inspect declared capabilities but the browser cannot start qualified farm work.
 
 ## Choose the matching farm and profile

@@ -1,16 +1,14 @@
 # Private-beta engineering plan
 
-Updated October 1, 2026. **The private beta is the onboarding and real-use testing phase. Engineering now prioritizes an integrated app, clear setup/how-to guidance and a usable tester build.** The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns remaining work. Historical PB1/PB2 results and camera attempts remain in their reports; this change does not qualify incomplete behavior.
+Updated October 1, 2026 for project-manager handoff. **Engineering is completing the user's Minecraft onboarding and first useful task in a versioned Mac app.** The [PM handoff](private-beta-pm-handoff.md) summarizes current status and continuation; the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns remaining work. The [course-correction review](minecraft-beta-course-correction-20261001.md) records the source repairs and verification. Historical PB reports retain their exact evidence.
 
 ## Product and launch scope
 
 A technically comfortable nonprogrammer connects an eligible game, follows setup/practice, saves a profile and completes supported tasks mainly through typed conversation. Existing Mario/Stardew paths, profile-based reference-game work and Minecraft Java Creative tasks remain the direction. A playable profile parameterizes implemented skills; configuration cannot invent navigation or verification.
 
-Before invitations, provide a coherent install/setup/play/Stop/reopen path, useful implemented tasks, understandable limitations and a feedback route. During private beta, testers do most onboarding usability evaluation, task variation, broader game configuration, sustained reliability and machine/environment testing. Unfamiliar-game evaluation, three-family reference-game coverage, the 30-minute setup target and exhaustive Minecraft matrices are beta exercises and improvement goals, not prerequisites for opening the cohort.
+Before invitations, provide a coherent install/setup/play/Stop/reopen path, a useful implemented Minecraft task, understandable limitations and a feedback route. During private beta, testers evaluate onboarding usability, task variation, broader game configuration, sustained reliability and machine/environment differences. Setup time and additional eligible-game tasks guide iteration.
 
-Do not require the former 48-core/30-fault camera matrix, three fresh-process repetitions or whole-matrix restarts to continue development. Preserve that material as optional diagnostic design. This policy change does not automatically remove runtime restrictions or enable camera input. Review and change those restrictions in implementation where appropriate, retaining conservative controls and truthful experimental labels.
-
-Minecraft camera readiness, visible detection, native relative input and experimental controls are implemented; the first-callback suppression repair is documented. Camera's exhaustive qualification is incomplete. The report also retains unexplained movement outside owned emitter requests. Do not attribute it to human input without evidence or promote incomplete results. Continue independent integration while native testing is paused.
+Minecraft camera readiness, visible detection, native relative input and bounded camera requests are implemented. Aiming, nearby movement, additions and wall Start remain disabled. Enable each family only after focused checks of its actual integrated behavior, with conservative controls and truthful task labels. The [camera report](pb3-minecraft-camera.md) preserves earlier trials, the first-response repair and unresolved observations separately from current release work.
 
 ## Existing ownership and implementation seams
 
@@ -18,44 +16,48 @@ Reuse the current conversation, session, catalog, host, feedback and history own
 
 | Concern | Existing owner to reuse | Private-beta work |
 | --- | --- | --- |
-| Plans and revisions | [request_planning.py](../src/smb3_agent/request_planning.py), [conversation_service.py](../src/smb3_agent/conversation_service.py), [conversation_ui.py](../src/smb3_agent/conversation_ui.py) | Add model-backed proposals and profile skills while retaining typed plans, direct controls and revision binding |
+| Plans and revisions | [request_planning.py](../src/smb3_agent/request_planning.py), [profile_conversation.py](../src/smb3_agent/profile_conversation.py), [minecraft_session.py](../src/smb3_agent/minecraft_session.py) | Compose implemented profile skills through typed plans, direct controls and revision binding |
 | Ownership and continuity | [companion_session.py](../src/smb3_agent/companion_session.py), [takeover.py](../src/smb3_agent/takeover.py), adapter runtimes | Reuse player ownership, fresh authority, bounded execution, immediate reclaim and neutral handback |
 | Catalog and switching | [companion_catalog.py](../src/smb3_agent/companion_catalog.py) | Profile-backed providers and task-specific proof labels; no shared-core game-ID branches |
-| Screen/input foundation | [stardew_adapter.py](../src/smb3_agent/stardew_adapter.py), [stardew_input.py](../src/smb3_agent/stardew_input.py) | Extract reusable window/capture/control interfaces from game-specific calibration and action purposes |
-| Current perception | [stardew_perception.py](../src/smb3_agent/stardew_perception.py), [stardew_farm_vision.py](../src/smb3_agent/stardew_farm_vision.py) | Add qualified reusable detectors/grounding; existing calibrated farm pixels do not generalize automatically |
+| Screen/input foundation | [screen_host.py](../src/smb3_agent/screen_host.py), [native_host.py](../src/smb3_agent/native_host.py), [ordinary_input.py](../src/smb3_agent/ordinary_input.py), [input_guardian.py](../src/smb3_agent/input_guardian.py) | Reuse selected-window capture, input guards and independent neutralization; keep game-specific calibration in providers |
+| Current perception | [minecraft_scene.py](../src/smb3_agent/minecraft_scene.py), [minecraft_capture.py](../src/smb3_agent/minecraft_capture.py), [minecraft_inventory.py](../src/smb3_agent/minecraft_inventory.py) | Finish efficient fresh pose/face/material/clearance inspections on the supported Minecraft path |
 | Outcomes and local evidence | [run_library.py](../src/smb3_agent/run_library.py), [learning.py](../src/smb3_agent/learning.py), [metrics.py](../src/smb3_agent/metrics.py) | Profile/skill/backend compatibility, observed task outcomes and configuration-test classifications |
 | Contributor installation | [experimental_adapters.py](../src/smb3_agent/experimental_adapters.py), [onboarding guide](new-game-onboarding.md) | Separate playable-profile schema/provider from current fixture-only scaffolding; installation does not prove execution |
 | Readiness and delivery | [beta_readiness.py](../src/smb3_agent/beta_readiness.py), [delivery.py](../src/smb3_agent/delivery.py), [launcher](../scripts/launch_companion.py) | Versioned tester build, focused launch checks and inspectable diagnostics |
 
 Current source is authoritative for implementation status. Historical reports bind their exact candidates; they are not requirements to recreate every earlier run. The local model remains separate from immediate controls and fast motion feedback.
 
-| Proposed owner | Responsibility |
+| Implemented owner | Responsibility |
 | --- | --- |
 | `model_gateway.py` | Backend/configuration identity, bounded multimodal input, structured results, cancellation, timeout, usage/spend, redaction and sanitized diagnostics |
 | `screen_host.py` | Selected process/window/display identity, visible capture, scale transforms, capture timestamp and permission/occlusion status |
 | `ordinary_input.py` | Mapped short actions, foreground/identity/freshness guards, pressed-input ledger, independent cancellation/watchdog and neutralization |
-| `grounded_observation.py` | Frame-bound regions/labels/facts, source provenance, uncertainty, compatible detectors and target revalidation |
-| `skill_contract.py`, `skill_runtime.py` | Finite typed primitives and predicates, parameters, eligibility, resource limits, outcomes, stop points and execution validation |
+| `feedback_contracts.py`, `minecraft_scene.py`, `minecraft_camera_observation.py` | Frame-bound facts, source provenance, uncertainty, compatible detectors and target revalidation |
+| `skill_registry.py`, `skill_runtime.py` | Finite typed primitives and predicates, parameters, eligibility, resource limits, outcomes, stop points and execution validation |
 | `game_profiles.py` | Bounded versioned profile/skill inventory, compatibility, local manifests, import/export and integrity |
-| `profile_onboarding.py` | Guided setup state, recording/annotation, candidate skill review, short practice and actionable setup failures |
-| Private-beta readiness owner | Practical build/check/known-issue record and beta feedback; preserve personal-beta v3 behavior and evidence |
+| `player_setup.py`, `player_setup_ui.py`, `player_onboarding.py`, `player_calibration.py`, `player_store.py` | Guided setup state/progress, app-created calibration, actionable setup failures and configuration/history lifecycle |
+| `build_private_beta.py`, `beta_readiness.py`, `delivery.py` and versioned review records | Practical build/check/known-issue record and beta feedback; preserve personal-beta v3 behavior and evidence |
 
 The model proposes typed plans; it cannot issue native input, execute arbitrary code, grant authority or declare verified success. Game-specific semantics belong to profile/providers. Profiles remain bounded declarative data.
 
 ## Current repository review and remaining integration
 
-Reviewed October 1, 2026 against private.2 and its current source. This is a source/document review, not a new live run. The owner has made the Mac available for short native checks. The [private.2 owner review](/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Owner%20Review.md) owns source identity, package limitations, 201 affected checks and native development observations.
+The delivery unit is the user's complete Minecraft first-use path: open the app, create a profile, follow permission/settings guidance, select the window, calibrate/connect, prepare and inspect a building region, run the reviewed useful wall task, stop/receive control and reopen the profile/history. Check this path with fresh setup data through the ordinary interface. The app should show the current setup step, available tasks and a concrete remedy for missing preparation. A component test or an engineering-prepared starting pose establishes only that component's behavior.
+
+Current source includes state-derived onboarding progress/remedies, priority controls independent of advanced setup fields, protection persistence, native-work draft locking, aiming precision/inspection reuse and child/parent deadline repairs. The canonical gate passed 1,327 tests plus its other local checks on the repaired source before this PM documentation refresh; its retained log is `artifacts/private-beta/course-correction-20261001/canonical.log`. These checks establish local behavior and remain bound to that source. No live Minecraft task or package rebuild occurred during the repair audit.
+
+The retained private.2 package predates those repairs. Its [owner review](/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Owner%20Review.md) owns its source identity, package limitations, 201 affected checks and native development observations. Keep current source, package checks and actual live outcomes distinct.
 
 | Implemented foundation | Remaining useful-path work |
 | --- | --- |
-| Player profile/setup/help/history/feedback and versioned packaging | Preserve it; finish and describe Minecraft tasks rather than recreating setup/storage |
-| App calibration, bounded camera Review/Start and direct controls | Confirm the next package's useful gameplay path in a short integrated smoke; no camera matrix restart |
+| Player profile/setup/help/history/feedback and versioned packaging; current source adds setup progress/remedies | Finish the user preparation and task path, then package the current changes |
+| App calibration, bounded camera Review/Start and direct controls | Confirm the next package's useful gameplay path in a short integrated smoke |
 | `minecraft_scene.py`, inventory/hotbar/capture and native provider integration | Practical flat clear start, reliable fresh target/clearance inspection and efficient pose handling. Creative/material/one-addition development observations are retained, not package-wide claims |
 | `minecraft_native.py` and `minecraft_camera_skill.py` | Finish nearby movement and aiming. Guard rejects unexpected translation/held input; key release alone cannot stop collision/game physics. Diagnose concrete failures without asserting an unproven cause |
 | `minecraft_wall.py` coordinates inspections, approach, placement and final checks under a shared budget | Make the live wall path progress: avoid repeated scanning/aiming exhausting the task before movement; verify 19 solids, two doorway air cells, marked protected surfaces and return point |
 | `minecraft_session.py` enables calibration/camera only | Enable aim/move/place/wall after focused practical checks for those paths, then rebuild accurate UI/manifest flags |
 
-Remaining order: clear stable disposable start → efficient inspected move/aim/addition → useful wall completion and handback → enabled appropriate features and refreshed package → ordinary packaged wall smoke. The completed profile/setup/camera integration should not be reopened as missing scaffolding. Broad onboarding and reliability are beta work.
+Remaining order: user-guided clear stable disposable start → efficient inspected move/aim/addition → useful wall completion and handback → enabled appropriate features and refreshed package → ordinary packaged first-use smoke from a new profile. Keep the implemented profile/setup/camera foundation and finish its connection to useful building. Broader usability and reliability evaluation continues during beta.
 
 ## Integration work — PB3 through PB7M
 
@@ -69,7 +71,7 @@ Use independent post-action observations. Event delivery and model confidence do
 
 ### Camera and Minecraft movement
 
-Integrate explicit readiness and calibration into ordinary setup/practice. Preserve finite preparation pulses, fresh visible response, settings compatibility and sampled settling checks. Remove player dependence on sealed engineering receipts or developer scripts through an explicit local profile/setup implementation; do not merely bypass validation.
+Reuse app-created readiness and calibration in ordinary setup/practice. Preserve finite preparation pulses, fresh visible response, settings compatibility and sampled settling checks. Guide the user through current connection and calibration in the app, then carry those checked observations into the useful task.
 
 Implement bounded forward/back/strafe and nearby approach/aiming on flat practice ground using the shared feedback loop. Re-observe between material actions, distinguish translation from rotation, and stop on uncertain pose, blocked paths or lost targets. Begin with conservative task/time/input limits. Expensive model inference chooses goals; local feedback owns motion and stopping.
 
@@ -93,7 +95,7 @@ Direct controls stay available independently of inference. Late or superseded re
 
 ### Guided setup and how-to — PB5
 
-Build select game/window → permissions → prerequisites/settings → controls/calibration → disposable practice → supported task families → save profile. Prefer sensible defaults and supported templates. Explain failed setup with a concrete remedy. No YAML editing, terminal steps or developer-authored coordinates should be required for ordinary player configuration.
+Complete the implemented select game/window → permissions → prerequisites/settings → controls/calibration → disposable practice → supported task families → save profile flow through useful building. Preserve state-derived progress and concrete remedies, sensible defaults and supported templates. No YAML editing, terminal steps or developer-authored coordinates should be required for ordinary player configuration.
 
 If teaching/demonstrations are offered, derive reviewable candidates from implemented primitives and outcome checks. A recorded macro alone is not a reusable skill. Missing capabilities must be explicit rather than yielding an apparently ready profile.
 
@@ -111,7 +113,7 @@ Beta testers evaluate these instructions and setup usability. Record assistance 
 
 ### Profiles and normal product — PB6
 
-Implement versioned save/reopen/edit/duplicate/import/export and history preservation. Bind profiles to supported game/settings/runtime/detector/skill versions. Reopening is useful but grants no fresh input authority. Switching, edits and removal neutralize current execution and preserve results.
+Preserve the implemented versioned save/reopen/edit/duplicate/import/export and history lifecycle. Bind profiles to supported game/settings/runtime/detector/skill versions. Reopening is useful but grants no fresh input authority. Switching, edits and removal neutralize current execution and preserve results.
 
 Imports accept bounded declarative content only; reject code, unsafe paths and unknown executable capabilities. Default exports exclude credentials, personal saves and unrelated screenshots. Imported evidence does not establish local compatibility or execution authority.
 
@@ -121,9 +123,9 @@ Before testers use a feature, confirm its basic integrated behavior and immediat
 
 Retain selected-window guards, finite input/time/model budgets, chat-before-focus neutralization, stale observation rejection, cancellation, direct Stop/Take control, shutdown and honest partial outcomes. Keep existing checks where relevant. Run the canonical gate once for an integrated handoff, repeating only after relevant changes or failures. Do not run full campaigns after every primitive or restart unrelated successful checks after a repair.
 
-Native camera automation uses the owner's captured mouse/foreground. Do not start long campaigns or ask the owner to stop normal work indefinitely. Agree on a short input-exclusive smoke window when needed; otherwise continue code, UI, guides, profile and packaging work. If the owner needs the Mac, stop/release and preserve work. The owner has now made the Mac available for bounded native checks. Stop and release immediately if they reclaim it; availability does not justify the old full campaign.
+Native camera automation uses the owner's captured mouse/foreground. Arrange a short input-exclusive smoke window when needed; otherwise continue code, UI, guides, profile and packaging work. Follow the latest owner availability instruction, and stop/release immediately if they reclaim the Mac. Preserve work between checks.
 
-Record practical build versions, affected checks and known issues. Historical evidence retains its classification; fixtures are not live proof. Do not create an expanded readiness-validator project solely to enforce removed matrices.
+Record practical build versions, affected checks and known issues. Historical evidence retains its classification; fixtures are local checks and live outcomes are recorded separately.
 
 ## Delivery integration — PB10
 
@@ -141,28 +143,28 @@ Prepare the actual app/build, quick-start guide, feature/limitation list and iss
 
 During beta, gather onboarding friction, profile creation/reopening, Minecraft task results and variation, reference-game task expansion, additional eligible-game attempts, interruption/recovery, resource/performance issues and installation differences. Repair concrete defects and recheck affected behavior. Record failures and useful assistance without forcing blind-title freezes or total requalification after every beta fix.
 
-The proposed 30-minute setup goal is a usability measurement. The third-game task breadth, unfamiliar-game transfer and broader reliability targets guide iteration. They do not claim universal support and are not private-beta admission gates. Public-beta readiness can be decided later from actual beta findings.
+Measure setup time, assistance, useful task completion and broader reliability during beta. Use those findings to choose later capability and public-beta work.
 
 ## Immediate engineering handoff
 
-Continue private.2's implemented Minecraft scene/native/wall providers. Establish a clear flat stable disposable starting position, repair affected move/aim/addition behavior and inspection inefficiency, finish ordinary wall execution, enable checked families and rebuild into a separate version. The Mac is available for bounded native work now; stop/release if reclaimed. Run a short useful packaged wall/outcome/control/reopen smoke. Preserve prior artifacts and partial results; no full qualification campaign or unrelated restart is required.
+Continue the current corrected source's Minecraft scene/native/wall providers through the user-facing setup flow. Start with a new profile and user-selected disposable world. Make preparation understandable and visibly checked, repair affected move/aim/addition behavior and inspection inefficiency, finish ordinary wall execution, enable checked families and rebuild into a separate version. Run a short useful packaged setup/wall/outcome/control/reopen smoke and record every engineering intervention needed to get through it. Preserve prior artifacts and partial results. Native work uses a brief exclusive-input window and releases the Mac when reclaimed.
 
 Do not commit/push, contact testers, purchase access or distribute. Finish with the app, exact setup, actual useful task result, limitations and owner review.
 
-## Integrated review build — October 1
+## Retained private.1 review record — October 1
 
-A local versioned Mac review build and guide are now prepared; the [owner review](/Users/michaelfuscoletti/Desktop/beat-mario/docs/private-beta-review.md) binds the actual packaged candidate and checks. The PHL OpenTTD one-repayment smoke passed with independent outcomes, neutral handback and profile/history reopening. Packaging OCR/configuration/cursor defects were repaired and affected checks repeated. Minecraft native input remains disabled; visible material/ground/empty-cell integration and useful wall execution are unfinished. The canonical gate ran once; no exhaustive camera qualification or whole-matrix restart occurred. Native work ended with the app/game closed and the Mac released. Continue the remaining product implementation within this plan; this review build is not full private-beta launch acceptance.
+A local versioned Mac review build and guide were prepared; the [owner review](private-beta-review.md) binds the actual packaged candidate and checks. The PHL OpenTTD one-repayment smoke passed with independent outcomes, neutral handback and profile/history reopening. Packaging OCR/configuration/cursor defects were repaired and affected checks repeated. In private.1, Minecraft native input was disabled and visible material/ground/empty-cell integration and useful wall execution were unfinished. The canonical gate ran once. Native work ended with the app/game closed and the Mac released. This record applies to private.1 and is not current Minecraft availability or full private-beta launch acceptance.
 
 
-## private.2 Minecraft integration in progress
+## Retained private.2 Minecraft integration record — October 1
 
-The separate private.2 candidate preserves private.1 and its successful packaged OpenTTD smoke. PHL 346E2C is connected; native work uses only the visibly verified disposable Creative world. Current gameplay uses vanilla Minecraft Java 26.3, an 854 × 508 point selected window, native 1× PHL capture retained with exact 2× glyph decoding, and app-created directional calibration. Personal Survival worlds remain untouched.
+The separate private.2 candidate preserves private.1 and its successful packaged OpenTTD smoke. At this checkpoint PHL 346E2C was connected and native work used only the visibly verified disposable Creative world. Gameplay used vanilla Minecraft Java 26.3, an 854 × 508 point selected window, native 1× PHL capture retained with exact 2× glyph decoding, and app-created directional calibration. Personal Survival worlds remained untouched. These environment and process observations describe the checkpoint; current availability must be established for the next native check.
 
 Live calibration measured eight signed responses near 0.15 degrees per unit. A bounded camera task and centered reachable-face aiming completed with independently observed settling and native HID release. Creative inventory, selected Oak Planks and the resumed-world hotbar texture were independently read from pixels. One 60 ms addition produced an observed Oak Planks block at (5, −60, 10). A result serialization defect occurred after that addition; the before/after evidence and release receipt were preserved, the reporter repaired, and a subsequent check confirmed the existing block without another click. Air/ground intervals touching at their boundary now qualify clearance consistently.
 
 Ordinary profile save/reopen/edit, calibration, window/display selection, world-bound region review, pointed-block protection, bounded requests, saved corrections, priority Stop/Take control, history and local feedback are integrated. Reopening restores configuration only. Movement and wall completion are still being checked; unverified families remain unavailable in the runtime and UI. A movement probe observed a position change during camera inspection and stopped before any movement command; its cause is not established. The guard now rejects translation during aiming and held physical keys/buttons before pulses. Historical r7 motion remains unattributed; the owner explicitly identified their interruption in a separate aim attempt.
 
-The earlier checkpoint statement that PHL was absent and the game closed is historical, not current. No packaged Minecraft wall smoke or final wall success has been established yet. Continue focused repairs and short input-exclusive checks; preserve all partial results. No commit, push, distribution or tester contact occurred.
+This checkpoint superseded an earlier PHL-absent/game-closed observation. No packaged Minecraft wall smoke or final wall success was established, and at that checkpoint no commit, push, distribution or tester contact had occurred. The later `fc019d5` commit records the implementation; it does not change the retained package or establish wall completion. Resume from the current handoff above.
 
 ### Retained short checks after the clearance repair
 
@@ -172,4 +174,4 @@ A nearby-movement inspection stopped on changed player position before any movem
 
 Key-up-only recovery did not establish stillness. A retained frame shows a large animal next to the player; collision is a plausible source of the current displacement, not proof of its cause or of the historical r7 motion. A later bounded disposable setup move ended one block lower than expected and preparation stopped. No jump or wall placement followed. The area needs a clear, flat starting position before further useful checks. Input was released after every attempt; no worker or held key/button remained.
 
-Current native evidence is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. Camera/calibration are available; aiming, nearby movement, additions and wall Start remain unavailable pending their remaining affected checks and the packaged ordinary Minecraft smoke. This is unfinished integration, not launch acceptance. Native input is paused awaiting the next agreed brief window. The preserved private.1 packaged OpenTTD smoke is unchanged.
+Retained native evidence is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. Private.2 enabled camera/calibration and left aiming, nearby movement, additions and wall Start unavailable. Native work paused at that checkpoint. The preserved private.1 packaged OpenTTD smoke is unchanged. Current feature flags still leave the building task unavailable; its useful packaged completion remains the next delivery result.

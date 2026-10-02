@@ -1,6 +1,8 @@
 # Route Patch Schema
 
-This is the existing **engineering source-change** workflow. The September 23 [personal-beta packet](personal-beta-engineering.md) requires a separate player-facing, typed plan/revision flow for live custom paths. That flow must not translate conversational edits into unchecked source patches or worktree promotion while a game runs. Reuse provenance and review principles while keeping runtime plan authority distinct from source-patch validation and historical route acceptance.
+Mario engineering source-patch reference. Current beta delivery follows the [private-beta engineering plan](private-beta-engineering.md); player requests use typed runtime plans.
+
+This is the existing **engineering source-change** workflow. The implemented player-facing [typed plan/revision flow](b2-integration-contract.md) handles live custom paths. Conversational edits remain runtime plans rather than unchecked source patches or worktree promotion while a game runs. Reuse provenance and review principles while keeping runtime plan authority distinct from source-patch validation and historical route acceptance.
 
 Rank 33 adds `beat-mario.route-patch/v1`, the only executable route-change
 contract accepted by the CLI and Game Companion Lab. Descriptive variant proposals
