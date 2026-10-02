@@ -1,0 +1,84 @@
+{
+  "profile_id": "openttd-pb1-loan-v1",
+  "game_id": "openttd",
+  "game_build": "15.3",
+  "settings_id": "cocoa-1280x1024-Arial12-English-GBP-paused-pause-level2",
+  "backend_id": "gemma3:4b",
+  "viewport": [
+    1280,
+    1056
+  ],
+  "sensors": [
+    {
+      "sensor_id": "loan",
+      "pattern": "\u00a3([0-9,]+)",
+      "region": [
+        0.21,
+        0.78,
+        0.11,
+        0.033
+      ]
+    },
+    {
+      "sensor_id": "cash",
+      "pattern": "\u00a3([0-9,]+)",
+      "region": [
+        0.21,
+        0.816,
+        0.11,
+        0.028
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "skill_id": "repay_once",
+      "target_id": "repay",
+      "target_text": "Repay \u00a310,000",
+      "target_region": [
+        0.2,
+        0.84,
+        0.2,
+        0.04
+      ],
+      "deltas": [
+        [
+          "loan",
+          -10000
+        ],
+        [
+          "cash",
+          -10000
+        ]
+      ],
+      "required_before": [
+        [
+          "loan",
+          100000
+        ],
+        [
+          "cash",
+          100000
+        ]
+      ],
+      "description": "Repay \u00a310,000 once, verify cash and loan, then release.",
+      "pulse_ms": 80,
+      "click_anchor": "label_left_gutter",
+      "request_verbs": [
+        "repay",
+        "pay back"
+      ]
+    }
+  ],
+  "protected_actions": [
+    "borrow",
+    "build",
+    "sell",
+    "demolish",
+    "unpause",
+    "save",
+    "network"
+  ],
+  "version": "game-companion-executable-profile/v1",
+  "frame_max_age": 2
+}

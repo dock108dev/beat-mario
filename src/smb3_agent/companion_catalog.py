@@ -317,16 +317,23 @@ def build_default_catalog_registry(
     *,
     mario_provider: CatalogProvider | None = None,
     stardew_provider: CatalogProvider | None = None,
+    profile_provider: CatalogProvider | None = None,
+    minecraft_provider: CatalogProvider | None = None,
     experimental_install_root: Path | None = None,
 ) -> CatalogRegistry:
     """Build the supported catalog in its one authoritative provider order."""
     from smb3_agent.experimental_adapters import discover_installed_providers
     from smb3_agent.mario_product import MarioCatalogProvider
     from smb3_agent.stardew_companion import StardewCatalogProvider
+    if profile_provider is None:
+        from smb3_agent.profile_catalog import ProfileCatalogProvider
+        from smb3_agent.profile_conversation import supported_profile
+        profile_provider = ProfileCatalogProvider(supported_profile())
 
     mario = mario_provider or MarioCatalogProvider()
     experimental = discover_installed_providers(experimental_install_root)
-    return CatalogRegistry((mario, stardew_provider or StardewCatalogProvider(), *experimental))
+    return CatalogRegistry((mario, stardew_provider or StardewCatalogProvider(), profile_provider,
+                            *((minecraft_provider,) if minecraft_provider else ()), *experimental))
 
 
 @dataclass

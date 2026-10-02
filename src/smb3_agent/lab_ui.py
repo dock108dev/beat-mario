@@ -6,7 +6,13 @@ from smb3_agent.conversation_ui import (
     CONVERSATION_JS,
     render_conversation_workspace,
 )
-from smb3_agent.conversation_service import ConversationService, StardewConversationService
+from smb3_agent.conversation_service import ConversationService, StardewConversationService, ProfileConversationService
+from smb3_agent.profile_catalog import ProfileCatalogProvider, MinecraftCatalogProvider
+from smb3_agent.player_setup import PlayerSetupService
+from smb3_agent.player_setup_ui import render_player_setup, PLAYER_SETUP_JS
+from smb3_agent.camera_practice import CameraPracticeService
+from smb3_agent.camera_practice_ui import render_camera_practice, CAMERA_PRACTICE_JS
+from smb3_agent.profile_conversation_ui import render_profile_workspace, PROFILE_CONVERSATION_JS
 from smb3_agent.stardew_companion import StardewCatalogProvider
 from smb3_agent.conversation_ui import render_stardew_conversation_workspace, STARDEW_CONVERSATION_JS
 
@@ -16,6 +22,7 @@ import logging
 import os
 import re
 import secrets
+import signal
 import socket
 import subprocess
 import sys
@@ -268,6 +275,9 @@ POST_PATHS = frozenset(
         "/api/delivery/shutdown",
         "/api/conversation",
         "/api/stardew/conversation",
+        "/api/profile/conversation",
+        "/api/camera-practice",
+        "/api/player",
         "/notes",
         "/observation-action",
         "/issue-action",
@@ -366,6 +376,25 @@ class _ThreadingHTTPServer(ThreadingHTTPServer):
 
 def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
     failures = []
+    minecraft = getattr(server, "minecraft_player_session", None)
+    if minecraft is not None:
+        try:
+            minecraft.close()
+        except Exception:
+            failures.append("Minecraft input or worker cleanup unconfirmed")
+    camera = getattr(server, "camera_practice_service", None)
+    if camera is not None:
+        try:
+            camera.close()
+        except Exception:
+            failures.append("Camera practice cleanup unconfirmed")
+    profile = getattr(server, "profile_conversation_service", None)
+    if profile is not None:
+        try:
+            profile.close()
+        except Exception:
+            failures.append("Profile input or worker cleanup unconfirmed")
+            LOGGER.exception("Profile neutralization failed during shutdown")
     stardew = getattr(server, "stardew_conversation_service", None)
     if stardew is not None:
         try:
@@ -415,12 +444,18 @@ def run_lab_ui_server(host: str = "127.0.0.1", port: int = 8765, *, open_browser
     print(f"lab_ui_url={url}")
     if open_browser:
         webbrowser.open(url)
+    previous_term = None
+    if threading.current_thread() is threading.main_thread():
+        previous_term = signal.signal(signal.SIGTERM,
+            lambda signum, frame: threading.Thread(target=server.shutdown, daemon=True).start())
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("lab_ui_stopped=true")
     finally:
         server.server_close()
+        if previous_term is not None:
+            signal.signal(signal.SIGTERM, previous_term)
 
 
 def _lab_ui_url(host: str, port: int) -> str:
@@ -453,6 +488,47 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     ))
     setattr(server, "stardew_conversation_service", StardewConversationService(
         artifacts_root=ARTIFACT_DIR / "stardew-conversation"))
+    if getattr(sys, "frozen", False):
+        from smb3_agent.player_store import user_data_root
+        server.camera_practice_service = CameraPracticeService(root=user_data_root()/"sessions/camera", native_enabled=True)
+    else:
+        server.camera_practice_service = CameraPracticeService(native_enabled=True)
+    server.profile_conversation_service = ProfileConversationService()
+    def neutral_player_setup():
+        camera = server.camera_practice_service
+        camera_release = camera.revoke("Player setup or direct control")
+        profile_ok = server.profile_conversation_service.invalidate_for_switch()
+        stardew = server.stardew_conversation_service.dispatch("stop")
+        live = server.live_observation_manager
+        if live.snapshot().session_id:
+            live.stop()
+        return (profile_ok and camera_release.get("confirmed", camera_release.get("motion_worker_reaped", True))
+                and not stardew.get("busy", False))
+    def open_player_profile(value):
+        if value["game"] == "openttd":
+            service = server.profile_conversation_service
+            if service.runtime:
+                old = service.runtime
+                if not old.driver.close() or not old.close_events():
+                    raise ValueError("Previous profile cleanup unconfirmed")
+            service.runtime = None
+            service._plan = service._outcome = service._selection = None
+            service._client = None
+            service.saved_profile_id = value["id"]
+            from smb3_agent.profile_conversation import supported_profile
+            service.profile = supported_profile()
+            if value["executable"]:
+                from smb3_agent.game_profiles import ExecutableProfile
+                service.profile = ExecutableProfile.from_dict(value["executable"])
+            server.profile_catalog_provider.profile = service.profile
+            _refresh_catalog_registry(server)
+    server.player_setup_service = PlayerSetupService(neutralize=neutral_player_setup, open_profile=open_player_profile)
+    from smb3_agent.minecraft_session import MinecraftPlayerSession
+    server.minecraft_player_session = MinecraftPlayerSession(server.camera_practice_service, server.player_setup_service.store)
+    server.player_setup_service.minecraft = server.minecraft_player_session
+    server.profile_conversation_service.player_store = server.player_setup_service.store
+    server.profile_catalog_provider = ProfileCatalogProvider(server.profile_conversation_service.profile,
+        runtime=lambda: server.profile_conversation_service.runtime)
     setattr(server, "objective_session_manager", ObjectiveSessionManager())
     setattr(server, "learning_store", learning_store)
     product_manager = MarioProductSessionManager()
@@ -474,7 +550,10 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
         invalidate=stardew_service.invalidate_for_switch,
     )
     server.stardew_catalog_provider = stardew_provider
-    registry = build_default_catalog_registry(mario_provider=mario_provider, stardew_provider=stardew_provider)
+    server.minecraft_catalog_provider = MinecraftCatalogProvider(server.camera_practice_service, server.minecraft_player_session)
+    registry = build_default_catalog_registry(mario_provider=mario_provider, stardew_provider=stardew_provider,
+                                             profile_provider=server.profile_catalog_provider,
+                                             minecraft_provider=server.minecraft_catalog_provider)
     setattr(server, "catalog_session", CatalogSession(registry, CatalogPreferenceStore()))
     return server
 
@@ -489,7 +568,9 @@ def _refresh_catalog_registry(server: ThreadingHTTPServer) -> None:
         "catalog_session",
         CatalogSession(
             build_default_catalog_registry(mario_provider=mario_provider,
-                                           stardew_provider=getattr(server, "stardew_catalog_provider", None)),
+                stardew_provider=getattr(server, "stardew_catalog_provider", None),
+                profile_provider=getattr(server, "profile_catalog_provider", None),
+                minecraft_provider=getattr(server, "minecraft_catalog_provider", None)),
             current.store,
         ),
     )
@@ -696,6 +777,35 @@ class _Handler(BaseHTTPRequestHandler):
                 self.server.stardew_conversation_service.snapshot(), csrf_token=self._csrf_token(),
                 selected=self._catalog_session().selected_adapter_id in {None, "stardew"}))
             return
+        if path in {"/setup", "/help", "/minecraft"}:
+            self._send_html(render_player_setup(self.server.player_setup_service.snapshot(), csrf_token=self._csrf_token(), minecraft=path == "/minecraft"))
+            return
+        if path == "/api/player":
+            self._send_json(self.server.player_setup_service.snapshot())
+            return
+        if path == "/assets/player-setup.js":
+            self._send_javascript(PLAYER_SETUP_JS)
+            return
+        if path == "/camera-practice":
+            self._send_html(render_camera_practice(self.server.camera_practice_service.snapshot(), csrf_token=self._csrf_token()))
+            return
+        if path == "/api/camera-practice":
+            self._send_json(self.server.camera_practice_service.snapshot())
+            return
+        if path == "/assets/camera-practice.js":
+            self._send_javascript(CAMERA_PRACTICE_JS)
+            return
+        if path == "/openttd":
+            self._send_html(render_profile_workspace(self.server.profile_conversation_service.snapshot(),
+                csrf_token=self._csrf_token(),
+                selected=self._catalog_session().selected_adapter_id in {None, "openttd"}))
+            return
+        if path == "/api/profile/conversation":
+            self._send_json(self.server.profile_conversation_service.snapshot())
+            return
+        if path == "/assets/profile-conversation.js":
+            self._send_javascript(PROFILE_CONVERSATION_JS)
+            return
         if path == "/lab":
             query = parse_qs(parsed.query)
             goal_id = query.get("goal", [ACTIVE_PRODUCT_GOAL_ID])[0]
@@ -833,8 +943,7 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/delivery/shutdown":
             if _single(data, "instance") != self.server.delivery_identity["instance"]:
                 raise LabUiError("Delivery process changed; inspect its identity again")
-            with self.server.action_lock:
-                self.server.delivery_stopping = True
+            self.server.delivery_stopping = True
             failures = _shutdown_session_managers(self.server)
             if failures:
                 self._send_json({"stopping": False, "failures": failures}, status=HTTPStatus.CONFLICT)
@@ -845,7 +954,53 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if self.server.delivery_stopping:
             raise LabUiError("Delivery is shutting down; no new actions are accepted")
-        if path in {"/api/stardew/conversation", "/api/conversation"}:
+        if path == "/api/player":
+            acquired = False
+            try:
+                action = _single(data, "action")
+                payload = json.loads(_single(data, "payload", default="{}"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Setup payload must be an object")
+                if action not in {"stop", "reclaim", "chat", "edit", "disconnect", "heartbeat"}:
+                    acquired = self.server.action_lock.acquire(blocking=False)
+                    if not acquired:
+                        raise ValueError("Another game transition is in progress")
+                self._send_json(self.server.player_setup_service.dispatch(action, payload))
+            except (ValueError, OSError, KeyError) as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            finally:
+                if acquired:
+                    self.server.action_lock.release()
+            return
+        if path == "/api/camera-practice":
+            acquired = False
+            try:
+                payload = json.loads(_single(data, "payload", default="{}"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Camera payload must be an object")
+                action = _single(data, "action")
+                service = self.server.camera_practice_service
+                if action not in service.PRIORITY:
+                    acquired = self.server.action_lock.acquire(blocking=False)
+                    if not acquired:
+                        raise ValueError("Another game transition is in progress")
+                    self.server.minecraft_player_session.revoke("Camera practice authority requested")
+                    self.server.minecraft_player_session.require_idle()
+                    # Invalidate ordinary game authority before granting practice authority.
+                    if not self.server.profile_conversation_service.invalidate_for_switch():
+                        raise ValueError("Wait for ordinary profile neutral handback")
+                    self.server.stardew_conversation_service.dispatch("stop")
+                    live = self.server.live_observation_manager
+                    if live.snapshot().session_id:
+                        live.stop()
+                self._send_json(service.dispatch(action, payload))
+            except (ValueError, KeyError) as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            finally:
+                if acquired:
+                    self.server.action_lock.release()
+            return
+        if path in {"/api/stardew/conversation", "/api/conversation", "/api/profile/conversation"}:
             # Serialize new authority with switching, while stop/reclaim bypass
             # this lock so they can revoke an in-flight operation immediately.
             action_lock = self.server.action_lock
@@ -856,14 +1011,22 @@ class _Handler(BaseHTTPRequestHandler):
                     raise ValueError("Conversation payload must be an object")
                 action = _single(data, "action")
                 priority = action in {"pause", "stop", "reclaim", "focus_lost"}
-                adapter = "stardew" if path == "/api/stardew/conversation" else "smb3"
+                adapter = "openttd" if path == "/api/profile/conversation" else (
+                    "stardew" if path == "/api/stardew/conversation" else "smb3")
+                if adapter == "openttd":
+                    priority = priority or action in ProfileConversationService.PRIORITY or action in {"heartbeat", "ui_timing", "windows"}
                 if not priority:
+                    self.server.minecraft_player_session.revoke("Ordinary game authority requested")
+                    self.server.minecraft_player_session.require_idle()
+                    if self.server.camera_practice_service.snapshot()["busy"]:
+                        raise ValueError("Wait for camera neutral handback")
                     acquired = action_lock.acquire(blocking=False)
                     if not acquired:
                         raise ValueError("A game transition is in progress. Wait for handback, then review again.")
                     if self._catalog_session().selected_adapter_id not in {None, adapter}:
-                        raise ValueError("Select " + ("Stardew" if adapter == "stardew" else "Mario") + " from Games before changing its session")
-                service = self.server.stardew_conversation_service if adapter == "stardew" else self._conversation_service()
+                        raise ValueError("Select this game from Games before changing its session")
+                service = (self.server.profile_conversation_service if adapter == "openttd" else
+                    self.server.stardew_conversation_service if adapter == "stardew" else self._conversation_service())
                 self._send_json(service.dispatch(action, payload))
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
@@ -879,12 +1042,19 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             try:
                 if path == "/catalog-switch":
+                    self.server.minecraft_player_session.revoke("Game selection changed")
+                    self.server.minecraft_player_session.require_idle()
+                    if self.server.camera_practice_service.snapshot()["busy"]:
+                        raise LabUiConflict("Wait for camera neutral handback")
                     catalog = self._catalog_session()
                     target_id = _single(data, "adapter_id")
                     target = catalog.registry.entry(target_id)
                     if target_id != catalog.selected_adapter_id and target.availability != "unavailable":
                         if catalog.selected_adapter_id == "stardew":
                             self.server.stardew_conversation_service.dispatch("stop")
+                        elif catalog.selected_adapter_id == "openttd":
+                            if not self.server.profile_conversation_service.invalidate_for_switch():
+                                raise LabUiConflict("Profile work is ending or release is unconfirmed. Wait, then switch again.")
                         elif catalog.selected_adapter_id == "smb3":
                             live = self.server.live_observation_manager
                             if live.snapshot().session_id:
@@ -1446,7 +1616,9 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         self.send_header("Permissions-Policy", "camera=(), geolocation=(), microphone=()")
-        self.send_header("Referrer-Policy", "no-referrer")
+        # Non-CORS POST forms serialize Origin as null under no-referrer.
+        # Preserve the local origin while suppressing all cross-origin referrers.
+        self.send_header("Referrer-Policy", "same-origin")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-Robots-Tag", "noindex, nofollow")
@@ -2605,7 +2777,7 @@ def render_combined_catalog(
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
           <header class="catalog-header"><h1>Game Companion</h1><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
           {recovery_panel}
-          <main>{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a></p></main>
+          <main>{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
         </div>
         """,
     )

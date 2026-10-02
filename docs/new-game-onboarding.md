@@ -1,5 +1,7 @@
 # New Game Onboarding and Experimental Adapter Contributor Guide
 
+> This guide documents contributor adapter scaffolding, not the private-beta player setup wizard. Player-facing setup, profiles, Minecraft integration and launch work are specified in [the private-beta engineering plan](private-beta-engineering.md). Schema/conformance results here do not establish playable generic game support.
+
 The planned player-facing playable-profile wizard is specified in [private-beta engineering PB5/PB6](private-beta-engineering.md#pb5--player-setup-and-demonstration-teaching). It requires a reusable model/vision/skill runtime first and is not implemented by the contributor scaffold below.
 
 Experimental adapters have a local, data-only contributor flow at `/onboarding` and under

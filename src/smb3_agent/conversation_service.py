@@ -14,6 +14,7 @@ from uuid import uuid4
 from smb3_agent.custom_variants import CustomVariantStore, PlanAttemptHistory
 from smb3_agent.outcome_review import outcome_review
 from smb3_agent.request_planning import ConversationPlan, Planner, is_advisory, normalized_text
+from smb3_agent.profile_conversation import ProfileConversationService as ProfileConversationService
 
 
 def _retain_refusal(service: Any, action: str, payload: dict, reason: str, game: str) -> None:

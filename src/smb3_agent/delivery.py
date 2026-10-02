@@ -11,8 +11,9 @@ from smb3_agent.paths import REPOSITORY_ROOT
 
 
 def delivery_identity() -> dict:
+    from smb3_agent.player_store import VERSION
     source = source_identity(REPOSITORY_ROOT)
-    return {"schema": "game-companion-delivery/v1", "root": str(REPOSITORY_ROOT),
+    return {"schema": "game-companion-delivery/v1", "version": VERSION, "packaged": bool(getattr(sys,"frozen",False)), "root": str(REPOSITORY_ROOT),
             "source_sha256": source["source_sha256"], "head": source["head"],
             "python": str(Path(sys.executable).absolute()), "pid": os.getpid(),
             "instance": uuid.uuid4().hex}

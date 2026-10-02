@@ -2,7 +2,7 @@
 
 Updated September 30, 2026. This packet records the narrower B0–B9 two-game contracts and engineering foundation. The [private-beta engineering plan](private-beta-engineering.md) and [Desktop next-steps tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) own the active configurable-game path and remaining work.
 
-B2–B8 technical completion is retained for the identified candidates/configurations. The [B8 repair closeout](../artifacts/b8-final-return-repair/20260926/closeout.md) and [readiness record](../artifacts/b8-final-return-repair/20260926/b8-readiness.json) identify source `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`, B8 delivery ready and beta ready false. The [B9 review](../artifacts/b9-owner-review/20260926T143731Z/review.md) has no owner observations and null usefulness/acceptance. These retained records do not establish current process state or qualify later source changes.
+B2–B8 technical completion is retained for the identified candidates/configurations. The B8 repair closeout (`artifacts/b8-final-return-repair/20260926/closeout.md`) and readiness record (`artifacts/b8-final-return-repair/20260926/b8-readiness.json`) identify source `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`, B8 delivery ready and beta ready false. The B9 review (`artifacts/b9-owner-review/20260926T143731Z/review.md`) has no owner observations and null usefulness/acceptance. These retained records do not establish current process state or qualify later source changes.
 
 ## Product loop and scope
 
@@ -123,7 +123,7 @@ Execute B2.1 → B2.2 → B2.3 → B2.4 → B3 → B4 → B5, with focused check
 
 ## Qualification reconciliation and focused checks
 
-The B-series personal pilot uses the delivered `personal-beta-v3.yaml` and its readiness validator, with third-game onboarding optional within that narrower contract. Preserve its schemas/manifests and the earlier V2 contracts. Private-beta configurable-game qualification requires the distinct PB9 scenario/manifest/validator from the active plan. No requirement is satisfied by deleting a failing case or filling owner fields.
+The B-series personal pilot uses the delivered `personal-beta-v3.yaml` and its readiness validator, with third-game onboarding optional within that narrower contract. Preserve its schemas/manifests and the earlier V2 contracts. The active private-beta plan now prioritizes integrated features, focused launch checks and beta-led onboarding/real-use testing; it does not require a new exhaustive PB9 qualification validator before invitations. No requirement is satisfied by deleting a failing case or filling owner fields.
 
 | Beta case | Required evidence |
 | --- | --- |
@@ -140,12 +140,12 @@ Start from relevant existing tests: `test_takeover.py`, `test_run_library.py`, `
 
 Keep live engineering attempts, review-only demonstrations, historical authoritative reliability, player/agent/mixed results and owner feedback separate. Custom edited or speed-adjusted play cannot inherit the accepted base route's reliability status. Select affected historical route regressions from actual changed controllers/contracts; do not repeat every accepted campaign for documentation or isolated presentation edits. No always-on agent or automatic unattended campaign is required.
 
-B8 delivered the identified in-place local Mac launcher with external runtime/game/calibration prerequisites. It did not deliver a portable standalone app or clean-machine distribution. Private-beta PB10 now owns self-contained delivery, signing/notarization and actual tester-machine qualification. No proprietary game assets are bundled; engineering readiness and owner acceptance remain separate.
+B8 delivered the identified in-place local Mac launcher with external runtime/game/calibration prerequisites. It did not deliver a portable standalone app or clean-machine distribution. Private-beta PB10 now owns a tester-usable build, the appropriate distribution setup and focused launch checks; broader tester-machine evaluation occurs during beta. No proprietary game assets are bundled; engineering readiness and owner acceptance remain separate.
 
 ## Retained personal-pilot handoff
 
-B2–B7 retain their identified engineering results and documented configurations. The [B8 repair closeout](../artifacts/b8-final-return-repair/20260926/closeout.md) closes the complete-return gap for the retained candidate; the repair is not pending. Later maintenance does not inherit its gameplay qualification.
+B2–B7 retain their identified engineering results and documented configurations. The B8 repair closeout (`artifacts/b8-final-return-repair/20260926/closeout.md`) closes the complete-return gap for the retained candidate; the repair is not pending. Later maintenance does not inherit its gameplay qualification.
 
 B9 began against that frozen delivery; actual owner observations, usefulness, acceptance and review closeout remain pending in its record. Reconcile any actual running-candidate identity before continuing that particular review. This documentation pass does not inspect or change processes, saves, input or owner verdicts.
 
-For new engineering, proceed to [private-beta PB1 feasibility](private-beta-engineering.md#pb1--feasibility-before-full-onboarding). This packet's earlier per-slice contract tables are the B-series foundation, not the active private-beta release checklist.
+For new engineering, follow the [active integration and beta plan](private-beta-engineering.md): ordinary setup/profile handling, useful Minecraft tasks, conversation, guidance and delivery with focused affected checks. [PB2 integration](/Users/michaelfuscoletti/Desktop/beat-mario/docs/pb2-integration.md) records the completed ordinary-app engineering slice. This packet's earlier per-slice contract tables are the B-series foundation, not the active private-beta release checklist.

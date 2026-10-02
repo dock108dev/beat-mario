@@ -20,6 +20,9 @@ MANIFEST_SCHEMA = "game-companion-beta-evidence/v3"
 
 def source_identity(root: Path | None = None) -> dict[str, Any]:
     root = root or repository_path("")
+    packaged = root / "build-manifest.json"
+    if packaged.exists() and not (root / ".git").exists():
+        return json.loads(packaged.read_text())
     def git(*args: str) -> str:
         return subprocess.check_output(["git", *args], cwd=root, text=True)
     paths = set(git("ls-files", "-z").split("\0"))

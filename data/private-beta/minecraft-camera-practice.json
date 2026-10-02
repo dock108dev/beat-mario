@@ -1,0 +1,44 @@
+{
+  "schema": "experimental-camera-practice/v1",
+  "game": "Minecraft Java 26.3 vanilla",
+  "experimental_only": true,
+  "qualified": false,
+  "max_pulse_units": 16,
+  "pulse_ms": 120,
+  "gain_degrees_per_unit": 0.15,
+  "response_error_degrees": 0.2,
+  "goal": {
+    "tolerance": 0.35,
+    "max_uncertainty": 0.1,
+    "max_overshoot": 0.5,
+    "max_iterations": 12,
+    "total_displacement": 192,
+    "total_input_ms": 1440,
+    "total_seconds": 12,
+    "frame_max_age": 0.8,
+    "settling_seconds": 0.2
+  },
+  "fps_range": [
+    5,
+    130
+  ],
+  "pitch_range": [
+    -90,
+    90
+  ],
+  "watchdog_seconds": 0.15,
+  "page_lease_seconds": 3,
+  "release_ack_seconds": 0.3,
+  "permitted_input": "single-axis captured-relative mouseMoved; no keys/buttons/scroll in correction",
+  "practice_preparation": "explicit selected-window menu-only resume; separate from camera correction",
+  "readiness_preparation": {
+    "version": "minecraft-capture-response/v1",
+    "max_pulses": 2,
+    "units_per_pulse": 4,
+    "max_input_ms": 240,
+    "max_seconds": 8,
+    "max_predicted_rotation_degrees": 1.2,
+    "reusable": false,
+    "authority": "explicitly reviewed separate operation before each goal; all probes retained"
+  }
+}

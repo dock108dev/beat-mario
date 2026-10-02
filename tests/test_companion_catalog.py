@@ -47,10 +47,13 @@ def test_default_catalog_factory_is_the_authoritative_provider_assembly(
 ) -> None:
     registry = build_default_catalog_registry(experimental_install_root=tmp_path)
 
-    assert tuple(item.adapter_id for item in registry.entries) == ("smb3", "stardew")
+    assert tuple(item.adapter_id for item in registry.entries) == ("smb3", "stardew", "openttd")
+    assert registry.entry("openttd").standalone_surface == "/openttd"
+    assert registry.entry("openttd").implementation_status == "experimental"
     assert tuple(item.game_id for item in registry.entries) == (
         "smb3",
         "stardew_valley",
+        "openttd",
     )
 
 

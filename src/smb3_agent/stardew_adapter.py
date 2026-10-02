@@ -14,11 +14,13 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Iterable, Mapping
 
 import yaml
 
 from smb3_agent.paths import repository_path
+from smb3_agent.host_contracts import (InputKind as InputKind, InputCommand, WindowObservation,
+    OrdinaryInputDriver as HostOrdinaryInputDriver)
 
 
 STARDEW_SCHEMA_VERSION = "game-companion-stardew-operator/v1"
@@ -64,12 +66,6 @@ class FailureCode(str, Enum):
     INPUT_REJECTED = "input_rejected"
 
 
-class InputKind(str, Enum):
-    KEYBOARD = "keyboard"
-    MOUSE = "mouse"
-    CONTROLLER = "controller"
-
-
 @dataclass(frozen=True)
 class SaveIdentity:
     primary_path: str
@@ -96,32 +92,6 @@ class SaveIdentity:
             and self.byte_count >= 0
             and self.source_tree_sha256 == self.disposable_tree_sha256
             and self.primary_real_path != self.disposable_real_path
-        )
-
-
-@dataclass(frozen=True)
-class WindowObservation:
-    process_id: int | None
-    process_started_at: str | None
-    window_id: str | None
-    title: str | None
-    bounds: tuple[int, int, int, int] | None
-    visible: bool
-    windowed: bool
-    foreground: bool
-    occluded: bool = False
-
-    @property
-    def trusted(self) -> bool:
-        return (
-            self.process_id is not None
-            and self.process_started_at is not None
-            and bool(self.window_id)
-            and self.bounds is not None
-            and self.visible
-            and self.windowed
-            and self.foreground
-            and not self.occluded
         )
 
 
@@ -265,17 +235,6 @@ class ScreenObservation:
                 raise StardewAdapterError(FailureCode.OCCLUDED_CROPS.value)
             if crop.confidence != 1.0:
                 raise StardewAdapterError(FailureCode.UNKNOWN_STATE.value)
-
-
-@dataclass(frozen=True)
-class InputCommand:
-    kind: InputKind
-    control: str
-    action: str
-    duration_ms: int = 0
-    target: tuple[int, int] | None = None
-    purpose: str = ""
-    reviewed_crop_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -570,33 +529,8 @@ class StardewEvidenceStore:
 
 
 def _foreground_process_id() -> int:
-    """Read OS focus synchronously without NSWorkspace's run-loop cache.
-
-    The headless UI server has no AppKit event loop. NSWorkspace can continue
-    returning the initially active application after focus has moved elsewhere.
-    A failed native query is unknown focus, never permission to send input.
-    """
-    import ctypes
-    import ctypes.util
-
-    class ProcessSerialNumber(ctypes.Structure):
-        _fields_ = [("high", ctypes.c_uint32), ("low", ctypes.c_uint32)]
-
-    try:
-        location = ctypes.util.find_library("ApplicationServices")
-        if location is None:
-            raise OSError("ApplicationServices unavailable")
-        native = ctypes.CDLL(location)
-        native.GetFrontProcess.argtypes = [ctypes.POINTER(ProcessSerialNumber)]
-        native.GetFrontProcess.restype = ctypes.c_int32
-        native.GetProcessPID.argtypes = [ctypes.POINTER(ProcessSerialNumber), ctypes.POINTER(ctypes.c_int32)]
-        native.GetProcessPID.restype = ctypes.c_int32
-        serial, pid = ProcessSerialNumber(), ctypes.c_int32()
-        if native.GetFrontProcess(ctypes.byref(serial)) != 0 or native.GetProcessPID(ctypes.byref(serial), ctypes.byref(pid)) != 0 or pid.value <= 0:
-            raise OSError("foreground process query failed")
-        return pid.value
-    except (OSError, AttributeError) as exc:
-        raise StardewAdapterError("Fresh macOS foreground identity is unavailable") from exc
+    from smb3_agent.native_host import foreground_process_id
+    return foreground_process_id(error_type=StardewAdapterError)
 
 
 class MacVisibleStardewBackend:
@@ -673,45 +607,10 @@ class MacVisibleStardewBackend:
         return window
 
     def capture(self, window: WindowObservation, destination: Path) -> Path:
-        if not window.trusted or window.bounds is None:
-            raise StardewAdapterError(FailureCode.WINDOW_LOSS.value)
-        current = self.detect_window()
-        if (
-            current.process_id != window.process_id
-            or current.process_started_at != window.process_started_at
-            or current.window_id != window.window_id
-        ):
-            raise StardewAdapterError(FailureCode.PROCESS_LOSS.value)
-        if destination.exists():
-            raise StardewAdapterError("screen evidence destination already exists")
-        import subprocess
-        from PIL import Image
-        from datetime import datetime, timezone
-        _, _, width, height = window.bounds
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        # Native PNG compression of the retina frame is avoidable latency.
-        # TIFF is a lossless capture intermediate; the normalized PNG remains
-        # the retained visible evidence. Failed intermediates remain available.
-        raw = destination.with_name(destination.stem + "-capture.tiff")
-        if raw.exists():
-            raise StardewAdapterError("native screen evidence destination already exists")
-        self.last_capture_started_at = datetime.now(timezone.utc).isoformat()
-        try:
-            result = subprocess.run(["/usr/sbin/screencapture", "-x", "-o", "-t", "tiff", "-l", window.window_id, str(raw)],
-                                    capture_output=True, timeout=1.5, check=False)
-        except subprocess.TimeoutExpired as exc:
-            raise StardewAdapterError("visible capture exceeded freshness bound; no frame accepted") from exc
-        if result.returncode or not raw.is_file():
-            raise StardewAdapterError("native visible capture failed; check screen-recording permission")
-        after = self.detect_window()
-        if (after.process_id, after.process_started_at, after.window_id, after.bounds) != (window.process_id, window.process_started_at, window.window_id, window.bounds):
-            raise StardewAdapterError("process/window changed during visible capture")
-        with Image.open(raw) as image:
-            if image.size not in {(width, height), (width*2, height*2)}:
-                raise StardewAdapterError("native capture has unexpected viewport dimensions")
-            image.convert("RGB").resize((width, height), Image.Resampling.NEAREST).save(destination, format="PNG", compress_level=1)
-        raw.unlink()  # newly created lossless intermediate, never retained evidence
-        return destination
+        from smb3_agent.native_host import capture_selected
+        return capture_selected(window, destination, detect_window=self.detect_window,
+            error_type=StardewAdapterError,
+            started=lambda at: setattr(self, "last_capture_started_at", at))
 
 def load_stardew_contract(path: Path = ADAPTER_CONTRACT_PATH) -> Mapping[str, Any]:
     try:
@@ -979,36 +878,8 @@ class StardewOperator:
             raise StardewAdapterError(FailureCode.PROCESS_LOSS.value)
 
 
-class OrdinaryInputDriver:
-    """Uses only configured OS-visible keyboard, mouse, or controller emitters."""
-
-    def __init__(
-        self,
-        *,
-        keyboard: Callable[[InputCommand], None] | None = None,
-        mouse: Callable[[InputCommand], None] | None = None,
-        controller: Callable[[InputCommand], None] | None = None,
-        neutralizer: Callable[[], None] | None = None,
-    ) -> None:
-        self._emitters = {
-            InputKind.KEYBOARD: keyboard,
-            InputKind.MOUSE: mouse,
-            InputKind.CONTROLLER: controller,
-        }
-        self._neutralizer = neutralizer
-
-    def available(self, kind: InputKind) -> bool:
-        return self._emitters[kind] is not None
-
-    def send(self, command: InputCommand) -> None:
-        emitter = self._emitters.get(command.kind)
-        if emitter is None:
-            raise StardewAdapterError(f"no ordinary {command.kind.value} emitter is configured")
-        emitter(command)
-
-    def neutralize(self) -> None:
-        if self._neutralizer is not None:
-            self._neutralizer()
+class OrdinaryInputDriver(HostOrdinaryInputDriver):
+    error_type = StardewAdapterError
 
 
 def render_stardew_operator(view: OperatorView) -> str:

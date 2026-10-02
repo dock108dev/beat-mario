@@ -228,7 +228,7 @@ def test_conversation_http_contract_keeps_controls_available_and_csrf(
         status, body = request("POST", "/api/conversation", {
             "csrf_token": server.csrf_token, "action": "start", "payload": "{}",
         })
-        assert status == 400 and "Select Mario" in json.loads(body)["error"]
+        assert status == 400 and "Select this game" in json.loads(body)["error"]
         status, _ = request("POST", "/api/conversation", {
             "csrf_token": server.csrf_token, "action": "stop", "payload": "{}",
         })
