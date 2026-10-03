@@ -1,18 +1,47 @@
 # Game Companion private-beta review status
 
-## Current source and release status — October 1, 2026
+## Owner product-direction review — October 3, 2026
 
-The current source has a guided Minecraft setup path, local profiles/history/feedback, app-created calibration and bounded camera requests. The October 1 corrections add visible setup progress, independent direct controls, protected-block persistence, native drafting locks, compatible-pose inspection reuse and deadline checks after captures. **The canonical local gate passed 1,327 tests**, with lint, source/security checks and local renders. The [course-correction record](minecraft-beta-course-correction-20261001.md) retains the source review, log and practical limits.
+The owner paused the proposed app walkthrough and clarified the product. This is a product-scope discussion and documentation instruction, not a completed app/gameplay review, launch verdict or distribution decision. The package was identified and an opening step supplied; the owner did not report opening a screen, using a profile, approving gameplay or testing control release in this session.
 
-Minecraft aiming, movement, placement and wall Start remain disabled. No new app was built or native gameplay performed during the source correction. A useful wall result through a separately identified packaged user setup path remains the release blocker. The [PM handoff](private-beta-pm-handoff.md) owns the current continuation and readiness checklist.
+### Owner feedback in their own words
 
-| Candidate | Actual review scope | Remaining limit |
+- “the idea is like a chatbot that can interprete your intentions and play for you.”
+- “at the very least I would expect initial beta to be able to PLAY mario and stardew a little. especially mario with like modifying or trying to tweak/test.”
+- “when we release the beta intially we can connect to minecraft, by the end minecraft will be a completed third option to play.”
+- Mario: “lets find a 100% coin route to the end”; “youre jumping too early wait a few more frames”; “fly to get the hidden 1up”; “STOP RIGHT NOW WAIT”.
+- “yes it should be training on routes and lives (later itself to improve)” and “you are wathching it play and coaching for the next time or in real time (with selecrt commands)”.
+- Stardew: “it should generally replace all the clicking actions.” Examples: “lets explore and find a good spot to plant corn”, “time to water the tomatos”, “lets go explore that cave”.
+- “This is slower so it should be a more immediate feedback/convo with like a hey this is what we are going to do for the next few minutes good? and i can say yes.”
+- “minecraft builds on stardew but is also used as a guide for how we can develop an onboard util thats not too complicated for advanced users”. The owner confirmed this means adding another game through guided setup without writing code.
+- Latest sequencing instruction: “we can get to that after the first two things are implemented.... for now lets get all the docs up to date and ready to roll for the next engineering sessions. once complete update the next steps in desktop with all the relevant details.”
+
+### Engineering interpretation and agreed follow-up
+
+The [product direction](product-direction.md) and [engineering plan](private-beta-engineering.md) translate those requirements into GC1 conversation/priority interruption, GC2 Mario watched/coached route learning, GC3 Stardew approved activities and GC4 exact two-game delivery. GC5 develops Minecraft during beta; GC6 no-code onboarding and its teaching discussion follow implementation of the first two gameplay experiences. Independent self-training is later work.
+
+Three proposed implementation priorities are: contextual Mario goals with applied/persistent coaching; useful Stardew activity perception/navigation and short approval/check-in conversations; reliable urgent interruption integrated with the existing direct controls. The concrete next session is GC1 plus the first GC2 watched-play/timing-change/memory slice. The owner authorized documentation updates and next-session preparation; this record supplies no launch approval.
+
+Actual product usage remains unreviewed. No screen-level expected/actual behavior or user-reported input-release result is available from this discussion. Assistance supplied was package identification, the opening instruction and explanation of current limitations, followed by a read-only source/document audit. Treat the interruption of the walkthrough as a product-expectation mismatch, not a failed live task.
+
+For the next app review, record each screen, task, expected/actual behavior, the user's own words and engineer assistance. Let the owner correct the closing review summary before recording that later review. Keep product findings separate from launch/distribution decisions.
+
+## Current source and retained packages
+
+The October 3 documentation work began on clean HEAD `482374ff83b202c6ac3c2ceae6ae1711dfe11c68`. It changes documentation only; future sessions must reconcile the new source identity. Mario route/control and Stardew prepared-farm foundations are real, but the corrected conversational learning/delegation experience remains unimplemented. The current grammar also does not recognize the exact urgent `STOP RIGHT NOW WAIT` phrase; direct Stop controls exist. These are source-inspection findings, not live test results.
+
+The October 1 source corrections added Minecraft setup progress, independent direct controls, protected-block persistence, native drafting locks, compatible-pose inspection reuse and capture deadline checks. The 1,327-test canonical local gate belongs to that source. No successor package or gameplay acceptance follows from the documentation refresh.
+
+| Candidate | What its evidence supports | Limits |
 | --- | --- | --- |
-| Current corrected repository source | Guided setup and affected control/observation/deadline behavior; 1,327 local tests and synthetic desktop/narrow preview | Source changes have not been packaged or demonstrated in native wall gameplay |
-| Retained `0.2.0-private.2` | Local Mac package; calibration/camera enabled; exact manifest and development observations beside the app | Aim/move/place/wall unavailable; no completed packaged wall smoke |
-| Retained `0.2.0-private.1` | Exact packaged OpenTTD one-repayment smoke and handback/reopening | Minecraft native input unavailable; its successful result applies to that package |
+| Current repository | Existing Mario/Stardew interfaces and source setup/control repairs | Corrected GC1–GC4 experience is upcoming; no new native/package proof |
+| Retained `0.2.0-private.2` | Profile/setup/history/local-feedback and Minecraft calibration/camera flags; offline lifecycle smoke | Predates source repairs; aim/move/place/wall unavailable; packaged native Minecraft wall smoke unfinished |
+| Retained `0.2.0-private.1` | Exact packaged OpenTTD one-repayment smoke, release and reopening | Narrow reference task; no Minecraft native input or corrected two-game beta proof |
+| Retained B8 repaired delivery | Prepared Stardew Day 5 actions/return/release and its historical Mario checks | Exact source/configuration only; owner usefulness/acceptance remains separate |
 
-The records below are retained evidence for their named candidates and checkpoints. Their counts, display availability and pause statements describe the recorded attempts; they do not replace the current source/release status above. Retained apps, manifests, embedded guides and results remain unchanged.
+Private.2 exact app: `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Game Companion.app`; version `0.2.0-private.2`, bundle build `20002`, arm64, local ad-hoc signature, not notarized. Source SHA-256 `230c206e51a46014e457458a8e4c0036cbd501f9a3e228f04103f1d70473fa60`. Its adjacent build manifest, Quick Start and Owner Review retain authority for that package and stay unchanged. A separately identified successor must demonstrate actual Mario coaching and Stardew delegation for initial-beta review. Minecraft's third-game expansion belongs to the later beta stage.
+
+The records below are historical checkpoints. Their “next” instructions, Mac/display availability and permissions describe those sessions; resume new work from the active [PM handoff](private-beta-pm-handoff.md) and [engineering plan](private-beta-engineering.md).
 
 ## Retained 0.2.0-private.1 owner review
 

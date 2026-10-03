@@ -1,24 +1,32 @@
 # Known limitations
 
-These boundaries are implemented or directly implied by the current runtime;
-they are not unverified product promises.
+Updated October 3, 2026. These describe current runtime limits and inspected product gaps. [Product direction](product-direction.md) and the [engineering plan](private-beta-engineering.md) describe planned requirements separately.
 
-## Current private-beta delivery
+## Initial-beta implementation gaps
 
-Reviewed October 1, 2026. The intended user path is ordinary Minecraft setup → useful building task → observed result and control → saved profile/history reopening. The [PM handoff](private-beta-pm-handoff.md) records current work and the [quick start](private-beta-quick-start.md) describes the actual review app.
+The initial beta must deliver watched/coached Mario play and useful Stardew activity delegation. No retained package currently demonstrates that complete experience. Next work is GC1 priority conversation/control, GC2 Mario coaching/route learning, GC3 Stardew delegation and GC4 an identified two-game package. Minecraft is a later third-game beta stage; advanced-user no-code onboarding follows implementation of the first two experiences.
 
-- Current source and retained private.2 enable Minecraft calibration and small camera requests. Aim, movement, placement and wall Start remain disabled; no packaged wall completion is established.
-- The current source includes guided setup progress, protection persistence, direct-control/drafting fixes and stricter observation/deadline checks. Its 1,327 passing canonical local tests are source checks. Retained packages predate those corrections.
-- Minecraft is limited to Java 26.3 vanilla Creative, English/default font, supported controls/HUD and an 854 × 508 point selected window at native 1× or 2× capture. The app requires a disposable world, a clear flat practice area, a manually selected supported full block and exclusive mouse/keyboard use during native work. Survival, multiplayer, breaking, jumping/flying, automatic inventory changes and unrestricted exploration are unavailable.
-- The initial building task is a 7 × 3 × 1 wall with a centered 1 × 2 opening. Manual preparation is part of the intended guided setup; developer coordinates or scripts cannot substitute for the ordinary first-use path. Geometry, occupancy, material, reach, protection and the return point require visible checks. Unknown results remain partial.
-- OpenTTD supports one £10,000 repayment from a paused disposable English 15.3 company with £100,000 cash and loan. The successful packaged result belongs to retained private.1. General management, borrowing, building and arbitrary starting balances are unavailable.
-- Retained Mac packages are Apple Silicon, locally ad-hoc signed and not notarized. Fresh-machine onboarding, broader configurations and sustained reliability need beta feedback; owner release/distribution approval remains pending.
+- Mario has a real cumulative route/controller and bounded path/stop/speed edits. Current Quickest/100% selections load the same existing base with unknown collectible coverage. Coin-route discovery, user jump-frame/flight objectives and an integrated cross-attempt/life coaching loop are not available through current conversation.
+- Mario's local learning records derive patterns and review candidates. They do not currently apply conversational coaching to the next attempt. Engineering accepted-route promotion remains distinct from the planned local reviewed experiments.
+- The Mario/Stardew intent interpreter is a bounded deterministic grammar. Exact `STOP RIGHT NOW WAIT` is not recognized by its full-match chat-control parser; dedicated Stop/Take control exist. Urgent conversational interruption is the first repair, with actual release verification required before claiming it works.
+- Stardew supports only the two prepared farms and exact screen/profile/settings in the [operator guide](stardew-operator-guide.md). General tomato watering, corn-location choice and cave exploration are not provided by current action recognition/navigation. Parsing a crop name does not establish gameplay capability.
+- Stardew chat focus stops ordinary native input and revokes authority. The planned immediate discussion/check-in experience needs a clear observe/replan/approve continuation flow; refocusing alone cannot resume input.
+- Current other-game onboarding creates data-only fixture scaffolds. Live perception/controller integration still requires engineering. Guided playable no-code onboarding is deferred, not a current capability.
 
-## Bounded planning and unfinished capabilities
+## Retained review-package scope
 
-The [conversation guide](b2-conversation-guide.md) describes local contextual planning, declared World 1-1 path/stop edits, normal/uncapped playback and authority-free saved variants. Only one cumulative Mario base exists. Quickest and 100% selections do not invent optimized routes or completion coverage. Resumed play permits only the verified opening stop after fresh observation/review/Start; level-exit or full-base traversal requires fresh power-on. Arbitrary mid-run full-route resume, custom later levels and fixed 2×/4× playback are unsupported. The deterministic language backend recognizes bounded action families and contextual corrections; unknown wording asks for clarification rather than using an external model.
+- Private.2 and current source enable Minecraft calibration/small camera requests; aim/move/place/wall Start remain disabled. No packaged Minecraft wall completion is established.
+- October 1 source progress/protection/direct-control/drafting/observation/deadline fixes passed 1,327 canonical local tests on that source. They have not been rebuilt into private.2 and do not prove the corrected two-game beta.
+- Minecraft's retained support is Java 26.3 vanilla Creative, English/default font, supported controls/HUD and an 854 × 508 point selected window at native 1× or 2× capture. It needs a disposable world and exclusive input during native work. Survival, multiplayer, breaking, flying/jumping, automatic inventory changes and unrestricted exploration are unavailable.
+- The retained future building case is a 7 × 3 × 1 wall with a centered 1 × 2 doorway. Its geometry, occupancy, material, reach, protection and stop point need independent checks in later GC5 gameplay. Unknown results remain partial.
+- OpenTTD supports one £10,000 repayment from a paused disposable English 15.3 company with £100,000 cash and loan. Its packaged success belongs to private.1; general management is unavailable.
+- Retained Mac packages are Apple Silicon, locally ad-hoc signed and not notarized. Broader configurations and sustained reliability need actual beta feedback. Product review and launch/distribution approval remain separate.
 
-Stardew watering and combined-action support is restricted to the prepared configurations in the [Stardew guide](stardew-operator-guide.md). Guarded stops may leave the return unconfirmed even when selected actions finish. Neutral handback is distinct from reaching the farmhouse. Retained successful runs establish behavior only for their identified source and configuration; they do not qualify later source changes or establish owner acceptance.
+## Current conversation and recovery limits
+
+See the [Mario guide](mario-player-guide.md) for declared World 1-1 paths/stops, normal/uncapped speed and authority-free variants. Resumed play permits only the verified opening stop after fresh observation/review/Start; level-exit or full-base traversal requires fresh power-on. Arbitrary mid-run full-route resume, later custom routes and fixed 2×/4× playback are unsupported. New coached gameplay entries/actions need implemented runtime contracts and observed results.
+
+Stardew guarded stops can leave the return unconfirmed even if selected actions finish. Neutral handback is distinct from reaching the farmhouse. The retained successful final-return repair does not reclassify earlier failures, qualify later source or establish owner acceptance. No current app/gameplay use was observed during the October 3 product-direction discussion. See [review records](private-beta-review.md).
 
 ## Live validation requires local assets
 

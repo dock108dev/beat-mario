@@ -2,6 +2,10 @@
 
 Mario objective/coaching and run-library reference. The September 23 requirement below records that adapter stage; current release scope follows the [private-beta engineering plan](private-beta-engineering.md).
 
+## October 3 coached-play requirement
+
+GC2 in the active plan must add coin-route discovery across attempts/lives and user-to-agent timing/tactic coaching with acknowledged application and persistent next-attempt memory. Existing advisory Tell/coaching below remains input-free; a future approved experimental gameplay revision is a separate runtime action. The observable-progress checklist is not a coin universe. Implement observable coin/reward identity and exact coverage before any 100% claim, while retaining honest discovery progress and unknowns. See [Mario integration](b2-integration-contract.md) and [learning memory](learning.md).
+
 ## Recorded September 23 adapter requirement
 
 Conversation supports route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.

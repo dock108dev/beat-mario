@@ -1,48 +1,58 @@
-# Game Companion private beta PM handoff
+# Game Companion private-beta PM handoff
 
-Updated October 1, 2026 for the October 2 pickup. The current delivery priority is a Mac app in which a user can onboard Minecraft Java Creative, complete a useful building task, receive control back and reopen their saved profile and result. Engineering has implemented the setup and camera foundation; the first building task still needs completion and a packaged workflow check. Owner launch acceptance is pending.
+Updated October 3, 2026. **The initial beta is conversational Mario coaching and Stardew delegation.** The owner watches Mario play and coaches current/next attempts; Stardew handles useful activities after a short discussed plan and approval. The initial beta can connect Minecraft with current capabilities clearly labeled; it becomes the completed third playable option by beta end. Advanced-user guided no-code game onboarding follows implementation of the first two gameplay experiences.
 
-## What the beta should let a user do
+Read [product direction](product-direction.md), [engineering plan](private-beta-engineering.md) and [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). This is the active pickup for upcoming sessions.
 
-Open Game Companion → create a Minecraft profile → follow permissions and supported settings → choose the game window → calibrate and connect → prepare and visibly check a practice building region → ask for the wall → Review and Start → read the observed result and receive control → Stop → reopen the profile and history.
+## Owner requirements
 
-The first task is a wall **7 blocks wide, 3 high and 1 thick**, with a centered **1 by 2 doorway**. It has 19 occupied cells and two empty doorway cells. The app must preserve the marked structure, inspect the outcome and report any unfinished or uncertain work. Ordinary manual preparation is acceptable when the app and guide explain it and provide a clear remedy for missing conditions.
-
-## Current status
-
-| Area | Status and implication |
+| Game/area | Intended experience |
 | --- | --- |
-| App and user setup | Profiles, settings guidance, window/display selection, app-created calibration, typed requests, history and local feedback are implemented. The corrected source now shows actual onboarding progress and available tasks. |
-| Minecraft camera | Calibration and small camera requests are enabled. Current support is the documented vanilla Java Creative configuration. |
-| Minecraft building | Aim, nearby movement, addition and wall components exist. These task families remain disabled in the ordinary workspace. The useful wall workflow is the active integration work. |
-| Direct controls and runtime repairs | The source now protects Stop/Take control from malformed setup fields, retains protection markings, locks drafting during native work, checks compatible placement observations and enforces deadlines after captures. |
-| Local verification | The October 1 canonical gate passed **1,327 tests**, lint, repository checks, goal/segment contracts and UI render checks. It verifies the corrected source; it does not establish real Minecraft wall completion. |
-| Packaged candidate | The retained **0.2.0-private.2** app enables calibration/camera only and predates the latest source repairs. It has no completed packaged wall walkthrough. Preserve it and build a separately identified candidate after integration. |
-| Launch | The useful packaged Minecraft workflow and owner launch decision remain open. Broader onboarding feedback, task variation and sustained reliability belong to private-beta use. |
+| Mario | `lets find a 100% coin route to the end`; explore and remember routes across attempts/lives |
+| Mario coaching | `youre jumping too early wait a few more frames`; actual supported behavior changes now or next attempt with clear acknowledgment |
+| Mario objective | `fly to get the hidden 1up`; interpret the goal, check the ability and execute/verify supported gameplay |
+| Control | `STOP RIGHT NOW WAIT`; immediate release, cancellation and preserved outcome |
+| Stardew | `lets explore and find a good spot to plant corn`, `time to water the tomatos`, `lets go explore that cave`; propose the next few minutes, receive approval, play and discuss changes |
+| Minecraft | Connect in the initial beta with accurate available abilities; extend the slower activity loop into spatial play and finish a third game by beta end |
+| Later onboarding | An advanced user adds an eligible game without writing code; defer implementation and teaching discussion until the first two experiences work |
 
-The package and source currently share the private.2 version label. Use their source/build manifests to distinguish them until the engineer produces the next identified package. The [review record](private-beta-review.md) owns the retained package facts; the [source correction report](minecraft-beta-course-correction-20261001.md) owns the recent audit and repair evidence.
+Supervised Mario learning and remembered coaching are initial-beta features. Independent practice/self-improvement comes later. A limited initial level/farm/area scope is acceptable when explicit and useful; substituting an unchanged route or engineering fixture for the requested experience is not completion.
 
-## Pickup for October 2
+## Current status and reusable work
 
-1. **Finish user preparation.** Start with a new Minecraft profile and a user-selected disposable Creative world. Make the supported settings, window/calibration, flat stable start, material, reachable building region and pointed protection understandable through the app. Show what is missing and how to fix it.
-2. **Complete the useful task.** Reuse the implemented inspection, aim, nearby movement, addition and wall components. Repair the specific bottleneck that prevents progress. Keep fresh observations, finite input and immediate Stop/Take control. Enable a task family only after its focused practical check.
-3. **Package and walk the full path.** Create a new identified build with the matching guide and capability labels. From fresh setup, exercise the user journey above, including an observed wall/doorway/protected-block result, handback, Stop and exact profile/history reopening. Record every point where engineer assistance was needed and absorb it into the app or guide.
-4. **Present the delivery for the launch decision.** Give the owner the app, supported setup, concise walkthrough, known issues and local feedback instructions. Update the tracker with the actual result and the single next action.
+Mario has actual controller/route foundations, current observations, watchable play, bounded path/stop/speed changes and history. It lacks integrated coin-route discovery, conversational jump/flight adjustments and durable coaching application. Learning records exist separately from ordinary conversational execution.
 
-The PM should keep this as one integrated user story. A profile save or a camera demonstration is progress toward it; the release result is the user completing the useful task through the delivered app. Use short checks for changed behavior and the canonical gate for the integrated engineering handoff. Wider variation and reliability testing continue during beta.
+Stardew has retained successful watering and selected farm actions, including the September 26 final-return repair. Its supported live work is two prepared farm/profile/display configurations. General crop/location/exploration behavior and short activity/check-in conversation remain engineering work. Typing in another foreground window currently stops Stardew input; the product needs a clear pause/discuss/replan/approve flow.
 
-## Acceptance for this delivery
+The exact urgent Stop phrase above does not match the current chat parser. Direct Stop/Take control foundations exist; priority natural-language interruption is the first concrete repair.
 
-- A user can follow setup and practice from the app and supplied guide, with actionable failures and visible task availability.
-- The reviewed wall task produces observed occupied cells, an empty doorway, unchanged protected blocks and the required nearby stop. Partial work remains clearly identified.
-- Stop/Take control return confirmed control; the request, result and remaining work reopen from saved history. Reopening requires a fresh game connection and review before new work.
-- The delivered package has an exact build identity, matching guide and accurate feature labels. Owner launch acceptance is recorded against that package.
+Minecraft's setup, calibration/camera and current-source progress/control repairs are useful retained work. Aim/move/place/wall remain disabled. Existing contributor onboarding produces fixture scaffolding, not a new playable game. Preserve these foundations for their later stages.
 
-## Where to resume
+## Exact package and evidence boundaries
 
-- [Current next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) contains the ordered work and practical exits.
-- [Engineering plan](private-beta-engineering.md) maps existing owners and implementation details.
-- [Quick start](private-beta-quick-start.md) describes the supported user configuration and current executable tasks.
-- [Package review](private-beta-review.md) and [source correction report](minecraft-beta-course-correction-20261001.md) provide the evidence behind the status above.
+- Retained app: `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Game Companion.app`.
+- Version/build: `0.2.0-private.2` / bundle `20002`; Apple Silicon, local ad-hoc signature, not notarized.
+- Source SHA-256: `230c206e51a46014e457458a8e4c0036cbd501f9a3e228f04103f1d70473fa60`. Adjacent manifest, Quick Start and Owner Review are authoritative for that package.
+- Minecraft calibration/camera available; aim/move/place/wall unavailable. It predates October 1 source repairs and has no packaged native Minecraft wall success.
+- Retained private.1 OpenTTD smoke and B-series Mario/Stardew results apply to their own identities/settings. They do not qualify the corrected conversational product or a successor package.
+- The October 1 canonical local gate's 1,327 tests are source verification. No new gameplay, package or owner acceptance was established by this October 3 documentation update.
 
-The working copy contains the source corrections and this documentation refresh. The existing private.1/private.2 packages and historical evidence are retained. Native checks need fresh window/display/world confirmation and exclusive Mac input; Stop immediately when the owner reclaims the Mac. Tester contact and distribution follow the owner launch decision.
+The documentation work began on clean HEAD `482374ff83b202c6ac3c2ceae6ae1711dfe11c68`; future sessions must reconcile the working tree/source identity and exact running build. See [review status](private-beta-review.md).
+
+## Ordered engineering pickup
+
+1. **GC1 + first GC2 slice:** urgent chat Stop, contextual intent/coaching, one watched supported Mario attempt with an actual jump-timing change and next-attempt memory. Use existing service/runtime/controller seams. Retain what was requested, applied and observed.
+2. **Finish GC2:** useful coin-route exploration across lives/attempts, supported flight/reward objectives, selected real-time commands and inspectable persisted coaching/history.
+3. **GC3:** Stardew observed crop/tool/resource targets, activity navigation and useful watering/location/exploration plans; explicit approval, safe conversation, correction and outcomes.
+4. **GC4:** distinct two-game package/guide/readiness contract; ordinary Mario coaching → neutral switch → Stardew activity → controls → reopening/report/shutdown walkthrough. Record every engineer intervention.
+5. **GC5/GC6 during later beta work:** Minecraft playable integration and advanced-user onboarding, after the first two experiences are implemented. Do not begin no-code demonstration requests in the current sessions.
+
+The [engineering plan](private-beta-engineering.md) gives code owners, task acceptance, affected checks and failure handling. Update the tracker at each session with the exact candidate, actual behavior, unresolved gap and next action.
+
+## Review and release
+
+The October 3 discussion is confirmed product direction and proposed-work authorization, not a gameplay review or launch acceptance. The opening walkthrough paused before the owner reported using an app screen. Do not manufacture observed UX/gameplay feedback or a tester decision from it. [Review notes](private-beta-review.md) preserve the owner's words separately from engineering interpretation.
+
+For the next actual app review, guide one action at a time, allow the app's guidance first, ask one short feedback question and wait. Record the user's words, screen, expected/actual behavior and help supplied. Let the owner correct the closing summary before recording it. Product feedback remains separate from a launch/distribution verdict.
+
+Preserve player data, profiles, packages, credentials, accepted routes, uncommitted work and all evidence. Native work needs fresh session/window/settings and current exclusive-input availability; release immediately when the owner reclaims the Mac. No commit/push, distribution, invitations or tester contact is authorized by this handoff.

@@ -3,7 +3,7 @@
 This document retains the earlier versioned campaign workflow. It is an
 engineering history record, not the current setup guide or current delivery
 qualification. Use the [private-beta quick start](private-beta-quick-start.md)
-to run the current tester build and the [private-beta engineering plan](private-beta-engineering.md)
+for retained engineering review packages and the [private-beta engineering plan](private-beta-engineering.md)
 for current release scope. The [B8 delivery record](b8-personal-delivery.md)
 retains the earlier personal-Mac build and review limits.
 Historical schema names and phase identifiers below are retained for interpreting

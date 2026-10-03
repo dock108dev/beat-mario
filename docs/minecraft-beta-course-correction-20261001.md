@@ -1,5 +1,7 @@
 # Minecraft private beta: user onboarding course correction
 
+Current planning note — October 3, 2026: this is the retained Minecraft source audit and its original scope. New sessions deliver Mario coaching and Stardew delegation first through the [active engineering plan](private-beta-engineering.md) and [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Preserve the findings and evidence below for later Minecraft integration.
+
 Reviewed October 1, 2026 against `fc019d50ff91abdee08d82514e885328fa5ca090` and its retained private.1/private.2 reports. This is a source, documentation and local regression review. Minecraft building remains unfinished.
 
 For the current delivery status and October 2 pickup, start with the [PM handoff](private-beta-pm-handoff.md). This report retains the specific audit findings and repair evidence.
@@ -10,7 +12,7 @@ A technically comfortable nonprogrammer opens the Mac app, creates a Minecraft p
 
 The initial useful task is the 7-wide × 3-high × 1-thick wall with its centered 1 × 2 doorway: 19 occupied cells and two empty doorway cells. User setup supplies intent and configuration; fresh game observations supply material, pose, reach, clearance and results. Preparation can involve ordinary manual game actions, explained and checked through the app. Developer scripts or supplied world coordinates cannot stand in for that first-use flow.
 
-This is the current [engineering contract](private-beta-engineering.md#guided-setup-and-how-to--pb5) and [tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Broader onboarding variation, setup-time measurement and sustained reliability continue during private beta.
+At the October 1 checkpoint this was the [engineering contract](private-beta-engineering.md#guided-setup-and-how-to--pb5) and [tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Broader onboarding variation, setup-time measurement and sustained reliability continue during private beta.
 
 ## What the recent work delivered, and where it diverged
 

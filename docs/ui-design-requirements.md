@@ -6,7 +6,9 @@ The [private-beta engineering plan](private-beta-engineering.md) defines the cur
 
 Put the useful result and next action before setup inventories or technical detail. Use ordinary sentences instead of internal codes and repeated badges. Group related facts; keep the current blocker, freshness, uncertainty and consequences next to the action. Move full history and advanced setup into named disclosures while leaving common controls directly available. Compare the same states and viewports, including keyboard use, increased text size and error recovery. Compact spacing must not come from smaller text or cramped controls.
 
-For Minecraft first use, show the current setup step, its concrete next action and available tasks. Build readiness must follow the actual task-family flags and fresh session state. Place prerequisites and practice-area guidance beside the controls that need them, and preserve typed drafts and editable protection intent during routine refresh.
+For initial-beta Mario, make watched play, current goal/attempt, coach messages, applied/next-attempt changes and immediate control understandable. For Stardew, show the next-few-minutes plan, explicit approval, observed progress and conversation/check-in recovery. Reopening coaching/history restores no input authority. These are planned GC1–GC4 interaction requirements.
+
+For later Minecraft first use, show the current setup step, its concrete next action and available tasks. Build readiness must follow the actual task-family flags and fresh session state. Place prerequisites and practice-area guidance beside the controls that need them, and preserve typed drafts and editable protection intent during routine refresh.
 
 ## Direction
 

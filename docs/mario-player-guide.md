@@ -1,6 +1,6 @@
 # Mario player guide
 
-Guide for the implemented Mario adapter. For the current private-beta build and Minecraft first use, begin with the [private-beta quick start](private-beta-quick-start.md). Release scope is in the [private-beta engineering plan](private-beta-engineering.md).
+Guide for the currently implemented Mario adapter. The [product direction](product-direction.md) defines the corrected beta target: watch Mario play, coach it during supported moments, and have it remember and test changes across attempts and lives. That experience is planned work; the narrower behavior below is what the existing implementation supports. The [private-beta engineering plan](private-beta-engineering.md) owns GC1 priority interruption, GC2 coachable Mario play and exact-build acceptance. For a retained package, read its adjacent manifest, quick start and owner review before using it; current source documentation does not establish packaged abilities.
 
 Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
 
@@ -9,6 +9,8 @@ Before opening a session, the setup card must recognize a supported local game f
 ## Review and Start
 
 Choose the existing base, **Quickest**, or **100% clear**, or type a request. All initially load the same existing `world_8_finish_game` base. Quickest is an existing-base fallback, not an optimized route; full-completion coverage remains unknown. Review the actual path and stop, not just the requested objective.
+
+This fallback is a current product gap. It does not satisfy a request to find or train a 100% coin route. The revised beta must explain unknown coverage and offer actual supported exploration or a clear blocked result, rather than treating an unchanged base route as fulfillment.
 
 Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The local bounded English planner needs no model account or credentials.
 
@@ -38,6 +40,8 @@ Playback offers **1× normal** and **Faster, uncapped**. “Use normal speed” 
 
 Mario can keep playing its approved plan while you type in Companion: chat keystrokes are isolated from game input. **Pause** holds the current session; **Resume** is usable only while that paused authority remains valid. **Stop** or **Take control** releases input and revokes pending commands. Reclaim while paused also invalidates Resume. Starting again requires fresh compatible observation and review, with the opening-only resumption limit above.
 
+The current chat parser accepts narrow control phrases such as “stop” and “stop now.” It does not recognize the owner's exact “STOP RIGHT NOW WAIT” example as an immediate stop. Until GC1 is implemented and checked on the reviewed build, use the visible **Stop** or **Take control** control for urgent interruption. This is a current source limitation, not verified native release evidence for a new package.
+
 ## Saved variants, results and recovery
 
 Expand **Save or reopen a route** to save a named variant or Reopen it. A variant stores its base/version, actions and stop; it stores no gameplay permission. Reopen proposes a plan, then checks integrity, compatibility and fresh state. Review and explicitly Start. A saved variant is not automatically accepted, fastest or reliable.
@@ -45,3 +49,16 @@ Expand **Save or reopen a route** to save a named variant or Reopen it. A varian
 A completed opening stop means that bounded stop completed; it does not mean the full base or a 100% objective completed. Death, lost process, reclaim and missed boundaries remain distinct partial/stopped results. After process loss, open a fresh session; old edits and Start identities cannot be reused, and no native handback receipt can be supplied by the dead process. See [shared history and recovery](../README.md#history-recovery-and-safe-shutdown).
 
 The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits.
+
+## Planned coached-play experience
+
+These are owner requirements, not instructions for features available today:
+
+| Request | Expected beta experience |
+| --- | --- |
+| “lets find a 100% coin route to the end” | Agree the level/route and coin goal, explore over attempts and lives, retain discoveries and uncertain coverage, and try an improved route. Report exactly what was observed; a route ending alone does not prove all coins. |
+| “youre jumping too early wait a few more frames” | Connect the correction to the relevant jump, clarify the amount or target when needed, remember the timing revision, and show whether it will apply now or on the next compatible attempt. Let the user watch the test and compare the result. |
+| “fly to get the hidden 1up” | Understand the destination and current ability, explain any missing prerequisites, and use an implemented, reviewed flight action to try it. A fixed flight segment elsewhere is not general support for this request. |
+| “STOP RIGHT NOW WAIT” | Interrupt immediately, release input and cancel pending actions before any further planning; show whether release was actually confirmed. |
+
+The user watches and coaches Mario; selected supported commands can change the current attempt and other corrections apply next time. Reopening must retain route discoveries, the owner's words, revisions and attempt results without restoring gameplay permission. Ordinary coached experiments stay separate from the historical accepted route. Later independent practice/self-improvement is deferred. The [integration contract](b2-integration-contract.md) and [learning contract](learning.md) describe the planned application and evidence checks.

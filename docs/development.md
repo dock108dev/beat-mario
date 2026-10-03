@@ -1,8 +1,9 @@
 # Development and repository structure
 
 For current private-beta work, start with the [PM handoff](private-beta-pm-handoff.md).
-The ordinary Minecraft setup implementation exists; the remaining delivery is its
-useful building task through a separately identified Mac package. The October 1
+The next sessions implement GC1 conversation/priority control and GC2 watched Mario
+coaching/route learning, followed by GC3 Stardew approved activities and GC4 two-game
+delivery. Minecraft and advanced-user no-code onboarding are later stages. The October 1
 corrected source passed **1,327 canonical local tests**. Retained private.1/private.2
 packages and their native results qualify their own identities, not subsequent
 source changes; see [review status](private-beta-review.md).
@@ -147,7 +148,7 @@ and keep watchable playback separate from authoritative evidence.
 
 `scripts/build_private_beta.py` uses `player_store.VERSION` for its build/output
 directories and includes the current source identity, checked Minecraft flags,
-guide, runtime and OCR resources in the manifest/package. The current local script
+guide, runtime and OCR resources in the manifest/package. Its hardcoded bundle build also needs a distinct successor identity before GC4 packaging. The current local script
 uses `--noconfirm` and local Homebrew OCR paths. Prepare a distinct version/output
 before invoking it so retained private.1/private.2 apps and evidence remain intact.
 It requires PyInstaller and the declared local OCR inputs in addition to the
@@ -160,7 +161,7 @@ profile/history reopening against that exact package. Offline `--smoke` verifies
 HTTP/profile/report behavior only. Native source probes do not qualify a packaged
 user walkthrough. Record actual settings and engineering assistance, and leave
 unchecked gameplay families disabled. See the [engineering plan](private-beta-engineering.md)
-and [quick start](private-beta-quick-start.md) for the current task and user path.
+for GC4 delivery; the [quick start](private-beta-quick-start.md) describes retained engineering packages. A new guide/manifest must match the successor's actual Mario/Stardew abilities.
 
 ## Conversation and route verification
 

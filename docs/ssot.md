@@ -7,6 +7,8 @@ owns release scope; the [PM handoff](private-beta-pm-handoff.md) records the cur
 delivery candidate, limitations and next work. The [B8 delivery record](b8-personal-delivery.md)
 retains its September 26 build identity.
 
+The [product direction](product-direction.md) now requires initial-beta Mario coaching and Stardew activity delegation. GC1–GC4 in the active plan own upcoming work; no existing readiness flag or historical evidence qualifies that full experience. Minecraft and advanced-user no-code onboarding follow implementation of the first two gameplay experiences. The domain map below describes existing owners to reuse, not completed new features.
+
 Domain: Ordinary player setup and Minecraft onboarding progress
 SSOT module/file: `src/smb3_agent/player_setup.py`, with read-only progress in `player_onboarding.py`
 Why this is authoritative: Coordinates profile operations, conversation, current

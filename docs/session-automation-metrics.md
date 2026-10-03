@@ -6,6 +6,10 @@ Scenario contracts define repeatable, adapter-neutral session scenarios and a lo
 metrics pipeline. This implementation is not a validation result. A scenario is
 not made true by being defined, planned, or technically completed.
 
+## Planned corrected-beta events
+
+GC1–GC4 require records for interpreted goal, reviewed/approved scope, attempt/life, original coaching, resolved change, controller acknowledgment/effective boundary, route/coin discoveries, next-attempt application, Stardew activity/check-in/correction, observed outcome and confirmed release. Use existing local attempt/history owners. Metrics must distinguish saved feedback from applied behavior and an applied change from measured improvement. Version the scenario mapping for this corrected beta; historical V2/B/PB results retain their original meaning. Independent self-training remains later work.
+
 ## Mario product events
 
 The Mario product prepares first-use, game-file detection/selection, identity

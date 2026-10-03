@@ -1,155 +1,155 @@
-# Private-beta engineering plan
+# Game Companion private-beta engineering plan
 
-Updated October 1, 2026 for project-manager handoff. **Engineering is completing the user's Minecraft onboarding and first useful task in a versioned Mac app.** The [PM handoff](private-beta-pm-handoff.md) summarizes current status and continuation; the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns remaining work. The [course-correction review](minecraft-beta-course-correction-20261001.md) records the source repairs and verification. Historical PB reports retain their exact evidence.
+Updated October 3, 2026 from the owner's product correction. **Deliver conversational Mario coaching and Stardew activity delegation first.** Minecraft becomes the third playable option during beta. Guided advanced-user onboarding of other games follows implementation of the first two gameplay experiences. The [product direction](product-direction.md) owns the intended experience, the [PM handoff](private-beta-pm-handoff.md) owns session pickup, and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) owns ordered status and the next action.
 
-## Product and launch scope
+## Product contract and sequence
 
-A technically comfortable nonprogrammer connects an eligible game, follows setup/practice, saves a profile and completes supported tasks mainly through typed conversation. Existing Mario/Stardew paths, profile-based reference-game work and Minecraft Java Creative tasks remain the direction. A playable profile parameterizes implemented skills; configuration cannot invent navigation or verification.
+Game Companion is a chatbot that interprets the player's intentions, observes the game, plays within an agreed scope, accepts coaching and returns control. The owner should be able to watch real gameplay and direct it through conversation. Setup, profiles, demonstrations and reports support that loop.
 
-Before invitations, provide a coherent install/setup/play/Stop/reopen path, a useful implemented Minecraft task, understandable limitations and a feedback route. During private beta, testers evaluate onboarding usability, task variation, broader game configuration, sustained reliability and machine/environment differences. Setup time and additional eligible-game tasks guide iteration.
+1. **Initial beta, Mario:** watched play, route discovery across attempts/lives, durable coaching, selected real-time changes, immediate interruption and inspectable results.
+2. **Initial beta, Stardew:** delegate clicking and navigation activities, discuss a short plan for the next few minutes, approve it, watch execution and correct or interrupt it.
+3. **Minecraft connection in the initial beta, gameplay development during beta:** carry forward usable connection/setup with accurate available abilities, extend the Stardew-style conversation/action loop into spatial play, and deliver a completed third playable option by beta end. The retained wall is one useful integration case.
+4. **After the first two gameplay experiences are implemented:** develop guided advanced-user setup that can add an eligible game without writing code. Minecraft helps establish reusable observation/control/teaching needs. Teaching demonstrations and the onboarding interaction will be discussed at that stage.
+5. **Later:** independent Mario practice/self-improvement. Learning from supervised attempts and owner coaching belongs in the initial Mario experience; an autonomous training service does not.
 
-Minecraft camera readiness, visible detection, native relative input and bounded camera requests are implemented. Aiming, nearby movement, additions and wall Start remain disabled. Enable each family only after focused checks of its actual integrated behavior, with conservative controls and truthful task labels. The [camera report](pb3-minecraft-camera.md) preserves earlier trials, the first-response repair and unresolved observations separately from current release work.
+Typed conversation is the initial input. Game coverage can begin with explicitly supported levels/areas, but the initial experiences must include meaningful goal-directed play and adjustments. The acceptance examples below cannot be replaced by selecting an unchanged base route or completing only a settings wizard. Requests that need an unavailable ability must explain the prerequisite and offer an actionable next step.
 
-## Existing ownership and implementation seams
+## Current implementation and exact evidence
 
-Reuse the current conversation, session, catalog, host, feedback and history owners. Avoid parallel product servers or a special controller that bypasses shared authority.
+The documentation-overhaul starting checkout was clean at `482374ff83b202c6ac3c2ceae6ae1711dfe11c68`. This identifies the source inspected for the gap inventory; subsequent documentation and implementation change its source identity. Reconcile HEAD, working tree and build/source manifest at each session.
 
-| Concern | Existing owner to reuse | Private-beta work |
+| Area | Reusable foundation | Product gap |
 | --- | --- | --- |
-| Plans and revisions | [request_planning.py](../src/smb3_agent/request_planning.py), [profile_conversation.py](../src/smb3_agent/profile_conversation.py), [minecraft_session.py](../src/smb3_agent/minecraft_session.py) | Compose implemented profile skills through typed plans, direct controls and revision binding |
-| Ownership and continuity | [companion_session.py](../src/smb3_agent/companion_session.py), [takeover.py](../src/smb3_agent/takeover.py), adapter runtimes | Reuse player ownership, fresh authority, bounded execution, immediate reclaim and neutral handback |
-| Catalog and switching | [companion_catalog.py](../src/smb3_agent/companion_catalog.py) | Profile-backed providers and task-specific proof labels; no shared-core game-ID branches |
-| Screen/input foundation | [screen_host.py](../src/smb3_agent/screen_host.py), [native_host.py](../src/smb3_agent/native_host.py), [ordinary_input.py](../src/smb3_agent/ordinary_input.py), [input_guardian.py](../src/smb3_agent/input_guardian.py) | Reuse selected-window capture, input guards and independent neutralization; keep game-specific calibration in providers |
-| Current perception | [minecraft_scene.py](../src/smb3_agent/minecraft_scene.py), [minecraft_capture.py](../src/smb3_agent/minecraft_capture.py), [minecraft_inventory.py](../src/smb3_agent/minecraft_inventory.py) | Finish efficient fresh pose/face/material/clearance inspections on the supported Minecraft path |
-| Outcomes and local evidence | [run_library.py](../src/smb3_agent/run_library.py), [learning.py](../src/smb3_agent/learning.py), [metrics.py](../src/smb3_agent/metrics.py) | Profile/skill/backend compatibility, observed task outcomes and configuration-test classifications |
-| Contributor installation | [experimental_adapters.py](../src/smb3_agent/experimental_adapters.py), [onboarding guide](new-game-onboarding.md) | Separate playable-profile schema/provider from current fixture-only scaffolding; installation does not prove execution |
-| Readiness and delivery | [beta_readiness.py](../src/smb3_agent/beta_readiness.py), [delivery.py](../src/smb3_agent/delivery.py), [launcher](../scripts/launch_companion.py) | Versioned tester build, focused launch checks and inspectable diagnostics |
+| Mario play | FCEUX, accepted cumulative route, observation/takeover, watchable play, pause/reclaim, revision acknowledgments, saved variants/results | Current grammar edits only declared opening paths, stop points and playback speed. Coin-route discovery, conversational jump timing, hidden-item objectives and cross-attempt coaching are not integrated |
+| Mario learning | Compatible run library, repeated-trouble patterns, candidate review and engineering promotion | No user-facing coach → changed attempt → measured comparison loop; saving a transcript alone is insufficient |
+| Conversation | Typed plans, context/identity, review/Start, corrections and local model gateway | Mario/Stardew intent handling is a narrow deterministic grammar. Add contextual interpretation and task orchestration, keeping executable validation separate |
+| Immediate controls | Dedicated Stop/Take control and bounded native/emulator release | Exact chat phrase `STOP RIGHT NOW WAIT` is not recognized by the current full-match parser. Urgent chat control needs a priority path and release acknowledgment |
+| Stardew play | Screen observations, isolated copies, tool/resource accounting, farm navigation, reviewed actions/outcomes | Two prepared farm/profile/display pairings only; general crop tasks, planting-location judgment and cave/exploration activities are absent |
+| Setup and history | Existing game selection, profile lifecycle, settings/permissions guidance, saved outcomes and feedback | New gameplay, coaching memory and reconnection need one understandable conversation-led product flow |
+| Minecraft | Calibration/camera, scene/native/wall components, settings/window/setup owners | Current source and retained private.2 enable calibration/camera only. Aim/move/place/wall remain disabled |
+| Other-game onboarding | Declarative profiles, finite skills, catalog/provider seams and fixture contributor scaffolding | Contributor installation creates no live game perception/control. Playable guided no-code onboarding remains future work |
 
-Current source is authoritative for implementation status. Historical reports bind their exact candidates; they are not requirements to recreate every earlier run. The local model remains separate from immediate controls and fast motion feedback.
+Preserve retained packages and evidence. Private.2 is `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Game Companion.app`, version `0.2.0-private.2`, bundle build `20002`, source SHA-256 `230c206e51a46014e457458a8e4c0036cbd501f9a3e228f04103f1d70473fa60`. Its manifest enables Minecraft calibration/camera and disables aim/move/place/wall. It predates the October 1 source repairs. Its packaged native Minecraft smoke is unfinished. The retained private.1 OpenTTD result and September 26 Stardew final-return repair qualify their own candidates/configurations. The October 1 1,327-test local gate verifies that source; it does not prove the corrected product or a new package. See [review records](private-beta-review.md).
 
-| Implemented owner | Responsibility |
+## Existing owners to reuse
+
+| Concern | Owners | Required integration |
+| --- | --- | --- |
+| Conversation and plans | `request_planning.py`, `conversation_service.py`, `profile_conversation.py`, `model_gateway.py` | Contextual intent, questions, clarification, coaching and activity planning; bounded structured proposals |
+| Mario actions/control | `mario_route_plan.py`, `mario_route_contract.py`, `mario_plan_runtime.py`, `live_observation.py`, `takeover.py`, FCEUX Lua controllers | State-dependent supported actions, selected live edits, next-attempt tuning and independent priority reclaim |
+| Attempt/learning memory | `run_library.py`, `learning.py`, `learning_promotion.py`, `custom_variants.py`, `objective_profiles.py` | Durable route/life discoveries, coach intent, applied parameters, outcome comparison and resettable experimental profiles |
+| Stardew observation/actions | `stardew_planning.py`, `stardew_runtime.py`, `stardew_companion.py`, `stardew_perception.py`, farm perception/navigation/tasks modules | Broader observed targets, activity navigation, resource-aware plans and observable task results |
+| Stardew isolation/input | `stardew_setup.py`, `stardew_input.py` | Verified disposable/copy workflow, primary-save preservation, foreground-safe input and release |
+| Shared sessions and catalog | `companion_session.py`, `companion_catalog.py`, `lab_ui.py`, `conversation_ui.py` | One local product/session ownership model, truthful game abilities, safe switching and responsive conversation |
+| Setup, profiles, reports | `player_setup.py`, `player_onboarding.py`, `player_setup_ui.py`, `player_store.py` | Guide actual supported setup and persist inspectable configuration/history without live authority |
+| Native observation/control | `screen_host.py`, `native_host.py`, `ordinary_input.py`, `input_guardian.py`, `feedback_contracts.py`, `skill_runtime.py` | Exact selected window, fresh feedback, bounded actions and independent release |
+| Delivery and readiness | `beta_readiness.py`, `delivery.py`, `app_runtime.py`, `scripts/build_private_beta.py` | New versioned contracts/package/guide for the corrected two-game experience |
+
+Game-specific mechanics, observations and action rules stay adapter-owned. The model interprets goals and proposes plans; the fast game controller owns frame/action timing and verified effects. The model cannot issue arbitrary code/input or declare success. Immediate controls must not wait for model inference, conversation locks or advanced setup parsing. Preserve the accepted route registry and existing safety boundaries while developing separate experimental gameplay profiles.
+
+## Engineering sessions and acceptance
+
+### GC1 — Shared conversation and immediate control
+
+**Next session:** repair urgent chat interruption and connect the existing proposal/runtime/history seams to one watched Mario session. Implement the smallest end-to-end coaching change before building a large new language layer.
+
+- Interpret the owner's original words in current game/attempt/goal context. Separate questions, goal requests, current-attempt commands, next-attempt coaching and emergencies. Select and document a usable backend through the existing gateway; deterministic control handling remains independent. Do not present phrase matching as general intention understanding.
+- Acknowledge the understood goal and any ambiguity. Preserve original wording alongside interpreted intent, the executable proposal, reviewed scope and later applied result.
+- Route urgent Stop/Take control directly to cancellation/release, including `STOP RIGHT NOW WAIT`, casing, urgency and punctuation variations. Cover idle, pending inference/review, active and paused execution. Never grant new authority after a late reply.
+- Show what applies now versus next attempt, pending/applied/refused status and why. A selected real-time edit applies only at its supported action boundary; timing corrections that arrive too late are saved for the next eligible attempt.
+- Preserve typed draft/focus, visible direct controls and inspectable outcomes. In Stardew, chat focus must safely pause/release native input before discussion; continuation needs fresh eligibility and approval.
+
+**Exit:** ordinary question/goal/correction conversations and urgent interruption run through the shared product interface, with meaningful affected parsing/orchestration/control-race tests. A short freshly authorized Mario check confirms actual release and an acknowledged applied change; unit-only work stays labeled as such.
+
+### GC2 — Mario watched play, coaching and route learning
+
+Deliver the owner's examples as goal-directed gameplay on clearly identified initial levels/segments:
+
+| Owner request | Required behavior and evidence |
 | --- | --- |
-| `model_gateway.py` | Backend/configuration identity, bounded multimodal input, structured results, cancellation, timeout, usage/spend, redaction and sanitized diagnostics |
-| `screen_host.py` | Selected process/window/display identity, visible capture, scale transforms, capture timestamp and permission/occlusion status |
-| `ordinary_input.py` | Mapped short actions, foreground/identity/freshness guards, pressed-input ledger, independent cancellation/watchdog and neutralization |
-| `feedback_contracts.py`, `minecraft_scene.py`, `minecraft_camera_observation.py` | Frame-bound facts, source provenance, uncertainty, compatible detectors and target revalidation |
-| `skill_registry.py`, `skill_runtime.py` | Finite typed primitives and predicates, parameters, eligibility, resource limits, outcomes, stop points and execution validation |
-| `game_profiles.py` | Bounded versioned profile/skill inventory, compatibility, local manifests, import/export and integrity |
-| `player_setup.py`, `player_setup_ui.py`, `player_onboarding.py`, `player_calibration.py`, `player_store.py` | Guided setup state/progress, app-created calibration, actionable setup failures and configuration/history lifecycle |
-| `build_private_beta.py`, `beta_readiness.py`, `delivery.py` and versioned review records | Practical build/check/known-issue record and beta feedback; preserve personal-beta v3 behavior and evidence |
+| `lets find a 100% coin route to the end` | Establish the level/route scope and coin-accounting basis, retaining unknown coverage during discovery; explore/retry under a reviewed attempt/life budget; retain discoveries and compare routes. Show collected, missed and uncertain coins. A 100% claim requires a complete observed checklist and reaching the reviewed end |
+| `youre jumping too early wait a few more frames` | Bind feedback to the relevant jump/hazard and attempt; infer or clarify the timing adjustment; show changed parameters, apply at an eligible live boundary or next attempt, and compare the actual outcome |
+| `fly to get the hidden 1up` | Resolve the objective against current game state and the implemented flight mechanic; check or obtain the required ability within reviewed scope; execute the supported approach and verify the reward. If a prerequisite is missing, explain it without silently running the base route |
+| `STOP RIGHT NOW WAIT` | Stop/release immediately through GC1, revoke pending edits and authority, retain progress and show confirmed handback |
 
-The model proposes typed plans; it cannot issue native input, execute arbitrary code, grant authority or declare verified success. Game-specific semantics belong to profile/providers. Profiles remain bounded declarative data.
+Implementation should proceed as useful slices: one state-aware playable segment with real timing coaching → durable next-attempt application and route/life memory → coin-route exploration and supported flight/reward objectives. Expand supported actions/entries enough to make these conversations useful. An added preset or playback-speed change alone is not completion.
 
-## Current repository review and remaining integration
+A reviewed finite attempt/life budget may cover multiple compatible retries. Re-observe eligibility after each life/reset; do not require another Start for every retry while the same scope and authority remain valid. New approval is required after reclaim, invalidated authority or a material scope change. Supported coaching inside the reviewed adjustment range can apply with acknowledgment; changes beyond it require review.
 
-The delivery unit is the user's complete Minecraft first-use path: open the app, create a profile, follow permission/settings guidance, select the window, calibrate/connect, prepare and inspect a building region, run the reviewed useful wall task, stop/receive control and reopen the profile/history. Check this path with fresh setup data through the ordinary interface. The app should show the current setup step, available tasks and a concrete remedy for missing preparation. A component test or an engineering-prepared starting pose establishes only that component's behavior.
+Persist level/game/backend compatibility, route discoveries, relevant state/landmarks, attempts/lives used, user feedback in their words, interpretation, proposed/applied parameter changes, outcomes and uncertainty. Failed attempts and deaths are learning evidence; they do not erase successful discoveries or imply improvement. Store this with existing run/history owners; give the user inspect/reset/undo for future coaching.
 
-Current source includes state-derived onboarding progress/remedies, priority controls independent of advanced setup fields, protection persistence, native-work draft locking, aiming precision/inspection reuse and child/parent deadline repairs. The canonical gate passed 1,327 tests plus its other local checks on the repaired source before this PM documentation refresh; its retained log is `artifacts/private-beta/course-correction-20261001/canonical.log`. These checks establish local behavior and remain bound to that source. No live Minecraft task or package rebuild occurred during the repair audit.
+Ordinary coached attempts may use versioned, bounded experimental controller parameters/actions after fresh review and runtime checks. They must not require the user to edit repository files or use Route Lab. Historical accepted-route promotion retains its separate reliability/replay/exact-diff process; experimental learning cannot overwrite that registry or inherit its reliability label.
 
-The retained private.2 package predates those repairs. Its [owner review](/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Owner%20Review.md) owns its source identity, package limitations, 201 affected checks and native development observations. Keep current source, package checks and actual live outcomes distinct.
+**Exit:** watch real play, issue a supported live command, stop, coach a failed/early jump, run another approved attempt and visibly see the changed behavior. Coin-route and flight cases have actual observed progress/reward results in their supported scope. Reopen coaching/history, start a fresh compatible session and apply remembered guidance. Report limits honestly; a full-completion preset fallback cannot satisfy route discovery. Owner usefulness is evaluated separately from technical implementation.
 
-| Implemented foundation | Remaining useful-path work |
-| --- | --- |
-| Player profile/setup/help/history/feedback and versioned packaging; current source adds setup progress/remedies | Finish the user preparation and task path, then package the current changes |
-| App calibration, bounded camera Review/Start and direct controls | Confirm the next package's useful gameplay path in a short integrated smoke |
-| `minecraft_scene.py`, inventory/hotbar/capture and native provider integration | Practical flat clear start, reliable fresh target/clearance inspection and efficient pose handling. Creative/material/one-addition development observations are retained, not package-wide claims |
-| `minecraft_native.py` and `minecraft_camera_skill.py` | Finish nearby movement and aiming. Guard rejects unexpected translation/held input; key release alone cannot stop collision/game physics. Diagnose concrete failures without asserting an unproven cause |
-| `minecraft_wall.py` coordinates inspections, approach, placement and final checks under a shared budget | Make the live wall path progress: avoid repeated scanning/aiming exhausting the task before movement; verify 19 solids, two doorway air cells, marked protected surfaces and return point |
-| `minecraft_session.py` enables calibration/camera only | Enable aim/move/place/wall after focused practical checks for those paths, then rebuild accurate UI/manifest flags |
+### GC3 — Stardew conversational activity delegation
 
-Remaining order: user-guided clear stable disposable start → efficient inspected move/aim/addition → useful wall completion and handback → enabled appropriate features and refreshed package → ordinary packaged first-use smoke from a new profile. Keep the implemented profile/setup/camera foundation and finish its connection to useful building. Broader usability and reliability evaluation continues during beta.
+Use a short loop: request → current observations → understandable plan for the next few minutes → explicit approval → play and report → discuss/correct/approve continuation. A contextual `yes` authorizes only the current displayed plan, session, targets, protection and limits. A changed plan invalidates that approval.
 
-## Integration work — PB3 through PB7M
+Deliver activity slices against a documented playable farm/area, extending beyond the two engineering fixtures:
 
-Stage IDs remain useful implementation references, not serial full-qualification gates. Work on skills, planning, setup, persistence, guidance and delivery together as their interfaces become usable.
+- `time to water the tomatos`: find the relevant observed crops, distinguish dry/already-watered/unknown, confirm the watering tool and water/energy, navigate, water and report what remains. Implement needed tool selection/refill if advertised; shortages give a useful remedy.
+- `lets explore and find a good spot to plant corn`: inspect reachable terrain, season/resources and location constraints; propose and explain a suitable spot. Finding a spot does not imply purchasing seeds or planting before approval. If planting is approved and supported, verify soil/seed/crop effects.
+- `lets go explore that cave`: identify or clarify the destination, agree the near-term navigation/exploration boundary and resource/risk limits, travel using supported observed navigation, then check in. State the extent of cave gameplay actually implemented; reaching an entrance and exploring inside are distinct outcomes.
+- Accept changes such as another destination, a different crop or conserving energy; safely pause/release for conversation, observe remaining work and obtain fresh approval. Stop/Take control bypass planning.
 
-### Shared observation and skill runtime
+Extend perception and navigation from fixed plot IDs/corridors to observed supported targets and activities. Reuse existing ledgers, clearance, resource and per-action result checks. Do not infer valid corn/tomato gameplay from seed-name parsing or existing parsnip evidence. Starting coverage/settings must be explicit and usable without engineer-authored target coordinates.
 
-Reuse frame-bound observations and finite feedback/calibration contracts. Each observation binds actual capture time, pixels/window identity, settings and detector provenance. Each skill declares finite parameters, eligibility, feedback, budgets, correction boundaries and supported success/failure checks.
+Keep primary saves untouched. Build the user-selected disposable or verified copy workflow and backups before ordinary farm use; existing prepared copies remain regression assets. No purchases, sales, gifts, story choices, overwrites or other consequential actions are inferred from a general activity request. Implement and review additional actions when the activity actually requires them.
 
-Use independent post-action observations. Event delivery and model confidence do not establish gameplay success. Unknown or contradictory observations stop the affected task and preserve partial work. Keep detector, policy, native execution and game semantics separate. Run focused checks for changed arithmetic, detector parsing, budgets, authority and cancellation.
+**Exit:** the ordinary UI proposes and receives approval for useful multi-action activities, executes supported watering/location/exploration work with observed outcomes, accepts a correction/check-in, stops with actual release, and reopens understandable history. Fresh evidence identifies farm/settings/source and assistance. Engineering preparation alone is not the delivered experience.
 
-### Camera and Minecraft movement
+### GC4 — Initial two-game beta delivery and owner review
 
-Reuse app-created readiness and calibration in ordinary setup/practice. Preserve finite preparation pulses, fresh visible response, settings compatibility and sampled settling checks. Guide the user through current connection and calibration in the app, then carry those checked observations into the useful task.
+Package the implemented GC1–GC3 experience with accurate capabilities, prerequisites and guide. Use one coherent game-selection/conversation surface and actionable setup. Verify the initial beta on the exact package: open → select Mario → goal/play/coach/retry/Stop → neutral switch → Stardew request/plan/yes/activity/correction/Stop → save/reopen → feedback preview → verified shutdown.
 
-Implement bounded forward/back/strafe and nearby approach/aiming on flat practice ground using the shared feedback loop. Re-observe between material actions, distinguish translation from rotation, and stop on uncertain pose, blocked paths or lost targets. Begin with conservative task/time/input limits. Expensive model inference chooses goals; local feedback owns motion and stopping.
+Update versioned readiness/scenario contracts to the corrected requirements. Current `personal-beta-v3` and PB records retain their original meaning; create a new version rather than repurposing historical pass results. No existing readiness command currently proves GC1–GC4.
 
-A declared visible debug HUD may supply initial pose/orientation observations. Explain that requirement in setup. Do not claim HUD-disabled operation or hidden world knowledge. Settings changes require the appropriate recheck, without repeated full engineering campaigns.
+Build a distinctly identified successor. Before running the existing builder, fix its version/output and hardcoded bundle-build assumptions so it cannot replace private.1/private.2. Include all runtime/adapter/controller resources and a workable game/calibration setup; ignored developer-only assets cannot be the ordinary product's hidden prerequisite. Keep game files, personal saves and credentials outside the package.
 
-### Minecraft interaction and useful task
+**Exit:** actual two-game gameplay, conversation, coaching persistence, input release, history and local reporting work through the packaged ordinary UI with retained evidence. Carry forward and check the initial Minecraft connection/setup with its actual capability labels; unfinished full Minecraft play stays in GC5. Record engineer assistance as product issues. Owner product feedback and a later launch/distribution decision remain separate; do not fill an acceptance verdict from tests.
 
-Minecraft Java remains the required 3D product target, using a dedicated or verified copied Creative world. Profile/provider rules own block/material/hotbar semantics, reachable faces and occupancy. Shared motion and feedback remain game-neutral.
+### GC5 — Minecraft third playable option during beta
 
-Implement aim at a fresh reachable face → confirm material/target → one placement → observe the result. Start with additions inside a reviewed work region; destructive actions require separately implemented and reviewed support. Preserve marked protected structures.
+After the initial two-game experience is implemented, resume Minecraft connection and useful gameplay through the same conversational activity flow. Connect/setup capability belongs in the initial beta; full Minecraft play develops during beta and is the beta-end third-game outcome. Keep any initial camera/calibration-only limitation visible.
 
-The first useful task is completing a 7-wide × 3-high × 1-thick wall with a centered 1-wide × 2-high opening. Its target contains 19 occupied cells and two empty doorway cells. Account for already-correct cells and observed new placements. Unknown/occluded cells remain unverified until inspected; do not invent completion from a wall-like screenshot.
+Reuse current scene/native/session/wall work. Finish efficient observed aim/movement/addition, preparation guidance, protection, task composition and truthful handback; enable each family only after affected practical checks. The existing 7 × 3 × 1 wall with a centered 1 × 2 doorway has 19 occupied cells and two empty cells and preserves marked blocks. It is one acceptance case, with observed material/cells/doorway/protection/stop point. Later Minecraft goals should express useful player intent through discussion and revised plans.
 
-Provide a short developer smoke for the integrated path when exclusive Mac input is available. Testers then exercise variations, corrections, different starts and usefulness during beta. General exploration, flying, parkour and survival remain later work.
+**Exit by beta end:** Minecraft is a usable third game through ordinary connect → request → approve → play → correct/Stop → outcome/history, with supported coverage stated and actual gameplay evidence.
 
-### Conversation and task composition — PB4
+### GC6 — Advanced-user no-code onboarding, deferred
 
-Extend existing typed plans with profile/skill identities, current observations and bounded context. Support ordinary requests, questions, exclusions, clarification and changes to future work. Plans use only implemented skill signatures and retain one review/Start decision for their bounded scope.
+Start this work only after Mario coaching and Stardew delegation are implemented. Keep the confirmed requirement: an advanced user adds an eligible game through guided setup without writing code. At that stage, discuss the appropriate controls, observations, demonstrations and practice with the owner; no demonstration request or onboarding implementation is required for the current pickup.
 
-Direct controls stay available independently of inference. Late or superseded replies cannot revive authority. Explain missing capabilities plainly. Do not expose internal schema, manifests or qualification vocabulary in the normal player flow.
+Use Minecraft to identify what can be shared. Existing fixture scaffolds/configuration are reusable data foundations, not a playable onboarding result. The future flow must end in an actually usable, inspectable game/task setup, with explicit unavailable abilities and observed practice outcomes. Preserve finite runtime authority and adapter-owned semantics. Feasibility and eligible game coverage need their own bounded implementation/evidence.
 
-### Guided setup and how-to — PB5
+## Guided setup and how-to — PB5
 
-Complete the implemented select game/window → permissions → prerequisites/settings → controls/calibration → disposable practice → supported task families → save profile flow through useful building. Preserve state-derived progress and concrete remedies, sensible defaults and supported templates. No YAML editing, terminal steps or developer-authored coordinates should be required for ordinary player configuration.
+For GC1–GC4, guide the user to actual Mario/Stardew play, explain prerequisites/remedies at the relevant step, and make controls and current capabilities readable. Reopening restores configuration and learning/history only; game connection, observation, approval and input authority are fresh. Keep questions input-free and ordinary users out of schemas, repository patches and terminal-based task configuration. The player guides describe current behavior separately from these targets.
 
-If teaching/demonstrations are offered, derive reviewable candidates from implemented primitives and outcome checks. A recorded macro alone is not a reusable skill. Missing capabilities must be explicit rather than yielding an apparently ready profile.
+Carry forward Minecraft window connection/calibration and truthful capability labels into GC4 initial-beta setup; check that entry on the exact successor package. Useful third-game activities/building preparation and completed Minecraft gameplay remain GC5. Advanced-user other-game onboarding is GC6. Profile naming/importing and fixture conformance do not teach an unimplemented game action.
 
-Include in-app guidance plus a concise first-use guide covering:
+## Focused checks, failure handling and evidence
 
-- App/game/model prerequisites and installation.
-- Permissions, window selection and supported settings.
-- Disposable worlds/saves and first practice.
-- Camera capture and the need to avoid concurrent mouse/keyboard use while native automation runs.
-- Tell/Show/Do behavior, example requests, review/Start, Stop and Take control.
-- Saving/reopening, changed settings, recovery and known limitations.
-- Inspectable issue/diagnostic export and how to give feedback.
+Run tests appropriate to changed parsing, contextual interpretation, action eligibility, coaching application, persistence, superseded approvals, command races, perception, navigation and outcome accounting. Begin with affected tests listed in the adapter contracts and [development guide](development.md). Use `.venv/bin/python -m pytest -q <affected tests>` and `git diff --check`; run `PYTHON=.venv/bin/python scripts/validate_phase0.sh` once for an integrated source handoff, repeating after relevant changes/failures. Documentation-only updates need documentation/link checks, not a gameplay campaign.
 
-Beta testers evaluate these instructions and setup usability. Record assistance and confusion so the flow improves; successful independent tester onboarding is not required before invitations.
+Use short fresh real-game checks for each enabled behavior. Preserve historical successes/failures and avoid repeating unrelated accepted campaigns. New controllers/shared boundaries get their affected route/control regressions. Model evaluation should test contextual/paraphrased goals and coaching beyond the exact examples, while uncertain actions remain reviewable/refused.
 
-### Profiles and normal product — PB6
+Before native work, establish current process/window/display/settings, disposable world/farm/session and a current exclusive-input window with the owner. Historical permissions/availability are not present authorization. Stop/release when the owner reclaims the Mac. Future gameplay still needs explicit Start/approval for its reviewed scope.
 
-Preserve the implemented versioned save/reopen/edit/duplicate/import/export and history lifecycle. Bind profiles to supported game/settings/runtime/detector/skill versions. Reopening is useful but grants no fresh input authority. Switching, edits and removal neutralize current execution and preserve results.
+At the first unmet safety or outcome requirement, stop and release, save the partial result and sanitized failure evidence, make the bounded repair, then start from a fresh compatible boundary. Unconfirmed release blocks further native work. A sent command, model explanation, candidate record or test count is not gameplay success. An unknown action effect is not blindly retried.
 
-Imports accept bounded declarative content only; reject code, unsafe paths and unknown executable capabilities. Default exports exclude credentials, personal saves and unrelated screenshots. Imported evidence does not establish local compatibility or execution authority.
-
-## Focused checks and live-input scheduling
-
-Before testers use a feature, confirm its basic integrated behavior and immediate control through focused regressions and a short practical smoke where native input is involved. Known wrong-window input, uncontrolled motion or broken Stop is a blocker for that feature; repair it or leave it disabled. This is not a demand for exhaustive gameplay testing.
-
-Retain selected-window guards, finite input/time/model budgets, chat-before-focus neutralization, stale observation rejection, cancellation, direct Stop/Take control, shutdown and honest partial outcomes. Keep existing checks where relevant. Run the canonical gate once for an integrated handoff, repeating only after relevant changes or failures. Do not run full campaigns after every primitive or restart unrelated successful checks after a repair.
-
-Native camera automation uses the owner's captured mouse/foreground. Arrange a short input-exclusive smoke window when needed; otherwise continue code, UI, guides, profile and packaging work. Follow the latest owner availability instruction, and stop/release immediately if they reclaim the Mac. Preserve work between checks.
-
-Record practical build versions, affected checks and known issues. Historical evidence retains its classification; fixtures are local checks and live outcomes are recorded separately.
+Record exact source/build/profile/backend/settings, request/approval, observations, attempted/applied actions, resources/lives, confirmed outcomes, uncertainty, release and help supplied. Keep local/fixture checks, real gameplay, packaged workflow, owner feedback and launch decision distinct. Never manufacture 100% coverage or current-state eligibility from historical evidence.
 
 ## Delivery integration — PB10
 
-Prepare a versioned tester-usable Mac build alongside feature integration. Bundle the app-owned runtime/dependencies needed for the chosen distribution, detect separately installed game/model prerequisites, and keep profiles/history outside the installation. Avoid reliance on ignored developer files. Do not bundle proprietary game assets.
+GC4 owns the next initial-beta package; GC5/GC6 add later versions. Preserve the retained apps, manifests, supplied guides and evidence. New packages need distinct version/source/build identity and matching guide, accurate runtime flags, local report preview and verified shutdown. Broader hardware/settings/reliability are beta learning, with actual supported prerequisites documented.
 
-Check install/launch, permissions, one useful task, Stop/shutdown and reopening on the intended initial path. Explain actual tested machine/settings limits. Broader hardware, installation variations, sustained performance and update behavior are evaluated during beta; do not advertise untested compatibility.
+Do not commit/push, distribute, invite/contact testers or purchase access without a direct applicable user instruction. Preserve uncommitted work, credentials, worlds/saves, profiles, reports and evidence. The October 3 update is a product/documentation reset; it makes no gameplay, package, owner acceptance or distribution claim.
 
-Use the signing/distribution approach appropriate to the chosen channel, with normal platform protections and actual account access. Do not require every architecture, clean-machine matrix or universal portability claim before the initial cohort. Any prerequisite needed by the testers must be documented and workable.
+## Immediate engineering pickup
 
-Provide local bounded diagnostics, version/profile identifiers and an inspectable export. No automatic cloud telemetry or hosted service is needed. Protect credentials, unrelated screen content and personal saves.
-
-## Private-beta launch and learning — PB7/PB8/PB9/PB11
-
-Prepare the actual app/build, quick-start guide, feature/limitation list and issue-reporting path for owner review. Launch readiness means the integrated path is usable, focused control checks pass, known hazardous defects are fixed or disabled, and testers know the experimental scope. Owner approval and the authorized cohort/channel remain the final distribution decision. Do not require tester acceptance before inviting the testers who will supply that feedback.
-
-During beta, gather onboarding friction, profile creation/reopening, Minecraft task results and variation, reference-game task expansion, additional eligible-game attempts, interruption/recovery, resource/performance issues and installation differences. Repair concrete defects and recheck affected behavior. Record failures and useful assistance without forcing blind-title freezes or total requalification after every beta fix.
-
-Measure setup time, assistance, useful task completion and broader reliability during beta. Use those findings to choose later capability and public-beta work.
-
-## Immediate engineering handoff
-
-Continue the current corrected source's Minecraft scene/native/wall providers through the user-facing setup flow. Start with a new profile and user-selected disposable world. Make preparation understandable and visibly checked, repair affected move/aim/addition behavior and inspection inefficiency, finish ordinary wall execution, enable checked families and rebuild into a separate version. Run a short useful packaged setup/wall/outcome/control/reopen smoke and record every engineering intervention needed to get through it. Preserve prior artifacts and partial results. Native work uses a brief exclusive-input window and releases the Mac when reclaimed.
-
-Do not commit/push, contact testers, purchase access or distribute. Finish with the app, exact setup, actual useful task result, limitations and owner review.
+Read the tracker, this plan, PM handoff, Mario integration contract and learning contract; reconcile the exact checkout/candidate. Begin **GC1 plus the first GC2 slice**: priority recognition of urgent stop, one watched supported Mario attempt, a real jump-timing coaching change, acknowledged application and retained next-attempt memory. Implement and check the whole interaction through the existing service/runtime/controller owners. Then finish GC2's route discovery/flight/memory acceptance before GC3's useful Stardew activities. Produce evidence, limitations and a tracker update at each session; continue the ordered deliverables rather than opening new Minecraft/onboarding work now.
 
 ## Retained private.1 review record — October 1
 
@@ -174,4 +174,4 @@ A nearby-movement inspection stopped on changed player position before any movem
 
 Key-up-only recovery did not establish stillness. A retained frame shows a large animal next to the player; collision is a plausible source of the current displacement, not proof of its cause or of the historical r7 motion. A later bounded disposable setup move ended one block lower than expected and preparation stopped. No jump or wall placement followed. The area needs a clear, flat starting position before further useful checks. Input was released after every attempt; no worker or held key/button remained.
 
-Retained native evidence is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. Private.2 enabled camera/calibration and left aiming, nearby movement, additions and wall Start unavailable. Native work paused at that checkpoint. The preserved private.1 packaged OpenTTD smoke is unchanged. Current feature flags still leave the building task unavailable; its useful packaged completion remains the next delivery result.
+Retained native evidence is in `artifacts/private-beta/private2-checkpoint/brief-state4/`: `movement-confirmation`, `movement-stationary-guard-recheck`, `key-up-recovery`, and `platform-clear-space-preparation`. Private.2 enabled camera/calibration and left aiming, nearby movement, additions and wall Start unavailable. Native work paused at that checkpoint. The preserved private.1 packaged OpenTTD smoke is unchanged. At that checkpoint the feature flags left building unavailable and packaged wall completion was the next proposed result. New sessions follow the October 3 GC1–GC4 sequence above.

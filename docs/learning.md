@@ -1,13 +1,13 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
-Engineering reference for local learning records and their evidence classifications. The [private-beta engineering plan](private-beta-engineering.md) owns current user-facing delivery scope.
+Engineering reference for implemented local learning records and planned coached-play memory. The [product direction](product-direction.md) requires Mario to remember route discoveries and coaching across attempts and lives; GC2 in the [private-beta engineering plan](private-beta-engineering.md) owns the initial-beta application loop. Independent self-training is later work. The existing evidence system below is a foundation, not proof that the current app learns from chat or changes its next attempt.
 
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
 All data stays local under `artifacts/learning`; no credentials,
 cloud identifiers, telemetry, or unnecessary owner identity are stored.
 
-## Evidence classes
+## Implemented evidence classes
 
 Raw observed runs, fastest locally observed runs, player bests, agent bests,
 mixed-actor completions, derived patterns, candidate tactics, candidate
@@ -44,7 +44,7 @@ decisions, recovery boundary, unsupported assumptions, validation requirements,
 and stable hash. It does not edit goal contracts, route order, solution files,
 reliability profiles, accepted evidence, run-library records, or preferences.
 
-## Lifecycle and promotion
+## Implemented accepted-registry lifecycle and promotion
 
 The fail-closed lifecycle is:
 
@@ -64,7 +64,27 @@ evidence. Promotion is the only path that updates the atomic accepted-solution
 registry. Rollback atomically restores the prior registry entry and retains the
 candidate, decision, promotion, and rollback history. The existing route-patch
 workflow remains responsible for applying and reversing the exact repository
-diff.
+diff. This is the historical accepted-solution promotion contract. It must not
+become a requirement for each ordinary player-coached experimental trial.
+
+## Planned GC2 coaching and experimental route memory
+
+The initial beta must let a user watch Mario, coach a relevant action and see the next compatible attempt play differently. Record “youre jumping too early wait a few more frames” in the owner's words and resolve its action/amount before claiming a change. Coin-route exploration must retain discoveries, branches tried, missed opportunities and coverage uncertainty across attempts/lives. Saying that a correction was saved is distinct from confirming it reached the controller or improved the outcome.
+
+Add local, inspectable and resettable records for the experiment objective/route version; attempt/life and observation boundary; discovered route/coin facts with provenance; the original coaching text; resolved target, parameter/tactic revision and scope; application eligibility/effective boundary; controller acknowledgment; result and confirmed release. Preserve superseded revisions and negative results. Current user choices override older coaching, and incompatible game/route/entry/ability records may inform a discussion but cannot silently become an executable action.
+
+Use two distinct paths:
+
+| Path | Purpose and acceptance |
+| --- | --- |
+| Local coached experiment — planned | An explicit reviewed trial may execute an implemented bounded action using a versioned local experiment and fresh runtime authority. The player can change timing/tactics, retry within reviewed limits and retain each result without authoring a repository patch. Label it Experimental and report its observed success/failure and remaining uncertainty; one successful trial does not turn it into the historical accepted route. |
+| Historical accepted solution — implemented | Keep the existing compatibility, replay, exact-diff reliability, promotion and rollback gates before altering the accepted-solution registry. Historical route contracts and accepted evidence remain immutable; experimental successes are not relabeled as prior accepted evidence. |
+
+An experiment still needs a supported controller/action, current compatible observation, clear limits and confirmed release. Conversational coaching cannot authorize arbitrary code, raw native input, process-memory mutation or a missing capability. Implement and record the supported retry/reset entry method; experimental attempts do not change the entry/evidence rules of historical accepted routes. The local experiment path is planned work; current `custom_variants.py` only stores descriptive plans and current `learning.py` derivation/promotion do not implement it.
+
+A reviewed finite attempt/life budget can cover multiple compatible retries; the user need not approve every life while the same scope and authority remain valid. Recheck eligibility/limits after each retry. Reclaim, invalidated authority and material scope expansion require new approval. Coaching within the reviewed adjustment range may be acknowledged/applied; other changes need review.
+
+GC2 acceptance must connect the entire loop: retain an attempt → record and resolve coaching → review the experiment and finite attempt/life budget → run a compatible next attempt within that approved budget → observe the revised action at its declared boundary → retain and explain the result. Reopening must retain the owner's words, route discoveries, prior/new parameter and whether it was applied; it must not restore gameplay authority. Verify a missed/late correction, death/partial attempt, changed entry/ability, reclaim with queued coaching, supersession and memory reset. For coin exploration, distinguish known collectables from unknown coverage and account for observed coins on the current attempt without double-counting discoveries from previous lives. Independent practice to generate its own improvements is deferred until this user-coached loop is useful and accepted.
 
 ## Local personalization
 

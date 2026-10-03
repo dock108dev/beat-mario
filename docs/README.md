@@ -1,83 +1,58 @@
 # Documentation index
 
-The root [README](../README.md) identifies the current product path and source-checkout launch. The [private-beta quick start](private-beta-quick-start.md) owns player setup, supported Minecraft settings, controls and feedback for the review package. Use this index to find the next task-specific guide.
+Updated October 3, 2026. Game Companion's initial beta delivers conversational Mario coaching and Stardew activity delegation. The initial beta can connect Minecraft, which develops into the third playable game during beta; advanced-user no-code game onboarding follows implementation of the first two experiences.
 
-For project-manager review, start with the [private-beta handoff](private-beta-pm-handoff.md). It distinguishes current uncommitted source repairs, unchanged review packages, local checks and the remaining useful Minecraft task.
+## Next engineering session
 
-## Next engineering work
+1. [Product direction](product-direction.md): confirmed owner experience, examples, scope and delivery order.
+2. [PM handoff](private-beta-pm-handoff.md): current foundations/gaps, exact retained package and session pickup.
+3. [Engineering plan](private-beta-engineering.md): GC1 priority conversation/control, GC2 Mario learning/coaching, GC3 Stardew delegation, GC4 delivery and deferred GC5/GC6 expansion; owners, acceptance, checks and failure handling.
+4. [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md): source-of-truth status and the next concrete action.
+5. [Mario integration](b2-integration-contract.md) and [learning](learning.md): immediate GC1/first-GC2 watched-play, timing-change and next-attempt-memory work.
 
-The [private-beta engineering plan](private-beta-engineering.md) and [Desktop next-steps tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) own the user Minecraft onboarding and useful-task path. Setup/profile lifecycle, app calibration and bounded camera requests exist. Current source adds setup progress/remedies and affected control, protection, aiming and deadline repairs; those changes are not in retained private.2. Finish guided and visibly checked practice preparation, efficient inspection/aim/movement, additions and the useful wall task; rebuild with accurate availability and check setup → task → Stop/handback → profile/history reopening through the ordinary app. Existing B-series guides describe the narrower personal pilot.
+Begin with urgent conversational Stop and one useful watched/coached Mario attempt. Finish Mario's initial experience, then Stardew's useful approved activities. Preserve existing game/control/history work and historical evidence.
 
-## Player workflows
+## Current player guides and retained packages
 
-Use the [private-beta quick start](private-beta-quick-start.md) for Minecraft setup/calibration, typed task examples, controls, recovery and feedback. Aiming, nearby movement, additions and wall Start remain unavailable in private.2; the [review status](private-beta-review.md) distinguishes implemented components from completed packaged gameplay.
+- [Mario player guide](mario-player-guide.md): actual bounded paths/stops/speed and fresh-session/reclaim limits, separately from the planned coached-player experience.
+- [Stardew guide](stardew-operator-guide.md): actual prepared Day 2/Day 5 routines and their local prerequisites, separately from planned crop/location/exploration delegation.
+- [Retained package quick start](private-beta-quick-start.md): private.2 Minecraft calibration/camera and private.1 OpenTTD reference setup. No retained package demonstrates the corrected initial beta.
+- [Review status](private-beta-review.md): October 3 owner words/engineering interpretation, unreviewed app use and exact historical package/source boundaries.
+- [Personal-pilot delivery](b8-personal-delivery.md): retained in-place Mario/Stardew launcher and September 26 candidate identity.
+- [Known limitations](known-limitations.md): current capabilities, gaps and what local checks cannot prove.
 
-Use the [Mario player guide](mario-player-guide.md) for bounded planning, edits and fresh-session limits. The [Stardew guide](stardew-operator-guide.md) distinguishes Day 2 watering from Day 5 combined work, setup and guarded recovery. See [known limitations](known-limitations.md) for unfinished capabilities.
+Adjacent package manifests, supplied guides and Owner Review files remain authoritative for their exact apps. Editing repository docs does not upgrade a package. Owner product feedback and launch/distribution decisions remain separate.
 
-## Understand the system
+## Understand and develop the system
 
-- [Product direction](product-direction.md) defines Tell, Show, Do, player
-  ownership, the adapter boundary, and the current Minecraft beta goal and existing game capabilities.
-- [Architecture](agent-architecture.md) maps the CLI, adapters, session model,
-  local UI, evidence stores, catalog, and switching lifecycle.
-- [Runtime, configuration, and data](runtime-and-configuration.md) lists the
-  actual settings, local executables, artifact roots, and deployment boundary.
-- [Single sources of truth](ssot.md) identifies the authoritative module or
-  contract for each behavior and the compatibility surfaces intentionally kept.
+- [Architecture](agent-architecture.md): reusable owners plus the planned conversation/decision/execution/attempt-memory integration.
+- [Single sources of truth](ssot.md): authoritative runtime/contract modules and preserved compatibility boundaries.
+- [Development](development.md): locked environment, public entry points, focused verification and distinct successor packaging.
+- [Runtime and configuration](runtime-and-configuration.md): actual local settings, executables, artifact roots and operating boundaries.
+- [Security](security.md) and [error handling](error-handling.md): authority, data preservation, failed workers, input release and fresh recovery.
+- [UI design](ui-design.md), [UI requirements](ui-design-requirements.md) and [UI verification](ui-verification.md): current visual system, planned conversational interaction and candidate-specific checks.
+- [Session automation and metrics](session-automation-metrics.md): existing evidence classes and planned coaching/activity events.
 
-## Set up, change, and test the repository
+The canonical non-live check is `PYTHON=.venv/bin/python scripts/validate_phase0.sh`; use affected checks after bounded changes and the full gate for integrated handoff. Documentation-only changes need documentation/link/whitespace checks. Gameplay evidence needs fresh real sessions, and packaged evidence needs the exact built app. [GC4 delivery/PB10](private-beta-engineering.md#delivery-integration--pb10) owns the next package and matching guide.
 
-- [Development and repository structure](development.md) covers the locked
-  environment, layout, public entry points, validation workflow, and change
-  boundaries.
-- [Security model](security.md) documents local trust boundaries, implemented
-  controls, accepted local-only decisions, and security follow-ups.
-- [Known limitations](known-limitations.md) states what the repository and
-  non-live gate intentionally cannot prove or operate.
-- [Error handling and operations](error-handling.md) explains retained failure
-  evidence, process cleanup, recovery, and incident inspection.
+## Mario implementation and evidence
 
-Private-beta packaging and launch checks are described in the [engineering plan](private-beta-engineering.md#delivery-integration--pb10) and [review status](private-beta-review.md). The canonical non-live check is `scripts/validate_phase0.sh`; CI runs it on the locked Python 3.11 environment. Install the development environment when missing; the engineering gate is not an every-launch requirement.
+- [Conversation guide](b2-conversation-guide.md) and [integration contract](b2-integration-contract.md): existing interfaces and planned GC1/GC2 work.
+- [Objective profiles](objective-profiles.md), [live observation](live-observation.md) and [learning](learning.md): goal/coin coverage, observation trust, attempt compatibility and coaching-memory separation.
+- [Route Lab](mario-route-lab.md): engineering attempts, notes, issue ledgers and accepted-route patches.
+- [Goal contracts](goal-contract.md), [FCEUX harness](fceux-harness.md), [reliability gates](reliability-gate.md), [route patch schema](route-patch-schema.md) and [route status](route-status.md): retained exact-route execution/evidence. They do not make every experimental coaching attempt an accepted route.
 
-## Use or modify the Mario adapter
+## Stardew and later expansion
 
-- [Mario player guide](mario-player-guide.md): player first use, Observe, Tell,
-  Show, Do, reclaim, History, and failure recovery.
-- [Game Companion Lab](mario-route-lab.md): engineering UI, attempt sessions,
-  notes, issue ledgers, and route work.
-- [Goal contracts](goal-contract.md): route composition, runner policy, and
-  success evidence.
-- [World 8 reliability gates](reliability-gate.md): fresh authoritative runs,
-  watchable review, and promotion boundaries.
-- [FCEUX harness](fceux-harness.md): low-level process, log, image, and
-  diagnostic behavior.
-- [Live observation](live-observation.md), [objective profiles](objective-profiles.md),
-  and [learning](learning.md): observation trust, coaching/comparison, and
-  reviewable local learning.
-- [Route patch schema](route-patch-schema.md): isolated review, validation,
-  promotion, rollback, and rejection.
-- [Route status](route-status.md): historical accepted Mario route evidence.
+- [Stardew integration](b3-integration-contract.md): reusable observed actions/ledgers, safe copy/input boundaries and GC3 activity acceptance.
+- [New-game onboarding](new-game-onboarding.md): later guided no-code target and current fixture contributor infrastructure; work/discussion deferred until the first two experiences are implemented.
+- [Minecraft source correction](minecraft-beta-course-correction-20261001.md), [camera report](pb3-minecraft-camera.md), [reference integration](pb2-integration.md) and [package review](private-beta-review.md): retained foundations for GC5; no full Minecraft wall claim.
+- [Unattended regression](unattended-regression.md): opt-in engineering evidence; independent learning/practice remains future product work.
 
-## Work with other adapters and shared product surfaces
+## Historical planning and assets
 
-- [Stardew companion guide](stardew-operator-guide.md) describes the implemented
-  session isolation, guarded controller contract and live-input prerequisites.
-- [Session automation and metrics](session-automation-metrics.md) documents
-  scenario classification, local product metrics, and proof limits.
-- [Unattended regression](unattended-regression.md) covers opt-in isolated
-  engineering runs that can never become player or acceptance evidence.
-- [New Game Onboarding](new-game-onboarding.md) covers data-only Experimental
-  scaffolds, fixture conformance, installation, discovery, and safe removal.
+- [Personal-beta B-series packet](personal-beta-engineering.md): original two-game implementation/evidence requirements; new work uses the active GC plan.
+- [V2 roadmap](v2-roadmap.md) and [historical campaign guide](final-campaign-guide.md): retained phase/status/scenario meanings, not the corrected readiness checklist.
+- [Local assets](local-assets.md): ignored artwork and rights boundaries.
 
-Use the [personal-pilot delivery guide](b8-personal-delivery.md) for retained Mario/Stardew in-place launch identity and review boundaries. The [private-beta review](private-beta-review.md) records the separate versioned packages and their actual checks. Minecraft's useful packaged task and owner launch acceptance remain pending.
-
-## Release-candidate and historical planning material
-
-- [Consolidated final campaign](final-campaign-guide.md) records the earlier V2/personal-pilot campaign. Current private-beta readiness follows the useful app workflow and focused launch checks in the active plan and tracker.
-- [Game Companion V2 roadmap](v2-roadmap.md) records slice status through V2.14.
-  It is a status/evidence document, not the setup guide.
-- [Local UI assets](local-assets.md) explains optional ignored artwork.
-
-Implementation, deterministic validation, historical live evidence, current
-release-candidate proof, usefulness feedback, and owner acceptance are separate
-claims throughout these documents.
+Implementation, local checks, retained gameplay, current packaged behavior, owner usefulness and launch acceptance are distinct claims throughout this documentation.

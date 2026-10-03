@@ -1,10 +1,14 @@
-# Game Companion private-beta quick start
+# Retained Game Companion review-package quick start
 
-Reviewed October 1, 2026. This guide covers the local Apple Silicon Mac review path. The retained `0.2.0-private.2` app supports Minecraft calibration and small camera tasks; aiming, movement, placement and wall Start are unavailable. It is an engineering review candidate, with owner release approval pending.
+Updated October 3, 2026. This is the operating guide for retained local Apple Silicon engineering review packages. **No retained package demonstrates the corrected initial-beta Mario coaching and Stardew delegation experience.** Upcoming product work is in [product direction](product-direction.md), the [PM handoff](private-beta-pm-handoff.md) and the [engineering plan](private-beta-engineering.md).
 
-The current repository source adds setup progress, protected-block persistence, independent direct controls, drafting locks and stricter observation/deadline checks. Its canonical local gate passed **1,327 tests**. Those changes have not been packaged or checked through a new native Minecraft task. The adjacent manifest and supplied guide identify each app's actual source and abilities; a current repository guide does not update a retained app. See the [PM handoff](private-beta-pm-handoff.md) for current release work and the [review records](private-beta-review.md) for exact retained results.
+For existing Mario and Stardew source-checkout workflows use the [Mario player guide](mario-player-guide.md), [Stardew guide](stardew-operator-guide.md) and [source launch instructions](../README.md#launch-and-first-use). They distinguish narrow current support from planned coaching/activities.
 
-The first-use goal is to create a Minecraft profile through the app, connect a disposable Creative world, check a building region, finish the supported wall, receive the observed result and control, then reopen the profile/history. The useful building step remains unfinished in the delivered review app.
+Private.2 exact app: `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Game Companion.app`; version `0.2.0-private.2`, bundle build `20002`, source SHA-256 `230c206e51a46014e457458a8e4c0036cbd501f9a3e228f04103f1d70473fa60`. Its adjacent manifest, Quick Start and Owner Review identify actual package abilities. It supports Minecraft calibration/small camera tasks; aim/move/place/wall Start remain unavailable. Its guide/checksums are preserved.
+
+Current source adds Minecraft setup progress, protection persistence, direct-control/drafting fixes and stricter observation/deadline checks. The October 1 1,327-test gate verifies that source, not a new package. The operating steps below do not update a retained app or qualify current gameplay. See [review records](private-beta-review.md).
+
+Minecraft connection/calibration is retained preparation for the later third-game beta stage. The wall/building sections describe unavailable future work. Initial-beta engineering now delivers Mario watched/coached learning, then Stardew approved activity delegation. Advanced-user no-code onboarding follows implementation of those experiences; no teaching demonstrations are requested now.
 
 ## Install and permissions
 
@@ -25,9 +29,9 @@ The first-use goal is to create a Minecraft profile through the app, connect a d
 5. When the Mac is available for exclusive input, check **disposable Creative world / exclusive input**, choose **Calibrate camera**, keep the page open and do not touch mouse/keyboard. Calibration measures eight small signed responses, checks cancellation and settling, and preserves an inspectable attempt on failure. Connect the resulting current calibration. Old engineering receipts are unnecessary.
 6. Begin with **Enter chat safely** → “Look right 2 degrees, then stop.” → read the actual angles and whole-task budget → **Review current scope** → **Start reviewed task**. Only families listed as available can Start. Questions never issue input. Stop and Take control remain directly available.
 
-## Minecraft: building preparation for the next app
+## Minecraft: retained future building preparation
 
-This section explains the intended first building task. It is not an enabled wall walkthrough for private.2. In the corrected source, **Minecraft setup progress** shows what is completed, the next setup action and available tasks. The retained app predates that progress display.
+This section preserves one future GC5 building case. It is not an enabled wall walkthrough for private.2 or the current initial-beta delivery requirement. In the corrected source, **Minecraft setup progress** shows what is completed, the next setup action and available tasks. The retained app predates that progress display.
 
 For block work, select a supported full cube manually. Point near the center of a reachable ground-block top and choose **Check visible block and scope**. The selected ground block is the center beneath the doorway; direction **X** means east/west and **Z** north/south. Review the actual world coordinates, held material, protected cells and nearby stop point. **Save checked region** stores configuration only.
 

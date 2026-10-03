@@ -1,22 +1,83 @@
 # Game Companion Architecture
 
-Game Companion is a local application with typed plans, explicit player control,
-game-owned observations and retained outcomes. FCEUX supplies the Mario backend;
-Stardew, profile-based reference work and Minecraft have their own runtime
-semantics. The [private-beta engineering plan](private-beta-engineering.md) owns
-current release scope and the [PM handoff](private-beta-pm-handoff.md) owns remaining delivery work.
+Game Companion is a conversational player: it interprets the user's intent,
+plays within an agreed scope, accepts coaching and reports observed results.
+The active implementation order is Mario coaching, then Stardew conversational
+delegation. Minecraft connects during the initial beta and develops into the
+third playable option by the end of beta. The [private-beta engineering
+plan](private-beta-engineering.md) owns current scope and the [PM
+handoff](private-beta-pm-handoff.md) owns remaining delivery work.
+
+The repository already has typed plans, explicit player control, game-owned
+observations, bounded runtimes and retained outcomes. FCEUX supplies the Mario
+backend; Stardew, profile-based reference work and Minecraft have their own
+runtime semantics. These are foundations for the required product integration;
+their existence is not proof of the complete conversational gameplay loop.
+
+## Required product integration
+
+The shared product must connect conversation, game decisions, execution and
+attempt memory. The intended loop is:
+
+```text
+user intent or coaching
+-> fresh game context and compatible attempt memory
+-> understandable proposed goal, constraints and stop point
+-> player approval where required
+-> game-owned decisions and bounded execution
+-> fresh outcome checks and conversational updates
+-> interrupt, revise or finish with confirmed input release
+-> retained discoveries, corrections and outcome for the next attempt
+```
+
+Mario is watched play that the user can coach. A goal such as finding a 100%
+coin route requires attempts across routes and lives, remembered discoveries
+and corrections, and honest progress toward the goal. An instruction such as
+"wait a few more frames" must bind to an identifiable timing decision and
+produce an inspectable change in play. Selected supported commands can affect
+the current attempt; other coaching is retained for the next one. Acknowledge
+whether a correction was applied, awaits a safe execution boundary, is queued
+for the next attempt or needs clarification. Later self-directed practice is
+separate from this initial coached-play requirement.
+
+Stardew uses short approved activities: understand "water the tomatoes" or an
+exploration/planting goal, discuss choices when needed, state the intended work
+for the next few minutes, receive approval, perform the clicking and movement,
+then check in at an observed decision or task boundary. Goal reasoning,
+navigation, resources and outcomes remain Stardew-owned. Conversational
+check-ins must make changes and interruptions useful without requiring the
+player to direct every click. These are required experiences, not claims that
+the existing watering and farm-task implementations already cover them.
+
+Higher-level intent interpretation and game decisions can use the model, typed
+adapter planning and compatible knowledge. The fast game feedback loop must
+continue through adapter-owned observations, finite primitives and checked
+postconditions; it must not wait for a language model on each frame or input.
+Direct Stop and Take control revoke authority and release input independently
+of model availability, planning and task locks. "STOP RIGHT NOW WAIT" takes
+priority over the goal and coaching queue. A requested scope change cannot
+silently expand the player's approval, and saved learning never grants new
+input authority.
+
+Minecraft builds on the slower Stardew activity loop. Its present calibration
+and camera path remains a component reference while Mario and Stardew lead
+delivery. Later, Minecraft also informs guided advanced-user setup for another
+eligible game without writing code. That no-code teaching/onboarding discussion
+and implementation are deferred until the first two gameplay experiences are
+implemented; they are not an initial beta gate. See [new-game
+onboarding](new-game-onboarding.md) for the separate contributor scaffold and
+its proof limits.
 
 ## Components
 
 ```text
-Player Session (Tell / Show / Do)
+Conversation and Player Session (Tell / Show / Do foundations)
   -> Authorization and Safety Contract
   -> Game Adapter Capabilities
   -> Goal Contract
-  -> Route Planner
-  -> Segment Runner
-  -> Emulator Adapter
-  -> State Observer
+  -> Intent and Game Decision Planning
+  -> Adapter-Owned Execution and Fast Feedback
+  -> Game Observer and Outcome Verification
   -> Recovery Manager
   -> Attempt Logger
   -> Note Collector
@@ -57,6 +118,10 @@ visible FCEUX connection, direct player-input source, read-only boundary,
 continuity rules, and retained local evidence.
 
 ## Ordinary player setup and Minecraft path
+
+This section records current owners and feature limits. Completing a Minecraft
+wall component does not establish the Mario/Stardew beta experiences above or
+replace their delivery priority.
 
 `lab_ui.py` serves `/setup`, `/minecraft` and `/help` through the existing local
 server. `PlayerSetupService` in `player_setup.py` coordinates saved profiles,
@@ -99,6 +164,11 @@ exact command acknowledgments, variant compatibility and append-only outcomes.
 then delegates a fresh bounded authority to the existing takeover controller.
 Conversation execution permission does not change accepted-solution or route records.
 See [Planning interfaces and adapter extension points](b2-conversation-guide.md).
+The product work must connect these owners to intent interpretation, route/life
+practice and remembered coaching. The present bounded grammar and accepted
+route execution are not evidence that arbitrary coin, flight or hidden-item
+goals can already be played. Preserve typed validation while expanding only
+the concrete supported behavior needed by the active engineering plan.
 
 ## Stardew companion adapter
 
@@ -154,6 +224,12 @@ isolation. The CLI also provides inspection. Low-level safety policy lives in
 ledgers. Fixtures and qualification contracts remain separate under
 `data/stardew/` and `data/scenarios/`. See the
 [Stardew companion guide](stardew-operator-guide.md).
+
+This retained pipeline supplies observation, protected input and watering/farm
+task foundations. The active delegation work must integrate them with the
+short approved activity conversation, navigation and decision/check-in behavior
+described above. A fixture, isolated action or retained delivery attempt does
+not prove the complete delegated activity.
 
 The [authority map](ssot.md) identifies current domain owners and retained
 compatibility boundaries. Mario planning and runtime validation share
@@ -215,6 +291,13 @@ proof denials are immutable after creation. See the
 
 ## Local learning and candidate review
 
+These records are reusable attempt-memory foundations. The Mario product must
+also retrieve compatible route/life discoveries and player corrections during
+normal coaching, apply them through the checked execution path and explain
+what changed. Stored notes or a candidate tactic alone do not establish that
+feedback affected a later attempt. Preserve observed runs and distinguish
+player coaching, proposed changes, tested changes and actual outcome evidence.
+
 The run library is the immutable observed-run source. The learning layer wraps each
 run in an adapter-neutral `AttemptContract` with the additional compatibility
 and evidence-integrity fields needed for honest comparison. The learning core
@@ -227,7 +310,7 @@ does not branch on game identity.
 Learning feeds evidence-classified statements into coaching and Tell. It cannot
 send input. A candidate becomes reviewable without changing goal contracts,
 accepted route order, reliability profiles, fastest-observed indexes, or
-takeover capabilities. Owner review permits later replay validation only. The
+takeover capabilities. For historical accepted-route promotion, owner review permits later replay validation only. Ordinary reviewed coached experiments use versioned local parameters/actions and fresh runtime authority, separate from accepted-registry promotion. The
 existing Route Lab patch manager remains the sole exact-diff application and
 rollback mechanism, while the learning registry binds candidate hash, replay
 evidence, affected reliability evidence, prior solution, promotion, and atomic
@@ -532,6 +615,12 @@ pending owner action are completion blockers for that versioned campaign. The
 active private-beta delivery path follows the engineering plan linked above.
 
 ## Experimental adapter onboarding and discovery
+
+This is the existing contributor infrastructure reference. The future guided
+advanced-user add-game product is deferred until Mario coaching and Stardew
+delegation are implemented; its discussion and implementation are not the next
+engineering task or an initial beta launch gate. An installed scaffold does
+not add playable no-code game support.
 
 `experimental_adapters.py` owns the versioned adapter contract, deterministic
 data-only scaffold, conformance report, source inventory, atomic manifest-owned

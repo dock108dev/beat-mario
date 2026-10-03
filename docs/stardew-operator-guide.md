@@ -1,6 +1,18 @@
 # Stardew companion guide
 
-Guide for the implemented, locally prepared Stardew adapter configurations. The [private-beta quick start](private-beta-quick-start.md) covers the current tester build; the [private-beta engineering plan](private-beta-engineering.md) owns release scope.
+Guide for the implemented, locally prepared Stardew adapter configurations, with the corrected product target agreed October 3, 2026. The [private-beta quick start](private-beta-quick-start.md) describes retained engineering review packages; the [private-beta engineering plan](private-beta-engineering.md) owns next-session priorities and release scope.
+
+## Product target for the initial beta
+
+Stardew is the second initial-beta gameplay priority, after Mario. Its purpose is to let the user delegate activities through conversation and have Companion handle the clicking. The intended experience is: describe a goal → discuss a short plan for the next few minutes → explicitly say yes → watch it act → read what happened → discuss or correct the next activity.
+
+Owner examples are “lets explore and find a good spot to plant corn”, “time to water the tomatos” and “lets go explore that cave”. These are product acceptance targets, not a list of currently supported requests. Companion must interpret the goal, observe the relevant game situation, propose useful actions and ask for a choice when needed. Finding a planting spot includes discussing its suitability; cave exploration needs its own implemented navigation and activity support. A recognized phrase or seed name does not establish an ability to perform the task.
+
+The next engineering sessions should broaden observed crop/tool/resource recognition, navigation and activity support, then connect them to short proposals and discussion during play. An explicit yes must authorize the particular current proposal; a revised or stale proposal needs a new decision. Stop and Take control must remain immediately available. Talking or changing direction during native-input play must release input safely and support a clear pause/replan path that preserves confirmed work.
+
+The prepared routines below are real gameplay foundations. They do not yet deliver this general delegation experience or support arbitrary farms, tomatoes, corn planting or cave exploration. The [Stardew integration contract](b3-integration-contract.md#next-engineering-work-and-initial-beta-acceptance) defines implementation ownership and acceptance for the expansion. Future owner-save support requires engineered backup/copy isolation and an actual suitability check; this guide currently uses prepared disposable farms only.
+
+## Currently implemented prepared-farm path
 
 Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. Live setup requires prepared seeds, profile registrations and their matching calibration files. These are ignored local assets and are not bundled by cloning the source or running the launcher. Without them, the CLI can inspect declared capabilities but the browser cannot start qualified farm work.
 
@@ -32,7 +44,7 @@ Progress counts only when fresh visible evidence confirms the action and its res
 
 Occlusion, stale screenshots, unknown resources, unsupported positions or changed process/window identity can produce a guarded partial stop. For example, all requested farm actions may be confirmed while the farmhouse return remains unconfirmed. Inspect **Outcome** and **Saved results** separately for confirmed work, remaining work and uncertainty. If stopped between supported viewpoints, take player control to reach a clear supported position before observing/reviewing again, or close unsaved and open a fresh disposable copy. Do not blind-retry the whole routine in a changed farm. A new copy starts from the prepared seed, not from the unsaved stopped attempt.
 
-Retained watering and combined-action successes apply to their exact source and configuration. A later successful final-return repair does not turn earlier stopped attempts into completed ones or qualify subsequent source changes. See the [delivery record](b8-personal-delivery.md) for the identified build and review limits.
+Retained watering and combined-action successes apply to their exact source and configuration. The September 26 final-return repair completed one fresh Day 5 four-action routine, return and independent input-release check on source `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`. It did not turn earlier stopped attempts into completed ones or qualify later source changes, an arbitrary farm or a packaged beta. Day 2 and Day 5 retain separate seed/profile/evidence identities. See the [delivery record](b8-personal-delivery.md) and [repair closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b8-final-return-repair/20260926/closeout.md) for the identified source and review limits. Check an exact package's manifest and owner review before describing its Stardew availability.
 
 The public CLI remains inspection-only. Inspection commands do not select or copy a save, open a game or send input:
 

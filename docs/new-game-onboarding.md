@@ -1,8 +1,39 @@
-# New Game Onboarding and Experimental Adapter Contributor Guide
+# New-game onboarding and contributor reference
 
-> This guide documents contributor adapter scaffolding, not the private-beta player setup wizard. Player-facing setup, profiles, Minecraft integration and launch work are specified in [the private-beta engineering plan](private-beta-engineering.md). Schema/conformance results here do not establish playable generic game support.
+Updated October 3, 2026 for the corrected product direction. The [private-beta
+engineering plan](private-beta-engineering.md) owns active work: implement Mario
+play with coaching first, then Stardew conversational delegation. Minecraft
+connects during the initial beta and develops into the third playable option by
+the end of beta.
 
-Player-facing setup/profile lifecycle, permissions/settings guidance, app-created Minecraft calibration and bounded camera requests are implemented in the ordinary app. Current source also shows setup progress, actual task availability and the next remedy; these source repairs are not in retained private.2. Aiming, nearby movement, additions and wall Start remain unavailable. The [guided setup plan](private-beta-engineering.md#guided-setup-and-how-to--pb5) and [private-beta quick start](private-beta-quick-start.md) describe that separate player path; the contributor scaffold below does not provide gameplay.
+## Deferred advanced-user product
+
+The intended later onboarding tool helps an advanced user add another eligible
+game through guided setup without writing code. Minecraft development will
+inform this tool, using the slower conversational activity loop developed for
+Stardew. This is required future product work, not an implemented capability.
+
+Discussion and implementation of no-code teaching/onboarding are deferred until
+the Mario coaching and Stardew delegation experiences are implemented. Do not
+ask the owner for onboarding demonstrations now or make this tool an initial
+beta launch gate. Define its concrete scope from the working gameplay loops at
+that later stage; adding a game cannot imply unrestricted gameplay or invent
+missing observation, action or outcome verification capabilities.
+
+## Current setup and contributor capabilities
+
+Ordinary player setup configures existing implemented templates. Its profile,
+permissions/settings, selected-window connection, history and local-feedback
+owners are reusable foundations. Minecraft has app-created calibration and
+bounded camera requests. Current source shows setup progress, task availability
+and remedies; these source repairs are not in retained private.2. Aiming,
+nearby movement, additions and wall Start remain unavailable. The
+[package-status quick start](private-beta-quick-start.md) records this narrower
+path. Configuring an existing game is separate from adding a playable new one.
+
+The contributor reference below documents the existing fixture scaffold. It
+does not fulfill the deferred advanced-user product, establish playable
+generic-game support or replace Mario/Stardew gameplay delivery.
 
 Experimental adapters have a local, data-only contributor flow at `/onboarding` and under
 the Lab. It creates declarative fixture-only adapters; it does not generate
@@ -112,4 +143,7 @@ returned. If that bounded cleanup also fails, the operation fails explicitly
 and reports the retained staging path; it never silently claims rollback. See
 [Error handling and operations](error-handling.md).
 
-This scaffold is optional expansion infrastructure. Installed adapters remain Experimental until their live behavior is implemented and qualified.
+This scaffold is optional contributor infrastructure. Installed adapters remain
+Experimental until their live behavior is implemented and qualified. Keep its
+contract and evidence truth while deferring the later player-facing no-code
+onboarding work to the ordering above.

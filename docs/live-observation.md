@@ -1,6 +1,6 @@
 # Live Mario observation
 
-Mario adapter observation reference. Minecraft selected-window observations and current release work are described in the [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path) and [private-beta engineering plan](private-beta-engineering.md).
+Mario adapter observation reference. GC2 coached play uses the existing read-only observation/control boundaries below and needs additional supported goal/coin/action facts. Current release work is in the [private-beta engineering plan](private-beta-engineering.md); retained Minecraft selected-window observations are in the [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path).
 
 Valid completed observations also create an adapter-neutral learning
 attempt referencing the original run, input trace, and observation evidence.

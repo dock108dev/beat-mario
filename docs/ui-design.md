@@ -3,7 +3,11 @@
 Use the [design requirements](ui-design-requirements.md) and `src/smb3_agent/glass_ui.py` when changing the interface.
 The [private-beta engineering plan](private-beta-engineering.md) owns the user workflow to deliver; the [PM handoff](private-beta-pm-handoff.md) records current build limitations and next work.
 
-## Layout and behavior
+## Planned conversational gameplay interaction
+
+GC1–GC4 in the active plan require a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. These behaviors are upcoming work; preserve the accepted visual system and change layout only where the new interaction needs it.
+
+## Current layout and behavior
 
 The catalog puts game selection before capability details. Mario places plan review beside conversation and keeps Stop/Take control visible above the workspace. Saved routes, earlier messages and advanced tools use named disclosures.
 

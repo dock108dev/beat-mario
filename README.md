@@ -1,32 +1,26 @@
 # Game Companion
 
-The private-beta goal is a Mac app that a user can open, connect to Minecraft Java, follow guided setup and practice, save a profile, complete a supported typed task, Stop or take control, and reopen their profile and result. The [private-beta technical plan](docs/private-beta-engineering.md) and [current tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) own the remaining work.
+Game Companion is a conversational game player: explain your goal, watch it play, coach or change the approach, and take control whenever needed. **The initial beta must deliver Mario coaching and Stardew activity delegation.** The initial beta can connect Minecraft with its available abilities clearly labeled; Minecraft becomes the completed third playable option by beta end. Advanced-user guided setup for adding games without code follows implementation of the first two gameplay experiences.
 
-Start project-manager review with the [private-beta handoff](docs/private-beta-pm-handoff.md), which identifies current source, retained packages, verification and the next delivery result.
+Start with [product direction](docs/product-direction.md), the [PM handoff](docs/private-beta-pm-handoff.md), the [engineering session plan](docs/private-beta-engineering.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Next work is GC1 priority conversation/control plus GC2 watched Mario play and persistent coaching, followed by GC3 Stardew delegation.
 
-**Current Minecraft status:** profile/setup/history/help/feedback, app-created calibration and bounded camera requests are implemented. Current source additionally has state-derived setup progress/remedies and focused control, protection, aiming and deadline repairs. These source changes have not been rebuilt into private.2. Aiming, nearby movement, additions and wall Start remain unavailable. Finish the guided first-task path and verify it in a separately identified packaged app. See the [quick start](docs/private-beta-quick-start.md) and [review status](docs/private-beta-review.md) for supported settings and evidence.
+## Current workflows and product gaps
 
-For the private-beta review package, open **Game Companion.app** and begin in **Setup & profiles**. The source-checkout launcher below remains available for local development and the existing Mario/Stardew paths.
+- **Mario:** real route/controller foundations, observations, bounded opening-path/stop/speed edits, direct controls and saved results. Coin-route discovery, conversational jump-timing/flight goals and coaching across attempts/lives are planned initial-beta work. Quickest/100% currently load the existing base with unknown full coverage. See the [Mario guide](docs/mario-player-guide.md).
+- **Stardew Valley:** retained Day 2 watering and selected Day 5 harvest/plant/water/stone routines on two prepared farms with exact local profiles/settings. General watering targets, planting-location choice, cave exploration and short approved activities require implementation. See the [Stardew guide](docs/stardew-operator-guide.md).
+- **Minecraft Java Creative:** setup/profile/history/feedback, calibration and small camera requests. Aim/movement/placement/wall Start remain disabled. Preserve this work for the later third-game integration.
+- **OpenTTD:** a narrow reference integration; one packaged repayment result belongs to retained private.1 and its recorded environment.
+- **Experimental adapters:** data-only fixture scaffolding and installation; this cannot add a new playable game without engineering. Guided no-code onboarding is deferred.
 
-Game Companion is a local, player-controlled assistant for single-player games.
-It observes a supported game, offers grounded advice (**Tell**), can demonstrate
-one bounded objective in a separate session (**Show**), and can take over only
-after explicit same-session authorization (**Do**). Every execution path must
-stop input and return control with a truthful handoff.
+The current Mario/Stardew intent interpreter uses a limited deterministic grammar. The exact urgent chat phrase `STOP RIGHT NOW WAIT` is unrecognized; dedicated Stop/Take control remain available. Repair conversational interruption first. Current capabilities and planned requirements are separate; no retained package establishes the corrected initial-beta experience.
 
-## Supported workflows
+The [private-beta review](docs/private-beta-review.md) identifies retained packages and actual evidence. Private.2 enables Minecraft calibration/camera and predates newer source setup/control fixes. Its adjacent manifest/guide describe that exact app. The [repository quick start](docs/private-beta-quick-start.md) is an engineering-package guide; existing Mario/Stardew source use follows the launcher below.
 
-- **Minecraft Java Creative:** guided profile setup, supported settings, exact window selection, app calibration and bounded camera requests. The intended first useful task is a 7 × 3 × 1 wall with a centered 1 × 2 doorway; movement, aiming, additions and wall execution are still unavailable. Ordinary user preparation must explain and check the flat clear practice area, material, reachable work region and protected blocks, with a concrete remedy when something is missing. See the [private-beta guide](docs/private-beta-quick-start.md).
-- **OpenTTD:** one reviewed £10,000 repayment from a disposable paused company with £100,000 cash and loan. Its retained packaged result applies to private.1 and its recorded environment; see the [review](docs/private-beta-review.md).
-- **Mario:** observation, coaching, separate demonstrations, bounded execution, and conversation-based route edits. Quickest and 100% intents initially use the same base route; they do not imply an optimized or full-completion result. See the [conversation and route guide](docs/b2-conversation-guide.md).
-- **Stardew Valley:** the locally prepared Pilot / B3Test farm supports reviewed automatic watering of all 15 crops, resource reconciliation, farmhouse return and neutral handback. Live input requires a newly verified isolated session and the retained local screen profile; the profile and proprietary game are not bundled with the checkout. A separate Pilot / B4Test Day 5 copy supports the qualified selected harvest → plant → water → small-stone clear routine. Other farms and targets are not qualified. See the [Stardew guide](docs/stardew-operator-guide.md).
-- **Experimental adapters:** data-only adapter scaffolding, fixture conformance, installation and discovery. Passing conformance does not establish live game compatibility.
-
-Game switching waits for the current adapter to stop and return control. Live execution requires explicit session authorization and a configured game environment. Automated tests cannot establish live gameplay reliability; see [known limitations](docs/known-limitations.md).
+Gameplay requires fresh explicit authorization for a reviewed scope. Game switching waits for confirmed input release and handback. Observed outcomes, remembered coaching and honest remaining work are required; tests and model replies do not establish gameplay success. See [known limitations](docs/known-limitations.md).
 
 ## Requirements
 
-The private-beta package bundles the app runtime. Games are installed separately; macOS permissions and supported game settings are explained in the [quick start](docs/private-beta-quick-start.md). Minecraft's bounded requests require no model installation. OpenTTD uses separately installed local Ollama with gemma3:4b.
+The retained private-beta review package bundles its app runtime. Games are installed separately; macOS permissions and supported game settings are explained in the [quick start](docs/private-beta-quick-start.md). Minecraft's bounded requests require no model installation. OpenTTD uses separately installed local Ollama with gemma3:4b.
 
 For source-checkout development and the existing local launchers:
 
@@ -65,7 +59,7 @@ browser workspace. For a quicker read-only check of the installed command surfac
 
 ## Launch and first use
 
-For Minecraft profile setup and practice, follow the [private-beta quick start](docs/private-beta-quick-start.md) from the identified review app. Its adjacent guide and manifest describe that retained package; the PM handoff describes later source changes. A saved profile restores configuration and history only; reconnect the game and establish current readiness before a new Review/Start. Follow the app's actual capability labels: the useful wall task is still awaiting completion and a packaged workflow check.
+For current Mario/Stardew use, follow their factual player guides and the source-checkout launcher below. For retained Minecraft camera/calibration review, use the [engineering-package quick start](docs/private-beta-quick-start.md) and exact adjacent manifest/guide. Saved configuration/history restores no connection or gameplay authority. The corrected conversational features in the engineering plan remain upcoming work.
 
 The following instructions describe the source-checkout launcher and existing Mario/Stardew first use.
 

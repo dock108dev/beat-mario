@@ -1,6 +1,6 @@
 # Game Companion V2 Roadmap
 
-This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. Current work completes the ordinary Minecraft onboarding and useful building path while preserving the implemented adapters.
+This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. New work delivers GC1 conversation/priority controls, GC2 Mario watched/coached route learning and GC3 Stardew activity delegation, then GC4 initial-beta delivery. Minecraft becomes the third playable game during beta; advanced-user no-code onboarding follows implementation of the first two experiences. The retained V2 scope below remains historical.
 
 ## Historical personal-beta scope — September 23, 2026
 
