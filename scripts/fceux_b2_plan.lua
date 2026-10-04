@@ -77,6 +77,10 @@ local function reject(command, reason)
 end
 function M.finish(reason)
   if M.stopped then return end
+  if M.coin_route and M.completed_opening and memory.readbyte(0x70A) == 1
+      and x() < 8192 and y() > 0 then
+    event("coin_observation", "counter=" .. tostring(memory.readbyte(0x7967)))
+  end
   neutral()
   local ok = pcall(emu.speedmode, "normal")
   M.paused = false
@@ -96,9 +100,29 @@ function M.start(request)
   M.path_choice = initial.path_choice; M.stop_point = initial.stop_point
   M.expires = tonumber(initial.expires_epoch); M.next_sequence = 1
   M.pending = nil; M.completed_opening = false; M.completed_exit = false
+  M.jump_delay_frames = tonumber(initial.jump_delay_frames or "0")
+  assert(M.jump_delay_frames >= 0 and M.jump_delay_frames <= 12 and M.jump_delay_frames % 1 == 0, "INVALID_JUMP_DELAY")
+  M.delay_remaining = M.jump_delay_frames
   M.hop_frames = 0; M.hop_started = false; M.hop_done = false
   M.route_complete = false; M.last_lives = nil
+  M.coin_route = M.path_choice == "coin_high" or M.path_choice == "coin_low" or M.path_choice == "coin_balanced"
+  M.stairs_tactic = initial.stairs_tactic
+  assert(not M.stairs_tactic or (M.stairs_tactic == "land_then_cross_v1" and M.path_choice == "coin_balanced"), "INVALID_ROUTE_GUIDANCE")
+  M.stairs_done=false; M.stairs_phase=nil
+  M.pipe_tactic=initial.pipe_tactic; M.pipe_done=false; M.pipe_phase=nil
+  assert(not M.pipe_tactic or (M.pipe_tactic == "land_on_pipe_then_cross_v1" and M.stairs_tactic), "INVALID_PIPE_GUIDANCE")
+  M.demo = nil; M.demo_index = nil
+  if initial.demonstration_id then
+    local frames = {}; local f = assert(io.open(directory .. "/demonstration.trace", "r"))
+    for line in f:lines() do
+      local row = {}; for value in line:gmatch("[^,]+") do row[#row+1] = assert(tonumber(value)) end
+      assert(#row == 18, "INVALID_DEMONSTRATION_FRAME"); frames[#frames+1]=row
+    end
+    f:close(); assert(#frames == tonumber(initial.demonstration_frames), "INVALID_DEMONSTRATION_LENGTH")
+    M.demo=frames; M.demo_id=initial.demonstration_id
+  end
   speed(initial.speed)
+  if M.coin_route then event("coin_route_applied", "route=" .. M.path_choice) end
   event("started", "path_choice=" .. M.path_choice .. " stop_point=" .. M.stop_point)
   emu.unpause()
 end
@@ -179,9 +203,11 @@ function M.boundary(name)
   if name == "world_1_1_opening" then
     M.completed_opening = true
     M.last_lives = memory.readbyte(0x736)
+    if M.coin_route then event("coin_observation", "counter=" .. tostring(memory.readbyte(0x7967))) end
   end
   if name == "world_1_1_exit" then
     M.completed_exit = true
+    if M.coin_route then event("coin_level_finish_observed") end
     if M.stop_point == "world_1_1_exit" then M.finish("completed_stop"); error("GAME_COMPANION_B2_STOP_completed_stop") end
   end
 end
@@ -200,6 +226,49 @@ function M.before_frame(held)
       and memory.readbyte(0x70A) == 1 and x() >= 160 then
     M.finish("completed_stop"); error("GAME_COMPANION_B2_STOP_completed_stop")
   end
+  if M.coin_route and M.completed_opening and memory.readbyte(0x70A) == 1
+      and x() < 8192 and y() > 0 then
+    event("coin_observation", "counter=" .. tostring(memory.readbyte(0x7967)))
+  end
+  if M.demo and M.completed_opening then
+    local state = {x(),y(),memory.readbytesigned(0xBD),memory.readbytesigned(0xCF),
+      memory.readbyte(0xED),memory.readbyte(0xD8)}
+    local function matches(row, tolerance)
+      return math.abs(state[1]-row[2]) <= tolerance and math.abs(state[2]-row[3]) <= tolerance
+        and math.abs(state[3]-row[4]) <= 4 and math.abs(state[4]-row[5]) <= 4
+        and state[5] == row[6] and state[6] == row[7]
+        and memory.readbyte(0x727) == row[8] and memory.readbyte(0x70A) == row[9]
+        and memory.readbyte(0x77) == row[10] and memory.readbyte(0x79) == row[11]
+        and memory.readbyte(0x14) == row[12] and memory.readbyte(0xF1) == 0
+    end
+    if not M.demo_index then
+      if matches(M.demo[1], 8) then
+        M.demo_index=1; event("demonstration_applied", "demonstration_id=" .. M.demo_id)
+      elseif x() > M.demo[1][2]+24 then
+        M.finish("demonstration_entry_missed"); error("GAME_COMPANION_B2_STOP_demonstration_entry_missed")
+      end
+    end
+    if M.demo_index then
+      if M.demo_index > #M.demo then
+        local last=M.demo[#M.demo]
+        if math.abs(x()-last[17]) > 24 or math.abs(y()-last[18]) > 24
+            or memory.readbyte(0x727) ~= last[8] or memory.readbyte(0x70A) ~= last[9]
+            or memory.readbyte(0xED) ~= last[6] or memory.readbyte(0xF1) ~= 0 then
+          M.finish("demonstration_drift"); error("GAME_COMPANION_B2_STOP_demonstration_drift")
+        end
+        event("demonstration_sequence_completed", "demonstration_id=" .. M.demo_id)
+        M.finish("completed_stop"); error("GAME_COMPANION_B2_STOP_completed_stop")
+      end
+      local row=M.demo[M.demo_index]
+      if not matches(row,24) then M.finish("demonstration_drift"); error("GAME_COMPANION_B2_STOP_demonstration_drift") end
+      local mask=row[16]
+      for i,key in ipairs({"A","B","up","down","left","right","start","select"}) do
+        held[key]=math.floor(mask/2^(i-1))%2 == 1
+      end
+      event("demonstration_frame", "demonstration_id=" .. M.demo_id .. " index=" .. M.demo_index)
+      M.demo_index=M.demo_index+1
+    end
+  end
   M.held = held
   -- All eight buttons are specified: chat/physical key state cannot leak through
   -- unspecified keys in the Lua joypad override while agent authority is active.
@@ -207,11 +276,110 @@ function M.before_frame(held)
   for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do input[key] = held[key] == true end
   joypad.set(1,input)
 end
+-- Stage on the left stair top before crossing the gap. The observed old
+-- approach hit the stair face, lost speed, then fell short of the far platform.
+function M.stairs_step(held, m)
+  if M.stairs_tactic ~= "land_then_cross_v1" or M.stairs_done then return false end
+  if not M.stairs_phase then
+    if m.air ~= 0 or m.x < 1545 or m.x > 1600 then return false end
+    M.stairs_phase = "release_climb"; M.stairs_frames = 0
+    event("route_adjustment_applied", "adjustment=stage_on_left_stair")
+  end
+  M.stairs_frames = M.stairs_frames + 1
+  if M.stairs_frames > 240 then
+    M.finish("stairs_stalled"); error("GAME_COMPANION_B2_STOP_stairs_stalled")
+  end
+  held.left=false; held.right=true; held.A=false; held.B=false
+  if M.stairs_phase == "release_climb" then
+    M.stairs_phase = "climb"; M.stairs_airborne=false
+  elseif M.stairs_phase == "climb" then
+    held.A=true
+    if m.air ~= 0 then M.stairs_airborne=true end
+    if m.x >= 1580 then held.right=false; held.left=true; M.stairs_phase="settle" end
+  elseif M.stairs_phase == "settle" then
+    held.right=false
+    -- Air momentum persists with no directional button. Counter-steer to
+    -- zero velocity so the intended landing stays on the left stair top.
+    local vx = memory.readbytesigned(0xBD)
+    held.left = vx > 0; held.right = vx < 0
+    if m.air == 0 and M.stairs_airborne then
+      M.stairs_phase="cross"; M.cross_frames=0
+      event("route_adjustment_applied", "adjustment=launch_from_stair_top")
+    end
+  elseif M.stairs_phase == "cross" then
+    held.B=true; held.A=M.cross_frames < 42
+    M.cross_frames=M.cross_frames+1
+    if m.x >= 1750 and m.air == 0 and m.y < 400 then
+      M.stairs_done=true
+      event("route_progress_observed", "landmark=stairs_landing")
+    end
+  end
+  return true
+end
+-- Preserve the height of the first pipe instead of waiting after walking off.
+function M.pipe_step(held, m)
+  if M.pipe_tactic ~= "land_on_pipe_then_cross_v1" or M.pipe_done or not M.stairs_done then return false end
+  if not M.pipe_phase then
+    if m.air ~= 0 or m.x < 1770 or m.x > 1810 then return false end
+    M.pipe_phase="release"; M.pipe_frames=0
+    event("route_adjustment_applied", "adjustment=stage_on_first_pipe")
+  end
+  M.pipe_frames=M.pipe_frames+1
+  if M.pipe_frames > 240 then M.finish("pipe_stalled"); error("GAME_COMPANION_B2_STOP_pipe_stalled") end
+  held.left=false; held.right=true; held.A=false; held.B=false
+  if M.pipe_phase == "release" then
+    M.pipe_phase="climb"; M.pipe_airborne=false
+  elseif M.pipe_phase == "climb" then
+    held.A=true
+    if m.air ~= 0 then M.pipe_airborne=true end
+    if m.x >= 1795 then held.right=false; held.left=true; M.pipe_phase="settle" end
+  elseif M.pipe_phase == "settle" then
+    local vx=memory.readbytesigned(0xBD)
+    held.left=vx>0; held.right=vx<0
+    if m.air == 0 and M.pipe_airborne then
+      M.pipe_phase="runup"
+      event("route_adjustment_applied", "adjustment=run_on_pipe_top")
+    end
+  elseif M.pipe_phase == "runup" then
+    held.B=true
+    if m.x >= 1812 then
+      M.pipe_phase="cross"; M.pipe_cross_frames=0
+      event("route_adjustment_applied", "adjustment=jump_from_pipe_top")
+    end
+  elseif M.pipe_phase == "cross" then
+    held.B=true; held.A=M.pipe_cross_frames<42
+    M.pipe_cross_frames=M.pipe_cross_frames+1
+    if m.x >= 1930 and m.air == 0 and m.y < 400 then
+      M.pipe_done=true; event("route_progress_observed", "landmark=pipe_landing")
+    end
+  end
+  return true
+end
+function M.coin_window(position, windows)
+  local offset = M.path_choice == "coin_high" and -20 or 20
+  if M.path_choice == "coin_balanced" then offset = position < 700 and 0 or -8 end
+  for _,w in ipairs(windows) do
+    if position >= w[1] + offset and position <= w[2] + offset then return true end
+  end
+  return false
+end
+function M.coin_jump_frames(position)
+  if M.path_choice == "coin_balanced" then return position < 700 and 18 or 22 end
+  return M.path_choice == "coin_high" and 28 or 12
+end
 function M.opening_step(held)
   if M.path_choice ~= "opening_hop" then return false end
+  if M.delay_remaining > 0 then
+    held.right = true; held.A = false; held.B = false
+    M.delay_remaining = M.delay_remaining - 1
+    if M.delay_remaining == M.jump_delay_frames - 1 then
+      event("coaching_delay_started", "jump_delay_frames=" .. tostring(M.jump_delay_frames))
+    end
+    return true
+  end
   if not M.hop_started then
     M.hop_started = true; M.hop_frames = 26
-    event("alternate_started", "primitive=world_1_1_opening_hop_v1")
+    event("alternate_started", "primitive=world_1_1_opening_hop_v1 jump_delay_frames=" .. tostring(M.jump_delay_frames))
   end
   if M.hop_frames > 0 then
     if M.hop_frames == 13 then event("alternate_apex", "primitive=world_1_1_opening_hop_v1") end

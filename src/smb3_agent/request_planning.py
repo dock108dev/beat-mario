@@ -229,6 +229,10 @@ def speed_from_text(text: str) -> float | str | None:
 
 
 def _control_request(text: str, context: PlanningContext) -> PlanResult | None:
+    from smb3_agent.mario_coaching import urgent_control
+    urgent = urgent_control(text)
+    if urgent:
+        return PlanResult("control", f"Requested {urgent}.", control={"action": urgent})
     value = re.sub(r"^(?:(?:please|okay|ok)\s+|(?:can|could|would|will) you\s+(?:please\s+)?)+", "", text)
     value = value.rstrip(".!?")
     if re.search(r"\b(?:don't|do not|never|not)\b", value):

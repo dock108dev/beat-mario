@@ -1,5 +1,11 @@
 # Game Companion product direction
 
+## October 4 priority update — recording deferred
+
+Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
+
+**Next development:** improve World 1-1 route traversal through the stairs and toward the finish using the existing conversational coaching and discovery loop. Engineering chooses the approach without requiring a player demonstration. Continue observed coin accounting and remembered route adjustments, then the remaining Mario objectives and Stardew activities.
+
 Updated October 3, 2026 from the owner's confirmed intent. The [engineering plan](private-beta-engineering.md) defines implementation and acceptance; the [PM handoff](private-beta-pm-handoff.md) and [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) identify the next sessions.
 
 ## The product

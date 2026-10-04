@@ -1010,7 +1010,12 @@ class _Handler(BaseHTTPRequestHandler):
                 if not isinstance(payload, dict):
                     raise ValueError("Conversation payload must be an object")
                 action = _single(data, "action")
-                priority = action in {"pause", "stop", "reclaim", "focus_lost"}
+                from smb3_agent.mario_coaching import urgent_control
+                if path == "/api/conversation" and action == "message":
+                    urgent = urgent_control(str(payload.get("text", "")))
+                    if urgent:
+                        action = urgent
+                priority = action in {"pause", "stop", "reclaim", "focus_lost", "record_stop", "demo_disable"}
                 adapter = "openttd" if path == "/api/profile/conversation" else (
                     "stardew" if path == "/api/stardew/conversation" else "smb3")
                 if adapter == "openttd":
@@ -1817,6 +1822,7 @@ class _Handler(BaseHTTPRequestHandler):
         encoded = body.encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/javascript; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)

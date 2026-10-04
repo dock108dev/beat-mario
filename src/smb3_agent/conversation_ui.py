@@ -44,10 +44,10 @@ def render_conversation_workspace(
     <h2 id="conversation-chat-heading">Ask Companion</h2>
     <form data-conversation-form="message" id="conversation-message-form">
       <label for="conversation-draft">Ask a question or describe a change</label>
-      <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="Take the opening hop, then stop after the opening section." required aria-describedby="conversation-typing-note"></textarea>
+      <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="Let’s find a coin route to the end for three attempts." required aria-describedby="conversation-typing-note"></textarea>
       <p class="meta" id="conversation-typing-note">Mario can play while you type. Questions give advice; supported changes update future steps.</p>
       <button type="submit" class="primary-button" data-testid="conversation-send">Send</button>
-      <div class="conversation-buttons" aria-label="Suggested supported edits"><button type="button" data-conversation-draft="Take the opening hop, then stop after the opening section">Try the opening hop</button><button type="button" data-conversation-draft="Use the base path and stop at the end of World 1-1">Base path to level exit</button></div>
+      <div class="conversation-buttons" aria-label="Suggested supported edits"><button type="button" data-conversation-draft="Let’s find a coin route to the end">Find a coin route</button><button type="button" data-conversation-draft="Let’s practice the opening jump">Practice the opening jump</button><button type="button" data-conversation-draft="You’re jumping too early, wait 3 more frames">Coach the next jump</button><button type="button" data-conversation-draft="Use the base path and stop at the end of World 1-1">Base path to level exit</button></div>
     </form>
     <ol id="conversation-messages" class="conversation-transcript" aria-label="Latest messages" role="log" aria-live="polite" aria-relevant="additions"></ol>
     <details id="conversation-earlier"><summary>Earlier messages</summary><ol id="conversation-older-messages" class="conversation-transcript" aria-label="Earlier messages"></ol></details>
@@ -90,6 +90,43 @@ def render_conversation_workspace(
     <p id="conversation-performance" class="meta"></p>
     <div class="conversation-outcome"><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
   </section>
+  <section class="session-card" data-testid="player-demonstrations"><h2>Let me show you</h2>
+    <p>Choose Open Mario for companion play above. Then choose Play Mario yourself, focus the emulator and enter World 1-1. Position yourself at the start of any route or useful segment, then record it. You control every input while recording.</p>
+    <button type="button" data-conversation-action="player_play">Play Mario yourself</button>
+    <button type="button" data-conversation-action="record_start">Start recording</button>
+    <button type="button" data-conversation-action="record_stop">Stop recording</button>
+    <p id="conversation-recording" role="status"></p>
+    <details><summary>Review recorded actions and gameplay</summary><div id="conversation-recording-images"></div><pre id="conversation-recording-preview"></pre></details>
+    <form data-conversation-form="record_save">
+      <label>Name <input name="name" maxlength="120" required placeholder="Climb the stairs"></label>
+      <label>What should Companion learn? <textarea name="lesson" maxlength="4000" required placeholder="Jump onto the next stair before the enemy reaches me"></textarea></label>
+      <p>Save the whole recording, or choose Start here / End here on the gameplay images above. You can also enter times in seconds of game time. Sampled images may miss a brief move; check the action review before saving.</p>
+      <label>Start at (seconds, optional) <input id="conversation-segment-start" name="start_seconds" type="number" min="0" step="any" placeholder="0"></label>
+      <label>End at (seconds, optional) <input id="conversation-segment-end" name="end_seconds" type="number" min="0" step="any" placeholder="End of recording"></label>
+      <button type="submit">Save demonstration</button>
+    </form>
+    <button type="button" data-conversation-action="demo_fresh">Open fresh attempt</button>
+    <p>After saving, Open fresh attempt closes this disposable game and opens a fresh paused session; it does not start companion play.</p>
+    <form id="conversation-demo-form" data-conversation-form="demo_review">
+      <label>Saved demonstration <select id="conversation-demonstration" name="demonstration_id" required></select></label>
+      <button type="submit">Review</button>
+      <button type="button" data-demo-action="demo_use">Use in next attempt</button>
+      <button type="button" data-demo-action="demo_delete">Delete demonstration</button>
+      <label>New name <input name="name" maxlength="120"></label>
+      <label>Intended lesson <textarea name="lesson" maxlength="4000"></textarea></label>
+      <button type="button" data-demo-action="demo_edit">Save name and lesson</button>
+    </form>
+    <p id="conversation-demo-review"></p>
+    <details><summary>Saved segment action review</summary><div id="conversation-demo-images"></div><pre id="conversation-demo-preview"></pre></details>
+    <button type="button" data-conversation-action="demo_disable">Stop using demonstration</button>
+    <p>Use proposes one attempt: balanced approach, then the recorded sequence when position, motion and form match. Review and Start authorize play. Drift stops playback; different enemy timing may prevent success. Saved demonstrations never resume gameplay on reopening.</p>
+  </section>
+  <section class="session-card"><h3>Coin-route discoveries</h3><p id="conversation-coins"></p></section>
+  <section class="session-card"><h3>Remembered opening guidance</h3><p id="conversation-guidance"></p><p id="conversation-retry-budget"></p>
+    <button type="button" data-conversation-action="retry">Try again with guidance</button>
+    <button type="button" data-conversation-action="reset_guidance">Reset future guidance</button>
+    <p class="meta">Try again reopens a fresh disposable cartridge session within the approved budget. Stop, Take control or an unrelated session change requires fresh approval. Reset keeps prior results.</p>
+  </section>
   <details class="session-card conversation-saved"><summary>Save or reopen a route</summary>
     <form data-conversation-form="save_variant" class="conversation-inline"><div><label for="conversation-variant-name">Route name</label><input id="conversation-variant-name" name="name" maxlength="100" required placeholder="My opening hop"></div><button type="submit">Save route</button></form>
     <form data-conversation-form="load_variant" class="conversation-inline conversation-speed"><div><label for="conversation-variant">Saved route</label><select id="conversation-variant" name="variant_id"><option value="">No saved routes</option></select></div><button type="submit">Reopen</button></form>
@@ -113,6 +150,16 @@ HISTORY_JS = r'''
     details.append(summary);
     for (const value of [review.request, review.reason, ...(review.confirmed || []).map(s => "Confirmed: " + s), ...(review.remaining || []).map(s => "Remaining: " + s), review.recovery]) {
       if (value) { const p = document.createElement("p"); p.textContent = value; details.append(p); }
+    }
+    if (entry.demonstration_result) {
+      const r = entry.demonstration_result, p = document.createElement("p");
+      p.textContent = `Demonstration ${r.name}: application ${r.application_observed ? "observed" : "unobserved"}; ${r.frames_followed} frames followed; sequence end ${r.sequence_completed_observed ? "observed" : "unverified"}; stopped because ${r.stopped_because || "unknown"}. Help overcoming the failure: ${r.helped_overcome_failure ?? "unknown"}.`;
+      details.append(p);
+    }
+    if (entry.coin_result) {
+      const result = entry.coin_result, p = document.createElement("p");
+      p.textContent = `Route ${entry.initial_plan?.path_choice || "unknown"} · Collected ${result.collected ?? "unknown"} this attempt · Known missed opportunity lower bound ${result.known_missed_lower_bound ?? "unknown"} · Furthest position ${result.furthest_x ?? "unknown"} · Finish ${result.level_finish_observed ? "observed" : "unverified"} · ${entry.neutralized ? "Inputs released" : "Release unconfirmed"}. ${result.coverage || "Coverage unknown."}`;
+      details.append(p);
     }
     const technical = document.createElement("details"), title = document.createElement("summary"), pre = document.createElement("pre");
     title.textContent = "Retained plan, ledger and evidence"; pre.textContent = JSON.stringify(entry, null, 2);
@@ -170,14 +217,15 @@ CONVERSATION_JS = r''' (() => {
     text("session", runtime.session_id || live.session_id || "No live session");
     text("requested", plan.requested_objective || "Existing base route");
     const loadedVariant = (state.variants || []).find(variant => variant.variant_id === plan.variant_id);
-    text("loaded", `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : " · Base"}`);
+    text("loaded", plan.coin_compatibility ? "Experimental World 1-1 coin discovery" : plan.coaching_compatibility ? "Experimental World 1-1 opening practice" : `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : " · Base"}`);
     text("fallback", displayCopy(plan.fallback_explanation) || "Faster and 100% routes are not available. These choices load the existing route.");
     text("plan-label", plan.revision ? `Plan version ${plan.revision}` : "");
-    list("actions", plan.actions || [], action => {
+    list("actions", (plan.actions || []).map(action => ({...action, jump_delay_frames:plan.jump_delay_frames, coaching_compatibility:plan.coaching_compatibility})), action => {
       const parameters = action.parameters || {};
       if (["mario_traverse", "mario_path", "traverse_route", "follow_route"].includes(action.kind)) {
+        if (plan.coin_compatibility) return item(`${(plan.change_summary || []).join(" ")} Stop after clearing World 1-1.`);
         const path = parameters.path_choice === "opening_hop" ? "Take the opening hop in World 1-1." : "Use the default World 1-1 opening.";
-        return item(`Follow the existing route. ${path} Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
+        return item(`${plan.coaching_compatibility ? `Practice opening jump: ${plan.jump_delay_frames ?? 0} delay frames, 26 held jump frames.` : "Follow the existing route."} ${path} Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
       }
       if (["mario_stop", "stop", "stop_at"].includes(action.kind)) return item(`Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
       if (["mario_speed", "set_speed"].includes(action.kind)) return item(`Set playback to ${speed(parameters.speed || plan.requested_speed)}.`);
@@ -231,8 +279,58 @@ CONVERSATION_JS = r''' (() => {
       if (options.some(option => option.value === selected)) select.value = selected;
     }
     list("revisions", revisions, revision => item(summarizePlan(revision)));
+    const guidance = state.guidance || {}, budget = state.retry_scope;
+    text("guidance", guidance.error || `World 1-1 experimental opening jump: delay ${guidance.jump_delay_frames ?? 0} frames before holding jump for 26 frames. ${(guidance.coaching || []).length} remembered corrections. ${(guidance.coaching || []).map(row => row.original_words).join(" · ")}`);
+    text("retry-budget", budget ? `${budget.remaining} of ${budget.maximum_attempts} attempts remain; 10-minute scope, checked again before every retry.` : "Review and approve exploration or opening practice for a finite attempt budget.");
+    const coins = state.coin_knowledge || {}, coinResult = state.coin_progress || state.outcome?.coin_result;
+    text("coins", `${coins.compatibility_pending ? `${coins.archived_attempts || 0} saved coin attempts; open the same cartridge to check compatibility. ` : ""}${coins.attempts || 0} remembered compatible attempts · Routes tried: ${(coins.routes_tried || []).join(", ") || "none"} · Best observed single-attempt coin count ${coins.known_opportunity_lower_bound || 0} (knowledge across attempts, not a run total). ${coinResult ? `${state.coin_progress ? "Current" : "Last"} attempt collected: ${coinResult.collected ?? "unknown"}; known missed opportunity lower bound: ${coinResult.known_missed_lower_bound ?? "unknown"}; furthest observed position ${coinResult.furthest_x ?? "unknown"}; stairs instruction ${coinResult.route_guidance ? (coinResult.guidance_application_observed ? "applied" : "application unverified") : "none"}; landing beyond stairs ${coinResult.stairs_landing_observed ? "observed" : "unverified"}; finish ${coinResult.level_finish_observed ? "observed" : "unverified"}; unvisited landmarks: ${(coinResult.unvisited_landmarks || []).join(", ") || "none"}. ` : ""}${coins.coverage || "Coverage unknown."}`);
     const outcome = state.outcome;
     text("outcome", !outcome ? "No attempt yet." : typeof outcome === "string" ? label(outcome) : `${label(outcome.status || "Unknown result")} · ${label(outcome.actor || "unknown")} play${outcome.elapsed_game_frames != null ? ` · ${outcome.elapsed_game_frames} game frames` : ""} · Input ${outcome.neutralized ? "stopped" : "not confirmed stopped"} · ${outcome.controller_owner === "player" ? "Control returned to you" : "Handback not confirmed"}`);
+    if (outcome?.coaching_result) {
+      const result = outcome.coaching_result;
+      text("outcome", `${label(outcome.status)} · Requested ${result.requested_delay_frames} delay frames · ${result.controller_application_observed ? "Controller confirmed timing applied" : "Timing application unconfirmed"} · ${result.segment_completed ? "Opening stop reached" : "Opening stop not reached"} · ${result.improvement_observed === true ? "Opening completion improved; causation unknown" : result.improvement_observed === false ? "Applied timing did not improve stop completion" : "Improvement unknown"} · ${outcome.neutralized ? "Inputs released" : "Input release unconfirmed"}`);
+    }
+    const recording = state.recording || {}, draft = recording.draft;
+    text("recording", recording.active ? `Player recording: ${recording.active.status}. Companion input is disabled.` : draft ? `${draft.frame_count} recorded frames · ${draft.reason}. Review, trim if needed and save.` : "No recording in progress. Ten-minute maximum; World 1-1 only.");
+    const describeFrames = rows => (rows || []).map(r => {
+      const buttons = ["A", "B", "up", "down", "left", "right", "start", "select"].filter((_, i) => r.buttons & (1 << i));
+      return `${(r.index / 60).toFixed(2)}s: (${r.x}, ${r.y}) → (${r.end_x}, ${r.end_y}); velocity (${r.vx}, ${r.vy}); form ${r.form}; airborne ${r.air}; coin counter ${r.coins}; buttons ${buttons.join(" + ") || "released"}`;
+    }).join("\n");
+    const imageNode = image => { const figure = document.createElement("figure"), img = document.createElement("img"), caption = document.createElement("figcaption");
+      if (String(image.url).startsWith("/artifacts/")) img.src = image.url;
+      img.alt = `Mario demonstration at game frame ${image.frame}`; img.loading = "lazy"; img.width = 256;
+      caption.textContent = `Game frame ${image.frame}`; figure.append(img, caption); return figure; };
+    const recordingImage = image => {
+      const figure = imageNode(image);
+      const offset = Math.max(0, image.frame - (draft?.preview?.[0]?.frame ?? image.frame));
+      const seconds = Math.min(offset, draft.frame_count) / 60;
+      figure.children[1].textContent = `${seconds.toFixed(2)}s of recording`;
+      for (const [name, title] of [["segment-start", "Start here"], ["segment-end", "End here"]]) {
+        const button = document.createElement("button"); button.type = "button"; button.textContent = title;
+        button.addEventListener("click", () => { node(name).value = String(seconds); });
+        figure.append(button);
+      }
+      return figure;
+    };
+    if (signatures.get("recording-draft") !== draft?.id) {
+      signatures.set("recording-draft", draft?.id);
+      node("segment-start").value = ""; node("segment-end").value = "";
+    }
+    list("recording-images", draft?.image_urls || [], recordingImage);
+    text("recording-preview", describeFrames(draft?.preview));
+    const demos = state.demonstrations || [], select = node("demonstration");
+    const demoSignature = JSON.stringify(demos);
+    if (signatures.get("demonstrations") !== demoSignature) {
+      signatures.set("demonstrations", demoSignature); const selected = select.value;
+      select.replaceChildren(...demos.map(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = `${d.name} · ${d.frame_count} frames · ${d.lesson}`; return o; }));
+      if (demos.some(d => d.id === selected)) select.value = selected;
+    }
+    const reviewedDemo = state.demonstration_review;
+    text("demo-review", reviewedDemo ? `${reviewedDemo.name} · ${reviewedDemo.lesson} · ${reviewedDemo.frame_count} frames. Review the proposal before Start.` : "Choose a saved demonstration to review its lesson and actions.");
+    text("demo-preview", describeFrames(reviewedDemo?.preview));
+    list("demo-images", reviewedDemo?.image_urls || [], imageNode);
+    const demoResult = outcome?.demonstration_result;
+    if (demoResult) text("outcome", `Demonstration ${demoResult.name}: ${demoResult.application_observed ? "applied" : "not observed applied"}, ${demoResult.frames_followed} frames followed. Sequence end ${demoResult.sequence_completed_observed ? "observed (recorded endpoint reached; traversal still needs observation)" : "unverified"}; stopped: ${label(outcome.status || "unknown")}; ${outcome.controller_owner === "player" ? "Control returned to you" : "Handback unconfirmed"}; help overcoming failure ${demoResult.helped_overcome_failure ?? "unknown"}. ${outcome.neutralized ? "Inputs released" : "Release unconfirmed"}`);
     text("coverage", `Full-completion coverage: ${label(plan.completion_coverage || "unknown")}.`);
     list("history", state.history || [], historyItem);
     text("details", JSON.stringify({plan, current_plan: current, pending_plan: pending, runtime, outcome}, null, 2));
@@ -257,12 +355,18 @@ CONVERSATION_JS = r''' (() => {
     finally { polling = false; }
   }
   async function dispatch(action, payload = {}, source = null) {
-    const priority = ["stop", "reclaim", "pause"].includes(action);
+    if (action === "message") {
+      const words = String(payload.text || "").toLowerCase().replace(/[^a-z0-9' ]/g," ").trim().replace(/\s+/g," ");
+      const value = words.replace(/^(?:(?:please|okay|ok) |(?:can|could|would|will) you (?:please )?)+/, "");
+      if (/^stop(?: (?:right|now|immediately|playing|wait|please|the game|the agent))*$/.test(value)) action = "stop";
+      else if (/^(?:take control|give me (?:back )?control|let me (?:play|take over)|hand (?:it |control )?back)(?: (?:right now|now|please|immediately))?$/.test(value)) action = "reclaim";
+    }
+    const priority = ["stop", "reclaim", "pause", "record_stop", "demo_disable"].includes(action);
     if (busy.has(action) || (!priority && busy.size)) return false;
     busy.add(action); const started = ++generation;
-    const buttons = source ? Array.from(source.querySelectorAll("button[type=submit]")) : [];
+    const buttons = source && action !== "message" ? Array.from(source.querySelectorAll("button[type=submit]")) : [];
     for (const button of buttons) button.disabled = true;
-    payload.request_id = crypto.randomUUID();
+    payload.request_id = `request-${Date.now().toString(36)}-${started}-${Math.random().toString(36).slice(2)}`;
     if (action === "start" || action === "apply") {
       payload.expected_plan_id = state.plan?.plan_id ?? null;
       payload.expected_revision = state.plan?.revision ?? null;
@@ -284,6 +388,8 @@ CONVERSATION_JS = r''' (() => {
   root.addEventListener("click", event => {
     const suggestion = event.target.closest("[data-conversation-draft]");
     if (suggestion && root.contains(suggestion)) { node("draft").value = suggestion.dataset.conversationDraft; node("draft").focus(); return; }
+    const demoButton = event.target.closest("[data-demo-action]");
+    if (demoButton) { dispatch(demoButton.dataset.demoAction, Object.fromEntries(new FormData(document.getElementById("conversation-demo-form")))); return; }
     const button = event.target.closest("[data-conversation-action]");
     if (button && root.contains(button)) dispatch(button.dataset.conversationAction);
   });

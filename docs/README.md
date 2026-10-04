@@ -10,7 +10,7 @@ Updated October 3, 2026. Game Companion's initial beta delivers conversational M
 4. [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md): source-of-truth status and the next concrete action.
 5. [Mario integration](b2-integration-contract.md) and [learning](learning.md): immediate GC1/first-GC2 watched-play, timing-change and next-attempt-memory work.
 
-Begin with urgent conversational Stop and one useful watched/coached Mario attempt. Finish Mario's initial experience, then Stardew's useful approved activities. Preserve existing game/control/history work and historical evidence.
+The first ordinary opening-jump coaching loop and urgent Mario Stop are implemented; see [source verification](gc1-gc2-coaching-verification.md). Experimental coin discovery and player demonstration recording/application are implemented in source. See [demonstration verification](gc2-demonstration-verification.md); attended stairs application/improvement remains pending. Finish GC2 before Stardew activities. Preserve existing game/control/history work and historical evidence.
 
 ## Current player guides and retained packages
 

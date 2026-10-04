@@ -1803,6 +1803,16 @@ local function run_agent(attempt)
     if b2_plan and b2_plan.opening_step(held) then
       apply()
       advance_frame()
+    elseif b2_plan and b2_plan.stairs_step(held, m) then
+      jump_frames = 0; cooldown = 0
+      apply()
+      if frame % 10 == 0 then log_state("learned_stairs_tick") end
+      advance_frame()
+    elseif b2_plan and b2_plan.pipe_step(held, m) then
+      jump_frames = 0; cooldown = 0
+      apply()
+      if frame % 10 == 0 then log_state("learned_pipe_tick") end
+      advance_frame()
     elseif jump_frames > 0 then
       held.right = true
       held.B = jump_hold_b
@@ -1899,7 +1909,8 @@ local function run_agent(attempt)
         if enemy ~= nil and enemy.dy > -20 and enemy.dx < 90 then
           should_jump = true
           reason = "enemy"
-        elseif in_window(m.x, scheduled_jumps) then
+        elseif (b2_plan and b2_plan.coin_route and b2_plan.coin_window(m.x, scheduled_jumps))
+            or (not (b2_plan and b2_plan.coin_route) and in_window(m.x, scheduled_jumps)) then
           should_jump = true
           reason = "scheduled"
         end
@@ -1939,6 +1950,9 @@ local function run_agent(attempt)
           jump_frames = 18
           cooldown = 34
           jump_hold_b = true
+        end
+        if reason == "scheduled" and b2_plan and b2_plan.coin_route then
+          jump_frames = b2_plan.coin_jump_frames(m.x)
         end
         log_state("jump_" .. tostring(reason))
       end

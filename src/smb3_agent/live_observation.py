@@ -779,6 +779,7 @@ class LiveObservationManager:
         self._takeover_controller: TakeoverController | None = None
         self._game_file_sha256: str | None = None
         self._allow_takeover = False
+        self._coaching_game_path: Path | None = None
 
     def start(
         self,
@@ -829,6 +830,7 @@ class LiveObservationManager:
             self._takeover_controller = takeover_controller
             self._allow_takeover = allow_takeover
             self._game_file_sha256 = hashlib.sha256(game_path.read_bytes()).hexdigest()
+            self._coaching_game_path = game_path.resolve()
             self._write_manifest(game_path, allow_takeover=allow_takeover)
             env = {
                 key: value
@@ -846,6 +848,7 @@ class LiveObservationManager:
                     "SMB3_TAKEOVER_RECLAIM_PATH": str(reclaim_path.resolve()),
                     "SMB3_TAKEOVER_AGENT_SCRIPT": str(AGENT_SCRIPT.resolve()),
                     "SMB3_B2_PLAN_SCRIPT": str(B2_PLAN_SCRIPT.resolve()),
+                    "SMB3_DEMONSTRATION_SCRIPT": str(repository_path("scripts/fceux_demonstration.lua").resolve()),
                     "SMB3_B2_DIRECTORY": str((artifact_dir / "b2").resolve()),
                     "SMB3_B2_PAUSE_FOR_PLAN": "1" if pause_for_plan else "0",
                     "SMB3_AGENT_LOG": str(
@@ -949,6 +952,7 @@ class LiveObservationManager:
                 raise LiveObservationError(
                     "This session was not launched with takeover capability"
                 )
+            self._require_no_recording()
             snapshot = self._accumulator.snapshot()
             if (
                 snapshot.freshness is not Freshness.FRESH
@@ -994,6 +998,7 @@ class LiveObservationManager:
                 raise LiveObservationError("No takeover-capable live session is active")
             if not self._accumulator.samples or self._game_file_sha256 is None:
                 raise LiveObservationError("Takeover requires a current observed state")
+            self._require_no_recording()
             sample = self._accumulator.samples[-1]
             self._takeover_controller.transfer(
                 authorization,
@@ -1027,6 +1032,7 @@ class LiveObservationManager:
                 raise LiveObservationError(
                     "This session was not launched with takeover capability"
                 )
+            self._require_no_recording()
             snapshot = self._accumulator.snapshot()
             if (
                 snapshot.freshness is not Freshness.FRESH
@@ -1071,6 +1077,99 @@ class LiveObservationManager:
             )
             return authorization
 
+    def restart_coaching_session(self, *, expected_session: str, cancelled: Callable[[], bool]) -> LiveObservationSnapshot:
+        """Explicit budgeted Retry opens a fresh task-owned cartridge session.
+
+        No primary save, savestate, RAM write or background training is involved.
+        The caller owns the finite practice scope; this owner checks input release,
+        exact cartridge and process before replacing its own disposable session.
+        """
+        with self._lock:
+            current = self._accumulator.snapshot() if self._accumulator else None
+            process = self._process
+            game_path = self._coaching_game_path
+            digest = self._game_file_sha256
+            if (cancelled() or current is None or current.session_id != expected_session
+                    or current.control_owner != "player" or not current.input_neutralized
+                    or not self._allow_takeover or process is None or game_path is None):
+                raise LiveObservationError("Retry needs the same released disposable session")
+        if hashlib.sha256(game_path.read_bytes()).hexdigest() != digest:
+            raise LiveObservationError("The cartridge changed; fresh review is required")
+        self.stop()
+        if cancelled():
+            raise LiveObservationError("Retry interrupted before reopening")
+        # Only the exact process launched by this manager is closed.
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                # FCEUX can ignore SIGTERM. This is the retained owned child,
+                # already neutralized and expressly disposable inside Retry scope.
+                process.kill()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired as exc:
+                    raise LiveObservationError("Prior emulator closure is unconfirmed") from exc
+        if not self.invalidate_volatile_state():
+            raise LiveObservationError("Wait for the old observer to finish before retrying")
+        if cancelled():
+            raise LiveObservationError("Retry interrupted before reopening")
+        self.start(game_path, allow_takeover=True, pause_for_plan=True)
+        if self._game_file_sha256 != digest:
+            self.stop()
+            raise LiveObservationError("Cartridge changed during retry preparation; fresh review is required")
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline:
+            if cancelled():
+                self.stop()
+                raise LiveObservationError("Retry interrupted; no new gameplay authority granted")
+            current = self.snapshot()
+            if current.checkpoint_id == "fresh_power_on" and current.freshness is Freshness.FRESH:
+                return current
+            if current.process_alive is False:
+                break
+            time.sleep(0.05)
+        self.stop()
+        raise LiveObservationError("Fresh retry observation unavailable; no gameplay started")
+
+    def _require_no_recording(self) -> None:
+        if self._accumulator:
+            directory = self._accumulator.artifact_dir / "b2"
+            request = directory / "recording.request"
+            ack = directory / "recording.ack"
+            if request.exists():
+                parts = request.read_text().split()
+                receipt = ack.read_text().split() if ack.exists() else []
+                if len(parts) == 3 and parts[1] == "start" and (receipt != [parts[0], "stopped"]
+                        and (len(receipt) != 2 or receipt[0] != parts[0] or receipt[1] == "recording")):
+                    raise LiveObservationError("Stop recording before companion play")
+
+    def demonstration_command(self, identity: str, action: str, session_id: str) -> Path:
+        """Recording grants no companion input authority and binds this process/session."""
+        import re
+        if not re.fullmatch(r"[a-f0-9]{32}", identity) or action not in {"start", "stop", "play"}:
+            raise LiveObservationError("Invalid recording request")
+        with self._lock:
+            if self._accumulator is None or not self.takeover_capable:
+                raise LiveObservationError("Open a fresh companion Mario session for recording")
+            current = self._accumulator.snapshot()
+            if current.session_id != session_id or not current.artifact_dir or not current.takeover_capable:
+                raise LiveObservationError("Open a fresh companion Mario session for recording")
+            if action in {"start", "play"} and (current.control_owner != "player" or current.freshness is not Freshness.FRESH
+                                      or self._process is None or self._process.poll() is not None):
+                raise LiveObservationError("Recording needs fresh observation and player control; Stop companion play first")
+            if action == "start":
+                sample = current.samples[-1]
+                if observed_level_id(current.samples) != "world_1_page_1_node_64_32_object_1" or sample.player_is_dying or sample.return_map:
+                    raise LiveObservationError("Play into World 1-1, then start recording an alive route or segment")
+            directory = current.artifact_dir / "b2"
+            directory.mkdir(exist_ok=True)
+            temporary = directory / "recording.tmp"
+            temporary.write_text(f"{identity} {action} {session_id}\n")
+            temporary.replace(directory / "recording.request")
+            return directory
+
     def begin_session_plan(self, fields: dict[str, Any]) -> TakeoverAuthorization:
         """Issue new, bounded authority; this never promotes a custom route.
 
@@ -1098,6 +1197,7 @@ class LiveObservationManager:
                 raise LiveObservationError("The bound emulator process is unavailable")
             if fields.get("session_id") != snapshot.session_id:
                 raise LiveObservationError("The plan belongs to another session")
+            self._require_no_recording()
             sample = snapshot.samples[-1]
             fresh = snapshot.checkpoint_id == "fresh_power_on"
             opening = (
@@ -1161,7 +1261,9 @@ class LiveObservationManager:
                 solution=solution,
                 scope="bounded_plan",
                 stop_condition="plan_stop",
-                timeout_seconds=1800 if fields["stop_point"] == "full_route" else 180,
+                timeout_seconds=min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
+                if fields.get("practice_expires_epoch") else
+                (1800 if fields["stop_point"] == "full_route" else 180),
                 _bounded_plan=True,
             )
             directory = snapshot.artifact_dir / "b2"

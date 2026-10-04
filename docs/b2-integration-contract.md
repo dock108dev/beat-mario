@@ -14,6 +14,10 @@ Integration surface: UI calls `ConversationService(live_manager, artifacts_root=
 
 The runtime offers snapshot/start/edit/cancel/control operations and never relies on stored or planner-supplied execution authority. UI treats returned plan/runtime dictionaries as presentation data, text only. CSRF and loopback protections remain mandatory.
 
+## Implemented opening coaching slice
+
+Current source now provides the ordinary experimental opening practice described in the [Mario guide](mario-player-guide.md#practice-and-coach-the-opening-jump) and [verification record](gc1-gc2-coaching-verification.md): next-attempt delay coaching, bounded explicit retries, persisted compatible guidance, reset, outcomes and priority urgent Stop. Accepted-route evidence below retains its historical scope. Broader coin/flight/life-learning requirements remain pending.
+
 ## Current implementation boundary
 
 `Planner` is a deterministic phrase matcher. `MarioPlanningAdapter` resolves the existing `world_8_finish_game` base, the default/opening-hop paths, declared stops and normal/turbo speed. `MarioPlanRuntime` accepts one supported traversal primitive and applies revisions only at declared boundaries. Quickest/100% requests fall back to the same base. General coin-route discovery, conversational jump-frame revisions, an arbitrary hidden-1-up flight goal and multi-life training are not implemented through these interfaces. Conversation history/custom variants and `learning.py` are retained foundations, but there is no integrated coaching-to-next-attempt application loop.
@@ -47,3 +51,11 @@ Acceptance is a visible Mario run followed by the owner's timing correction, a c
 One reviewed finite attempt/life budget may cover compatible retries without a new Start for every life. Recheck current eligibility and remaining limits each time; reclaim, invalidated authority or expanded scope needs fresh approval. A selected timing/tactic change inside the reviewed adjustment range may apply with acknowledgment; a material scope change needs review.
 
 Ordinary experimental coaching uses local versioned records and reviewed runtime validation; it does not require a repository route patch or accepted-registry promotion for each trial. [Learning](learning.md) owns this separation. Promotion into the historical accepted registry retains its existing gates. Independent practice/self-improvement remains later work.
+
+## Experimental surface coin exploration
+
+The adapter accepts `coin_high` and `coin_low` only with the versioned coin-discovery plan and unexpired finite approval, stopping at the World 1-1 exit. These are scheduled-jump alternatives across the level, retaining hazard precedence. Fresh power-on is required for level-exit traversal. Per-frame native `coin_observation` events read game-owned `$7967`; `coin_route_applied` confirms selection and `coin_level_finish_observed` confirms the independent exit boundary. Plans and results never modify accepted-route registry entries.
+
+## Player demonstration sequence extension — October 3
+
+The ordinary conversation API adds `player_play`, `record_start`, `record_stop`, `record_save` (name, lesson, optional first/last indexes), `demo_review`, `demo_edit`, `demo_delete`, `demo_fresh`, `demo_use`, and priority `demo_disable`. Demonstration review/edit/use/delete select `demonstration_id`; use only creates a proposal. Start retains existing plan/revision binding. `recording.request`/`recording.ack` are passive process/session-bound mailboxes; all native takeover entry points reject recording/pending start. The actual FCEUX Lua recorder pairs pre-frame state with effective post-frame buttons and position, retaining raw traces and visual frames. Stop acknowledges file closure before save. The controller receives only validated numeric replay rows, copies the recorded buttons to the actual eight-button override and emits application/frame/completion receipts. Priority reclaim, expiry, death and drift dominate replay. Sequence completion stops locally and does not emit a level-exit receipt. Reopening retains data only. See [verification](gc2-demonstration-verification.md) for limits and pending real-game evidence.

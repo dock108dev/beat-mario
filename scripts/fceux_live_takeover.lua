@@ -9,6 +9,8 @@ local control_path = os.getenv("SMB3_TAKEOVER_CONTROL_PATH")
 local reclaim_path = os.getenv("SMB3_TAKEOVER_RECLAIM_PATH")
 local agent_script = os.getenv("SMB3_TAKEOVER_AGENT_SCRIPT")
 local b2_script = os.getenv("SMB3_B2_PLAN_SCRIPT")
+local demo_script = os.getenv("SMB3_DEMONSTRATION_SCRIPT")
+local demonstration = demo_script and dofile(demo_script) or nil
 local b2 = b2_script and dofile(b2_script) or nil
 
 if session_id == nil or observer_token == nil or log_path == nil
@@ -114,6 +116,8 @@ local last_heartbeat = 0
 local preparing = os.getenv("SMB3_B2_PAUSE_FOR_PLAN") == "1"
 if b2 then
   gui.register(function()
+    if demonstration then demonstration.poll(b2.active or active_epoch ~= nil) end
+    if preparing and demonstration and demonstration.active then preparing = false end
     if b2.active then b2.poll() end
     local request = command()
     if preparing and request and request.action == "start" then
@@ -129,6 +133,7 @@ if b2 then
     end
   end)
   emu.registerbefore(function()
+    if demonstration then demonstration.before() end
     if b2.active then
       local input = {}
       for _, button in ipairs(ordered_buttons) do
@@ -137,7 +142,10 @@ if b2 then
       joypad.set(1, input)
     end
   end)
-  emu.registerafter(function() b2.audit_input() end)
+  emu.registerafter(function()
+    if demonstration then demonstration.after() end
+    b2.audit_input()
+  end)
 end
 if preparing then
   emit("player", "", "plan_review_paused")
@@ -148,6 +156,7 @@ while true do
   local detach = io.open(detach_path, "r")
   if detach ~= nil then
     detach:close()
+    if demonstration then demonstration.stop("detached") end
     joypad.set(1, {})
     emit("player", "", "detached_neutral")
     if b2 then gui.register(nil); emu.registerbefore(nil); emu.registerafter(nil) end

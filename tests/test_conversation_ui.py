@@ -73,26 +73,60 @@ process.stdin.on('end', async () => {
  root.contains=() => true;
  root.querySelector=()=>nodes['conversation-open-game'];
  nodes['mario-conversation']=root;
- for(const name of ['owner','session','requested','loaded','fallback','plan-label','actions','eligibility','unsupported','current','pending','boundary','ack','speed-status','performance','live-reason','open-game','messages','variant','outcome','coverage','history','details','error','draft','variant-name','intent','speed','revision','revisions','earlier','older-messages','playing','controls']) nodes['conversation-'+name]=new Element(name==='variant'?'select':'div');
+ for(const name of ['segment-start', 'segment-end', 'recording-images', 'demo-images', 'recording', 'recording-preview', 'demonstration', 'demo-review', 'demo-preview', 'result', 'coins', 'guidance','retry-budget','owner','session','requested','loaded','fallback','plan-label','actions','eligibility','unsupported','current','pending','boundary','ack','speed-status','performance','live-reason','open-game','messages','variant','outcome','coverage','history','details','error','draft','variant-name','intent','speed','revision','revisions','earlier','older-messages','playing','controls']) nodes['conversation-'+name]=new Element(['variant','demonstration'].includes(name)?'select':'div');
  let interval;
  let serverState={plan:{plan_id:'rendered-plan-2',revision:2,requested_objective:'Quickest',base_route_id:'world_8_finish_game',fallback_explanation:'Optimized variant unavailable',actions:[]},runtime:{owner:'agent',revision:1,requested_speed:'turbo',applied_speed:'turbo'},messages:[],variants:[{variant_id:'a',name:'A'},{variant_id:'b',name:'B'}]};
  const calls=[];let postResolve;
  const response = data => ({ok:true, headers:{get:()=> 'application/json'},json:async()=>data});
  const fetch=async(url,options={}) => {calls.push({url,options});if(options.method==='POST')return new Promise(resolve=>{postResolve=()=>resolve(response(serverState));});return response(serverState);};
  class FormData {constructor(form){this.fields={...form.fields};if(form.dataset.conversationForm==='message')this.fields.text=nodes['conversation-draft'].value;} [Symbol.iterator](){return Object.entries(this.fields)[Symbol.iterator]();}}
- const context={document,fetch,HTMLFormElement:Form,FormData,URLSearchParams,crypto:{randomUUID:()=> 'request-unique'},window:{setInterval:fn=>{interval=fn;}}};
+ const context={document,fetch,HTMLFormElement:Form,FormData,URLSearchParams,crypto:{randomUUID:scenario==='no-uuid'?undefined:()=> 'request-unique',getRandomValues:a=>a.fill(1)},window:{setInterval:fn=>{interval=fn;}}};
  vm.runInNewContext(script,context);
  const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
  await settle();
  const draft=nodes['conversation-draft'];draft.value='Please change my future path';draft.selectionStart=7;draft.selectionEnd=13;draft.focus();
  const original=draft;
- if(scenario.endsWith('-toolbar')) {
+ if(scenario==='record-root') {
+   handlers.click({target:{closest:selector=>selector==='[data-conversation-action]'?{dataset:{conversationAction:'record_start'}}:null}});
+   await settle();postResolve();await settle();
+   assert.equal(new URLSearchParams(calls.find(call=>call.options.method==='POST').options.body).get('action'),'record_start');
+ } else if(scenario.endsWith('-toolbar')) {
    const action=scenario.replace('-toolbar','');
    nodes['conversation-controls'].listeners.click({target:{closest:()=>({dataset:{conversationAction:action}})}});
    await settle();postResolve();await settle();
    const sent=new URLSearchParams(calls.find(call=>call.options.method==='POST').options.body);
    assert.equal(sent.get('action'),action);assert.equal(sent.get('csrf_token'),'secret');
    assert.equal(document.activeElement,original);
+ } else if(scenario==='demonstration-review') {
+   serverState={...serverState, demonstrations:[{id:'d',name:'Stairs',frame_count:30,lesson:'Hold jump'}], recording:{draft:{id:'recorded',image_urls:[{frame:65,url:'/artifacts/example.png'}],frame_count:30,reason:'stopped',preview:[{index:0,frame:50,x:1600,y:100,end_x:1602,end_y:99,vx:30,vy:-3,form:0,air:1,coins:2,buttons:3}]}}, demonstration_review:{name:'Stairs',lesson:'Hold jump',frame_count:30}};
+   await interval();await settle();
+   assert.equal(nodes['conversation-demonstration'].value,'d');
+   assert.match(nodes['conversation-recording-preview'].textContent,/A \+ B/);
+   assert.match(nodes['conversation-demo-review'].textContent,/Hold jump/);
+   const image=nodes['conversation-recording-images'].children[0];
+   assert.equal(image.children[1].textContent,'0.25s of recording');
+   image.children[2].listeners.click();image.children[3].listeners.click();
+   assert.equal(nodes['conversation-segment-start'].value,'0.25');
+   assert.equal(nodes['conversation-segment-end'].value,'0.25');
+   await interval();await settle();
+   assert.equal(nodes['conversation-segment-start'].value,'0.25');
+   assert.equal(draft.value,'Please change my future path');
+ } else if(scenario==='timing-preview') {
+   serverState={...serverState,plan:{...serverState.plan,coaching_compatibility:'smb3/world-1-1/opening-hop/v1',jump_delay_frames:0,actions:[{kind:'mario_traverse',parameters:{path_choice:'opening_hop',stop_point:'world_1_1_opening_end'}}]}};
+   await interval();await settle();
+   assert.match(nodes['conversation-actions'].children[0].textContent,/0 delay frames/);
+   serverState={...serverState,plan:{...serverState.plan,jump_delay_frames:3}};
+   await interval();await settle();
+   assert.match(nodes['conversation-actions'].children[0].textContent,/3 delay frames/);
+ } else if(scenario==='urgent-pending') {
+   const form=new Form('message',{}), event={target:form,preventDefault:()=>{}};
+   const first=handlers.submit(event);await settle();const firstResolve=postResolve;
+   draft.value='STOP RIGHT NOW WAIT';
+   const second=handlers.submit(event);await settle();
+   const posts=calls.filter(call=>call.options.method==='POST');
+   assert.equal(posts.length,2);
+   assert.equal(new URLSearchParams(posts[1].options.body).get('action'),'stop');
+   postResolve();await second;firstResolve();await first;
  } else if(scenario==='polling') {
    nodes['conversation-variant'].value='b';nodes['conversation-intent'].value='100% clear';
    serverState={...serverState,runtime:{...serverState.runtime,revision:3},messages:[{role:'assistant',text:'<img src=x onerror=alert(1)>'}]};
@@ -119,7 +153,7 @@ process.stdin.on('end', async () => {
    if(scenario==='new-draft') {draft.value='A new request typed while sending';draft.selectionStart=4;draft.selectionEnd=8;}
    postResolve();await first;await settle();
    const sent=new URLSearchParams(calls.find(call=>call.options.method==='POST').options.body);
-   assert.equal(sent.get('csrf_token'),'secret');assert.equal(JSON.parse(sent.get('payload')).request_id,'request-unique');
+   assert.equal(sent.get('csrf_token'),'secret');assert.match(JSON.parse(sent.get('payload')).request_id,/^request-[a-z0-9-]+$/);
    assert.equal(document.activeElement,original);
    if(reviewed){const payload=JSON.parse(sent.get('payload'));assert.equal(payload.expected_plan_id,'rendered-plan-3');assert.equal(payload.expected_revision,3);assert.equal(draft.value,'Please change my future path');}
    else if(scenario==='normal-speed'){assert.equal(JSON.parse(sent.get('payload')).rate,1);assert.equal(draft.value,'Please change my future path');}
@@ -130,7 +164,7 @@ process.stdin.on('end', async () => {
 
 
 @pytest.mark.skipif(NODE is None, reason="Node.js is needed for browser behavior checks")
-@pytest.mark.parametrize("scenario", ["polling", "duplicate", "new-draft", "normal-speed", "reviewed-start", "reviewed-apply", "pending-boundary", "reclaim-toolbar", "stop-toolbar", "pause-toolbar", "resume-toolbar"])
+@pytest.mark.parametrize("scenario", ["record-root", "no-uuid", "demonstration-review", "record_stop-toolbar", "demo_disable-toolbar", "timing-preview", "urgent-pending", "polling", "duplicate", "new-draft", "normal-speed", "reviewed-start", "reviewed-apply", "pending-boundary", "reclaim-toolbar", "stop-toolbar", "pause-toolbar", "resume-toolbar"])
 def test_shipped_conversation_polling_and_submit_behavior(scenario: str) -> None:
     result = subprocess.run(
         [str(NODE), "-e", HARNESS],

@@ -115,3 +115,14 @@ three removed action spellings. `tests/test_request_planning.py` exercises real
 planner outputs through runtime validation for all four supported combinations.
 `tests/test_conversation_service.py` protects ordinary plan/revision callers.
 No live game, owner save, package, or release qualification is part of this pass.
+
+## Experimental Mario coin accounting and selection
+
+SSOT module/file: `src/smb3_agent/mario_coins.py`
+
+Owns per-attempt counter reconciliation, compatible landmark-yield knowledge, experimental route selection and failure-derived next-attempt stairs/pipe instructions. `route-guidance.json` retains explicit cartridge-bound player instruction wording; plans carry the versioned instruction contract and exact supported tactic fields through runtime validation to the emulator. Conversation outcome history owns persistence; `conversation_service.py` owns review/retry/control orchestration; the Mario runtime and Lua controller own execution/observations. Accepted-route registry authority is unchanged. `tests/test_mario_coins.py` protects accounting and future-route application.
+
+Domain: Player-controlled Mario demonstrations
+SSOT module/file: `src/smb3_agent/mario_demonstrations.py`, `scripts/fceux_demonstration.lua`
+Why this is authoritative: Versioned cartridge-bound player action/state traces, atomic named demonstration records, trim/integrity checks, passive frame synchronization and review images. `live_observation.py` binds recorder ownership; `mario_plan_runtime.py` and `fceux_b2_plan.lua` own approved real input application; `conversation_service.py` retains application outcomes and volatile selection/approval. Saved demonstrations do not modify accepted routes.
+Known callers: Ordinary `/mario` conversation API/UI and retained outcome history.

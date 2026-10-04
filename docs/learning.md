@@ -1,11 +1,27 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
-Engineering reference for implemented local learning records and planned coached-play memory. The [product direction](product-direction.md) requires Mario to remember route discoveries and coaching across attempts and lives; GC2 in the [private-beta engineering plan](private-beta-engineering.md) owns the initial-beta application loop. Independent self-training is later work. The existing evidence system below is a foundation, not proof that the current app learns from chat or changes its next attempt.
+Engineering reference for implemented local learning records and planned coached-play memory. The [product direction](product-direction.md) requires Mario to remember route discoveries and coaching across attempts and lives; GC2 in the [private-beta engineering plan](private-beta-engineering.md) owns the initial-beta application loop. Independent self-training is later work. Current source applies persisted experimental opening-jump coaching through ordinary conversation. The historical evidence/promotion system below remains separate.
 
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
 All data stays local under `artifacts/learning`; no credentials,
 cloud identifiers, telemetry, or unnecessary owner identity are stored.
+
+## Ordinary experimental coaching
+
+`mario_coaching.py` owns a versioned local profile at `artifacts/conversation/coaching.json`, compatible only with `smb3/world-1-1/opening-hop/v1`. It stores original coaching words and prior/new delay frames. Conversation plans copy the guidance into each attempt; the Mario runtime validates its range and opening-only scope and passes timing to the Lua controller. Controller events distinguish requested guidance from observed application. Outcomes retain failures, partial stops, input release and compatible comparisons; application alone never establishes improvement.
+
+The finite attempt budget is volatile. Reopening restores descriptive guidance/outcomes, never authority. Reset changes future guidance only and preserves history. Explicit Retry checks the approved session, deadline, neutral handback and exact cartridge before fresh disposable startup. Engineering promotion, accepted routes and reliability evidence are unchanged.
+
+## Experimental coin-route memory
+
+`mario_coins.py` derives compatible route knowledge from append-only conversation outcomes, separately from the accepted registry. Cartridge fingerprint plus the World 1-1 coin-discovery version binds observations. Finite approvals remain volatile. Each attempt carries original words, selected route, controller application, per-frame level-counter observations, landmark yields, failure/finish and neutral handback. Deduplication is by frame within an attempt; retries have independent baselines. Accumulated knowledge retains per-landmark maxima; the known coin opportunity lower bound is the best single-attempt count, never a sum of collections from different attempts. Missed opportunity uses the maximum historical yield in the completed bands from one prior attempt, preventing cross-attempt boundary shifts from inflating a total. Shortfalls against prior verified segment yields are opportunity lower bounds; individual coin identity remains unknown. Untried alternatives change scheduled jump windows and durations in the actual Lua traversal; measured finished-route yields can influence subsequent selection. Counter discontinuity prevents a trusted total and no record asserts full coin coverage.
+
+## Player-recorded experimental sequences
+
+`mario_demonstrations.py` owns saved traces, range validation, cartridge/version compatibility, trace hashes, names/lessons and visual/action review. `fceux_demonstration.lua` reads effective player inputs after each frame paired with its pre-frame state; it writes no game input or RAM. `live_observation.py` owns process-bound recorder requests and excludes native companion authority while recording. `conversation_service.py` owns explicit use/review/approval and durable application outcomes; `mario_plan_runtime.py` binds validated numeric traces to the exact cartridge/session; `fceux_b2_plan.lua` matches entry, overrides real inputs, audits them and stops on divergence or segment completion. No trace becomes historical accepted-route authority.
+
+Saved demonstrations under `artifacts/conversation/demonstrations/` are distinct from ordinary coin-route candidates and engineering promotion. Application records retain immutable content/lesson hashes and observed controller receipts. Completion of a recorded sequence does not establish improvement or level completion. Reopening restores descriptive examples/outcomes only. See [verification](gc2-demonstration-verification.md).
 
 ## Implemented evidence classes
 
@@ -77,10 +93,10 @@ Use two distinct paths:
 
 | Path | Purpose and acceptance |
 | --- | --- |
-| Local coached experiment — planned | An explicit reviewed trial may execute an implemented bounded action using a versioned local experiment and fresh runtime authority. The player can change timing/tactics, retry within reviewed limits and retain each result without authoring a repository patch. Label it Experimental and report its observed success/failure and remaining uncertainty; one successful trial does not turn it into the historical accepted route. |
+| Local opening coached experiment — implemented | An explicit reviewed trial may execute an implemented bounded action using a versioned local experiment and fresh runtime authority. The player can change timing/tactics, retry within reviewed limits and retain each result without authoring a repository patch. Label it Experimental and report its observed success/failure and remaining uncertainty; one successful trial does not turn it into the historical accepted route. |
 | Historical accepted solution — implemented | Keep the existing compatibility, replay, exact-diff reliability, promotion and rollback gates before altering the accepted-solution registry. Historical route contracts and accepted evidence remain immutable; experimental successes are not relabeled as prior accepted evidence. |
 
-An experiment still needs a supported controller/action, current compatible observation, clear limits and confirmed release. Conversational coaching cannot authorize arbitrary code, raw native input, process-memory mutation or a missing capability. Implement and record the supported retry/reset entry method; experimental attempts do not change the entry/evidence rules of historical accepted routes. The local experiment path is planned work; current `custom_variants.py` only stores descriptive plans and current `learning.py` derivation/promotion do not implement it.
+An experiment still needs a supported controller/action, current compatible observation, clear limits and confirmed release. Conversational coaching cannot authorize arbitrary code, raw native input, process-memory mutation or a missing capability. Implement and record the supported retry/reset entry method; experimental attempts do not change the entry/evidence rules of historical accepted routes. The ordinary opening experiment is implemented by `mario_coaching.py`, conversation orchestration and the validated Mario runtime/Lua controller; `custom_variants.py` and historical derivation/promotion remain separate owners.
 
 A reviewed finite attempt/life budget can cover multiple compatible retries; the user need not approve every life while the same scope and authority remain valid. Recheck eligibility/limits after each retry. Reclaim, invalidated authority and material scope expansion require new approval. Coaching within the reviewed adjustment range may be acknowledged/applied; other changes need review.
 

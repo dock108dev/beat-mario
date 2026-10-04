@@ -20,6 +20,9 @@ class Traversal:
 
 
 TRAVERSALS = MappingProxyType({
+    "coin_balanced": Traversal("world_1_1_coin_balanced_v1", ("world_1_1_exit",)),
+    "coin_high": Traversal("world_1_1_coin_high_v1", ("world_1_1_exit",)),
+    "coin_low": Traversal("world_1_1_coin_low_v1", ("world_1_1_exit",)),
     "default": Traversal("world_1_1_default_v1", SUPPORTED_STOP_POINTS),
     "opening_hop": Traversal("world_1_1_opening_hop_v1", ("world_1_1_opening_end",)),
 })

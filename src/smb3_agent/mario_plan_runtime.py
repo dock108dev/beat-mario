@@ -47,6 +47,17 @@ def write_fields(path: Path, fields: dict[str, Any]) -> None:
 
 def validate_runtime_fields(fields: dict[str, Any]) -> None:
     validate_traversal(fields.get("path_choice"), fields.get("stop_point"))
+    if fields.get("stairs_tactic") and (fields["stairs_tactic"] != "land_then_cross_v1"
+                                       or fields.get("path_choice") != "coin_balanced"):
+        raise ValueError("Unsupported route guidance")
+    if fields.get("pipe_tactic") and (fields["pipe_tactic"] != "land_on_pipe_then_cross_v1"
+                                     or not fields.get("stairs_tactic")):
+        raise ValueError("Unsupported pipe guidance")
+    delay = fields.get("jump_delay_frames", 0)
+    if type(delay) is not int or not 0 <= delay <= 12:
+        raise ValueError("Opening jump delay must be an integer from 0 to 12 frames")
+    if delay and (fields.get("path_choice") != "opening_hop" or fields.get("stop_point") != "world_1_1_opening_end"):
+        raise ValueError("Coached timing supports only the World 1-1 opening hop")
     if fields.get("speed") not in SUPPORTED_SPEEDS:
         raise ValueError(
             "Supported playback is 1× or turbo (uncapped faster); 2×/4× are unavailable"
@@ -115,6 +126,51 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         "stop_point": data.get("stop_point", "full_route"),
         "speed": speed or 1,
     }
+    delay = data.get("jump_delay_frames", 0)
+    if delay or data.get("coaching_compatibility"):
+        from smb3_agent.mario_coaching import COMPATIBILITY
+        if data.get("coaching_compatibility") != COMPATIBILITY:
+            raise ValueError("Incompatible coaching profile")
+        if path != "opening_hop" or fields["stop_point"] != "world_1_1_opening_end":
+            raise ValueError("Coaching supports only the experimental opening hop")
+        fields["jump_delay_frames"] = delay
+        expires = data.get("practice_expires_epoch")
+        if expires is not None:
+            if type(expires) is not int or not time.time() < expires <= time.time() + 601:
+                raise ValueError("Practice approval expired or exceeds ten minutes")
+            fields["practice_expires_epoch"] = expires
+    if path in {"coin_high", "coin_low", "coin_balanced"}:
+        from smb3_agent.mario_coins import COMPATIBILITY as COIN_COMPATIBILITY
+        if data.get("coin_compatibility") != COIN_COMPATIBILITY:
+            raise ValueError("Coin routes require the experimental discovery contract")
+        expires = data.get("practice_expires_epoch")
+        if type(expires) is not int or not time.time() < expires <= time.time() + 601:
+            raise ValueError("Coin exploration requires an unexpired finite approval")
+        fields["practice_expires_epoch"] = expires
+    if data.get("route_guidance"):
+        from smb3_agent.mario_coins import GUIDANCE_CONTRACT, STAIRS_TACTIC
+        guidance = data["route_guidance"]
+        if (guidance.get("contract") != GUIDANCE_CONTRACT
+                or guidance.get("stairs_tactic") != STAIRS_TACTIC
+                or path != "coin_balanced" or data.get("demonstration")
+                or guidance.get("application") != "next_compatible_attempt"):
+            raise ValueError("Unsupported route guidance")
+        if data["actions"][0]["parameters"].get("stairs_tactic") != guidance["stairs_tactic"]:
+            raise ValueError("Action and remembered route guidance disagree")
+        fields["stairs_tactic"] = guidance["stairs_tactic"]
+        if guidance.get("pipe_tactic"):
+            from smb3_agent.mario_coins import PIPE_TACTIC
+            if guidance["pipe_tactic"] != PIPE_TACTIC or data["actions"][0]["parameters"].get("pipe_tactic") != PIPE_TACTIC:
+                raise ValueError("Unsupported pipe guidance")
+            fields["pipe_tactic"] = PIPE_TACTIC
+    if data.get("demonstration"):
+        from smb3_agent.mario_demonstrations import CONTRACT, validate_rows, trace_hash
+        demo = data["demonstration"]
+        validate_rows(demo["frames"])
+        if (demo.get("contract") != CONTRACT or path != "coin_balanced" or speed != 1
+                or demo.get("trace_sha256") != trace_hash(demo["frames"])):
+            raise ValueError("Demonstrations require validated balanced World 1-1 play at normal speed")
+        fields.update(demonstration_id=demo["id"], demonstration_frames=len(demo["frames"]))
     if data.get("ambiguities") or data.get("unsupported_parts"):
         raise ValueError(
             "Resolve plan ambiguities and unsupported parts before starting"
@@ -331,7 +387,17 @@ class MarioPlanRuntime:
             live = self.live.snapshot()
             if live.session_id != fields["session_id"]:
                 raise ValueError("The plan belongs to another session")
+            guidance = _plan_data(plan).get("route_guidance")
+            if guidance and guidance.get("cartridge_sha256") != getattr(self.live, "_game_file_sha256", None):
+                raise ValueError("Remembered route guidance belongs to another cartridge")
             start_frame = live.samples[-1].frame if live.samples else None
+            if _plan_data(plan).get("demonstration"):
+                from smb3_agent.mario_demonstrations import compatible, write_replay
+                demo = _plan_data(plan)["demonstration"]
+                compatible(demo, getattr(self.live, "_game_file_sha256", None))
+                directory = live.artifact_dir / "b2"
+                directory.mkdir(exist_ok=True)
+                write_replay(directory / "demonstration.trace", demo)
             authorization = self.live.begin_session_plan(fields)
             self._directory = live.artifact_dir / "b2"
             self._directory.mkdir(exist_ok=True)
@@ -405,7 +471,11 @@ class MarioPlanRuntime:
     ) -> dict[str, Any]:
         with self._lock:
             self._sync()
+            if (self._state.get("plan") or {}).get("coin_compatibility") or (self._state.get("plan") or {}).get("demonstration"):
+                raise ValueError("Coin route changes require a fresh attempt")
             fields = runtime_fields(plan)
+            if fields.get("jump_delay_frames", 0) != self._state.get("jump_delay_frames", 0):
+                raise ValueError("Jump timing coaching applies on the next compatible attempt")
             current = self._state["revision"]
             expected = current if expected_revision is None else expected_revision
             data = _plan_data(plan)
