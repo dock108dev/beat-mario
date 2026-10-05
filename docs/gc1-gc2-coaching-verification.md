@@ -1,5 +1,7 @@
 # Conversational Mario opening coaching — source verification
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 October 3, 2026. Implementation started from clean HEAD `5d4ed6280c65657c0c3184660ce514c9eef0a477`. The current uncommitted source implements the first GC1/GC2 ordinary-interface loop; no package, release or owner acceptance is inferred.
 
 ## Delivered contract

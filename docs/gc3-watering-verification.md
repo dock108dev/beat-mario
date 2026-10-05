@@ -1,5 +1,7 @@
 # GC3 conversational watering — October 4, 2026
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 ## Delivered source scope
 
 Ordinary `/stardew`: watering request → fresh qualified Day 2 farm observation → connected dry patch or target clarification → displayed resource/route/120-second plan → contextual yes bound to displayed version or Review/Start → existing observed navigation and watering outcomes → discussion/Stop with native authority revoked → fresh remaining-work proposal/approval → retained plan and actual/uncertain outcome without reopened control.

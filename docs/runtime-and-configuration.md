@@ -20,7 +20,7 @@ retains a separate Mednafen diagnostic path. Stardew provides isolated prepared-
 declarative, fixture-only catalog entries. There is no database, migration,
 cloud API, or production deployment target.
 
-The [PM handoff](private-beta-pm-handoff.md) records the corrected engineering sequence: GC1 conversation/priority control, GC2 Mario coaching, GC3 Stardew delegation and GC4 two-game delivery. These requirements are planned, not provided by the current parser or historical readiness flags. Minecraft/no-code expansion follows the first two gameplay experiences.
+The [PM handoff](private-beta-pm-handoff.md) records the active sequence: contextual Codex language and gameplay roles, reusable observations/skills, adaptive decisions and memory, both game experiences, ordinary setup, evaluation and a successor two-game Mac app. These AI and delivery requirements are not provided by the current deterministic parser or historical readiness flags. Minecraft/no-code expansion follows the first two gameplay experiences.
 Current source and retained private.2 enable Minecraft calibration/camera only;
 the building task is unfinished. Source corrections passed 1,327 canonical local
 tests; Minecraft gameplay/package integration belongs to the later GC5 stage. The [review records](private-beta-review.md)

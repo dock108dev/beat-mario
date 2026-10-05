@@ -1,5 +1,7 @@
 # GC3 observed planting-location discussion — October 4, 2026
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 ## Current live qualification — October 4 follow-on
 
 The passive Day 2 survey was verified through the ordinary Companion page on disposable session `c817934e28e94e496866f88074323b29`: corn in spring was unsuitable; changing to parsnip recommended bare ground just right of the starter crops; Why explained observed ground/access and four-day growth; another spot selected bare ground below the mailbox. Four distinct fresh observations emitted no gameplay input, created no action plan, left all 15 crops dry and resources at energy 270 / water 40. The final source and retained native frames are in `artifacts/gc3-inspection/20261004/qualified-{corn,parsnip,why,alternative}.json` (individual filenames). Saved discussion and image persisted across application reopening as historical without review or authority.

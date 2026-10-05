@@ -4,7 +4,7 @@
 
 Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
 
-**Next development:** improve World 1-1 route traversal through the stairs and toward the finish using the existing conversational coaching and discovery loop. Engineering chooses the approach without requiring a player demonstration. Continue observed coin accounting and remembered route adjustments, then the remaining Mario objectives and Stardew activities.
+**Current development:** follow the [two-role AI roadmap](private-beta-engineering.md), starting with Codex-backed interpretation and adaptive Stardew decisions, then Mario strategy integration and delivery. Supported stairs/pipe traversal and sky 1UP collection have later source-gameplay records. Recording and demonstration qualification remain deferred; no owner recording action is needed.
 
 ## October 4 stairs preparation — owner unavailable
 

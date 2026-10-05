@@ -2,7 +2,7 @@
 
 > Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
 
-This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. New work delivers GC1 conversation/priority controls, GC2 Mario watched/coached route learning and GC3 Stardew activity delegation, then GC4 initial-beta delivery. Minecraft becomes the third playable game during beta; advanced-user no-code onboarding follows implementation of the first two experiences. The retained V2 scope below remains historical.
+This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. New work follows the contextual Codex language/gameplay AI roadmap, then ordinary setup, evaluation, a successor two-game Mac app and local release. Minecraft becomes the third playable game during beta; advanced-user no-code onboarding follows implementation of the first two experiences. The retained V2 scope below remains historical.
 
 ## Historical personal-beta scope — September 23, 2026
 

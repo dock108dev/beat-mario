@@ -61,7 +61,7 @@ silently turn an observed subset into a claim about the whole farm.
 
 The historical Day 5 combined routine completed on source
 `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`;
-its [closeout](../artifacts/b8-final-return-repair/20260926/closeout.md) retains
+its [closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b8-final-return-repair/20260926/closeout.md) retains
 the separate seed/profile and evidence boundaries. It does not qualify later
 AI behavior or a package.
 

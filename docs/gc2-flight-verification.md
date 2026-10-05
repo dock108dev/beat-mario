@@ -1,5 +1,7 @@
 # World 1-1 sky hidden 1UP — real gameplay, October 4, 2026
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 ## Observed result
 
 **The intended hidden 1UP was revealed and collected through the ordinary `/mario` interface.** The user explicitly made a gameplay window available. All preparation used ordinary buttons in disposable sessions; no player recording, game-memory writes, save-state load or personal save/profile change was used. A task-only app wrapper around the installed Homebrew FCEUX binary allowed visible native observation. This is local source qualification, not packaged delivery or owner acceptance.

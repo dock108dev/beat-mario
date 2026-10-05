@@ -1,5 +1,7 @@
 # World 1-1 app-delivered route instructions — October 4, 2026
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 ## Delivered behavior
 
 The ordinary `/mario` app turns compatible observed failures into a supported next-attempt instruction, includes it in Review/Start and sends `stairs_tactic=land_then_cross_v1` and, after an observed post-stairs pipe death, `pipe_tactic=land_on_pipe_then_cross_v1` in the emulator's immutable `initial.request`. The existing `coin_balanced` approach remains the plan path. The controller changes execution because it receives these instruction fields. Accepted route registry/profile evidence is unchanged.

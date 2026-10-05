@@ -1,5 +1,7 @@
 # GC3 live planting survey and reviewed inspection — October 4, 2026
 
+> Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
+
 Current source adds a player-directed disposable preparation view, a Day 2 eastern crop-margin inspection proposal, exact displayed-plan approval, bounded observed navigation, fresh second-view findings and retained results. Live surveys and second-view findings are recorded below; return and reopening have separate evidence gates.
 
 ## Scope and evidence

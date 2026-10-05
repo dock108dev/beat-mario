@@ -32,7 +32,7 @@ Ask **“Fly to the hidden 1UP.”** Companion names the hidden 1UP inside the s
 4. Watch the separate flight, area, revelation and collection results. Collection requires the target mushroom's game-owned hit receipt. Unknown observations stay unconfirmed; an extra life from 100 coins does not prove the hidden reward.
 5. **Stop**, **Take control** or **STOP RIGHT NOW WAIT** interrupts play. Confirm handback before more input. The finished flight pauses with control returned. After release, **Open fresh attempt** opens a new disposable session; prepare again and review a fresh request before Start. Saved results can be reopened without playing.
 
-This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. Final repository gate: **1,444 tests passed**, plus lint/security/contracts/renders. See [flight verification](gc2-flight-verification.md). Initial Mario work now hands off to Stardew activity delegation; full coin coverage remains unknown and recording stays deferred to tentative beta v2.
+This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. Final repository gate: **1,444 tests passed**, plus lint/security/contracts/renders. See [flight verification](gc2-flight-verification.md). The active next work is the shared Codex language/gameplay loop on Stardew, followed by Mario strategy integration; full coin coverage remains unknown and recording stays deferred to tentative beta v2.
 
 ## Send instructions for the next attempt
 

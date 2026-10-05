@@ -69,8 +69,8 @@ After the Stardew vertical slice works, extend model-driven task decisions into 
 
 Game Companion is a conversational player: it interprets the user's intent,
 plays within an agreed scope, accepts coaching and reports observed results.
-The active implementation order is Mario coaching, then Stardew conversational
-delegation. Minecraft connects during the initial beta and develops into the
+The active implementation begins with the shared Codex language and gameplay
+roles on a useful Stardew activity, followed by Mario strategy integration. Minecraft connects during the initial beta and develops into the
 third playable option by the end of beta. The [private-beta engineering
 plan](private-beta-engineering.md) owns current scope and the [PM
 handoff](private-beta-pm-handoff.md) owns remaining delivery work.
