@@ -434,6 +434,17 @@ def test_lintel_side_face_uses_one_addition_when_underneath_is_empty(
     emitted = []
     native._driver = lambda: SimpleNamespace(send=emitted.append)
     monkeypatch.setattr(module, "time", time)
+    # Placement is simulated here; keep the pointer read off native OS APIs.
+    import sys
+
+    monkeypatch.setitem(
+        sys.modules,
+        "Quartz",
+        SimpleNamespace(
+            CGEventCreate=lambda source: object(),
+            CGEventGetLocation=lambda event: SimpleNamespace(x=427, y=254),
+        ),
+    )
     result = native.place(cell, "minecraft:stone")
     assert result["status"] == "completed" and len(emitted) == 1
     assert emitted[0].control == "right_button" and emitted[0].duration_ms == 60
