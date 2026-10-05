@@ -385,9 +385,14 @@ def test_page_lease_watchdog_cancels_without_operation_lock(tmp_path):
         while not s.cancel.is_set() and time.monotonic() < deadline:
             time.sleep(0.005)
         assert s.cancel.is_set() and s.snapshot()["review"] is None
+        # Cancellation is immediate; the watchdog publishes its receipt afterward.
+        receipt_path = tmp_path / "control-receipts.jsonl"
+        while not receipt_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.005)
+        assert receipt_path.exists()
         receipts = [
             json.loads(line)
-            for line in (tmp_path / "control-receipts.jsonl").read_text().splitlines()
+            for line in receipt_path.read_text().splitlines()
         ]
         assert any(
             "lease expired" in r["reason"] and r["release"]["epoch_revoked"]

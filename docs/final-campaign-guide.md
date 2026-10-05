@@ -1,5 +1,7 @@
 # Historical campaign procedure
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 This document retains the earlier versioned campaign workflow. It is an
 engineering history record, not the current setup guide or current delivery
 qualification. Use the [private-beta quick start](private-beta-quick-start.md)

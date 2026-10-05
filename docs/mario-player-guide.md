@@ -1,26 +1,63 @@
 # Mario player guide
 
+## Current abilities and the private-beta target
+
+Current source can execute the supported World 1-1 coaching, surface-route and
+sky-1UP cases described below. The retained verification records establish actual
+controller behavior and outcomes for those cases. The ordinary Mario interpreter
+still uses deterministic request matching, and its route choices and tactics are
+mostly authored in advance. These foundations do not yet establish the intended
+AI player.
+
+The next development priority is a Codex-backed conversational interpreter and a
+separate gameplay reasoning role. The first understands your own wording, goals
+and corrections; the second uses the current game situation to choose actions,
+check their effects and revise the approach. Both roles may use the same Codex
+provider. The app continues to handle controls and immediate interruption.
+
+For the initial private beta, those roles must affect actual play within a stated
+supported scope. They must handle a changed request or gameplay condition without
+needing a new script for that individual case. This is planned work, not a
+description of current availability. See the [Mario integration
+contract](b2-integration-contract.md) and [engineering plan](private-beta-engineering.md).
+Recording remains deferred to tentative beta v2.
+
+## Fly to the sky hidden 1UP
+
+Ask **“Fly to the hidden 1UP.”** Companion names the hidden 1UP inside the sky brick in World 1-1 and checks your current form and entry. Other rewards or levels need clarification.
+
+1. Choose **Open Mario for companion play**. Use **Preparation controls** for short ordinary presses that release every button and pause the game, or choose **Prepare flight form yourself** and use your normal emulator controls.
+2. Get the Mushroom from the right upper question block before the first pipe. Keep Super Mario through the crossing. Stomp the red Koopa, carry its shell right and release it before the ground question block. Follow immediately to catch the Super Leaf. Return Raccoon or Tanooki Mario to the low green platform after the pipe. No recording is required.
+3. Ask for flight again. Review the fresh observed requirements and finite plan, then choose **Start reviewed plan** or say **yes**. Companion stages onto the longer floor, clears the runway threat, builds full P-speed, flies to the sky brick, descends and jumps into it from below, then follows the mushroom. The attempt allows at most 15 seconds of gameplay and 30 seconds overall.
+4. Watch the separate flight, area, revelation and collection results. Collection requires the target mushroom's game-owned hit receipt. Unknown observations stay unconfirmed; an extra life from 100 coins does not prove the hidden reward.
+5. **Stop**, **Take control** or **STOP RIGHT NOW WAIT** interrupts play. Confirm handback before more input. The finished flight pauses with control returned. After release, **Open fresh attempt** opens a new disposable session; prepare again and review a fresh request before Start. Saved results can be reopened without playing.
+
+This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. Final repository gate: **1,444 tests passed**, plus lint/security/contracts/renders. See [flight verification](gc2-flight-verification.md). Initial Mario work now hands off to Stardew activity delegation; full coin coverage remains unknown and recording stays deferred to tentative beta v2.
+
 ## Send instructions for the next attempt
 
 Open Mario through the ordinary companion interface. Ask “Improve stairs traversal toward the finish for two attempts.” The proposal uses compatible failure memory and displays the next-attempt instructions. Review them, then choose **Start** or say **yes**. The app sends those instructions to the emulator; it reports whether the controller applied them and whether Mario actually landed beyond the stairs and reached the level exit.
 
 You can teach the supported stair instruction directly: “At the stairs land on the left top before jumping across the gap.” Companion explains its interpretation, retains your words and uses the instruction in the next compatible attempt. If already playing, the correction applies next time. After confirmed handback choose **Try again with guidance** within the remaining approved budget. Each trial is capped at three minutes inside the ten-minute scope; one to five attempts can be reviewed. Reopening retains descriptive instructions/results and requires a fresh session and approval. Stop/Take control cancels future retry authority and requires confirmed input release before more play.
 
-Current source observed the stairs and pipe continuation reaching the World 1-1 exit with **two coins**. Two consecutive reviewed attempts finished; collecting every coin is unverified. Urgent chat Stop during a paused pipe crossing also returned control with native confirmation. The supported next-attempt instructions are limited to this stair tactic, a failure-derived pipe continuation and the existing opening timing. Broader English tactics, flight/rewards and wider learning remain development work. No recording or player demonstration is required. See [route verification](gc2-route-verification.md).
+Current source observed the stairs and pipe continuation reaching the World 1-1 exit with **two coins**. Two consecutive reviewed attempts finished; collecting every coin is unverified. Urgent chat Stop during a paused pipe crossing also returned control with native confirmation. The supported next-attempt instructions are limited to this stair tactic, a failure-derived pipe continuation and the existing opening timing. The supported flight/reward case above is verified through real source gameplay; broader English tactics and wider learning remain development work. No recording or player demonstration is required. See [route verification](gc2-route-verification.md).
 
 ## October 4 priority update — recording deferred
 
 Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
 
-**Current continuation:** the app-delivered route-instruction closeout above now owns route progress. Flight/reward objectives and remaining Mario learning follow, then Stardew activity delegation. Recording remains deferred.
+**Current continuation:** build the shared conversational interpretation and gameplay reasoning roles, prove the decision-and-replanning loop in Stardew, then apply it to Mario's faster play loop. Existing Mario successes remain useful baselines. Recording remains deferred.
 
-Guide for the currently implemented Mario adapter. The [product direction](product-direction.md) defines the corrected beta target: watch Mario play, coach it during supported moments, and have it remember and test changes across attempts and lives. The first opening-jump coaching loop is implemented in current source; surface coin-route discovery is implemented experimentally; full coverage and reward objectives remain planned. The [private-beta engineering plan](private-beta-engineering.md) owns GC1 priority interruption, GC2 coachable Mario play and exact-build acceptance. For a retained package, read its adjacent manifest, quick start and owner review before using it; current source documentation does not establish packaged abilities.
+Guide for the currently implemented Mario adapter. The [product direction](product-direction.md) defines the corrected beta target: watch Mario play, coach it during supported moments, and have it remember and test changes across attempts and lives. The first opening-jump coaching loop is implemented in current source; surface coin-route discovery is implemented experimentally; full coin coverage remains planned; the supported flight/reward case above has real source gameplay evidence. The [private-beta engineering plan](private-beta-engineering.md) owns GC1 priority interruption, GC2 coachable Mario play and exact-build acceptance. For a retained package, read its adjacent manifest, quick start and owner review before using it; current source documentation does not establish packaged abilities.
 
 Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
 
 Before opening a session, the setup card must recognize a supported local game file and find FCEUX. If needed, select the local game-file path through first-use setup; the saved selection or `SMB3_GAME_FILE` supplies it on later launches. Confirm normal keyboard/controller mapping for player control. A missing file, unsupported identity or unavailable emulator must be resolved in setup; repeated launch does not bypass the check.
 
 ## Let me show you: record a route or segment
+
+The following records the implemented source workflow for later beta work. It is
+not required for the initial private beta, and no recording session is needed now.
 
 The current source **Let me show you** card supports alive World 1-1 route segments. Your input controls Mario throughout recording. Check your usual FCEUX keyboard/controller mapping first.
 
@@ -34,9 +71,9 @@ The current source **Let me show you** card supports alive World 1-1 route segme
 
 The companion follows recorded buttons frame by frame once position, motion, form, air and level/map state match. It stops at the segment end, on drift/death, or after the three-minute attempt limit. Different enemies and timing can prevent entry or success; it does not infer a general stair-climbing skill. Only World 1-1 is currently supported. Reopening restores saved demonstrations/results, never recording or permission to play. Real gameplay and the owner's demonstration experience for this source slice are still pending; these instructions require no engineer-created recording or file edits.
 
-## Next attended stairs check
+## Deferred demonstration verification
 
-The owner was unavailable on October 4; no stairs demonstration has been recorded or applied. When ready, first **open Game Companion and choose Mario**. The engineer should then give one action at a time: open disposable Mario, release to player control, enter World 1-1, reach the approach to the stairs, record, demonstrate, stop, review and save **Climb the stairs**. Stop the recording while alive after the useful move. The start may need adjustment after comparing the actual companion approach; the player should not match hidden controller conditions.
+No stairs demonstration has been recorded or applied in the retained verification. When recording returns to scope in a later beta, the walkthrough is: open disposable Mario, release to player control, enter World 1-1, reach the approach to the stairs, record, demonstrate, stop, review and save **Climb the stairs**. Stop the recording while alive after the useful move. The start may need adjustment after comparing the actual companion approach; the player should not match hidden controller conditions. This is not the current engineering or owner action.
 
 Next, open a fresh attempt, review/use the saved example and explicitly Start. Observe entry, actual recorded input, stairs traversal and whether it passes the earlier failure separately. Retain a refused or failed example; diagnose the trace and entry before changing alignment or drift guards. Interrupt a separate approved attempt with Take control and confirm handback. Reopen Companion and review the saved example/result with no resumed play. Enemy timing is not synchronized; a compatible entry does not guarantee the same outcome.
 
@@ -46,7 +83,7 @@ Open Mario for companion play, then ask “Let's find a coin route to the end fo
 
 The **Coin-route discoveries** card separates the last attempt's collected count from the best observed yields across attempts. Six landmark bands (opening, first pipes, middle gap, stairs, last pipes, goal) retain progress and opportunities. The missed number is a lower bound on previously observed segment-yield shortfalls in completed bands, not a count of individually identified coins. Unvisited bands and hidden, brick, airborne and bonus-room opportunities stay unknown. The level counter is read before every controlled frame; duplicate observations do not add coins, and resets, wraps or gaps make the total uncertain. The baseline counter is excluded. A finish requires the controller's level-exit observation; position alone is insufficient. No total coin universe has yet been verified, so a 100% claim is unavailable.
 
-Results and failed routes survive reopening. Open the same recognized cartridge again to bind compatible discoveries before reviewing a new exploration plan. Reopening never restores approval or input ownership. Questions about coin discoveries are advisory. Accepted historical routes and experimental exploration results remain separate. Player-controlled route recording, flight/reward goals and broader learning follow this slice.
+Results and failed routes survive reopening. Open the same recognized cartridge again to bind compatible discoveries before reviewing a new exploration plan. Reopening never restores approval or input ownership. Questions about coin discoveries are advisory. Accepted historical routes and experimental exploration results remain separate. The supported flight/reward case above has real source gameplay evidence. Broader learning and full coin coverage remain separate; recording is deferred to a later beta.
 
 ## Practice and coach the opening jump
 
@@ -67,7 +104,7 @@ Choose the existing base, **Quickest**, or **100% clear**, or type a request. Al
 
 This fallback is a current product gap. It does not satisfy a request to find or train a 100% coin route. The revised beta must explain unknown coverage and offer actual supported exploration or a clear blocked result, rather than treating an unchanged base route as fulfillment.
 
-Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The local bounded English planner needs no model account or credentials.
+Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The current deterministic English planner needs no model account or credentials. The planned AI experience will use the selected Codex CLI setup and show its availability in first-use setup; it is not active in this current path.
 
 ## Supported paths, destinations and changes
 
@@ -107,13 +144,27 @@ The older Observe/Tell/Show/Do and History surfaces remain available. Observe on
 
 ## Broader coached-play requirements
 
-The opening timing and urgent-control cases are available in current source as described above. Coin discovery, general flight and wider learning below remain beta requirements:
+The supported cases above remain current source behavior. The initial AI private
+beta must add contextual interpretation and actual gameplay decisions within a
+clearly described Mario scope:
 
-| Request | Expected beta experience |
+| Player intention | Required AI experience |
 | --- | --- |
-| “lets find a 100% coin route to the end” | Agree the level/route and coin goal, explore over attempts and lives, retain discoveries and uncertain coverage, and try an improved route. Report exactly what was observed; a route ending alone does not prove all coins. |
-| “youre jumping too early wait a few more frames” | Connect the correction to the relevant jump, clarify the amount or target when needed, remember the timing revision, and show whether it will apply now or on the next compatible attempt. Let the user watch the test and compare the result. |
-| “fly to get the hidden 1up” | Understand the destination and current ability, explain any missing prerequisites, and use an implemented, reviewed flight action to try it. A fixed flight segment elsewhere is not general support for this request. |
-| “STOP RIGHT NOW WAIT” | Interrupt immediately, release input and cancel pending actions before any further planning; show whether release was actually confirmed. |
+| Explore a coin route or improve a section | Reason from the visible level, mechanics and remembered attempts; choose a useful approach, observe the result and revise it. Explain the declared collection scope and unknown coverage. A completed route does not establish every coin. |
+| Coach a movement or timing decision | Resolve the relevant event from the conversation and current play, explain the adjustment and show when it actually reaches the controller. Compare observed results honestly. |
+| Pursue a supported flight reward | Understand the destination, ability and current conditions, choose an executable approach and distinguish flight, reward revelation and collection. |
+| Interrupt or change the goal | Release input promptly, preserve what happened, and discuss a revised plan. Old work must not restart after Stop. |
 
-The user watches and coaches Mario; selected supported commands can change the current attempt and other corrections apply next time. Reopening must retain route discoveries, the owner's words, revisions and attempt results without restoring gameplay permission. Ordinary coached experiments stay separate from the historical accepted route. Later independent practice/self-improvement is deferred. The [integration contract](b2-integration-contract.md) and [learning contract](learning.md) describe the planned application and evidence checks.
+Examples in this guide illustrate intent; they are not a required vocabulary.
+Private-beta acceptance requires varied wording and a meaningful changed gameplay
+condition without a phrase-specific or route-specific patch. Mario's fast
+controller must keep playing the current approved task safely while the slower
+reasoner is working; a late decision cannot be applied to a missed event.
+
+The companion must retain discoveries, coaching, decisions and outcomes so they
+affect compatible future attempts. Reopening restores that history without
+restoring gameplay permission. Ordinary experiments remain separate from
+historical accepted routes. Full coin-universe coverage, broader game support,
+independent training and recording remain separately labeled work. The
+[integration contract](b2-integration-contract.md) defines the AI and gameplay
+completion checks; source results alone do not establish a released package.

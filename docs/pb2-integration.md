@@ -1,5 +1,7 @@
 # PB2 — Ordinary app integration
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Historical PB2 integration report. All candidate identities, counts, limits and handoffs below describe that recorded OpenTTD experiment. Current integration and delivery work follows the [private-beta engineering plan](private-beta-engineering.md).
 
 October 1, 2026. **PB2 engineering qualification passed for the isolated OpenTTD repayment task on the identified Mac.** The normal Game Companion catalog now opens OpenTTD's conversation workspace. Three fresh processes completed the typed-request → Review → Start → verified outcome → neutral handback sequence. The initial PB3 text/integer/click contracts are implemented; full PB3 and Minecraft feasibility remain open.

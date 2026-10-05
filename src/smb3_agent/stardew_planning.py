@@ -102,9 +102,41 @@ def _resolve_targets(kind: str, clause: str, context: PlanningContext,
         candidates = compatible
     elif selected_ids:
         candidates = [target for target in compatible if _id(target) in selected_ids]
+    elif kind == "water" and context.observation.get("watering_activity"):
+        dry = [t for t in compatible if t.get("watered") is False and t.get("visible") is not False
+               and not t.get("occluded") and t.get("confidence", 0) == 1]
+        # Cardinal connected components describe patches from current pixels,
+        # without naming a species or using historical crop identity.
+        groups = []
+        pending = list(dry)
+        while pending:
+            group = [pending.pop(0)]
+            for tile in group:
+                neighbors = [t for t in pending if all(t.get(k) is not None and tile.get(k) is not None for k in ("tile_x", "tile_y"))
+                             and abs(t["tile_x"]-tile["tile_x"]) + abs(t["tile_y"]-tile["tile_y"]) == 1]
+                for t in neighbors:
+                    pending.remove(t)
+                    group.append(t)
+            groups.append(group)
+        if len(groups) == 1:
+            candidates = groups[0]
+        elif not groups:
+            ambiguities.append("No confidently observed dry crop patch is available. Refresh a clear farm view; already watered crops need no work.")
+            return ()
+        else:
+            ambiguities.append("Several dry patches are visible. Choose a patch in the target list or describe its observed location, then review again.")
+            return ()
     else:
         ambiguities.append(f"Select the observable targets to {kind}; the task does not authorize every object on the farm.")
         return ()
+    if kind == "water" and context.observation.get("watering_activity"):
+        named = re.search(r"\b(tomatoes|tomatos|tomato|corn)\b", clause)
+        if named and any(target.get("species") != named.group(1) for target in candidates):
+            ambiguities.append("That crop identity is unconfirmed. Choose the observed patch without assuming its species.")
+        uncertain = [t for t in candidates if t.get("watered") is None]
+        if uncertain:
+            ambiguities.append("Some requested tiles have uncertain water state; obtain a clear observation before approval.")
+        candidates = [t for t in candidates if t.get("watered") is False]
     if kind == "harvest" and re.search(r"\b(?:ready|ripe|mature)\b", clause):
         candidates = [target for target in candidates if target.get("ready") is True]
     if not candidates:
@@ -313,10 +345,25 @@ class StardewPlanningAdapter:
                                "farm_contract": FARM_CONTRACT},
                                preconditions=tuple(item for item in action.preconditions if item != "live_perception_and_input_not_yet_available"))
                        for action in actions]
+        activity = live and watering_only and context.observation.get("watering_activity") is True
+        if activity:
+            if context.observation.get("watering_route_ready") is False:
+                ambiguities.append("The observed route is unsupported: " + str(context.observation.get("route_remedy")) + ". Reposition to a qualified clear viewpoint and request again.")
+            limits["maximum_seconds"] = 120
+            limits["minimum_energy"] = limits.get("minimum_energy") or 1
+            count = len({identity for action in actions for identity in action.target_ids})
+            water, energy = context.observation.get("water"), context.observation.get("energy")
+            cost = context.observation.get("energy_cost_upper_bound")
+            if context.observation.get("selected_tool") != "watering_can":
+                ambiguities.append("Select the watering can yourself, then request a fresh plan. Tool selection is not part of this activity.")
+            if water is None or water < count:
+                ambiguities.append("Refill the watering can yourself, then request a fresh plan; automatic refill is unavailable.")
+            if energy is None or cost is None or energy - count * cost < limits["minimum_energy"]:
+                ambiguities.append("Insufficient or uncertain energy for this patch and reserve. Recover energy or choose fewer crops and review again.")
         if live and watering_only and not farm_live:
             initial_ids = set(context.observation.get("initial_target_ids", ()))
             requested_ids = {identity for action in actions for identity in action.target_ids}
-            if not initial_ids or requested_ids != initial_ids:
+            if not activity and (not initial_ids or requested_ids != initial_ids):
                 ambiguities.append("The watering contract covers all initially planted crops. Review the complete initial set; a narrower live task is not supported.")
             if limits.get("stop_time") is not None or limits.get("maximum_seeds") is not None:
                 unsupported.append("Clock and seed limits are unavailable for live watering; remove them before review.")
@@ -327,7 +374,8 @@ class StardewPlanningAdapter:
                        preconditions=tuple(item for item in action.preconditions if item != "live_perception_and_input_not_yet_available"))
                        for action in actions]
         eligibility = "requires_runtime_validation" if farm_live or live and watering_only else "unavailable_live"
-        explanation = ("Review the ordered selected targets, owned items, dependencies, limits and farmhouse return. Each action requires fresh visible eligibility and reconciled postconditions; interruptions retain partial work and require new review."
+        explanation = ("For the next two minutes, water the listed observed dry crops using the selected can, then return to the farmhouse entrance if time allows. Stop at two minutes even if work or return remains. Already watered tiles are skipped; unknown crop identity stays unknown. Review scope, then Start to approve this exact plan. Discussion releases input and requires a fresh plan and approval."
+                       if activity else "Review the ordered selected targets, owned items, dependencies, limits and farmhouse return. Each action requires fresh visible eligibility and reconciled postconditions; interruptions retain partial work and require new review."
                        if farm_live else "Review every initially planted crop and the farmhouse return point. Start requires fresh Stardew authority; focusing chat pauses game input."
                        if live and watering_only else
                        "Live watering requires verified disposable setup and automatic complete-set perception. Harvest, planting, clearing and combined routines remain unavailable until B4.")

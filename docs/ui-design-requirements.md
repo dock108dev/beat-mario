@@ -1,12 +1,18 @@
 # Game Companion UI design requirements
 
+## Model-driven private-beta UI requirements
+
+Integrate provider availability/sign-in remedies and both game setup paths without pushing diagnostics into ordinary conversation. Show the understood objective, scope, current activity and observed result. Pending inference, clarification, paused discussion, changed approval and provider/game errors need distinct readable states.
+
+Keep Stop/Take control visible and responsive while the model is thinking. Preserve typed drafts and reject stale updates after switching or revising the goal. A model rationale cannot be displayed as completed gameplay. Historical images/results stay marked historical. Check real model/game and packaged interaction under GC-Q/D2, alongside existing visual/accessibility checks.
+
 The [private-beta engineering plan](private-beta-engineering.md) defines the current user workflow. Apply these requirements to setup, conversation, task review, direct controls and reopening; record candidate-specific visual evidence in [UI verification](ui-verification.md).
 
 ## Task first
 
 Put the useful result and next action before setup inventories or technical detail. Use ordinary sentences instead of internal codes and repeated badges. Group related facts; keep the current blocker, freshness, uncertainty and consequences next to the action. Move full history and advanced setup into named disclosures while leaving common controls directly available. Compare the same states and viewports, including keyboard use, increased text size and error recovery. Compact spacing must not come from smaller text or cramped controls.
 
-For initial-beta Mario, make watched play, current goal/attempt, coach messages, applied/next-attempt changes and immediate control understandable. For Stardew, show the next-few-minutes plan, explicit approval, observed progress and conversation/check-in recovery. Reopening coaching/history restores no input authority. These are planned GC1–GC4 interaction requirements.
+For initial-beta Mario, make watched play, current goal/attempt, coach messages, applied/next-attempt changes and immediate control understandable. For Stardew, show the next-few-minutes plan, explicit approval, observed progress and conversation/check-in recovery. Reopening coaching/history restores no input authority. Bounded versions exist in source; the contextual AI experience and exact-app usability qualification remain GC-U/GC-Q/GC-D2 requirements.
 
 For later Minecraft first use, show the current setup step, its concrete next action and available tasks. Build readiness must follow the actual task-family flags and fresh session state. Place prerequisites and practice-area guidance beside the controls that need them, and preserve typed drafts and editable protection intent during routine refresh.
 

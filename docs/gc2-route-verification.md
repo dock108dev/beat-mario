@@ -40,4 +40,4 @@ Two consecutive final-source finishes qualify this World 1-1 disposable-session 
 
 The current instruction vocabulary is limited to this stairs tactic, the observed-failure pipe continuation and opening jump timing. A remaining wording limitation is that the exhausted retry error still refers to an opening-practice plan; a fresh reviewed route plan also renews the scope. Recording/demonstration gameplay qualification remains deferred to a later beta, tentatively beta v2, and is not a gate here.
 
-Next bounded development: implement “fly to get the hidden 1up” through the app with observed form/flight prerequisites, a finite reviewed executable action and game-owned reward accounting. Wider Mario instruction learning follows; Stardew activity delegation remains subsequent. No owner recording is required.
+Route traversal pickup and the subsequent [real sky hidden 1UP flight/reward qualification](gc2-flight-verification.md) are complete for their supported source cases. GC3 Stardew watering is the current next development action. Full coin coverage and broader Mario tactics remain explicit limits; no owner recording is required.

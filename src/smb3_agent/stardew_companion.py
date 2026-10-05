@@ -276,7 +276,7 @@ def convert_stardew_observation(
         observed_at = None
         stale.append("invalid_observation_time")
 
-    crop_confidence = min((crop.confidence for crop in screen.crops if not (allow_player_occlusion and crop.occluded)), default=1.0)
+    crop_confidence = min((crop.confidence for crop in screen.crops if not ((allow_player_occlusion or screen.navigation_coverage is not None) and crop.occluded)), default=1.0)
     confidence = min(crop_confidence, screen.position.confidence)
     if screen.energy is None or not screen.tool.exact:
         confidence = 0.0
@@ -285,7 +285,7 @@ def convert_stardew_observation(
     if ledger is not None and not isinstance(ledger, FarmLedger):
         current_ids = {crop.crop_id for crop in planted}
         watered_ids = {crop.crop_id for crop in planted if crop.watered}
-        if allow_player_occlusion:
+        if allow_player_occlusion or screen.navigation_coverage is not None:
             watered_ids |= {crop.crop_id for crop in planted if crop.occluded} & ledger.confirmed_watered_ids
         if current_ids != set(ledger.initial_crop_ids):
             stale.append(FailureCode.ACCOUNTING_MISMATCH.value)
@@ -1076,7 +1076,12 @@ class StardewCompanionController:
                 raise StardewCompanionError("unqualified navigation key mapping")
             along = dx*direction[0]+dy*direction[1]
             across = abs(dx*direction[1]-dy*direction[0])
-            if along < -uncertainty or along > 48 or across > uncertainty+2:
+            coverage_before = before.navigation_coverage
+            coverage_after = after.navigation_coverage
+            cave_step = (coverage_before is not None and coverage_after is not None
+                         and coverage_before.route_digest == coverage_after.route_digest)
+            maximum_step = 96 if cave_step else 48
+            if along < -uncertainty or along > maximum_step or across > uncertainty+2:
                 raise StardewCompanionError("movement stalled, collided or deviated from the reviewed corridor")
 
     @staticmethod

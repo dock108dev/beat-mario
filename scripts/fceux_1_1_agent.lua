@@ -25934,6 +25934,16 @@ if embedded_takeover and (embedded_policy == "world_1_1_remainder_v1"
     or embedded_policy == "b2_world_1_1_plan_v1") then
   bootstrap_to_level = function() end
 end
+local flight_plan=rawget(_G, "SMB3_B2_PLAN")
+if flight_plan and flight_plan.flight then
+  flight_plan.boundary("world_1_1_flight_runway")
+  for _=1,901 do
+    flight_plan.flight_step(held)
+    apply()
+    advance_frame()
+  end
+  error("GAME_COMPANION_B2_FLIGHT_INCOMPLETE")
+end
 bootstrap_to_level()
 if attempts == 1 then
   -- A single-attempt acceptance replay runs straight from the power-on boot.

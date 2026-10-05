@@ -1,5 +1,7 @@
 # PB3 feedback contracts / PB7M.1 Minecraft camera
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Engineering history for the PB3/PB7M camera campaign and later private.2 development observations. The [private-beta engineering plan](private-beta-engineering.md) owns current task sequencing, input availability and release scope; the [PM handoff](private-beta-pm-handoff.md) identifies the next candidate work.
 
 October 1, 2026. **Historical camera campaign retained; exhaustive qualification is stopped. The missing first response was repaired with observed readiness preparation. The private.2 integrated player path now has focused calibration and camera evidence; live building integration remains in progress.**

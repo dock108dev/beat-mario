@@ -1,5 +1,15 @@
 # Runtime, configuration, and data
 
+## Active AI beta runtime target
+
+The current ordinary Mario/Stardew paths are deterministic; their Codex provider is not implemented. GC-A1 in the [engineering plan](private-beta-engineering.md) adds a supported app-owned Codex integration using saved CLI authentication, text/images, structured decisions and owned cancellation. The app must supply its own validated game tools; launching Codex does not automatically inherit this chat's computer-control tools.
+
+The conversation and gameplay roles have separate bounded contexts. Scope/goal revision, observation/session identity and control generation bind replies; late output cannot execute. Provider sessions are descriptive, never gameplay permission. Runtime tools compose supported adapter skills instead of editing source.
+
+Source launch currently runs from the checkout; the packaged app runs from Application Support. GC-D1 must separate read-only bundled resource paths from writable profiles, variants, histories and provider state. Relative planting-survey paths and ignored prepared-farm/profile/calibration registrations need explicit resource resolution/adoption, including their image dependencies. FCEUX scripts must be supplied and located as app resources. Finder launch cannot assume the developer shell's executable PATH.
+
+Provider unavailability, login loss, rate limits, timeouts and invalid output produce visible remedies and safe release. GC-U/D2 integrate both-game setup, switch/reconnect, Quit, signals and restart; cleanup failures remain observable. Normal Codex inference sends selected game context/images to OpenAI, while reports remain local until explicitly shared.
+
 Game Companion is a local Mac application with a loopback-only player UI, plus
 Python engineering commands. The packaged app bundles its runtime; ordinary
 player setup does not require terminal commands or YAML editing. Minecraft
@@ -83,12 +93,12 @@ save/load for that isolated process. Legacy passive observation remains read-onl
 
 Custom variants and outcome ledgers live under `artifacts/conversation/`; saved
 revisions never restore runtime authority. The `game-companion-personal-beta/v3`
-contract and `python -m smb3_agent.beta_readiness` inspect the retained B-series requirements. GC4 must version new readiness/scenario contracts for the corrected conversational beta; existing commands cannot certify it. Historical campaign manifests retain their meanings. See the [conversation guide](b2-conversation-guide.md).
+contract and `python -m smb3_agent.beta_readiness` inspect the retained B-series requirements. GC-D1 must version new readiness/scenario contracts for the corrected conversational beta; existing commands cannot certify it. Historical campaign manifests retain their meanings. See the [conversation guide](b2-conversation-guide.md).
 
 ## Operator configuration
 
 The application does not load `.env` files and does not need a sample env file.
-There are no cloud credentials to configure. OpenTTD requires separately installed
+There is no ordinary-game Codex provider in current source yet. The successor beta uses CLI-managed sign-in as described above. OpenTTD requires separately installed
 local Ollama with `gemma3:4b` at its fixed loopback endpoint. Minecraft's current
 narrow typed requests do not require a model installation.
 
@@ -150,7 +160,7 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
   remain on loopback. Current Minecraft requests are parsed into finite skills.
 - Packaged review builds include Python dependencies and OCR resources. Games,
   worlds, model weights and account credentials are separately owned prerequisites.
-  No cloud or external HTTP provider is implemented in this beta path.
+  No Codex/external inference provider is implemented in the current ordinary-game path; it is required successor-beta work.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions

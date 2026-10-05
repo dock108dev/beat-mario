@@ -1,11 +1,68 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
-Engineering reference for implemented local learning records and planned coached-play memory. The [product direction](product-direction.md) requires Mario to remember route discoveries and coaching across attempts and lives; GC2 in the [private-beta engineering plan](private-beta-engineering.md) owns the initial-beta application loop. Independent self-training is later work. Current source applies persisted experimental opening-jump coaching through ordinary conversation. The historical evidence/promotion system below remains separate.
+Updated October 4, 2026. Engineering reference for implemented local learning records and the required memory used by contextual language and gameplay decisions. [Product direction](product-direction.md), [architecture](agent-architecture.md#october-4-architecture-correction--two-model-driven-responsibilities) and the [engineering plan](private-beta-engineering.md) own the initial-beta work. Current source applies narrow experimental coaching and chooses among authored coin routes using retained outcomes. It does not yet supply general model-driven learning. Independent training and player demonstrations are later work.
 
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
-All data stays local under `artifacts/learning`; no credentials,
-cloud identifiers, telemetry, or unnecessary owner identity are stored.
+Learning and gameplay evidence are retained locally under their existing learning,
+conversation and player-history owners. The current Ollama reference path uses local
+inference. The required Codex-backed app will send selected contextual material to
+the remote model during inference; local storage does not mean inference stays on
+the Mac. Credentials and unrelated owner data must not be copied into learning
+records or provider context.
+
+## Required memory for the two AI roles
+
+The language role retrieves relevant preferences, prior instructions, current
+conversation context and unresolved questions. The gameplay role retrieves
+applicable mechanics, discovered landmarks, failed/effective actions, coaching
+and outcomes. The two roles can share one store and backend, but each must receive
+the relevant evidence rather than an unbounded transcript or the entire archive.
+
+Keep these records distinct:
+
+| Record | Meaning and use |
+| --- | --- |
+| Current observed state | Facts grounded in a current game observation, with evidence and uncertainty. Freshness is rechecked before action. |
+| Mechanics and reference knowledge | Adapter-owned rules or sourced game knowledge, versioned independently of the current scene. A rule does not prove the required object/resource is present. |
+| Player preferences and coaching | Original words, resolved meaning, effective scope, supersession and compatibility. Current choices override older preferences. |
+| Episode or attempt | Goal, proposed/selected actions, actually applied parameters, observed effects, discoveries, failures, resources and release. Partial or failed outcomes remain useful evidence. |
+| Derived guidance | A hypothesis or useful lesson linked to supporting episodes and counterexamples. It remains uncertain where evidence is weak. |
+| Conversation summary | Bounded continuity for references, constraints and unresolved questions. A summary cannot upgrade a hypothesis to fact or restore approval. |
+
+Retrieve by game/level or activity, state and capability compatibility, relevant
+objective and the decision being made. Include applicable failures and
+counterexamples, not only successful results. Historical/off-screen observations
+must retain their age and provenance; they cannot silently become current world
+state. Incompatible knowledge may inform discussion but cannot directly create an
+executable action.
+
+Persist the understood goal and the model's selected action, supporting evidence,
+expected effect, actual effect, updated knowledge and subsequent decision. Record
+which decisions were model-generated versus deterministic runtime/controller work.
+Keep concise decision explanations; private chain-of-thought collection is
+unnecessary.
+
+The initial beta requires memory to influence actual later decisions. Show a
+coaching instruction or discovery changing the selected action/target/parameters
+in a compatible later attempt, and show a changed condition causing a different
+decision with the same code. Storing a note, replaying one trace or selecting among
+three fixed routes is an implemented foundation, not sufficient proof of the
+required learning behavior. No new neural-network training or unattended practice
+service is needed for this milestone.
+
+Inspection/reset must show the guidance in use, its basis and scope. Reset or
+supersession affects future retrieval while preserving historical episodes.
+Conversation compaction and index rebuilding must preserve exclusions, remaining
+work, uncertainty and the original evidence references. Reopening requires fresh
+game context and approval; neither memory nor a resumed Codex thread grants input
+authority.
+
+Verification combines deterministic retrieval/compatibility/reset checks,
+real-model contextual decisions and live application/outcome checks. Test
+contradictory feedback, changed objectives, stale/off-screen facts, incomplete
+results, incompatible entries, summary loss, duplicates, interruption and reopening.
+Report whether guidance was retrieved, applied and helpful as separate results.
 
 ## Ordinary experimental coaching
 
@@ -18,6 +75,11 @@ The finite attempt budget is volatile. Reopening restores descriptive guidance/o
 `mario_coins.py` derives compatible route knowledge from append-only conversation outcomes, separately from the accepted registry. Cartridge fingerprint plus the World 1-1 coin-discovery version binds observations. Finite approvals remain volatile. Each attempt carries original words, selected route, controller application, per-frame level-counter observations, landmark yields, failure/finish and neutral handback. Deduplication is by frame within an attempt; retries have independent baselines. Accumulated knowledge retains per-landmark maxima; the known coin opportunity lower bound is the best single-attempt count, never a sum of collections from different attempts. Missed opportunity uses the maximum historical yield in the completed bands from one prior attempt, preventing cross-attempt boundary shifts from inflating a total. Shortfalls against prior verified segment yields are opportunity lower bounds; individual coin identity remains unknown. Untried alternatives change scheduled jump windows and durations in the actual Lua traversal; measured finished-route yields can influence subsequent selection. Counter discontinuity prevents a trusted total and no record asserts full coin coverage.
 
 ## Player-recorded experimental sequences
+
+Recording, demonstration application and the attended stairs walkthrough remain
+deferred to a later beta, tentatively beta v2. The source and evidence below are
+preserved; real demonstration application is unverified and does not block the
+initial model-driven beta.
 
 `mario_demonstrations.py` owns saved traces, range validation, cartridge/version compatibility, trace hashes, names/lessons and visual/action review. `fceux_demonstration.lua` reads effective player inputs after each frame paired with its pre-frame state; it writes no game input or RAM. `live_observation.py` owns process-bound recorder requests and excludes native companion authority while recording. `conversation_service.py` owns explicit use/review/approval and durable application outcomes; `mario_plan_runtime.py` binds validated numeric traces to the exact cartridge/session; `fceux_b2_plan.lua` matches entry, overrides real inputs, audits them and stops on divergence or segment completion. No trace becomes historical accepted-route authority.
 
@@ -83,9 +145,9 @@ workflow remains responsible for applying and reversing the exact repository
 diff. This is the historical accepted-solution promotion contract. It must not
 become a requirement for each ordinary player-coached experimental trial.
 
-## Planned GC2 coaching and experimental route memory
+## Ordinary experimental memory and required extension
 
-The initial beta must let a user watch Mario, coach a relevant action and see the next compatible attempt play differently. Record “youre jumping too early wait a few more frames” in the owner's words and resolve its action/amount before claiming a change. Coin-route exploration must retain discoveries, branches tried, missed opportunities and coverage uncertainty across attempts/lives. Saying that a correction was saved is distinct from confirming it reached the controller or improved the outcome.
+The initial beta must let a user watch Mario, coach a relevant action and see compatible later play reflect that guidance. The narrow opening-timing loop and authored coin-route memory are implemented; contextual model interpretation and adaptive strategy remain required. Preserve original coaching and resolve its target, amount and applicability before claiming a change. Retain discoveries, branches tried, missed opportunities and coverage uncertainty across attempts/lives. Saying that a correction was saved is distinct from confirming it reached the controller or improved the outcome.
 
 Add local, inspectable and resettable records for the experiment objective/route version; attempt/life and observation boundary; discovered route/coin facts with provenance; the original coaching text; resolved target, parameter/tactic revision and scope; application eligibility/effective boundary; controller acknowledgment; result and confirmed release. Preserve superseded revisions and negative results. Current user choices override older coaching, and incompatible game/route/entry/ability records may inform a discussion but cannot silently become an executable action.
 
@@ -100,7 +162,7 @@ An experiment still needs a supported controller/action, current compatible obse
 
 A reviewed finite attempt/life budget can cover multiple compatible retries; the user need not approve every life while the same scope and authority remain valid. Recheck eligibility/limits after each retry. Reclaim, invalidated authority and material scope expansion require new approval. Coaching within the reviewed adjustment range may be acknowledged/applied; other changes need review.
 
-GC2 acceptance must connect the entire loop: retain an attempt → record and resolve coaching → review the experiment and finite attempt/life budget → run a compatible next attempt within that approved budget → observe the revised action at its declared boundary → retain and explain the result. Reopening must retain the owner's words, route discoveries, prior/new parameter and whether it was applied; it must not restore gameplay authority. Verify a missed/late correction, death/partial attempt, changed entry/ability, reclaim with queued coaching, supersession and memory reset. For coin exploration, distinguish known collectables from unknown coverage and account for observed coins on the current attempt without double-counting discoveries from previous lives. Independent practice to generate its own improvements is deferred until this user-coached loop is useful and accepted.
+The model-driven extension must connect the entire loop: retain an attempt → understand contextual coaching → bind the revised goal and finite attempt/life budget → choose an applicable supported action → execute and independently observe its effect → retain and explain the result → use that result in another decision. Reopening retains the owner's words, discoveries, prior/new parameters and application status, without authority. Verify late corrections, death/partial attempts, changed entry/ability, queued work during reclaim, supersession and reset. For coin exploration, distinguish known collectibles from unknown coverage and avoid double-counting discoveries from previous lives. Independent practice is deferred; it is not a prerequisite for useful reasoning with episodic memory.
 
 ## Local personalization
 
@@ -134,12 +196,15 @@ These commands inspect, recover derived indexes, idempotently wrap historical
 observed runs, export, or review. They do not
 run replay validation, promote a route, or start the emulator.
 
-## Deferred final campaign
+## Historical deferred final campaign
 
 `data/learning/campaign_cases.yaml` enumerates compatibility, thresholds,
 counterexamples, candidate derivation, idempotency, invalid transitions,
 review, rejection, validation failure, promotion readiness, exact-diff
 promotion, rollback, supersession, corruption/recovery, preference reset,
 advice provenance, UI classification, and takeover-isolation cases. None
-of those cases is accepted until the consolidated V2 final-validation campaign
-runs against the frozen cumulative release candidate.
+of those historical cases is accepted until the retained campaign is actually
+run against its declared candidate. These contracts do not cover Codex-backed
+contextual intent or adaptive gameplay. Initial private-beta acceptance needs
+focused evidence for the new two-role architecture and the delivered app, as
+defined in the active engineering plan.

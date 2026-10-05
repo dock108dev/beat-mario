@@ -1,5 +1,11 @@
 # Live Mario observation
 
+## Working game state for the AI beta
+
+GC-A3 in the [engineering plan](private-beta-engineering.md) adapts current observers into fresh semantic state/image snapshots for contextual language and gameplay decisions. Supply relevant objects, player form/motion, resources, scene/target identity, current progress, confidence and observation age. Keep inferred mechanics and historical memory separate from observed facts.
+
+Current passive observation and opt-in control distinctions below remain authoritative. The model consumes evidence and proposes actions; it does not alter passive observer authority or establish completion by explanation. Extend current scene coverage through reusable semantics where needed, with uncertain/off-screen information retained honestly. Runtime model images may be sent through Codex; local trace storage and optional feedback export are separate.
+
 Mario adapter observation reference. GC2 coached play uses the existing read-only observation/control boundaries below and needs additional supported goal/coin/action facts. Current release work is in the [private-beta engineering plan](private-beta-engineering.md); retained Minecraft selected-window observations are in the [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path).
 
 Valid completed observations also create an adapter-neutral learning

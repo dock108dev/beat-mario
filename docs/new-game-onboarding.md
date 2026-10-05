@@ -1,10 +1,12 @@
 # New-game onboarding and contributor reference
 
-Updated October 3, 2026 for the corrected product direction. The [private-beta
-engineering plan](private-beta-engineering.md) owns active work: implement Mario
-play with coaching first, then Stardew conversational delegation. Minecraft
-connects during the initial beta and develops into the third playable option by
-the end of beta.
+Updated October 4, 2026. The [private-beta engineering
+plan](private-beta-engineering.md) owns active work: connect Codex-backed
+conversational interpretation and a separate gameplay reasoning role to the
+ordinary Mario/Stardew experience, prove meaningful action choice and replanning,
+then complete the exact local private-beta artifact. One Codex provider may serve
+both roles. Minecraft connection belongs in the initial beta with accurate
+capability labels; full Minecraft gameplay is later work.
 
 ## Deferred advanced-user product
 
@@ -13,12 +15,13 @@ game through guided setup without writing code. Minecraft development will
 inform this tool, using the slower conversational activity loop developed for
 Stardew. This is required future product work, not an implemented capability.
 
-Discussion and implementation of no-code teaching/onboarding are deferred until
-the Mario coaching and Stardew delegation experiences are implemented. Do not
-ask the owner for onboarding demonstrations now or make this tool an initial
-beta launch gate. Define its concrete scope from the working gameplay loops at
-that later stage; adding a game cannot imply unrestricted gameplay or invent
-missing observation, action or outcome verification capabilities.
+Discussion and implementation of no-code teaching/onboarding follow the working
+AI Mario/Stardew experience and are not an initial-beta release gate. Recording
+and player demonstrations remain deferred to tentative beta v2; no owner
+demonstration is required for current work. Define later onboarding from actual
+observation, knowledge, skill and decision contracts rather than treating a
+declarative profile as a playable agent. Adding a game cannot imply unrestricted
+gameplay or invent missing observation, action or outcome capabilities.
 
 ## Current setup and contributor capabilities
 
@@ -45,11 +48,38 @@ network dependencies, and it never launches or controls a game.
 A live adapter is separate engineering work; the scaffold does not create its observation or controller implementation. Start with one useful, bounded task and an explicit unsupported list.
 
 1. **Own the game facts and actions.** Implement detection, session/process/window continuity, fresh observations and ordinary input in adapter-owned modules. Use `CompanionObservationEnvelope` for shared identity, freshness, evidence and ownership; keep game-specific facts opaque to the shared shell. Do not teach the core to interpret farm tiles or Mario RAM for a third game.
-2. **Integrate the shared lifecycle.** Add a provider to the catalog, typed actions and clarification through `Planner.plan(text, PlanningContext)`, and adapter validation of reviewed proposals. Reuse conversation, outcomes, read-only history and neutral switching. A parsed plan, installed provider or reopened result never grants input authority.
+2. **Integrate the shared lifecycle and AI roles.** Add a game provider to the catalog, typed goals/actions, the selected Codex conversational interpreter, game-state reasoning and adapter validation of proposals. The current `Planner.plan(text, PlanningContext)` is a reusable typed boundary with a deterministic implementation; connecting it alone does not supply AI. Reuse conversation, outcomes, read-only history and neutral switching. A parsed plan, installed provider or reopened result never grants input authority.
 3. **Isolate sessions and evidence.** Use explicit disposable inputs and attempt-owned storage. Bind fresh authority to game, source/copy identity, process/window, observation, reviewed scope and expiry. Never discover or modify personal saves to prove isolation; persist history, not execution permission.
 4. **Specify eligibility and postconditions per action.** Name observable targets, tools/resources, protected choices, timing and stop point before enabling Start. Confirm each effect from fresh game-owned evidence; input dispatch is not success. Preserve unknowns and distinguish already-satisfied work from newly executed work. Refuse unsupported actions rather than borrowing another adapter's controller.
 5. **Stop before handback.** Pause/reclaim, focus or identity loss, stale evidence, missed boundaries and failure must release input, revoke authority and retain partial outcomes. Require confirmed handback for switching; record missing receipts honestly when the process is gone. Recovery requires fresh eligibility, review and Start.
-6. **Test in layers.** Use deterministic fixtures for parsing/corrections, eligibility, postconditions, shortages, stale/replayed authority, cancellation, session isolation, switching and history. Test rendered controls separately. Then qualify the actual game on the exact source with fresh isolated sessions: ordinary request/review/Start, observed work and resources, reviewed stop/return, neutral handback, interruption and recovery. Select regressions for changed shared contracts and existing adapters. Fixture conformance never becomes actual-game success, owner feedback or release acceptance.
+6. **Test in layers and prove composition.** Use deterministic fixtures for typed goals, eligibility, postconditions, shortages, stale/replayed authority, cancellation, session isolation, switching and history. Evaluate held-out wording and changed supported scenes with real model decisions. Then verify actual isolated-game actions, effects, replanning, stop/return, handback and recovery through the ordinary interface. A second meaningful variation must work with the same skills rather than a new scene-specific script. Select affected shared/adapter regressions. Fixture conformance never becomes game success, owner feedback or release acceptance.
+
+## Gameplay integration required before a new game is playable
+
+The future onboarding tool must collect or establish these components, and show
+which are implemented, declared, unverified or unavailable:
+
+| Component | Required game-specific information |
+| --- | --- |
+| Observation/state | Supported settings and sources; scene/entity/player/camera state; resources; target identities; uncertainty, freshness and tracking across frames |
+| Mechanics knowledge | Rules relevant to the declared tasks, provenance/version, protection and outcome interpretation; knowledge is separate from current observations |
+| Skills | Actually implemented parameterized actions, preconditions, effects, input/timing bounds, verification and interruption |
+| Gameplay decisions | Goal decomposition, action selection, expected/actual comparison, inspection, recovery and online replanning |
+| Timing | Slower model decision cadence versus fast controller feedback; safe behavior during inference and rejection of late output |
+| Learning/history | Compatible discoveries, failures, coaching and demonstrated future decision changes without restored authority |
+| Setup | Local game/window selection, permissions, Codex readiness, usable supported entry and personal-data preservation |
+| Acceptance | Real task and changed-condition behavior through the ordinary interface, then exact local artifact and owner usefulness checks |
+
+A vision-language reply or recorded input sequence alone does not supply these
+components. Reusable observed skills and a reasoner must influence actual play;
+the deterministic controller remains responsible for reliable timing and Stop.
+The shared framework can host them without knowing another game's mechanics.
+
+For the initial private beta, finish these components for the declared Mario and
+Stardew scope. Existing exact routes/calibrations remain useful baselines. They
+must not make every new supported request require an engineer patch. Minecraft
+connection can honestly show narrower available abilities; connection alone is
+not full Minecraft gameplay.
 
 Use [architecture](agent-architecture.md), [Mario integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
 
@@ -66,7 +96,9 @@ Use [architecture](agent-architecture.md), [Mario integration](b2-integration-co
 - **Installed:** an exact hashed inventory is locally manifest-owned and
   provider-discoverable. Installed never means Supported.
 
-Mario and Stardew are explicit trusted built-ins. An Experimental provider may
+Mario and Stardew are explicit built-ins with their own implementation and
+evidence limits. Built-in status does not imply unrestricted or AI-qualified
+gameplay. An Experimental provider may
 not use their IDs, collide with their game identities, claim Supported status,
 or promote its capability declarations.
 

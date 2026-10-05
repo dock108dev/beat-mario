@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from smb3_agent.custom_variants import CustomVariantStore, PlanAttemptHistory
 from smb3_agent.mario_coaching import CoachingStore, COMPATIBILITY, timing_adjustment, urgent_control
-from smb3_agent import mario_coins, mario_demonstrations
+from smb3_agent import mario_coins, mario_demonstrations, mario_flight
 from smb3_agent.outcome_review import outcome_review
 from smb3_agent.request_planning import ConversationPlan, Planner, is_advisory, normalized_text
 from smb3_agent.profile_conversation import ProfileConversationService as ProfileConversationService
@@ -62,6 +62,8 @@ class ConversationService:
         self._revisions: dict[int, dict[str, Any]] = {}
         self._messages: list[dict[str, Any]] = []
         self._requests: set[str] = set()
+        self._history_signature = None
+        self._history_rows_cache = []
         self._attempt: dict[str, Any] | None = None
         self._outcome: dict[str, Any] | None = None
         self._last_message = "Select a route intent, then review the actual base and supported edit scope."
@@ -80,10 +82,14 @@ class ConversationService:
         sample = live.samples[-1] if live.samples else None
         fresh = getattr(live.freshness, "value", live.freshness) == "fresh"
         observation_id = f"{live.session_id}:{sample.sequence}" if sample else None
+        from smb3_agent.live_observation import observed_level_id
+        level_id = observed_level_id(live.samples) if sample and hasattr(sample, "object_set") else None
         return live, {
             "game_id": "mario", "session_id": live.session_id,
             "observation_id": observation_id, "fresh": fresh,
             "checkpoint_id": live.checkpoint_id,
+            "level_id": level_id,
+            **{key: getattr(sample, key, None) for key in ("form", "air", "p_meter", "flight_timer", "lives", "player_is_dying", "return_map")},
             "frame": sample.frame if sample else None,
             "x": sample.x if sample else None, "y": sample.y if sample else None,
         }
@@ -91,6 +97,10 @@ class ConversationService:
     def _context(self, *, current: dict[str, Any] | None = None) -> dict[str, Any]:
         live, observation = self._live()
         prior = deepcopy(current if current is not None else (self._pending or self._plan))
+        # Flight scopes have their own immutable contract. Generic route
+        # proposals start independently rather than inheriting that primitive.
+        if prior and prior.get("flight_compatibility"):
+            prior = None
         # A plan prepared before explicit launch is a proposal; bind it to the new
         # observation without acquiring permission. Already-bound plans stay bound.
         if prior and prior.get("session_id") is None:
@@ -274,15 +284,50 @@ class ConversationService:
             record["coin_result"] = result
             if terminal not in {"completed_stop", "death"} or not live.input_neutralized:
                 self._retry_scope = None
+        if record.get("initial_plan", {}).get("flight_compatibility") == mario_flight.COMPATIBILITY:
+            record["flight_result"] = mario_flight.reconcile(runtime.get("events", []), terminal=terminal)
+            record["flight_result"]["controller_application_observed"] = any(
+                row.get("event") == "flight_objective_applied" for row in runtime.get("events", []))
+            record["flight_result"]["handback_confirmed"] = bool(live.input_neutralized)
+            record["requested_objective_satisfied"] = record["flight_result"]["reward_collected"]
+            self._retry_scope = None
         path = self.history.record(record["attempt_id"], record)
         record["evidence_path"] = str(path)
         self._outcome = record
         self._attempt = None
         self._pending = None
+        if record.get("flight_result"):
+            self._message("assistant", mario_flight.report(record["flight_result"]) +
+                          (" Control returned." if live.input_neutralized else " Handback is unconfirmed; no further attempt can start."), "outcome")
+            return
         if record.get("coin_result"):
             self._message("assistant", mario_coins.report(record["coin_result"]), "outcome")
             return
         self._message("assistant", f"Session {terminal.replace('_', ' ')}. Actual actions and timing are retained; full completion remains unknown.", "outcome")
+
+    def _history_rows(self) -> list[dict[str, Any]]:
+        # Terminal files are immutable, but another local session may append.
+        # Stat the roster so polling avoids reparsing every native frame trace.
+        signature = tuple(sorted((str(path), path.stat().st_mtime_ns, path.stat().st_size)
+                                 for path in self.history.root.glob("*.json")))
+        if signature != self._history_signature:
+            self._history_rows_cache = self.history.list(limit=100000)
+            self._history_signature = signature
+        return self._history_rows_cache
+
+    @staticmethod
+    def _history_view(row: dict[str, Any]) -> dict[str, Any]:
+        # The complete native trace remains at evidence_path. The ordinary
+        # polling/history surface carries the reviewed plan and result once.
+        view = deepcopy({key: value for key, value in row.items() if key != "runtime"})
+        runtime = row.get("runtime")
+        if isinstance(runtime, dict):
+            view["runtime"] = {key: deepcopy(runtime[key]) for key in
+                               ("state", "owner", "session_id", "revision", "outcome",
+                                "terminal_frame", "native_neutral_ack", "input_neutralized")
+                               if key in runtime}
+            view["retained_event_count"] = len(runtime.get("events", []))
+        return view
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
@@ -295,6 +340,7 @@ class ConversationService:
             runtime.setdefault("status", runtime.get("state", "idle"))
             runtime.setdefault("performance_limitation", runtime.get("speed_limitation"))
             runtime.setdefault("pending_revision", (runtime.get("pending") or {}).get("revision"))
+            history_rows = self._history_rows()
             coin_progress = None
             if self._attempt and self._attempt.get("initial_plan", {}).get("coin_compatibility"):
                 coin_progress = mario_coins.reconcile(runtime.get("events", []), finished=False)
@@ -310,12 +356,14 @@ class ConversationService:
                 "pending_plan": deepcopy(self._pending), "runtime": runtime,
                 "messages": deepcopy(self._messages[-60:]), "message": self._last_message,
                 "variants": self.variants.list(), "outcome": deepcopy(self._outcome),
+                "flight_progress": mario_flight.reconcile(runtime.get("events", [])) if self._attempt and self._attempt["initial_plan"].get("flight_compatibility") else None,
+                "flight_knowledge": mario_flight.knowledge(history_rows, getattr(self.live_manager, "_game_file_sha256", None)),
                 "coin_progress": coin_progress,
-                "coin_knowledge": mario_coins.knowledge(self.history.list(limit=100000), getattr(self.live_manager, "_game_file_sha256", None)),
+                "coin_knowledge": mario_coins.knowledge(history_rows, getattr(self.live_manager, "_game_file_sha256", None)),
                 "demonstrations": self.demonstrations.list(), "recording": self.recording.review(),
                 "demonstration_review": deepcopy(self._demo_review),
                 "guidance": self._guidance_snapshot(), "retry_scope": deepcopy(self._retry_scope),
-                "history": [{**row, "review": outcome_review({"game_id": "mario", **row})} for row in self.history.list()], "revisions": deepcopy(list(self._revisions.values())),
+                "history": [{**self._history_view(row), "review": outcome_review({"game_id": "mario", **row})} for row in history_rows[:20]], "revisions": deepcopy(list(self._revisions.values())),
                 "live": {"session_id": live.session_id,
                          "observation_active": live.observation_active,
                          "process_alive": live.process_alive if live.process_alive is not None else bool(live.emulator_pid),
@@ -343,6 +391,32 @@ class ConversationService:
                     resource_limits={"maximum_attempts": attempts, "jump_delay_range": [0, 12], "maximum_seconds": 600},
                     change_summary=[f"Experimental opening hop: delay {guidance['jump_delay_frames']} frames, hold jump 26 frames; stop at x ≥ 160. Up to {attempts} attempts within 10 minutes; each requires a compatible opening entry."],
                     fallback_explanation="Experimental coaching; gameplay improvement has not been established.")
+        return plan
+
+    def _flight_plan(self, text: str) -> dict[str, Any]:
+        context = self._context()
+        context["current_plan"] = None
+        proposed = self.planner.plan("Use the base path and stop at the end of World 1-1", context)
+        if proposed.plan is None:
+            raise ValueError("Flight proposal unavailable")
+        plan = proposed.plan.to_dict()
+        requirements = mario_flight.prerequisites(self._live()[1])
+        remembered = mario_flight.knowledge(self.history.list(limit=100000), getattr(self.live_manager, "_game_file_sha256", None))
+        plan.update(original_request=text, requested_objective="Fly to the World 1-1 sky hidden 1UP brick",
+                    normalized_intent="flight_reward", flight_compatibility=mario_flight.COMPATIBILITY,
+                    path_choice=mario_flight.PATH, stop_point=mario_flight.STOP,
+                    requested_speed=1, prerequisites=requirements, remembered_flight=remembered,
+                    execution_eligibility="eligible" if requirements["ready"] else "blocked",
+                    resource_limits={"maximum_attempts": 1, "maximum_seconds": 30, "maximum_frames": 900},
+                    change_summary=[mario_flight.APPROACH], fallback_explanation=" ".join(requirements["missing"]) +
+                    (" " + mario_flight.REMEDY if not requirements["ready"] else " Flight form and runway observed. Collection requires a game-owned mushroom hit receipt."))
+        if remembered["last_result"]:
+            previous = remembered["last_result"]
+            plan["change_summary"].append("Last compatible attempt: " + mario_flight.report(previous) + " This review grants a fresh single attempt only.")
+        parameters = plan["actions"][0]["parameters"]
+        parameters.update(path_choice=mario_flight.PATH, primitive_id="world_1_1_sky_hidden_1up_v2", stop_point=mario_flight.STOP)
+        plan["actions"][0]["target_ids"] = ["world_1_1_sky_hidden_1up_brick"]
+        plan["actions"][0]["expected_outcomes"] = ["observe_mushroom_hit_receipt", "neutralize_and_return_control"]
         return plan
 
     def _coin_plan(self, text: str, *, attempts: int = 3) -> dict[str, Any]:
@@ -440,6 +514,11 @@ class ConversationService:
         if plan.get("session_id") not in {None, live.session_id}:
             raise ValueError("This plan belongs to another session; select or reopen it for this session")
         result = deepcopy(plan)
+        if result.get("flight_compatibility"):
+            requirements = mario_flight.prerequisites(observation)
+            if not requirements["ready"]:
+                raise ValueError(" ".join(requirements["missing"]) + " " + mario_flight.REMEDY)
+            result.update(prerequisites=requirements, execution_eligibility="eligible")
         if result.get("demonstration"):
             chosen = result["demonstration"]
             saved = self.demonstrations.load(chosen["id"])
@@ -454,7 +533,7 @@ class ConversationService:
         return result
 
     def _queue(self, plan: dict[str, Any], request_id: str) -> None:
-        if (self._current or {}).get("coin_compatibility"):
+        if (self._current or {}).get("coin_compatibility") or (self._current or {}).get("flight_compatibility"):
             raise ValueError("Coin route changes apply on fresh attempts; finish or Stop before reviewing another route")
         if plan.get("ambiguities") or plan.get("execution_eligibility") in {"blocked", "unsupported", "planning_only", "clarification_required"}:
             raise ValueError("Resolve the plan's unsupported actions or material clarification before applying")
@@ -529,14 +608,30 @@ class ConversationService:
             raise ValueError("The reviewed plan has changed. Review the current plan before Start or Apply.")
         if self.recording.current and action not in {"record_stop", "record_save", "record_start"}:
             raise ValueError("Stop recording before asking the companion to play or changing its plan")
-        if action == "player_play":
+        if action == "preparation_press":
+            if self._active():
+                raise ValueError("Stop companion play before preparation")
+            self._plan = None
+            self._retry_scope = None
+            choices = {"wait": (), "start": ("start",), "left": ("left",), "right": ("right",), "up": ("up",), "down": ("down",),
+                       "jump": ("A",), "jump_right": ("A", "right"), "jump_left": ("A", "left"),
+                       "run_right": ("B", "right"), "run_jump_right": ("A", "B", "right")}
+            choice = payload.get("buttons")
+            if choice not in choices:
+                raise ValueError("Choose a preparation control")
+            try:
+                frames = int(payload.get("frames", ""))
+            except (ValueError, TypeError) as exc:
+                raise ValueError("Choose a short preparation duration") from exc
+            self._message("assistant", self.live_manager.preparation_press(choices[choice], frames), "control")
+        elif action == "player_play":
             if self._active():
                 raise ValueError("Stop companion play before demonstrating")
             live = self.live_manager.snapshot()
             self.live_manager.demonstration_command(uuid4().hex, "play", live.session_id)
             self._plan = None
             self._retry_scope = None
-            self._message("assistant", "You control Mario. Focus the emulator, enter World 1-1 and position yourself; then Start recording.", "demonstration")
+            self._message("assistant", "You control Mario. Focus the emulator and prepare the entry for your next reviewed goal. Companion gameplay needs a fresh plan and Start.", "demonstration")
         elif action == "demo_fresh":
             if self._active():
                 raise ValueError("Stop companion play before opening a fresh attempt")
@@ -549,7 +644,7 @@ class ConversationService:
             if generation != self._control_generation:
                 raise ValueError("Fresh attempt interrupted; review again")
             self._current = None
-            self._message("assistant", "Fresh disposable attempt is paused. Choose a demonstration, Use in next attempt, review and Start.", "demonstration")
+            self._message("assistant", "Fresh disposable attempt is paused. Prepare your entry, ask for a goal, review and Start. No recording is needed for flight.", "demonstration")
         elif action == "record_start":
             if self._active():
                 raise ValueError("Stop companion play before demonstrating")
@@ -655,6 +750,23 @@ class ConversationService:
                     self._plan["revision"] = revision
                 self._message("assistant", "Remembered for the next compatible attempt: " + guidance["instruction"] +
                               " The current attempt is unchanged. Review a stairs or coin goal, or Try again after confirmed handback within the existing budget.", "coaching")
+                return
+            if mario_flight.request(conversational):
+                if is_advisory(text) and re.search(r"\b(?:remember|history|outcome|result|learned)\b", value):
+                    self._message("assistant", "Remembered flight results: " + json.dumps(mario_flight.knowledge(
+                        self.history.list(limit=100000), getattr(self.live_manager, "_game_file_sha256", None))), "advisory")
+                    return
+                if self._active():
+                    raise ValueError("Finish or Stop before reviewing a flight reward objective")
+                self._retry_scope = None
+                error = mario_flight.target_error(conversational)
+                if error:
+                    self._plan = None
+                    self._message("assistant", error, "clarification")
+                    return
+                self._plan = self._flight_plan(text)
+                self._message("assistant", " ".join(self._plan["change_summary"]) + " " + self._plan["fallback_explanation"] +
+                              " Review and say yes or Start once prerequisites are observed.", "proposal")
                 return
             coin_goal = mario_coins.coin_request(conversational)
             if "stairs" in value and is_advisory(text):
@@ -907,6 +1019,35 @@ class StardewConversationService:
         self._requests: set[str] = set()
         self._retained: set[str] = set()
         self._selected: tuple[str, ...] = ()
+        self._cave_destination = None
+        self._cave_pending = False
+        self._cave_saved = None
+        cave_file = self.root / "cave-result.json"
+        if cave_file.is_file():
+            try:
+                self._cave_saved = {**json.loads(cave_file.read_text()), "historical": True}
+                if self._cave_saved.get("status") == "running":
+                    self._cave_saved.update(status="interrupted", reason="Application reopened; return was not confirmed.", handback_confirmed=False)
+            except (ValueError, OSError):
+                pass
+        self._inspection_saved = None
+        inspection_file = self.root / "inspection-result.json"
+        if inspection_file.is_file():
+            try:
+                self._inspection_saved = {**json.loads(inspection_file.read_text()), "historical": True}
+            except (ValueError, TypeError):
+                pass
+        self._planting = None
+        saved = self.root / "planting-discussion.json"
+        if saved.is_file():
+            try:
+                retained = json.loads(saved.read_text())
+                self._planting = {**retained["recommendation"], "historical": True}
+                self._planting_messages = retained.get("messages", [])[-60:]
+            except (ValueError, KeyError, TypeError):
+                self._planting_messages = []
+        else:
+            self._planting_messages = []
 
     def _message(self, role: str, text: str, kind: str) -> None:
         event = {"role": role, "text": text, "kind": kind,
@@ -919,6 +1060,21 @@ class StardewConversationService:
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             runtime = deepcopy(getattr(self.runtime, "ui_snapshot", self.runtime.snapshot)())
+            cave = runtime.get("cave_result")
+            if cave and cave != self._cave_saved:
+                self.root.mkdir(parents=True, exist_ok=True)
+                # Persist findings even during return; reopening never resumes it.
+                temporary = self.root / "cave-result.tmp"
+                temporary.write_text(json.dumps(cave))
+                temporary.replace(self.root / "cave-result.json")
+                self._cave_saved = deepcopy(cave)
+            inspection = runtime.get("inspection_result")
+            if inspection and inspection.get("status") != "running" and inspection != self._inspection_saved:
+                self.root.mkdir(parents=True, exist_ok=True)
+                temporary = self.root / "inspection-result.tmp"
+                temporary.write_text(json.dumps(inspection))
+                temporary.replace(self.root / "inspection-result.json")
+                self._inspection_saved = deepcopy(inspection)
             outcome = runtime.get("outcome")
             if (isinstance(outcome, dict) and outcome.get("attempt_id")
                     and outcome.get("status") not in {None, "active", "running"}
@@ -941,6 +1097,10 @@ class StardewConversationService:
                     "plan": deepcopy(self._plan), "reviewed": self._reviewed == self._plan and self._plan is not None,
                     "current_plan": runtime.get("current_plan"), "pending_plan": None,
                     "messages": deepcopy(self._messages[-60:]), "runtime": runtime,
+                    "planting_recommendation": deepcopy(self._planting),
+                    "planting_messages": deepcopy(self._planting_messages),
+                    "cave_result": deepcopy(cave or ({**self._cave_saved, "historical": True} if self._cave_saved else None)),
+                    "inspection_result": deepcopy(inspection or self._inspection_saved),
                     "selected_target_ids": list(self._selected),
                     "outcome": outcome, "history": [{**row, "review": outcome_review(row)} for row in deepcopy(self._history_summary_cache)]}
 
@@ -972,8 +1132,16 @@ class StardewConversationService:
             self.runtime.control(action)
             with self._lock:
                 self._reviewed = None
-                self._message("assistant", "Input stopped; review the remaining work before authorizing another attempt.", "control")
+                state = self.runtime.snapshot()
+                handback = ("Input release and player handback confirmed." if state.get("handback_confirmed") is True
+                            else str(state.get("reason") or "Input authority ended; check the handback status before continuing."))
+                self._message("assistant", handback + " Review the remaining work before authorizing another attempt.", "control")
             return self.snapshot()
+        # Discussion revokes input before acquiring planning/persistence locks,
+        # including questions and check-ins that never activate observation.
+        if action == "message" and (self.runtime.snapshot().get("status") == "running" or getattr(self.runtime, "_preparation_driver", None) is not None):
+            self.runtime.control("pause")
+            self._reviewed = None
         with self._lock:
             request_id = str(payload.get("request_id") or uuid4().hex)
             if request_id in self._requests:
@@ -983,15 +1151,32 @@ class StardewConversationService:
                         or type(payload.get("expected_revision")) is not int
                         or payload["expected_revision"] != self._plan["revision"]):
                     raise ValueError("The plan changed. Review its current version before continuing.")
-            if action == "launch_engineering":
+            if action == "prepare_engineering":
+                self._plan = self._reviewed = None
+                self.runtime.prepare_engineering(payload.get("step", "view"), payload.get("expected_view"))
+            elif action in {"reconnect_engineering", "show_engineering_game"}:
                 self._plan = self._reviewed = None
                 self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
+                if action == "reconnect_engineering":
+                    self.runtime.setup({"action": action})
+                else:
+                    self.runtime.show_engineering_game()
+                self._message("assistant", str(self.runtime.snapshot().get("reason")), "setup")
+            elif action == "launch_engineering":
+                self._plan = self._reviewed = None
+                self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
                 self.runtime.setup({"action": "launch_engineering", **(
                     {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {})})
                 self._message("assistant", "Engineering launch attempted in a fresh isolated folder. Check the setup status; this does not establish a prepared farm or grant gameplay input.", "setup")
             elif action == "verify_engineering_session":
                 self._plan = self._reviewed = None
                 self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
                 verifier = getattr(self.runtime, "verify_engineering_session", None)
                 if verifier is None:
                     raise ValueError("Game loading and persistence verification is unavailable for this session.")
@@ -1008,6 +1193,8 @@ class StardewConversationService:
                     raise ValueError("Qualified screen connection is unavailable for this session.")
                 self._plan = self._reviewed = None
                 self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
                 connector(profile_id)
                 self._message("assistant", "Screen connection checked. Request and review a task before explicitly authorizing farm work.", "setup")
             elif action == "setup":
@@ -1018,12 +1205,16 @@ class StardewConversationService:
                                     ("source", "destination", "copy_authorized", "setup_source_kind") if key in payload})
                 self._plan = self._reviewed = None
                 self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
                 self._message("assistant", "Disposable setup recorded. Game loading, persistence and fresh screen perception must be verified before input.", "setup")
             elif action == "reset":
                 if not isinstance(payload.get("destination"), str) or not payload["destination"].strip():
                     raise ValueError("Choose a new disposable destination for the fresh attempt.")
                 self._plan = self._reviewed = None
                 self._selected = ()
+                if self._planting:
+                    self._planting["historical"] = True
                 self.runtime.setup({"action": "reset", "destination": payload.get("destination", "")})
                 self._message("assistant", "Reset attempted with a fresh identity. All prior plans, observations and permission are invalidated.", "reset")
             elif action == "observe":
@@ -1042,8 +1233,65 @@ class StardewConversationService:
                 self._reviewed = None
             elif action == "message":
                 text = str(payload.get("text", "")).strip()
+                if (self._plan and self._plan.get("normalized_intent") in {"inspect_planting", "inspect_cave"}
+                        and text.lower().strip(" ?.! ") not in {"yes", "approve", "start", "go ahead"}):
+                    self._plan = self._reviewed = None
                 self._message("user", text, "request")
-                if text.lower().strip(" ?.! ") in {"what is left", "what's left", "what remains", "remaining work"}:
+                from smb3_agent.stardew_planting import location_request
+                from smb3_agent.stardew_inspection import inspection_request
+                from smb3_agent.stardew_cave import cave_request, resolve_destination, DESTINATION, LIMITS
+                cave_followup = (self._cave_pending and text.lower().strip(" ?.! ") in {"the farm one", "farm", "that one"}) or (self._cave_destination and text.lower().strip(" ?.! ") in
+                    {"farm cave", "the farm one", "that one", "the same one", "continue", "return", "return home", "continue return"})
+                control_preview = self.planner.plan(text, {"game_id": "stardew"})
+                if control_preview.control:
+                    self._plan = self._reviewed = None
+                    self._cave_pending = False
+                    self.runtime.control(control_preview.control["action"])
+                    self._message("assistant", control_preview.message, "control")
+                elif cave_request(text) or cave_followup:
+                    self._plan = self._reviewed = None
+                    destination, clarification = resolve_destination(text, self._cave_destination)
+                    if clarification:
+                        self._cave_destination = None
+                        self._cave_pending = True
+                        self._message("assistant", clarification, "clarification")
+                    else:
+                        self._cave_pending = False
+                        self._cave_destination = DESTINATION
+                        return_only = text.lower().strip(" ?.! ") in {"continue", "return", "return home", "continue return"}
+                        try:
+                            plan = self.runtime.propose_cave(text, self.conversation_id, return_only=return_only)
+                        except ValueError as exc:
+                            self._message("assistant", str(exc)+" "+LIMITS, "advisory")
+                        else:
+                            self._plan = plan.to_dict()
+                            self._message("assistant", plan.requested_objective+" "+plan.fallback_explanation+
+                                " Limit: 10 minutes including return. Review and Start or approve this displayed version.", "proposal")
+                elif self.runtime.snapshot().get("cave_result") and text.lower().strip(" ?.! ") in {
+                        "what did you find", "what did you see", "why", "what is left", "how is it going"}:
+                    self._message("assistant", self.progress_summary(self.runtime.snapshot()), "advisory")
+                elif inspection_request(text):
+                    self._plan = self._reviewed = None
+                    plan = self.runtime.propose_inspection(text, self.conversation_id)
+                    self._plan = plan.to_dict()
+                    self._message("assistant", plan.requested_objective + " " + plan.fallback_explanation + " Limit: 120 seconds including return. Review and Start or approve this displayed version.", "proposal")
+                elif location_request(text, self._planting):
+                    self._discuss_planting(text)
+                elif self._planting and not self._plan and text.lower().strip(" ?.! ") in {"yes", "approve", "start", "go ahead", "plant it", "plant there"}:
+                    self._message("assistant", "This is a location recommendation only. Planting, clearing, tilling and purchases need a separate supported activity and explicit review; no input was authorized.", "advisory")
+                elif text.lower().strip(" ?.! ") in {"yes", "approve", "start", "go ahead"}:
+                    if (not self._plan or payload.get("expected_plan_id") != self._plan["plan_id"]
+                            or type(payload.get("expected_revision")) is not int
+                            or payload.get("expected_revision") != self._plan["revision"]):
+                        raise ValueError("Approval must name the displayed plan version; review the current plan again.")
+                    if self._plan["ambiguities"] or self._plan["unsupported_parts"] or self._plan["execution_eligibility"] != "requires_runtime_validation":
+                        raise ValueError("Resolve the plan's targets and resource limits before approval.")
+                    plan = ConversationPlan.from_dict(self._plan)
+                    self.runtime.review(plan)
+                    self.runtime.start(plan)
+                    self._reviewed = None
+                    self._message("assistant", "Approved the displayed plan and started. Discussion stops input; continuation needs a fresh plan and approval.", "started")
+                elif text.lower().strip(" ?.! ") in {"what is left", "what's left", "what remains", "remaining work", "how much is left", "how much remains", "how is it going", "what have you watered"}:
                     state = self.runtime.snapshot()
                     self._message("assistant", self.progress_summary(state), "advisory")
                 else:
@@ -1086,8 +1334,39 @@ class StardewConversationService:
             self._requests.add(request_id)
             return self.snapshot()
 
+    def _discuss_planting(self, text):
+        from smb3_agent.stardew_planting import recommend
+        # Every location discussion invalidates an earlier actionable farm plan.
+        self._plan = self._reviewed = None
+        self._selected = ()
+        try:
+            observation = self.runtime.inspect_planting()
+        except (ValueError, OSError, AttributeError) as exc:
+            observation = {"targets": [], "inspection_error": str(exc)}
+        previous = self._planting  # Retain crop/preference as intent; never reuse its observation.
+        result = recommend(text, observation, previous)
+        if observation.get("inspection_error"):
+            result["message"] = observation["inspection_error"] + " " + result["message"]
+        self._planting = result
+        self._message("assistant", result["message"], "planting_discussion")
+        self._planting_messages.extend(deepcopy(self._messages[-2:]))
+        self._planting_messages = self._planting_messages[-60:]
+        self.root.mkdir(parents=True, exist_ok=True)
+        destination = self.root / "planting-discussion.json"
+        temporary = destination.with_suffix(".tmp")
+        temporary.write_text(json.dumps({"recommendation": result, "messages": self._planting_messages}))
+        temporary.replace(destination)
+
     @staticmethod
     def progress_summary(state: dict[str, Any]) -> str:
+        cave = state.get("cave_result")
+        if cave and (state.get("current_plan") or {}).get("normalized_intent") == "inspect_cave":
+            return (cave.get("findings", {}).get("message", "No fresh entrance findings yet.") if cave.get("findings")
+                    else "No fresh entrance findings yet.") + " Arrival " + ("observed." if cave.get("arrival_observation") else "unknown.") + " Farmhouse return " + ("observed." if cave.get("return_observation") else "incomplete; request return home and approve a revised plan.")
+        inspection = state.get("inspection_result")
+        if inspection and (state.get("current_plan") or {}).get("normalized_intent") == "inspect_planting":
+            return (inspection.get("findings", {}).get("message", "The second area has not yet been observed.")
+                    if inspection.get("findings") else "The second area has not yet been observed.") + " Inspection " + inspection["status"] + ". Farmhouse return " + ("confirmed." if inspection.get("return_observation") else "not confirmed.")
         ledger = state.get("ledger")
         if not ledger:
             return "Remaining work is unknown until a fresh complete planted-set observation is available."

@@ -155,6 +155,9 @@ class LiveSample:
     confidence: float = 1.0
     control_epoch: int = 0
     takeover_detail: str | None = None
+    air: int | None = None
+    p_meter: int | None = None
+    flight_timer: int | None = None
 
     def provenance(self) -> EvidenceSource:
         return EvidenceSource(
@@ -169,6 +172,10 @@ class LiveSample:
             raise LiveObservationError(
                 "Mario resource samples require ten inventory slots"
             )
+        for name, maximum in (("air", 255), ("p_meter", 255), ("flight_timer", 255)):
+            value = getattr(self, name)
+            if value is not None and not 0 <= value <= maximum:
+                raise LiveObservationError("invalid flight observation field: " + name)
         if self.player_is_dying not in {0, 1}:
             raise LiveObservationError("player death state must be zero or one")
 
@@ -641,6 +648,9 @@ def parse_observer_line(
             fields["actor"],
             control_epoch=int(fields.get("control_epoch", "0")),
             takeover_detail=fields.get("takeover_detail"),
+            air=int(fields["air"]) if "air" in fields else None,
+            p_meter=int(fields["p_meter"]) if "p_meter" in fields else None,
+            flight_timer=int(fields["flight_timer"]) if "flight_timer" in fields else None,
         )
     except ValueError as exc:
         raise LiveObservationError("observer numeric field is invalid") from exc
@@ -1145,6 +1155,46 @@ class LiveObservationManager:
                         and (len(receipt) != 2 or receipt[0] != parts[0] or receipt[1] == "recording")):
                     raise LiveObservationError("Stop recording before companion play")
 
+    def preparation_press(self, buttons: tuple[str, ...], frames: int) -> str:
+        """One explicit manual press, ordinary joypad only, with native release receipt."""
+        allowed = {"A", "B", "up", "down", "left", "right", "start", "select"}
+        if type(frames) is not int or not 1 <= frames <= 60 or not set(buttons) <= allowed:
+            raise LiveObservationError("Preparation presses allow known buttons for at most one second")
+        if {"left", "right"} <= set(buttons) or {"up", "down"} <= set(buttons):
+            raise LiveObservationError("Choose one direction")
+        with self._lock:
+            self._require_no_recording()
+            if self._accumulator is None:
+                raise LiveObservationError("Open a companion Mario session before preparation")
+            current = self._accumulator.snapshot()
+            if (not self.takeover_capable or current.control_owner != "player" or not current.input_neutralized
+                    or current.freshness is not Freshness.FRESH or not current.artifact_dir
+                    or self._process is None or self._process.poll() is not None):
+                raise LiveObservationError("Preparation needs a fresh connected session and confirmed player control")
+            directory = current.artifact_dir / "b2"
+            directory.mkdir(exist_ok=True)
+            # A completed epoch leaves a reclaim marker. Clear it only after
+            # confirmed handback under the same lock used by Stop/reclaim.
+            # A subsequent Stop writes a new marker or detaches the session.
+            if current.control_state == "returned" and self._takeover_controller:
+                self._takeover_controller.reclaim_path.unlink(missing_ok=True)
+            nonce = secrets.token_hex(16)
+            temporary = directory / "preparation.tmp"
+            temporary.write_text(f"{nonce} {current.session_id} {frames} {int(time.time()) + 3} {','.join(buttons) or 'none'}\n")
+            temporary.replace(directory / "preparation.request")
+        deadline = time.monotonic() + 4
+        acknowledgment = directory / "preparation.ack"
+        while time.monotonic() < deadline:
+            if acknowledgment.exists():
+                receipt = acknowledgment.read_text()
+                if receipt == nonce + " neutral":
+                    return "Preparation press finished; inputs released and Mario paused. Prepare more, or ask for flight again to review the observed entry."
+                if receipt.startswith(nonce + " "):
+                    break
+            time.sleep(0.02)
+        self.stop()
+        raise LiveObservationError("Preparation release was not confirmed; session detached. Open a fresh session before further play")
+
     def demonstration_command(self, identity: str, action: str, session_id: str) -> Path:
         """Recording grants no companion input authority and binds this process/session."""
         import re
@@ -1210,7 +1260,16 @@ class LiveObservationManager:
                 and observed_level_id(snapshot.samples)
                 == "world_1_page_1_node_64_32_object_1"
             )
-            if not fresh and not opening:
+            from smb3_agent import mario_flight
+            flight = fields["path_choice"] == mario_flight.PATH
+            if flight:
+                requirements = mario_flight.prerequisites({
+                    "fresh": True, "level_id": observed_level_id(snapshot.samples),
+                    "form": sample.form, "air": sample.air, "x": sample.x, "y": sample.y,
+                    "player_is_dying": sample.player_is_dying, "return_map": sample.return_map})
+                if not requirements["ready"]:
+                    raise LiveObservationError(" ".join(requirements["missing"]) + " " + mario_flight.REMEDY)
+            if not flight and not fresh and not opening:
                 raise LiveObservationError(
                     "Start needs fresh power-on or the World 1-1 opening; arbitrary resume is unsupported"
                 )
@@ -1218,7 +1277,7 @@ class LiveObservationManager:
                 raise LiveObservationError(
                     "The full route requires fresh power-on; review a World 1-1 stop for this entry"
                 )
-            if not fresh and fields["stop_point"] != "world_1_1_opening_end":
+            if not flight and not fresh and fields["stop_point"] != "world_1_1_opening_end":
                 raise LiveObservationError(
                     "Returning from player control at the World 1-1 opening supports only "
                     "the opening stop. Review that bounded stop, or open a fresh session "
@@ -1261,7 +1320,7 @@ class LiveObservationManager:
                 solution=solution,
                 scope="bounded_plan",
                 stop_condition="plan_stop",
-                timeout_seconds=min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
+                timeout_seconds=30 if flight else min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
                 if fields.get("practice_expires_epoch") else
                 (1800 if fields["stop_point"] == "full_route" else 180),
                 _bounded_plan=True,

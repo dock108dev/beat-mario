@@ -1,5 +1,13 @@
 # Error Handling and Operations
 
+## Planned AI provider and adaptive-play recovery
+
+The [complete beta plan](private-beta-engineering.md) adds real contextual interpretation and gameplay decisions. Cover provider absence/sign-out/limits/timeouts, malformed replies, stale observation/goal generations and failed skills with readable product remedies. Release input before slow provider cleanup; preserve actual completed/uncertain work and invalidate queued decisions.
+
+An unsuccessful skill feeds fresh observations to a new decision: inspect, take a supported alternative, revise scope or explain the missing capability. Bound no-progress repetition. Do not blindly replay an action whose effect is unknown. Reconnect/reopening restores descriptive state, with fresh approval for new work.
+
+Existing server-close cleanup is wired; the beta still needs observed Quit/signal/crash, pending-inference and active-input behavior, honest cleanup-failure reporting and ownership-aware cleanup of new Codex children. These requirements are planned, not evidence that the provider already exists.
+
 Engineering operations reference. Current build readiness and the complete user path are tracked in the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md). The maintenance records below keep their original source/evidence scope.
 
 This document is the source of truth for failure handling outside the gameplay

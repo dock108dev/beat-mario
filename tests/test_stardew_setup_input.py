@@ -527,3 +527,32 @@ def test_posting_delay_consumes_hold_budget(monkeypatch):
     d.send(InputCommand(InputKind.KEYBOARD, 'w', 'press', 80))
     assert intervals == [0]
     assert q.events[-1][1] == (13, False) and not d._held
+
+
+def test_reconnected_process_rejects_reused_pid_and_preserves_lifetime(monkeypatch):
+    from types import SimpleNamespace
+    from smb3_agent.stardew_setup import ReconnectedEngineeringProcess
+    launch = SimpleNamespace(process_id=123, process_started_at="original start")
+    started = ["original start"]
+    monkeypatch.setattr("subprocess.run", lambda *a, **kw: SimpleNamespace(stdout=started[0]))
+    process = ReconnectedEngineeringProcess(launch)
+    assert process.poll() is None
+    assert process.terminate() is None and process.poll() is None
+    started[0] = "different start"
+    assert process.poll() == 1
+
+
+def test_reconnect_rejects_missing_and_multiple_open_copies(tmp_path, monkeypatch):
+    import json
+    from smb3_agent.stardew_setup import EngineeringLaunch, ReconnectedEngineeringProcess, reconnect_open_engineering
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(StardewAdapterError, match="exactly one"):
+        reconnect_open_engineering()
+    monkeypatch.setattr(ReconnectedEngineeringProcess, "poll", lambda self: None)
+    for name in ("one", "two"):
+        root = tmp_path / "artifacts/stardew-engineering" / name
+        root.mkdir(parents=True)
+        launch = EngineeringLaunch(name, str(root), "install", "exe", "config", "data", "sandbox", {}, 123, "start")
+        (root / "process.json").write_text(json.dumps(launch.status()))
+    with pytest.raises(StardewAdapterError, match="exactly one"):
+        reconnect_open_engineering()

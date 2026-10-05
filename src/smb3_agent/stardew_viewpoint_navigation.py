@@ -8,6 +8,8 @@ from smb3_agent.stardew_adapter import InputCommand, InputKind, StardewAdapterEr
 
 class ViewpointNavigator:
     energy_cost_upper_bound = 2
+    maximum_pulse_ms = 40
+    maximum_waypoint_pulses = 40
 
     def __init__(self, config):
         self.poses = {key: tuple(value) for key, value in config["poses"].items()}
@@ -54,6 +56,21 @@ class ViewpointNavigator:
 
         key = min(self.poses, key=distance)
         if distance(key) > 8:
+            # A stopped pulse can leave the player between two calibrated
+            # viewpoints. Re-enter only that same cardinal corridor; a fresh
+            # review still validates the complete visible farm before input.
+            corridors = []
+            for left, neighbors in self.edges.items():
+                for right in neighbors:
+                    a, b = self.poses[left], self.poses[right]
+                    x, y = p.world_pixel_x, p.world_pixel_y
+                    inside = (min(a[0], b[0]) <= x <= max(a[0], b[0])
+                              if a[1] == b[1] else min(a[1], b[1]) <= y <= max(a[1], b[1]))
+                    cross = abs(y-a[1]) if a[1] == b[1] else abs(x-a[0])
+                    if inside and cross + p.pixel_uncertainty <= 8:
+                        corridors.extend((left, right))
+            if corridors:
+                return min(corridors, key=lambda node: (distance(node), node))
             raise StardewAdapterError(
                 "player is outside a qualified observation viewpoint; reposition before review"
             )
@@ -106,6 +123,9 @@ class ViewpointNavigator:
             raise StardewAdapterError("bounded route input budget exhausted")
         if self._last_node is None:
             self._last_node = self._nearest(screen)
+            x, y = self.poses[self._last_node]
+            if max(abs(x-p.world_pixel_x), abs(y-p.world_pixel_y)) + p.pixel_uncertainty > 8:
+                self._waypoint = self._last_node
         hidden = any(c.occluded for c in screen.crops)
         if (self._remaining_count is not None and len(remaining) < self._remaining_count
                 and hidden):
@@ -228,7 +248,7 @@ class ViewpointNavigator:
                 )
         self._waypoint_pulses += 1
         self._total_pulses += 1
-        if self._waypoint_pulses > 40:
+        if self._waypoint_pulses > self.maximum_waypoint_pulses:
             raise StardewAdapterError("viewpoint positioning failed to converge")
         self._progress.append((p.world_pixel_x, p.world_pixel_y))
         if (
@@ -248,7 +268,7 @@ class ViewpointNavigator:
             if axis == 0
             else ("s" if delta[1] > 0 else "w")
         )
-        duration = min(40, max(15, int(abs(delta[axis]) * 2)))
+        duration = min(self.maximum_pulse_ms, max(15, int(abs(delta[axis]) * 2)))
         return InputCommand(
             InputKind.KEYBOARD, key, "press", duration, purpose="navigate"
         ), None

@@ -1,5 +1,7 @@
 # PB1 — Reusable gameplay feasibility
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Historical PB1 feasibility report. All candidate identities, counts, limits and handoffs below describe that recorded experiment. Current integration and delivery work follows the [private-beta engineering plan](private-beta-engineering.md).
 
 September 30, 2026. **PB1 engineering feasibility is complete for the bounded menu interaction described here.** The final eight declared real-game cases passed on one engineering Mac. Three fresh processes repaid exactly £10,000 and independently verified both balances. Correction, ambiguity refusal, Stop, Take control and cancellation during a dispatched inference request passed. This establishes one reusable task family; PB2–PB11, including Minecraft PB7M, remain open.

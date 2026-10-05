@@ -1,117 +1,45 @@
-# Game Companion private-beta PM handoff
+# Game Companion active engineering handoff
 
-## October 4 route progress — instructions delivered through the app
+Updated October 4, 2026 after the owner clarified the AI requirement. Read [product direction](product-direction.md), [architecture](agent-architecture.md), the complete [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
 
-Current source now carries remembered **next-attempt instructions from `/mario` into the emulator**, rather than relying on a newly selected route alone. A compatible stairs failure proposes landing on the left stair top, releasing jump and running across the gap. A later observed pipe failure adds landing and a short run-up on the first pipe before crossing the next pipe. Review/Start binds these supported instructions to a fresh finite attempt; explicit Try again applies them to a fresh disposable session. Player wording, failure attempt IDs, the reviewed instructions, wire fields, controller application and actual outcomes are retained separately.
+## Active objective
 
-**Observed result:** the final source and its explicit memory-guided retry both traversed the stairs and later pipes, reached maximum x=2848 and observed the World 1-1 exit with **2 collected coins each**. Native neutral acknowledgment confirmed player handback. These are two consecutive source gameplay finishes, not broad reliability, packaged delivery or full coin coverage. A separately reviewed one-attempt check paused during the pipe crossing, accepted urgent chat Stop, confirmed native neutral handback and cleared retry authority. Hidden/brick, airborne and bonus-room opportunities and the full coin universe remain unknown. Recording/demonstration learning stays deferred to a later beta, tentatively beta v2.
+Build an actual conversational AI player for the owner's personal Mac. There are two responsibilities: contextual language-to-game interpretation and game understanding/action selection/replanning. Use the installed, signed-in Codex CLI first; one backend may serve both roles.
 
-The ordinary chat also accepts “At the stairs land on the left top before jumping across the gap,” stores the original words and includes that instruction in the next reviewed attempt. The supported instruction vocabulary is currently narrow: stair staging/crossing, the failure-derived pipe continuation, and existing opening timing. It does not compile arbitrary gameplay advice. No owner recording, walkthrough or engineering configuration is needed for this supported loop.
+Current Mario and Stardew ordinary services use deterministic interpretation and mostly authored task/tactic choices. Observation, finite control, meaningful outcomes and persistence are reusable real foundations. The existence of a model gateway on a separate reference path does not mean the ordinary games use it.
 
-See [route verification](gc2-route-verification.md) for exact candidates, failed trials, real gameplay, checks and interruption evidence. Existing accepted routes, editable demonstration work and retained private.2 are preserved.
+## Next session
 
-**One concrete next development step:** implement the app’s bounded flight/reward request, starting with “fly to get the hidden 1up”: observe and explain form/flight prerequisites, review the supported action and report the actual reward separately from reaching its area. Complete remaining Mario learning before Stardew activity delegation.
+Implement GC-A0/GC-A1 and one connected language-plus-play vertical slice on Stardew. Use existing working observation and skills, introduce real Codex intent and gameplay decisions, execute a validated skill, observe the effect and make a further decision. Include a changed preference or supported changed condition; show the same implementation handles a second variant without a custom script edit.
 
-## October 4 priority update — recording deferred
+Connect the shared language role to both ordinary interfaces. Extend reusable perception/control capabilities where needed to make the first activity actually adaptive. Use available game evidence and working setup; the incomplete cave detour is no longer the lead task.
 
-Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
+Choose architecture and routine implementation details autonomously. This is useful source integration work, not a new documentation-only or reconciliation stage. Complete all independent implementation if a live window is unavailable, and name the exact pending check.
 
-**Current continuation:** the app-delivered route-instruction closeout above now owns route progress. Flight/reward objectives and remaining Mario learning follow, then Stardew activity delegation. Recording remains deferred.
+## Full sequence to release
 
-## October 4 stairs preparation — owner unavailable
+1. GC-A0/A1: intent/state/decision/skill contracts and Codex provider lifecycle.
+2. GC-A2–A5: contextual interpretation, semantic observation, composable skills and adaptive decisions; prove one connected Stardew activity early.
+3. GC-A6: supervision, compatible coaching/memory and recovery.
+4. GC-M/GC-S: actual model influence and supported variation in both game experiences.
+5. GC-U/GC-Q: ordinary setup/UI, measured model/game/control evaluation and regressions.
+6. GC-D1/D2: successor personal Mac app, required assets, new readiness contract and exact-package walkthrough.
+7. GC-R: local quick start, feedback/update path, usefulness review and owner's private-beta decision.
 
-The owner explicitly chose **Unavailable; prepare the workflow**. There is no saved demonstration in this checkout and no active task-owned Mario session. No new gameplay recording or application was performed. Entry reachability, recorded-input application in Mario, stairs traversal, improvement over the earlier x=1652 death, demonstration interruption and real-recording reopening remain live checks.
+The worklist enumerates the technical tasks and exits for every package. Packaging/launch scope is the owner's Mac first. No hosted application service, universal game support, custom model training or external distribution campaign is required.
 
-Preparation repaired observed interface friction: technical trim indexes were replaced by **Start here / End here** on sampled gameplay images and optional game-time seconds. The service converts times to exact frame boundaries, validates the selected sequence using existing compatibility/integrity rules, and retains the full draft after a refused save. Whole-recording saving and older callers remain compatible. Review actions show elapsed recording time. Application results now include stop reason and handback, and explain that a recorded endpoint receipt still needs traversal observation. Entry and drift tolerances were preserved because no real trace supports changing them.
+## Existing behavior and limits
 
-**Recording walkthrough:** deferred to a later beta, tentatively beta v2. No owner recording action is needed now.
+Mario has observed opening coaching, authored stairs/pipe guidance with two World 1-1 exits and two supported sky 1UP collections. Full coin coverage, arbitrary language-to-action execution and broader reliability are unknown.
 
-Local check evidence is retained under `artifacts/gc2-demonstrations/20261004-preparation/`; it establishes source preparation only. Owner experience and stairs success are unverified.
+Stardew has observed selected watering, live planting discussion and a supported eastern inspection round trip. The Farm Cave has newer manual route/handback evidence, but ordinary companion delegation remains unverified. Preserve the manual foundation and avoid presenting it as a completed conversational round trip.
 
-Local verification: **1,396 tests passed** in the canonical repository gate, including lint/security, generated-file guard, objective/segment contracts and UI renders; **45 focused tests passed**. The ordinary browser check confirmed editable time fields while idle, without launching Mario. UI evidence is `segment-selection.png` and `mario-workflow.png`. The temporary port-8776 server/tab were closed; an unrelated delivery on port 8765 was preserved. These checks do not verify real stairs application.
+Retained private.1/private.2 are historical review packages. No current package demonstrates the new Codex-driven two-game beta. Recording source work remains preserved and deferred to tentative beta v2. Minecraft connection/calibration has its own retained capability limits; full Minecraft gameplay and guided new-game onboarding follow later.
 
-Updated October 3, 2026. **The initial beta is conversational Mario coaching and Stardew delegation.** The owner watches Mario play and coaches current/next attempts; Stardew handles useful activities after a short discussed plan and approval. The initial beta can connect Minecraft with current capabilities clearly labeled; it becomes the completed third playable option by beta end. Advanced-user guided no-code game onboarding follows implementation of the first two gameplay experiences.
+See the dated [Mario](gc2-route-verification.md), [flight](gc2-flight-verification.md), [watering](gc3-watering-verification.md), [inspection](gc3-inspection-verification.md), [cave](gc3-cave-verification.md) and [package](private-beta-review.md) records for actual evidence. Do not relabel those results as model-driven or package proof.
 
-Read [product direction](product-direction.md), [engineering plan](private-beta-engineering.md) and [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). This is the active pickup for upcoming sessions.
+## Closeout standard
 
-## Player demonstrations — October 4 source closeout
+Report what model decisions affected real execution, what independent observations established, checks, user-facing limits and the next work package. Preserve cancellation, finite authority, current-vs-historical facts, saves, credentials, profiles and evidence. Game switches/reopening never transfer input authority.
 
-The ordinary `/mario` **Let me show you** card now owns player-controlled recording, stop, visual/action review, optional frame-range trimming, named saving, lesson editing, deletion and explicit use. **Play Mario yourself** releases the initial review pause without companion authority. Recording is passive; all gameplay inputs remain the player's. Alive World 1-1 routes or segments are supported, bounded to ten minutes/36,000 frames. Frame pairing retains actual effective buttons, pre/post position, motion, form, air state, level/map identity, lives and coin counter, plus sampled images. Closed-file acknowledgment is required before saving. A replaced/disconnected recording remains raw evidence and cannot be silently saved as complete.
-
-**Open fresh attempt** closes only the released task-owned disposable emulator and opens a fresh paused session. Choose **Use in next attempt**, review its proposal, then **Start** or **yes** approves one attempt of at most three minutes. The experimental balanced approach reaches the segment's entry; matching position (8 pixels), velocity (4 units), form, air and World 1-1/map identity triggers frame-by-frame recorded-button playback. Per-frame state mismatch (24-pixel position tolerance, same motion/form/air/level checks), a missed entry, death, expiry or Stop ends playback with the existing neutral acknowledgment. Segment completion stops immediately; it does not resume the accepted base route or declare a level clear. Enemies are not synchronized: different enemy timing may cause death or drift even when entry matches. This is recorded sequence following, not generalized adaptation or independent training.
-
-Demonstrations live separately in `artifacts/conversation/demonstrations/`; each approved attempt copies the immutable trace hash, name and intended lesson into existing outcome history. Requested use, actual controller application, frames followed, sequence completion, terminal observations and handback remain distinct. Improvement stays unknown unless real gameplay independently establishes it. Demonstration-altered yields do not rank ordinary coin candidates. Reopening restores saved demonstrations and application outcomes, with no recording, selected guidance, plan or input authority. **Stop using demonstration** revokes the attempt and clears future use; deleting a saved demonstration preserves prior attempt/session evidence. Historical accepted routes, profiles, saves and retained packages are unchanged.
-
-The final local gate passed **1,395 tests** plus lint/security/contracts/UI rendering; 73 focused recorder/UI/observation checks and Lua 5.1 compilation passed. Behavioral checks execute the actual recorder/controller with a simulated host. Ordinary browser recording refusal responded immediately after the manager-lock repair. This source slice has no new real gameplay or owner demonstration evidence. The stairs application near x=1652 and whether it helps remain pending separately. See [verification](gc2-demonstration-verification.md) and the [ready recording walkthrough](mario-player-guide.md#let-me-show-you-record-a-route-or-segment).
-
-**Route continuation completed:** the October 4 app-delivered instruction closeout above now owns current status and next development. Demonstration qualification remains deferred to a later beta.
-
-## Delivered source slice — October 3, 2026
-
-GC1 plus the first GC2 conversational Mario coaching loop is implemented through `/mario`. Ask to practice the World 1-1 opening jump, review its proposed stop at x ≥ 160, approve with **yes** or **Start**, coach an earlier/later jump, and request **Try again**. Default scope is three attempts in ten minutes; explicit budgets support one to five attempts. Each trial is at most three minutes and cannot extend the overall deadline. Corrections tune a 0–12 frame delay before the existing 26-frame opening hop and apply on the next compatible attempt. No accepted route is edited.
-
-Guidance and original words persist locally; the interface shows the current delay, retry budget, actual controller application, stop completion and uncertainty. **Reset future guidance** preserves old outcomes. Questions remain input-free. Reopening restores descriptive guidance/history only. Retry explicitly closes the released task-owned disposable emulator, checks the same cartridge, opens fresh paused power-on and revalidates before input. Stop/Take control, process/session replacement, changed scope, expiry and unconfirmed release invalidate retry permission. Urgent chat Stop bypasses the conversation/action locks and cancels pending planning/retry preparation.
-
-The source walkthrough verified zero-frame and three-frame opening attempts, a changed retry without renewed approval, persistent guidance after server reopening, reset with retained history, and `STOP RIGHT NOW WAIT` after a controller pause with neutral acknowledgment and a retained partial result. Both timing variants reached the opening stop; improvement remains unestablished. The first retry failed safely when FCEUX ignored graceful closure; retained failure evidence led to bounded cleanup of the already-neutral task-owned child. The final UI/count repairs and exact source verification are recorded in [coaching verification](gc1-gc2-coaching-verification.md). This is source evidence; private.2 is unchanged and packaging/owner acceptance remain separate.
-
-Remaining scope is explicit: the local contextual English interpreter handles the declared goal/coaching/control families, not general free-form gameplay intelligence. Timing changes are next-attempt only. Full coin coverage, flight/reward objectives, jump-height coaching, later levels and Stardew expansion remain future work. Player demonstration source workflow is delivered above; gameplay qualification is pending.
-
-**Current GC2 slice:** World 1-1 surface coin-route exploration now interprets conversational coin goals, changes scheduled jumps across the level, remembers compatible attempts and reports collected, missed-opportunity lower bounds and unknown coverage. Earlier/longer, later/shorter and balanced candidates are experimental; the balanced candidate preserves the opening through x=700 before later exploration. Counter observations and independent level-exit receipts govern results. No full coin set or 100% completion is established. Preserve finite approval, explicit retries, priority Stop and the delivered opening coaching. **Subsequent demonstration implementation:** delivered above; attended stairs qualification is deferred to a later beta. Flight/reward and wider learning remain GC2; Stardew follows.
-
-
-## Coin-discovery observed boundary — October 3
-
-Ordinary-interface gameplay observed two failed alternatives (0 coins near x=351/x=582), then a balanced route with 2 coins and maximum x=1652 before death. Memory selected that furthest candidate on an explicit retry; a final attempt collected 2 before urgent Stop near x=1572 and confirmed native handback. Reopening retains discoveries and no authority. Surface coverage through the middle gap is partial; stairs, later pipes, finish and the full coin universe remain unverified. The usable exploration loop is delivered, with honest partial route progress. Tests and exact source/evidence details are in [coaching and discovery verification](gc1-gc2-coaching-verification.md).
-
-## Owner requirements
-
-| Game/area | Intended experience |
-| --- | --- |
-| Mario | `lets find a 100% coin route to the end`; explore and remember routes across attempts/lives |
-| Mario coaching | `youre jumping too early wait a few more frames`; actual supported behavior changes now or next attempt with clear acknowledgment |
-| Mario objective | `fly to get the hidden 1up`; interpret the goal, check the ability and execute/verify supported gameplay |
-| Control | `STOP RIGHT NOW WAIT`; immediate release, cancellation and preserved outcome |
-| Stardew | `lets explore and find a good spot to plant corn`, `time to water the tomatos`, `lets go explore that cave`; propose the next few minutes, receive approval, play and discuss changes |
-| Minecraft | Connect in the initial beta with accurate available abilities; extend the slower activity loop into spatial play and finish a third game by beta end |
-| Later onboarding | An advanced user adds an eligible game without writing code; defer implementation and teaching discussion until the first two experiences work |
-
-Supervised Mario learning and remembered coaching are initial-beta features. Independent practice/self-improvement comes later. A limited initial level/farm/area scope is acceptable when explicit and useful; substituting an unchanged route or engineering fixture for the requested experience is not completion.
-
-## Current status and reusable work
-
-Mario now has the integrated experimental opening-jump coaching loop described above, plus the retained controller/route and path/stop/speed foundations. Experimental surface coin-route discovery is implemented; full coin coverage and flight/reward actions remain unfinished.
-
-Stardew has retained successful watering and selected farm actions, including the September 26 final-return repair. Its supported live work is two prepared farm/profile/display configurations. General crop/location/exploration behavior and short activity/check-in conversation remain engineering work. Typing in another foreground window currently stops Stardew input; the product needs a clear pause/discuss/replan/approve flow.
-
-The exact urgent Stop phrase now takes the priority cancellation/release path in Mario. Its paused-play handback has source evidence; the retained package has not been rebuilt.
-
-Minecraft's setup, calibration/camera and current-source progress/control repairs are useful retained work. Aim/move/place/wall remain disabled. Existing contributor onboarding produces fixture scaffolding, not a new playable game. Preserve these foundations for their later stages.
-
-## Exact package and evidence boundaries
-
-- Retained app: `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.2.0-private.2/Game Companion.app`.
-- Version/build: `0.2.0-private.2` / bundle `20002`; Apple Silicon, local ad-hoc signature, not notarized.
-- Source SHA-256: `230c206e51a46014e457458a8e4c0036cbd501f9a3e228f04103f1d70473fa60`. Adjacent manifest, Quick Start and Owner Review are authoritative for that package.
-- Minecraft calibration/camera available; aim/move/place/wall unavailable. It predates October 1 source repairs and has no packaged native Minecraft wall success.
-- Retained private.1 OpenTTD smoke and B-series Mario/Stardew results apply to their own identities/settings. They do not qualify the corrected conversational product or a successor package.
-- The October 1 canonical local gate's 1,327 tests are source verification. No new gameplay, package or owner acceptance was established by this October 3 documentation update.
-
-The documentation work began on clean HEAD `482374ff83b202c6ac3c2ceae6ae1711dfe11c68`; future sessions must reconcile the working tree/source identity and exact running build. See [review status](private-beta-review.md).
-
-## Ordered engineering pickup
-
-1. **GC1 + first GC2 slice:** urgent chat Stop, contextual intent/coaching, one watched supported Mario attempt with an actual jump-timing change and next-attempt memory. Use existing service/runtime/controller seams. Retain what was requested, applied and observed.
-2. **Finish GC2:** useful coin-route exploration across lives/attempts, supported flight/reward objectives, selected real-time commands and inspectable persisted coaching/history.
-3. **GC3:** Stardew observed crop/tool/resource targets, activity navigation and useful watering/location/exploration plans; explicit approval, safe conversation, correction and outcomes.
-4. **GC4:** distinct two-game package/guide/readiness contract; ordinary Mario coaching → neutral switch → Stardew activity → controls → reopening/report/shutdown walkthrough. Record every engineer intervention.
-5. **GC5/GC6 during later beta work:** Minecraft playable integration and advanced-user onboarding, after the first two experiences are implemented. Do not begin no-code demonstration requests in the current sessions.
-
-The [engineering plan](private-beta-engineering.md) gives code owners, task acceptance, affected checks and failure handling. Update the tracker at each session with the exact candidate, actual behavior, unresolved gap and next action.
-
-## Review and release
-
-The October 3 discussion is confirmed product direction and proposed-work authorization, not a gameplay review or launch acceptance. The opening walkthrough paused before the owner reported using an app screen. Do not manufacture observed UX/gameplay feedback or a tester decision from it. [Review notes](private-beta-review.md) preserve the owner's words separately from engineering interpretation.
-
-For the next actual app review, guide one action at a time, allow the app's guidance first, ask one short feedback question and wait. Record the user's words, screen, expected/actual behavior and help supplied. Let the owner correct the closing summary before recording it. Product feedback remains separate from a launch/distribution verdict.
-
-Preserve player data, profiles, packages, credentials, accepted routes, uncommitted work and all evidence. Native work needs fresh session/window/settings and current exclusive-input availability; release immediately when the owner reclaims the Mac. No commit/push, distribution, invitations or tester contact is authorized by this handoff.
+Documentation reflects requirements and status; it does not qualify gameplay. Product usefulness feedback and the final local beta decision are separate from source/model/game/package checks. No outreach or external sharing is implied by this handoff.

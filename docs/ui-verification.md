@@ -1,5 +1,11 @@
 # Product clarity verification
 
+## Verification for the corrected AI beta
+
+Existing visual records below retain their original identities. GC-U/Q/D2 in the [engineering plan](private-beta-engineering.md) need new ordinary and packaged checks for Codex readiness, interpretation/clarification, pending decisions, observed progress, replan, provider unavailable/error, immediate control, switching and historical reopening.
+
+Inspect supported screen sizes, keyboard focus/drafts, long contextual conversation, readable images/targets and setup remedies. Mark fixture/replay previews separately from live model/gameplay. No new UI or gameplay was exercised by this documentation update.
+
 Retained visual and interaction checks for their recorded source snapshots. The [private-beta engineering plan](private-beta-engineering.md) owns the current workflow and the [PM handoff](private-beta-pm-handoff.md) records current candidate checks and remaining work.
 
 ## Historical September 26 ordinary-workspace cleanup

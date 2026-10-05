@@ -1,5 +1,13 @@
 # Objective profiles and live coaching
 
+## Current source and active AI objective work
+
+Current source has observed opening coaching, experimental coin-route memory, authored stairs/pipe instruction application with World 1-1 exits, and a supported flight/sky-1UP case. Full coin coverage, arbitrary instructions and wider reliability remain unknown. These bounded implementations are reusable skills, not the completed model-driven player.
+
+The [engineering plan](private-beta-engineering.md) now requires contextual Codex intent and state-driven gameplay decisions, composed from supported skills and evaluated on changed objectives/conditions. Preserve separate records for target, applied strategy, actual outcome and uncertainty. A locally fastest observation never implies a global record, and coaching changes need observed effects before improvement claims.
+
+The dated requirements and original objective/profile registry below are retained references; they do not supply the active next engineering action. Recording remains deferred to tentative beta v2.
+
 Mario objective/coaching and run-library reference. The September 23 requirement below records that adapter stage; current release scope follows the [private-beta engineering plan](private-beta-engineering.md).
 
 ## October 3 coached-play requirement

@@ -632,3 +632,10 @@ def test_unavailable_live_tell_stays_on_coherent_player_page(tmp_path: Path) -> 
     assert 'data-connection-state="connected"' in html
     assert "Live Tell needs a supported checkpoint" in html
     assert "Game Companion Lab Error" not in html
+
+
+def test_title_screen_flight_bytes_do_not_disconnect_observer() -> None:
+    sample = replace(_sample(buttons=()), world=255, form=255, p_meter=255, flight_timer=255)
+    sample.validate()
+    with pytest.raises(LiveObservationError, match="p_meter"):
+        replace(sample, p_meter=256).validate()

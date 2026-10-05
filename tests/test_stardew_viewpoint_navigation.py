@@ -128,3 +128,16 @@ def test_briefly_clear_edge_of_watering_pose_is_not_recovery_view():
     action, _ = nav.next_command(screen(0,138,True), set())
     assert action.control == 'w'
     assert nav._observation_return == 'south'
+
+
+def test_fresh_review_recovers_only_inside_qualified_corridor():
+    nav = navigator()
+    middle = screen(0, 35)
+    nav.validate_scope(middle)
+    command, target = nav.next_command(middle, {"crop"})
+    assert command.purpose == "navigate" and command.control == "w"
+    assert target is None and nav._waypoint == "home"
+    with pytest.raises(StardewAdapterError, match="outside a qualified"):
+        navigator().validate_scope(screen(12, 35))
+    with pytest.raises(StardewAdapterError, match="outside a qualified"):
+        navigator().validate_scope(screen(0, -15))

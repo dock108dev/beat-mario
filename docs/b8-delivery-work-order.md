@@ -1,5 +1,7 @@
 # B8 delivery work order
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Historical B8 work order for the September 26 personal-Mac delivery. Its packaging and sequencing instructions apply to that stage. The [private-beta engineering plan](private-beta-engineering.md) owns the current versioned tester-build path.
 
 **Historical work order prepared by B7; B8 completed on retained source `ed84e02a…`, and B9 began with owner observations/acceptance pending.** See [retained B8 delivery guidance](b8-personal-delivery.md). The repair closeout is retained locally at `artifacts/b8-final-return-repair/20260926/closeout.md` (repository-relative path; ignored evidence, unavailable in a standalone checkout). The requirements and pre-delivery gap descriptions below preserve the original work order. Later maintenance has separate qualification. B6 technical qualification and the [B7 closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b7-guidance/20260926/closeout.md) remain separate evidence.

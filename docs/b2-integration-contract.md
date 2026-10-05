@@ -1,61 +1,192 @@
 # Mario planning and runtime interfaces
 
-Adapter interface reference and planned GC1/GC2 work. The [product direction](product-direction.md) defines watched/coached Mario play across attempts and lives as an initial-beta requirement. The [private-beta engineering plan](private-beta-engineering.md) owns implementation order and exact-candidate acceptance. Existing contracts below are reusable foundations; they do not yet implement that product loop.
+Updated October 4, 2026. This contract distinguishes the implemented bounded
+Mario controller from the **Codex-backed conversational interpretation and
+gameplay reasoning required for the initial private beta**. The
+[engineering plan](private-beta-engineering.md) owns the complete delivery order;
+the [product direction](product-direction.md) owns the intended experience.
 
-The ordinary conversation flow separates proposals, execution and presentation.
-See the [Stardew integration contract](b3-integration-contract.md) for farm interfaces.
+## Current implementation and evidence
 
-- Planning uses `request_planning.py`, `mario_route_plan.py`, `stardew_planning.py` and matching new tests. Typed JSON-serializable plans expose request/conversation/game/session/observation identity; original objective, normalized intent, real base route, revision/parent; typed actions and preconditions/outcomes; protection/resources/stop/effective boundary; speed; eligibility/evidence/authority. Pure planning never emits input.
-- Runtime validation uses `mario_plan_runtime.py`, the Python/Lua control seams in `live_observation.py`, `takeover.py`, `fceux_live_takeover.lua`, `fceux_1_1_agent.lua`, any new Lua controller file and matching runtime tests. It validates adapter-owned primitives, process/session/state, revisions and commands independently of planner claims.
-- Presentation uses `conversation_ui.py`, integration edits in `lab_ui.py` and matching browser/render tests. Keep planner/execution logic in their modules and expose ordinary `/mario` conversation with stable draft/focus, persistent control and visible revision/speed/outcome.
-- `conversation_service.py` coordinates runtime and planning; `custom_variants.py` stores descriptive plans and outcomes without restoring authority.
+| Area | Implemented behavior | Remaining limit |
+| --- | --- | --- |
+| Conversation | Deterministic `Planner`, adapter request matching and supported coaching helpers | No Codex-backed interpretation or gameplay reasoner on the ordinary Mario decision path |
+| Opening coaching | Persisted delay adjustments, finite explicit retries, actual Lua application and urgent interruption | One authored opening event and bounded timing parameter |
+| Surface-route learning | Selection among authored high/low/balanced jump schedules, failure-derived supported stairs/pipe tactics, per-attempt coin accounting | No general route discovery; individual and full coin-universe coverage unknown |
+| Traversal | Two observed World 1-1 finishes with two coins each, plus preserved historical accepted routes | Those results do not establish novel-state play or broader reliability |
+| Flight/reward | Observed prepared Raccoon/Tanooki World 1-1 sky-1UP case, separate revelation/collection and handback | Prepared entry and one authored objective; broader flight reasoning unavailable |
+| Demonstrations | Source recording, review, storage and bounded numeric playback | Real demonstration application remains unverified; deferred to tentative beta v2 |
+| Control/history | Independent Stop/Take control, session-bound plans, outcomes and reopening without restored authority | Must remain effective while new model work is pending |
 
-Integration surface: UI calls `ConversationService(live_manager, artifacts_root=...)`; `snapshot()` yields JSON-safe state; `dispatch(action, payload)` yields JSON-safe state or raises ValueError. Actions: select_intent, message, start, apply, cancel_pending, revert, speed, pause, resume, stop, reclaim, save_variant, load_variant. No endpoint starts or resets an emulator implicitly; existing explicit launch remains. Service shares the server live manager.
+See [coaching](gc1-gc2-coaching-verification.md),
+[route](gc2-route-verification.md),
+[flight](gc2-flight-verification.md) and
+[demonstration](gc2-demonstration-verification.md) records for their exact evidence.
+Historical B2 parser limitations and later repairs describe their own candidates;
+the urgent interruption gap is repaired in current source.
 
-The runtime offers snapshot/start/edit/cancel/control operations and never relies on stored or planner-supplied execution authority. UI treats returned plan/runtime dictionaries as presentation data, text only. CSRF and loopback protections remain mandatory.
+These are real gameplay foundations. They do not complete the AI-player product.
+Adding another fixed route or another request pattern alone is not the next
+milestone.
 
-## Implemented opening coaching slice
+## Existing integration owners
 
-Current source now provides the ordinary experimental opening practice described in the [Mario guide](mario-player-guide.md#practice-and-coach-the-opening-jump) and [verification record](gc1-gc2-coaching-verification.md): next-attempt delay coaching, bounded explicit retries, persisted compatible guidance, reset, outcomes and priority urgent Stop. Accepted-route evidence below retains its historical scope. Broader coin/flight/life-learning requirements remain pending.
+- `request_planning.py` defines typed serializable goals, actions, references,
+  resources, revisions, uncertainty, eligibility and scope. Current `Planner`
+  and `mario_route_plan.py` are deterministic.
+- `conversation_service.py` owns the ordinary conversation, reviewed plans,
+  coaching, finite attempts and outcomes. `conversation_ui.py` presents the
+  experience without granting authority through rendering or history.
+- `mario_plan_runtime.py`, `live_observation.py`, `takeover.py` and the
+  FCEUX Lua controllers independently validate actions and own actual execution.
+- `mario_coaching.py`, `mario_coins.py`, `run_library.py`, `learning.py`
+  and outcome history retain descriptive guidance and evidence. Experimental
+  knowledge stays separate from the historical accepted-route registry.
+- The existing model gateway demonstrates bounded inference in the separate
+  profile path. Its presence does not establish model use in Mario. Connect the
+  selected Codex CLI backend to the actual ordinary decision path.
 
-## Current implementation boundary
+Keep typed plans and runtime validation as the integration boundary. A model
+response cannot execute arbitrary code, mint a capability or provide its own
+authorization.
 
-`Planner` is a deterministic phrase matcher. `MarioPlanningAdapter` resolves the existing `world_8_finish_game` base, the default/opening-hop paths, declared stops and normal/turbo speed. `MarioPlanRuntime` accepts one supported traversal primitive and applies revisions only at declared boundaries. Quickest/100% requests fall back to the same base. General coin-route discovery, conversational jump-frame revisions, an arbitrary hidden-1-up flight goal and multi-life training are not implemented through these interfaces. Conversation history/custom variants and `learning.py` are retained foundations, but there is no integrated coaching-to-next-attempt application loop.
+## Role 1: conversational intention
 
-`request_planning._control_request` uses full-string matching for narrow phrases such as “stop” and “stop now.” The exact owner command “STOP RIGHT NOW WAIT” does not match; it returns Mario help/clarification instead. Dedicated stop/reclaim operations reach runtime control. GC1 must repair the conversational interruption gap and separately verify actual input release; inspection of the parser is not a native receipt.
+Use the selected Codex provider to understand varied natural language, follow-up
+references, goal changes and coaching in the current conversation. This role
+produces a typed goal proposal containing:
 
-## Planned GC1: priority interruption
+- The player's intended outcome and any unresolved interpretation.
+- Game/level and observed target or event references.
+- Observable success criteria and declared coverage.
+- Player preferences, protected choices, attempt/life/time limits and stop point.
+- The change from the current goal or coaching, and its proposed applicability.
+- Missing game information or missing capabilities that require clarification.
 
-Detect an explicit urgent stop before model work, ordinary request planning, clarification or revision application. The detector must recognize the owner's exact command and checked urgent variants without interpreting negated or hypothetical stop discussion as authorization. Dispatch through the direct runtime reclaim path, invalidate pending commands first, and expose observed release state. A slow/unavailable model, busy planner, paused task or pending revision cannot delay interruption. Retain unconfirmed release as an issue and refuse further native work until control is known.
+Preserve the original request. Keep examples as evaluation cases rather than a
+literal vocabulary. Questions do not emit input. An unsupported full-completion
+request must explain the available exploration scope; the unchanged base route
+cannot be presented as fulfillment. Independent urgent controls bypass inference.
 
-Acceptance requires the exact command while a supported task is active, while paused and with a pending edit; retained evidence must show the interruption and neutral input/returned control, with no later queued input. Direct visible Stop/Take control stay available independently of conversation. Bounds and timing receipts must identify the exact runtime/package under review.
+## Role 2: game understanding and action selection
 
-## Planned GC2: coachable Mario attempts
+The gameplay role receives the typed goal, fresh observations, relevant mechanics,
+implemented skills and compatible attempt memory. It must choose and revise
+actual play, not merely narrate an authored route.
 
-Extend the current typed proposal/runtime boundary rather than allowing planner text to issue raw input. Define these contracts before adding gameplay breadth:
+Maintain a game-owned state representation sufficient for the declared scope:
+Mario's position and motion, grounded/airborne state, form/abilities, level/camera,
+visible geometry, reachable landing areas, enemies/hazards, interactable/reward
+objects, lives/coins and observed event receipts. Game-owned emulator state can
+supply supported facts; image observations supply additional scene context.
+Declare source, observation time, confidence and any unknown fields.
 
-| Contract | Required behavior |
-| --- | --- |
-| Play objective | Bind a level/route, observable goal, current entry, protected resources and reviewed limits on attempts/lives. “100% coin route” needs observed coin accounting and explicit unknown coverage; the unchanged base route cannot be presented as satisfying it. |
-| Experimental route and attempt | Create a local versioned route experiment with an attempt/life identity, entry and stop, discoveries, controller actions, outcome and release receipt. Retain death and partial progress; never overwrite historical accepted evidence. |
-| Coaching revision | Keep the owner's exact words, targeted jump/action, prior/new timing or tactic, applicability and requested effective boundary. Clarify ambiguous targets/“a few” frames, then acknowledge applied, next-attempt, refused or missed-boundary state. |
-| Selected real-time command | Validate adapter-owned capability, current observation, remaining authority and a safe application boundary. A late command is reported as late, never silently marked applied or deferred. Urgent Stop has its separate priority path. |
-| Retry and memory | Load compatible route discoveries and approved coaching for the next authorized attempt/life; explain what changed and why. Reopening restores descriptive memory, not input authority or assumed current game state. |
-| Flight/objective action | Reuse existing flight mechanics only through a supported action contract with observed current ability/target and measured outcome. A fixed fortress flight controller does not prove general “fly to get the hidden 1up” support. |
-| Outcome | Show goal progress, missed/unknown coins or target, lives/resources used, applied coaching, discoveries, comparison and control release. A controller completing its segment is separate from the requested goal being satisfied. |
+Keep current state separate from historical discoveries. A prior coin yield does
+not identify today's coin location; a retained route does not establish current
+enemy timing. Update identities and relations across observations, and use
+uncertainty to decide whether to inspect, choose a lower-risk supported action,
+ask a question or stop.
 
-The player-facing workspace must make a useful supported play request, reviewing it, watching Mario and coaching the next attempt possible without developer edits. Keep a compact current goal/attempt, visible Stop/Take control, chat isolation, applied-versus-pending coaching and readable results. The Lab remains engineering infrastructure.
+At meaningful decision boundaries the gameplay role should:
 
-Acceptance is a visible Mario run followed by the owner's timing correction, a compatible retry within a reviewed finite attempt/life budget, and evidence that the new timing actually reached the controller; reopening must retain the correction and experiment. Add a bounded coin-exploration case across attempts/lives that remembers discoveries, reconciles collected/known/missed coins and leaves unknown coverage explicit. GC2 also needs an actual supported flight-to-reward attempt with observed ability/target, controller execution and reward outcome; a prerequisite explanation alone cannot complete that implemented task case. Declare flight and each live command Available only after their exact task has implementation and evidence; show clear limitations for the rest. Meaningful checks cover ignored/late corrections, death, reclaim, process loss, incompatible memory, reopening and queued-input cancellation, followed by exact-package owner review. Local contract checks alone do not establish useful gameplay.
+1. Select a useful subgoal from current state and the approved objective.
+2. Propose a skill/target/parameter combination and its expected effect.
+3. Pass that proposal through the independent capability and authority validator.
+4. Observe actual execution and compare its effect with the expected result.
+5. Continue, revise, inspect further or report a blocker based on that comparison.
 
-One reviewed finite attempt/life budget may cover compatible retries without a new Start for every life. Recheck current eligibility and remaining limits each time; reclaim, invalidated authority or expanded scope needs fresh approval. A selected timing/tactic change inside the reviewed adjustment range may apply with acknowledgment; a material scope change needs review.
+The same implemented skills must compose into more than one meaningful approach.
+The engineer should not add a custom controller branch for each new wording,
+landmark or failure merely to complete the AI acceptance check.
 
-Ordinary experimental coaching uses local versioned records and reviewed runtime validation; it does not require a repository route patch or accepted-registry promotion for each trial. [Learning](learning.md) owns this separation. Promotion into the historical accepted registry retains its existing gates. Independent practice/self-improvement remains later work.
+## Skills and the fast controller
 
-## Experimental surface coin exploration
+Expose a machine-readable catalog generated from actual adapter capabilities.
+Each skill declares parameters and bounds, observed preconditions, expected
+effects, verification method, timing class, interruption behavior and limits.
+Examples of useful skill families include movement, supported jumps/landings,
+run-up, ability use, observation and interaction with an observed target.
+Engineering chooses the concrete decomposition.
 
-The adapter accepts `coin_high` and `coin_low` only with the versioned coin-discovery plan and unexpired finite approval, stopping at the World 1-1 exit. These are scheduled-jump alternatives across the level, retaining hazard precedence. Fresh power-on is required for level-exit traversal. Per-frame native `coin_observation` events read game-owned `$7967`; `coin_route_applied` confirms selection and `coin_level_finish_observed` confirms the independent exit boundary. Plans and results never modify accepted-route registry entries.
+The deterministic controller remains responsible for frame timing, feedback,
+collision/reachability checks, deadlines, game input and immediate handback.
+A generic parameterized movement/jump skill is useful infrastructure; a
+coordinate-specific stairs macro is a narrower fallback and must be labeled so.
 
-## Player demonstration sequence extension — October 3
+Do not call a language model for every frame. Define the planning cadence,
+observation-to-action latency limits and safe behavior while inference is pending.
+The controller may finish the currently approved bounded skill or hold/release at
+a supported decision boundary. A stale or late decision cannot target an event
+that has already passed. Strategy changes may apply during a supported boundary
+or on the next compatible attempt with clear acknowledgment.
 
-The ordinary conversation API adds `player_play`, `record_start`, `record_stop`, `record_save` (name, lesson, optional first/last indexes), `demo_review`, `demo_edit`, `demo_delete`, `demo_fresh`, `demo_use`, and priority `demo_disable`. Demonstration review/edit/use/delete select `demonstration_id`; use only creates a proposal. Start retains existing plan/revision binding. `recording.request`/`recording.ack` are passive process/session-bound mailboxes; all native takeover entry points reject recording/pending start. The actual FCEUX Lua recorder pairs pre-frame state with effective post-frame buttons and position, retaining raw traces and visual frames. Stop acknowledges file closure before save. The controller receives only validated numeric replay rows, copies the recorded buttons to the actual eight-button override and emits application/frame/completion receipts. Priority reclaim, expiry, death and drift dominate replay. Sequence completion stops locally and does not emit a level-exit receipt. Reopening retains data only. See [verification](gc2-demonstration-verification.md) for limits and pending real-game evidence.
+If Mario requires a faster policy, search or local motion planner for general
+action selection, implement the appropriate approach beneath the gameplay role.
+An LLM alone is not assumed to supply reliable platformer timing. Acceptance is
+chosen, observed behavior; no specific learning algorithm is mandated.
+
+## Mechanics, outcomes and memory
+
+Provide relevant mechanics knowledge through a bounded game-owned knowledge
+source, separating stable rules, current observations, player reports and learned
+hypotheses. Include movement/ability conditions and reward interpretation needed
+for the declared tasks. Version that knowledge with the supported game identity.
+
+Retain the goal, reasoning summary, selected skills, parameters, observed effects,
+failures, coaching revisions and unresolved questions. Use compatible memory to
+change future decisions. Keep learned advice inspectable and resettable without
+erasing historical outcomes. Current player direction overrides old guidance.
+
+For coin objectives, keep per-attempt collection separate from accumulated
+discoveries, avoid double-counting and state the declared coin coverage.
+For rewards, distinguish reaching, revealing and collecting; a life change alone
+may be ambiguous. For coaching, distinguish proposed change, actual controller
+application and observed improvement. A model explanation is not a success receipt.
+
+Retries can share a reviewed finite scope when compatible. Death/reset requires
+fresh state and budget checks; reclaim, expiry or scope expansion requires new
+approval. Reopening restores descriptive knowledge, not live state or authority.
+
+## Initial AI gameplay acceptance
+
+After the shared slow decision loop is proved in Stardew, complete Mario's faster
+version through the ordinary interface. Declare the supported level, entry
+conditions, mechanics and tasks rather than claiming unrestricted gameplay.
+
+Required evidence:
+
+- Varied held-out goals and corrections are interpreted without phrase-specific
+  patches, including contextual references and meaningful ambiguity.
+- A real Codex request and reply lead to a validated runtime action selection;
+  logs distinguish model decisions, authored fallback skills and algorithms.
+- A changed supported condition or failed approach leads to a materially changed
+  decision based on fresh observations, without a bespoke route patch.
+- A compatible later attempt uses retained evidence or coaching to change play.
+- At least one supported traversal/exploration task and one ability/reward task
+  have observed effects and honest outcomes under the declared scope.
+- Stop during inference and active play releases input, and stale replies cannot
+  revive authority. Reopening retains results without playing.
+- The same implementation handles a second meaningful supported variation,
+  demonstrating composition rather than replay of one accepted trace.
+
+Use fixtures for logic and concurrency, and real disposable-game evidence for
+perception, action application, adaptation and handback. Measure task results,
+interventions, refusals, failures and decision latency for the exact candidate.
+A large test count or a single fixed-route success cannot substitute for this.
+
+## Local private-beta delivery
+
+The release candidate must include the app-owned runtime/controller assets,
+readable setup, Codex CLI availability/authentication guidance, local game-file
+selection, capability labels and actionable connection errors. Do not bundle game
+files or credentials. The app is private and local; Codex-backed inference uses
+the selected provider and should be described accurately without implying
+on-device inference.
+
+Verify the exact local artifact from first launch through connection, goal,
+approval, model decision, play, coaching/replan, Stop and saved reopening.
+Preserve Mario/Stardew shared regressions and verify the chosen configuration
+matrix. Retained private.2/source evidence does not establish a later artifact.
+Owner usefulness review and the local beta release decision follow that actual
+artifact check. Recording, arbitrary game support, independent training and
+no-code addition of games remain later work.

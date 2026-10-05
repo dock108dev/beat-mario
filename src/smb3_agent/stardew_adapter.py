@@ -187,6 +187,7 @@ class ScreenObservation:
     session_nonce: str | None = None
     perception_classification: str = "unqualified"
     farm: object | None = None
+    navigation_coverage: object | None = None
 
     def validate(self, expected_save_sha256: str, *, allow_player_occlusion: bool = False) -> None:
         if not self.observation_id or not self.observed_at:
@@ -211,9 +212,16 @@ class ScreenObservation:
         if not self.tool.exact or not self.position.exact:
             raise StardewAdapterError(FailureCode.RESOURCE_UNKNOWN.value)
         hidden = tuple(c.crop_id for c in self.crops if c.occluded)
+        navigation = False
+        if self.navigation_coverage is not None:
+            from smb3_agent.stardew_cave import NavigationCoverage
+            if not isinstance(self.navigation_coverage, NavigationCoverage):
+                raise StardewAdapterError("unrecognized navigation coverage")
+            self.navigation_coverage.validate(self)
+            navigation = True
         temporary = (allow_player_occlusion and self.position.world_pixel_x is not None
                      and len(hidden) <= 3 and set(self.unknown_regions) == {f"player-occluded:{key}" for key in hidden})
-        if not self.scene_complete or (self.unknown_regions and not temporary):
+        if (not self.scene_complete or (self.unknown_regions and not temporary)) and not navigation:
             raise StardewAdapterError(FailureCode.UNKNOWN_STATE.value)
         seen: set[str] = set()
         coordinates: set[tuple[int, int]] = set()
@@ -223,6 +231,10 @@ class ScreenObservation:
                 raise StardewAdapterError(FailureCode.ACCOUNTING_MISMATCH.value)
             seen.add(crop.crop_id)
             coordinates.add((crop.tile_x, crop.tile_y))
+            if crop.occluded and navigation:
+                if crop.confidence != 0:
+                    raise StardewAdapterError("historical crop cannot claim current confidence")
+                continue
             if crop.occluded and temporary:
                 # Identity remains in the initial set; False is not a dry-state
                 # assertion here. Watered/dry is explicitly unknown until seen.
@@ -273,6 +285,14 @@ class WateringLedger:
     final_position: PositionObservation | None = None
     evidence_references: list[str] = field(default_factory=list)
 
+    # Full initial set remains the accounting/protection boundary. Only this
+    # reviewed subset contributes to task completion. None preserves legacy scope.
+    requested_crop_ids: tuple[str, ...] | None = None
+
+    @property
+    def task_crop_ids(self) -> tuple[str, ...]:
+        return self.initial_crop_ids if self.requested_crop_ids is None else self.requested_crop_ids
+
     @classmethod
     def from_observation(cls, observation: ScreenObservation) -> WateringLedger:
         planted = tuple(sorted(crop.crop_id for crop in observation.crops if crop.planted))
@@ -296,7 +316,7 @@ class WateringLedger:
         current = {crop.crop_id: crop for crop in observation.crops if crop.planted}
         if set(current) != set(self.initial_crop_ids):
             raise StardewAdapterError(FailureCode.ACCOUNTING_MISMATCH.value)
-        hidden = {key for key, crop in current.items() if crop.occluded} if allow_player_occlusion else set()
+        hidden = {key for key, crop in current.items() if crop.occluded} if allow_player_occlusion or observation.navigation_coverage is not None else set()
         newly_confirmed = {crop_id for crop_id, crop in current.items() if crop.watered} | (self.confirmed_watered_ids & hidden)
         if not self.confirmed_watered_ids.issubset(newly_confirmed):
             raise StardewAdapterError("a previously confirmed watered crop became unverified")
@@ -328,11 +348,11 @@ class WateringLedger:
 
     @property
     def planted_count(self) -> int:
-        return len(self.initial_crop_ids)
+        return len(self.task_crop_ids)
 
     @property
     def watered_count(self) -> int:
-        return len(self.confirmed_watered_ids)
+        return len(set(self.task_crop_ids) & self.confirmed_watered_ids)
 
     @property
     def remaining_count(self) -> int:
@@ -703,6 +723,8 @@ class StardewOperator:
             raise StardewAdapterError(FailureCode.AMBIGUOUS_OWNERSHIP.value)
         self._validate_same_process(observation)
         observation.validate(self.save.disposable_tree_sha256, allow_player_occlusion=allow_player_occlusion)
+        if observation.navigation_coverage is not None and (command.kind != InputKind.KEYBOARD or command.purpose != "navigate" or command.control not in {"w", "a", "s", "d"}):
+            raise StardewAdapterError("partial navigation coverage permits cardinal movement only")
         allowed = self.contract.get("ordinary_input", {})
         if command.kind.value not in allowed:
             raise StardewAdapterError(FailureCode.INPUT_REJECTED.value)

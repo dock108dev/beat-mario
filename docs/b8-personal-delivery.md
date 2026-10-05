@@ -1,5 +1,7 @@
 # Personal Mac delivery
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Retained September 26 B8 in-place delivery guide and evidence record. The [private-beta engineering plan](private-beta-engineering.md) owns current delivery scope; use the [private-beta quick start](private-beta-quick-start.md) only for retained engineering-package setup and the [PM handoff](private-beta-pm-handoff.md) for remaining work.
 
 This is an in-place delivery at `/Users/michaelfuscoletti/Desktop/beat-mario`. Keep this repository, its installed `.venv`, and the registered local engineering assets at their existing paths. It is not a portable package or an app bundle. No proprietary game files are bundled.

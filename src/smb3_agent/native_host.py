@@ -2,29 +2,36 @@
 from pathlib import Path
 from smb3_agent.host_contracts import HostError, WindowObservation
 
-def foreground_process_id(*, error_type=HostError) -> int:
-    """Read OS focus synchronously without NSWorkspace's run-loop cache.
+from functools import lru_cache
 
-    The headless UI server has no AppKit event loop. NSWorkspace can continue
-    returning the initially active application after focus has moved elsewhere.
-    A failed native query is unknown focus, never permission to send input.
-    """
+
+@lru_cache(maxsize=1)
+def _foreground_binding():
+    # Cache the library binding, never the OS focus answer. Repeated dynamic
+    # library discovery can delay small key-up deadlines during held input.
     import ctypes
     import ctypes.util
 
     class ProcessSerialNumber(ctypes.Structure):
         _fields_ = [("high", ctypes.c_uint32), ("low", ctypes.c_uint32)]
 
+    location = ctypes.util.find_library("ApplicationServices")
+    if location is None:
+        raise OSError("ApplicationServices unavailable")
+    native = ctypes.CDLL(location)
+    native.GetFrontProcess.argtypes = [ctypes.POINTER(ProcessSerialNumber)]
+    native.GetFrontProcess.restype = ctypes.c_int32
+    native.GetProcessPID.argtypes = [ctypes.POINTER(ProcessSerialNumber), ctypes.POINTER(ctypes.c_int32)]
+    native.GetProcessPID.restype = ctypes.c_int32
+    return native, ProcessSerialNumber
+
+
+def foreground_process_id(*, error_type=HostError) -> int:
+    """Read current OS focus on every call, without NSWorkspace's cached answer."""
+    import ctypes
     try:
-        location = ctypes.util.find_library("ApplicationServices")
-        if location is None:
-            raise OSError("ApplicationServices unavailable")
-        native = ctypes.CDLL(location)
-        native.GetFrontProcess.argtypes = [ctypes.POINTER(ProcessSerialNumber)]
-        native.GetFrontProcess.restype = ctypes.c_int32
-        native.GetProcessPID.argtypes = [ctypes.POINTER(ProcessSerialNumber), ctypes.POINTER(ctypes.c_int32)]
-        native.GetProcessPID.restype = ctypes.c_int32
-        serial, pid = ProcessSerialNumber(), ctypes.c_int32()
+        native, serial_type = _foreground_binding()
+        serial, pid = serial_type(), ctypes.c_int32()
         if native.GetFrontProcess(ctypes.byref(serial)) != 0 or native.GetProcessPID(ctypes.byref(serial), ctypes.byref(pid)) != 0 or pid.value <= 0:
             raise OSError("foreground process query failed")
         return pid.value

@@ -81,6 +81,7 @@ function M.finish(reason)
       and x() < 8192 and y() > 0 then
     event("coin_observation", "counter=" .. tostring(memory.readbyte(0x7967)))
   end
+  if M.flight and M.completed_opening then M.flight_observe() end
   neutral()
   local ok = pcall(emu.speedmode, "normal")
   M.paused = false
@@ -105,6 +106,14 @@ function M.start(request)
   M.delay_remaining = M.jump_delay_frames
   M.hop_frames = 0; M.hop_started = false; M.hop_done = false
   M.route_complete = false; M.last_lives = nil
+  M.flight=nil
+  if M.path_choice == "sky_hidden_1up" then
+    assert(initial.flight_objective == "sky_hidden_1up_v2" and initial.stop_point == "world_1_1_hidden_1up"
+      and (initial.speed == "1" or initial.speed == "1.0"), "INVALID_FLIGHT_OBJECTIVE")
+    M.flight={phase="stage_runway",frames=0,objects={},popups={}}
+    for slot=1,8 do M.flight.objects[slot]=memory.readbyte(0x660+slot)>0 end
+    for i=0,4 do M.flight.popups[i]=memory.readbyte(0x79E+i) end
+  end
   M.coin_route = M.path_choice == "coin_high" or M.path_choice == "coin_low" or M.path_choice == "coin_balanced"
   M.stairs_tactic = initial.stairs_tactic
   assert(not M.stairs_tactic or (M.stairs_tactic == "land_then_cross_v1" and M.path_choice == "coin_balanced"), "INVALID_ROUTE_GUIDANCE")
@@ -151,7 +160,7 @@ function M.poll()
       reject(c,"stale_revision")
     elseif c.action == "edit" then
       M.seen[c.command_id] = true
-      if not valid_choice(c) or tonumber(c.revision) <= M.revision then
+      if M.flight or not valid_choice(c) or tonumber(c.revision) <= M.revision then
         reject(c,"invalid_primitive_or_revision")
       elseif M.pending and c.replace_pending ~= "1" then
         reject(c,"pending_requires_explicit_replace")
@@ -172,7 +181,8 @@ function M.poll()
       else reject(c,"pending_change_no_longer_available") end
     elseif c.action == "speed" then
       M.seen[c.command_id] = true
-      if c.speed == "1" or c.speed == "1.0" or c.speed == "turbo" then speed(c.speed == "turbo" and "turbo" or "1")
+      if M.flight and c.speed == "turbo" then reject(c,"flight_requires_normal_speed")
+      elseif c.speed == "1" or c.speed == "1.0" or c.speed == "turbo" then speed(c.speed == "turbo" and "turbo" or "1")
       else reject(c,"unsupported_speed") end
     elseif c.action == "pause" then
       M.seen[c.command_id] = true
@@ -186,6 +196,18 @@ end
 function M.boundary(name)
   M.poll()
   if M.abort then error("GAME_COMPANION_B2_STOP_" .. M.abort) end
+  if name == "world_1_1_flight_runway" then
+    if not M.flight or memory.readbyte(0x727)~=0 or memory.readbyte(0x70A)~=1
+        or x()<400 or x()>600 or y()<300 or y()>430 or memory.readbyte(0xD8)~=0
+        or memory.readbyte(0xF1)~=0 or memory.readbyte(0x14)~=0
+        or (memory.readbyte(0xED)~=3 and memory.readbyte(0xED)~=5) then
+      M.finish("flight_prerequisite_missing"); error("GAME_COMPANION_B2_STOP_flight_prerequisite_missing")
+    end
+    M.completed_opening=true; M.last_lives=memory.readbyte(0x736)
+    event("flight_objective_applied", "target=sky_hidden_1up_brick")
+    M.flight_observe()
+    return
+  end
   if name == "world_1_1_opening" and (memory.readbyte(0x727) ~= 0
       or memory.readbyte(0x70A) ~= 1 or x() < 1 or x() > 64
       or y() < 1 or y() > 500 or memory.readbyte(0xF1) ~= 0) then
@@ -216,6 +238,15 @@ function M.before_frame(held)
   if M.abort then error("GAME_COMPANION_B2_STOP_" .. M.abort) end
   if M.pending and M.pending.boundary == "world_1_1_opening" and M.completed_opening then
     M.finish("boundary_missed"); error("GAME_COMPANION_B2_STOP_boundary_missed")
+  end
+  if M.flight and M.completed_opening then
+    M.flight_observe()
+    if M.flight.collected then
+      for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do held[key]=false end
+      if movie.framecount()>=M.flight.hit_frame+8 then
+        M.finish("reward_hit_observed"); error("GAME_COMPANION_B2_STOP_reward_hit_observed")
+      end
+    end
   end
   -- F1 also marks nonfatal form changes. Match the cumulative route's actual
   -- death contract: a game-owned reduction of the life counter.
@@ -276,6 +307,189 @@ function M.before_frame(held)
   for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do input[key] = held[key] == true end
   joypad.set(1,input)
 end
+-- Read-only reward observations: origin-latch the sky brick's 1UP,
+-- then require its removal and newly emitted, colocated game-owned hit popup.
+function M.flight_observe()
+  if not M.flight or not M.completed_opening then return end
+  local f = M.flight
+  if f.last_observed_frame == movie.framecount() then return end
+  f.last_observed_frame=movie.framecount()
+  local newly_seen = {}
+  for slot=1,8 do
+    local state=memory.readbyte(0x660+slot)
+    local id=memory.readbyte(0x670+slot)
+    local ox=memory.readbyte(0x90+slot)+256*memory.readbyte(0x75+slot)
+    local oy=memory.readbyte(0xA2+slot)+256*memory.readbyte(0x87+slot)
+    if not f.slot and state > 0 and id == 11 and not f.objects[slot]
+        and ox >= 1432 and ox <= 1448 and oy >= 112 and oy <= 144
+        and x() >= 1404 and x() <= 1464 and y() <= 208 then
+      f.slot=slot; event("flight_reward_revealed", "target=sky_hidden_1up_brick slot=" .. slot)
+      local image=io.open(directory .. "/reward-revealed-" .. movie.framecount() .. ".gd", "wb")
+      if image then image:write(gui.gdscreenshot()); image:close() end
+    end
+    newly_seen[slot]=state > 0
+  end
+  local slot=f.slot or 0
+  local state=slot>0 and memory.readbyte(0x660+slot) or 0
+  local id=slot>0 and memory.readbyte(0x670+slot) or 0
+  local ox=slot>0 and memory.readbyte(0x90+slot)+256*memory.readbyte(0x75+slot) or 0
+  local oy=slot>0 and memory.readbyte(0xA2+slot)+256*memory.readbyte(0x87+slot) or 0
+  local popup=0
+  local popups={}
+  for i=0,4 do
+    local value=memory.readbyte(0x79E+i)
+    local counter=memory.readbyte(0x7A3+i)
+    popups[i]=value
+    if f.previous and f.previous.state>0 and state==0 then
+      event("flight_popup_observation", "score_slot=" .. i .. " value=" .. value .. " counter=" .. counter
+        .. " popup_x=" .. memory.readbyte(0x7AD+i) .. " popup_y=" .. memory.readbyte(0x7A8+i)
+        .. " prior_sprite_x=" .. f.previous.sprite_x .. " prior_sprite_y=" .. f.previous.sprite_y)
+    end
+    if value == 13 and (counter == 48 or counter == 47) and f.popups[i] ~= 13 and f.previous
+        and math.abs(memory.readbyte(0x7AD+i)-f.previous.sprite_x) <= 2
+        and math.abs(memory.readbyte(0x7A8+i)-(((f.previous.sprite_y-16)%256>=192) and 5 or (f.previous.sprite_y-16)%256)) <= 2 then popup=1 end
+  end
+  local current={state=state,id=id,x=ox,y=oy,frame=movie.framecount(),
+    sprite_x=slot>0 and memory.readbyte(0xAB+slot) or 0,
+    sprite_y=slot>0 and memory.readbyte(0xB4+slot) or 0,
+    mario_x=x(),mario_y=y(),lives=memory.readbyte(0x736),coins=memory.readbyte(0x7DA2),
+    level_coins=memory.readbyte(0x7967),dying=memory.readbyte(0xF1)}
+  event("flight_observation", "lives=" .. current.lives .. " coins=" .. current.coins
+    .. " level_coins=" .. current.level_coins .. " dying=" .. (current.dying~=0 and "1" or "0")
+    .. " form=" .. memory.readbyte(0xED) .. " p_meter=" .. memory.readbyte(0x3DD)
+    .. " flight_timer=" .. memory.readbyte(0x56E) .. " slot=" .. (f.slot or -1)
+    .. " object_state=" .. state .. " object_id=" .. id .. " object_x=" .. ox .. " object_y=" .. oy .. " popup=" .. popup)
+  local prev=f.previous
+  if prev and prev.frame == current.frame then return end
+  if prev and f.slot and prev.frame+1 == current.frame and prev.id==11 and id==11
+      and prev.state>0 and state==0 and popup==1 and prev.dying==0 and current.dying==0
+      and math.abs(prev.mario_x-prev.x)<=24 and math.abs(prev.mario_y-prev.y)<=32
+      and current.level_coins-prev.level_coins>=0 and current.level_coins-prev.level_coins<=1
+      and current.coins==(prev.coins+current.level_coins-prev.level_coins)%100 then
+    f.collected=true; f.hit_frame=movie.framecount()
+    event("flight_reward_hit_observed", "target=sky_hidden_1up_brick")
+    local image=io.open(directory .. "/reward-hit-" .. movie.framecount() .. ".gd", "wb")
+    if image then image:write(gui.gdscreenshot()); image:close() end
+  end
+  f.previous=current; f.objects=newly_seen; f.popups=popups
+end
+function M.flight_step(held)
+  if not M.flight then return false end
+  local f=M.flight
+  M.poll()
+  if M.abort then error("GAME_COMPANION_B2_STOP_" .. M.abort) end
+  if f.collected then
+    for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do held[key]=false end
+    if movie.framecount()>=f.hit_frame+8 then
+      M.finish("reward_hit_observed"); error("GAME_COMPANION_B2_STOP_reward_hit_observed")
+    end
+    return true
+  end
+  if memory.readbyte(0x727)~=0 or memory.readbyte(0x70A)~=1 or memory.readbyte(0x14)~=0 then
+    M.finish("flight_area_changed"); error("GAME_COMPANION_B2_STOP_flight_area_changed")
+  end
+  local form=memory.readbyte(0xED)
+  if form~=3 and form~=5 then M.finish("flight_form_lost"); error("GAME_COMPANION_B2_STOP_flight_form_lost") end
+  f.frames=f.frames+1
+  if f.frames>900 then M.finish("flight_budget_exhausted"); error("GAME_COMPANION_B2_STOP_flight_budget_exhausted") end
+  for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do held[key]=false end
+  held.B=true
+  if f.phase=="stage_runway" then
+    -- Cross the short platforms and preparation shell by jumping onto the
+    -- longer floor beyond the Leaf block. Brake before beginning the run-up.
+    local vx=memory.readbytesigned(0xBD)
+    held.right=x()<730; held.left=x()>=730 and vx>0
+    held.A=x()<730 and (f.frames<24 or f.frames%4<2)
+    held.B=x()<730 or f.frames%20<4
+    if x()>=680 and x()<=780 and y()==368 and memory.readbyte(0xD8)==0 and math.abs(vx)<=2 then
+      f.phase="runup"; f.runup_frame=f.frames; held.B=true; held.A=false; held.left=false; held.right=true
+      event("flight_runway_staged", "landmark=long_floor")
+    elseif x()>800 or f.frames>=240 then
+      M.finish("flight_staging_failed"); error("GAME_COMPANION_B2_STOP_flight_staging_failed")
+    end
+  elseif f.phase=="runup" then
+    held.right=true
+    if memory.readbyte(0xD8)~=0 then
+      M.finish("flight_runway_lost"); error("GAME_COMPANION_B2_STOP_flight_runway_lost")
+    end
+    if memory.readbyte(0x3DD)==127 and x()>=1032 then
+      f.phase="fly"; f.launch_frame=f.frames; held.A=true
+      event("flight_launch_applied", "p_meter=" .. memory.readbyte(0x3DD))
+    elseif x()>=1060 or f.frames-(f.runup_frame or 0)>=240 then
+      M.finish("flight_speed_missing"); error("GAME_COMPANION_B2_STOP_flight_speed_missing")
+    end
+    if f.phase=="runup" then
+      -- Stop and spin while facing the approaching ground enemy. Charging
+      -- through it made the tail hit window miss during real gameplay.
+      for slot=1,8 do
+        local state=memory.readbyte(0x660+slot)
+        local id=memory.readbyte(0x670+slot)
+        local ox=memory.readbyte(0x90+slot)+256*memory.readbyte(0x75+slot)
+        local oy=memory.readbyte(0xA2+slot)+256*memory.readbyte(0x87+slot)
+        if state>0 and state<4 and (id==109 or id==114) and ox-x()>=0 and ox-x()<=64
+            and math.abs(oy-y())<=24 then
+          f.phase="clear_runway"; f.clear_slot=slot; f.clear_frame=f.frames; f.clear_braked=false; f.clear_faced=false
+          held.right=false; held.B=false
+          event("flight_enemy_approach", "slot=" .. slot .. " enemy_x=" .. ox .. " enemy_y=" .. oy)
+          break
+        end
+      end
+    end
+  elseif f.phase=="clear_runway" then
+    local slot=f.clear_slot
+    local state=memory.readbyte(0x660+slot)
+    local ox=memory.readbyte(0x90+slot)+256*memory.readbyte(0x75+slot)
+    held.B=(f.frames-f.clear_frame)%20>=3
+    if state==0 or state>=4 then
+      f.phase="runup"; f.runup_frame=f.frames; held.right=true; held.B=true
+      event("flight_runway_cleared", "slot=" .. slot)
+    elseif f.frames-f.clear_frame>120 then
+      M.finish("flight_enemy_not_cleared"); error("GAME_COMPANION_B2_STOP_flight_enemy_not_cleared")
+    elseif not f.clear_braked then
+      held.B=false
+      if memory.readbytesigned(0xBD)>0 then held.left=true
+      else f.clear_braked=true end
+    elseif not f.clear_faced then
+      held.right=true; held.B=false; f.clear_faced=true; f.clear_frame=f.frames
+    end
+    if f.frames%4==0 then
+      event("flight_enemy_observation", "enemy_x=" .. ox .. " state=" .. state
+        .. " tail=" .. memory.readbyte(0x517) .. " vx=" .. memory.readbytesigned(0xBD)
+        .. " pad=" .. memory.readbyte(0x17) .. " pressed=" .. memory.readbyte(0x18))
+    end
+  else
+    local target=f.below_brick and 1432 or 1472
+    if f.slot and memory.readbyte(0x660+f.slot)>0 then
+      target=memory.readbyte(0x90+f.slot)+256*memory.readbyte(0x75+f.slot)
+      if math.abs(target-1440)>160 then M.finish("reward_out_of_range"); error("GAME_COMPANION_B2_STOP_reward_out_of_range") end
+    end
+    local vx=memory.readbytesigned(0xBD)
+    if math.abs(x()-target)<=8 then held.left=vx>0; held.right=vx<0
+    else held.right=x()<target; held.left=x()>target end
+    held.A=(f.frames-f.launch_frame)%4<2
+    if not f.slot then
+      if x()>=1464 then f.passed_brick=true end
+      if f.passed_brick then
+        held.A=false
+        if y()>=144 and y()<430 then f.below_brick=true end
+      end
+      if f.below_brick and math.abs(x()-1432)<=8 then
+        held.A=f.frames%20<10
+      end
+    else
+      local oy=memory.readbyte(0xA2+f.slot)+256*memory.readbyte(0x87+f.slot)
+      held.A=oy<y()-8 and (f.frames-f.launch_frame)%4<2
+    end
+    if memory.readbyte(0x56E)>0 and memory.readbyte(0xD8)~=0 and y()<300 and not f.observed then
+      f.observed=true; event("flight_progress_observed", "landmark=flight")
+    end
+    if f.frames-f.launch_frame>240 and not f.observed then
+      M.finish("flight_not_observed"); error("GAME_COMPANION_B2_STOP_flight_not_observed")
+    end
+  end
+  return true
+end
+
 -- Stage on the left stair top before crossing the gap. The observed old
 -- approach hit the stair face, lost speed, then fell short of the far platform.
 function M.stairs_step(held, m)

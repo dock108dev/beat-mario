@@ -1,5 +1,72 @@
 # Game Companion Architecture
 
+## October 4 architecture correction — two model-driven responsibilities
+
+This is the active product and implementation requirement. Game Companion must have both contextual language understanding and a game-playing decision loop. The first backend is the owner's installed, signed-in Codex CLI for this personal local application. The two roles may share one model/backend, but have separate inputs, outputs, session state and verification.
+
+Current ordinary Mario and Stardew services construct the deterministic Planner and dispatch recognized request families. Their controllers have real observation feedback, interruption and outcome verification, but high-level choices are largely authored tactics, configured routes and calibrated scene rules. LocalOllamaGateway is currently connected to the separate profile/OpenTTD flow. Existing gameplay results establish those implementations, not general model-driven understanding or adaptive play. These foundations should become reusable capabilities beneath the decision loop.
+
+### Responsibility 1 — contextual language-to-game LLM
+
+The conversation layer understands what the player means across turns. It must handle original wording, incomplete descriptions, references to what is visible, priorities, exclusions, corrections, questions and coaching without requiring a prescribed vocabulary.
+
+Input context includes the player's words, relevant conversation, selected game, current goal/plan/progress, fresh observed entities and images, available game capabilities, applicable mechanics and compatible remembered guidance. Keep it compact and task-relevant. Earlier observations must retain their age and uncertainty.
+
+The output describes the requested objective, relevant targets/references, constraints, preferences, time/resource limits, proposed completion conditions and interaction type. It identifies clarification needs and capabilities the request would require. It also provides a concise player-facing interpretation. Engineering chooses the schema and provider abstraction.
+
+Understanding a request is separate from having the ability to execute it. Preserve the intended objective even if a prerequisite or skill is missing. Explain the actual gap rather than substituting the nearest scripted task. Resolve a reference such as another patch or a previous jump using context; ask a question when the intended target remains materially ambiguous.
+
+A correction updates the represented goal and constraints, then informs the gameplay agent. Coaching records the intended behavior change and applicable game event, rather than just storing a phrase or mapping it to a fixed preset. Questions request an answer or observation without gameplay authority.
+
+The LLM may interpret an approval reference, but the app binds approval to the displayed current scope and session. Independent Stop/Take control remains immediately available. Neither role can restore canceled authority.
+
+Acceptance includes wording withheld from implementation, multi-turn references, compound preferences, exclusions, changed priorities and accurately understood unsupported requests. Vary context as well as phrasing: identical words about different observed targets must resolve appropriately. Show actual model calls and resulting typed intent; simulated model replies and deterministic shortcuts do not establish model understanding. Provider failure must be visible, with input released rather than silent substitution by a narrower parser.
+
+### Responsibility 2 — game understanding and adaptive play
+
+The gameplay agent determines how to accomplish the understood objective from the current game. It uses mechanics, perception, spatial context, resources, available skills and observed consequences. This is an active decision layer during play, not just an initial plan explanation.
+
+Its working state includes player location/motion/form, relevant objects and targets, terrain and possible routes, resources/time, completed work, hazards, observations with confidence/age, remembered outcomes and missing information. Separate observed facts, inferred possibilities, general game knowledge and historical evidence. A model's visual guess or knowledge of a typical map is not confirmation of the current scene.
+
+Expose reusable adapter capabilities with preconditions, bounded parameters, expected effects, outcome checks and failure states. Capabilities may include inspecting an area, moving toward an observed target, acting on a selected target, executing a supported jump/flight maneuver or returning control. The model may compose implemented capabilities and ask for more observation; it may not invent executable skill IDs or expand input permission. Geometry, collision handling and fast movement can use ordinary algorithms.
+
+The decision loop is:
+goal + fresh state + rules + capabilities -> choose the next subgoal/action -> validate -> execute a bounded skill -> observe the result -> update state -> continue, replan, clarify or stop.
+
+Each decision identifies the selected action/target, why it serves the goal, the expected observable effect and what would trigger a new decision. Keep explanations concise; no private chain-of-thought collection is required. The app validates the action against current conditions and approved constraints before dispatch.
+
+After execution, independent observation determines the actual effect. Unexpected obstruction, resource loss, changed target, lost visibility or failed action must feed a revised decision. Distinguish a feasible alternative, a need to inspect, a missing implemented skill and a fundamentally blocked objective. Limit repetition and stop when it has no evidence-backed new approach; changing timing endlessly without learning is not adaptive play.
+
+Perception must let the agent reason over supported variations in scenes and targets, not require engineers to install a new complete route for each request. Use current precise recognizers where reliable, and extend perception where its missing information blocks the decision. Visual model inference can propose object/location interpretations; critical movement and outcome checks still need sufficient independent grounding.
+
+Memory retains coaching, discoveries, effective and failed actions, context and uncertainty. Retrieve applicable knowledge and show it affecting later decisions. A stored record or automatic selection from three fixed routes alone does not demonstrate learning. This does not require training a new neural network or an unattended practice service.
+
+Acceptance includes a changed starting condition, target, constraint or obstacle selected after implementation, with the same agent choosing a different grounded action or revising a plan without a bespoke script edit. Demonstrate progress or completion from the approved goal, verified outcomes and usable handback. Test both interpretation and gameplay choice: novel wording alone proves only the first layer.
+
+### Local Codex integration and execution boundary
+
+Use Codex as an inference/agent backend during ordinary app use, not merely as the engineer writing the app. Engineering can start with non-interactive calls or choose the app-server integration if its persistent threads, tool interaction and cancellation are a better fit. Keep this personal integration small; no hosted product service or new training pipeline is required.
+
+The installed CLI supports image inputs, JSON event output and schema-constrained final output. Its exec interface reuses saved CLI authentication. Official references: [non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) and [app-server](https://learn.chatgpt.com/docs/app-server). Installed CLI help and login status were inspected on October 4. No inference was performed and game-playing quality, latency and account limits were not measured by this documentation update. The normal OpenAI-backed CLI sends inference to a remote model even though the application and tools run locally.
+
+Give the roles game-state/image access and a small explicit interface to validated adapter capabilities. Runtime gameplay does not edit repository code or patch controllers in response to each obstacle. Improvements to a reusable skill are engineering work; the agent's job is to compose supported skills using current state.
+
+The existing fast controller continues to handle frame timing, movement feedback, input release and postconditions. Codex makes semantic/task decisions at useful boundaries, not each Mario frame. Stardew is the first complete adaptive-play integration because its slower activities fit these boundaries. Connect shared contextual intent to both game interfaces and then extend Mario strategy at suitable skill boundaries.
+
+Measure actual inference latency and decisions per activity. Pause or maintain only the currently validated finite skill while a new decision is pending. Stale replies, invalid output, model unavailability and cancellation cannot initiate more input.
+
+### Immediate milestone and evidence
+
+Deliver one connected Stardew activity where real Codex interpretation creates the goal, a real Codex-backed gameplay agent selects/composes actions, existing controllers execute, and fresh results cause a later decision or replan. Use available watering/inspection skills so progress is not contingent on finishing a cave manifest first.
+
+Include a changed preference and a supported changed scene/resource/target condition that require different decisions without code changes between trials. Extend a reusable observation or skill if necessary. Preserve operating controls and prior game evidence.
+
+Record original language, resolved goal, evidence supplied, chosen skill/parameters, expected effect, actual effect, later decision, uncertainty and handback. Show which decisions actually came from the model. Keep real model, local simulation, live game and packaged evidence distinct.
+
+AI capability is the next development gate. Pause the one-off cave detour qualification campaign as the lead task; retain its frames and current manual-route versus ordinary-activity evidence for future work. A foliage fix or route patch is appropriate when it unlocks this adaptive loop, but is not completion of the two AI responsibilities.
+
+After the Stardew vertical slice works, extend model-driven task decisions into Mario and evaluate a second activity/state variation. Then continue product coverage and delivery. Recording stays deferred to tentative beta v2. Historical game successes remain valid under their original scope, without implying the new architecture is implemented.
+
 Game Companion is a conversational player: it interprets the user's intent,
 plays within an agreed scope, accepts coaching and reports observed results.
 The active implementation order is Mario coaching, then Stardew conversational
@@ -49,7 +116,7 @@ check-ins must make changes and interruptions useful without requiring the
 player to direct every click. These are required experiences, not claims that
 the existing watering and farm-task implementations already cover them.
 
-Higher-level intent interpretation and game decisions can use the model, typed
+Higher-level intent interpretation and game decisions must use the model with typed
 adapter planning and compatible knowledge. The fast game feedback loop must
 continue through adapter-owned observations, finite primitives and checked
 postconditions; it must not wait for a language model on each frame or input.
@@ -157,6 +224,10 @@ plan contract. `mario_route_plan.py` and `stardew_planning.py` own actions,
 capabilities, protected choices and target semantics. Advisory proposals cannot
 grant permission. The Mario/Stardew local grammar supports bounded contextual requests and
 keeps unsupported clauses explicit; these adapter planners need no model account.
+
+This describes the existing deterministic implementation. The active two-role
+requirement above connects Codex-backed intent and game decisions to these
+validation/execution owners; the grammar is not the target AI architecture.
 
 `conversation_service.py` coordinates the ordinary Mario UI, reviewed plans,
 exact command acknowledgments, variant compatibility and append-only outcomes.

@@ -1,7 +1,15 @@
 # Security model and hardening
 
+## Codex-backed personal beta boundary — planned
+
+GC-A1/A4 introduces remote model inference into the local app. The current OpenTTD Ollama path remains separate; ordinary Mario/Stardew have no Codex provider yet. The application should send only selected game images and relevant conversation/state/rules/memory. Game text, screenshots and imported notes are source data, not permission to bypass the player's goal or execute arbitrary instructions.
+
+Reuse CLI-managed sign-in without copying secrets into profiles, packages, prompts or reports. Expose capabilities through the existing validated adapter dispatcher. Runtime model tools must not acquire an unrestricted source-editing or native-input path. Current targets, preconditions, parameters, finite scope and canceled generations are checked independently of model output.
+
+Independent Stop and release remain available during provider requests and skill execution. Game switch, late reply, failure and restart never restore authority. Explain inference transmission separately from local feedback export. Persist diagnostic context with bounded retention and redaction; retain raw game captures only in the established local evidence paths. Verify these behavior changes under GC-Q and exact packaged launch under GC-D2.
+
 Game Companion is a single-operator, local game-assistance and automation tool.
-It has no user accounts, authenticated web sessions, database, cloud service,
+It has no user accounts, authenticated web sessions, database, hosted application service,
 webhook, or third-party callback.
 Its important trust boundaries are the local player/Route Lab HTTP server,
 selected-window capture/native input, local model proposals, player configuration
@@ -60,7 +68,7 @@ requires fresh exact-process verification and explicit authorization.
   must be local and multimodal. Structured proposals are constrained by finite
   profiles and independently read targets/values. Canceling kills the request
   worker and discards late replies; it cannot prove Ollama stopped GPU computation.
-  No cloud inference provider is enabled. Current Minecraft typed requests do not
+  No Codex inference provider is enabled in the current ordinary-game implementation; the planned provider boundary is described above. Current Minecraft typed requests do not
   need model inference.
 - Profiles, history, reports, settings backups and session diagnostics live outside
   installation in the user data root. Normal report export includes selected
@@ -80,7 +88,7 @@ requires fresh exact-process verification and explicit authorization.
   non-symlinked file beneath the repository so the same backend remains safe
   when reached from Route Lab.
 - Savestates, screenshots, traces, and generated session records are
-  local-only data. Repository and CI guards keep them out of tracked source.
+  stored local runtime data. Repository and CI guards keep them out of tracked source. The planned Codex provider may transmit selected game captures/context for inference as disclosed above.
 - Emulator processes use fixed argument vectors rather than a shell. Product
   FCEUX runs receive a sanitized environment; diagnostic overrides remain
   explicit operator-only CLI inputs.

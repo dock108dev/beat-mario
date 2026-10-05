@@ -1,145 +1,266 @@
 # Stardew integration and evidence contract
 
-Adapter interface and evidence reference for the bounded Stardew path, updated October 3, 2026 for the corrected product direction. The [private-beta engineering plan](private-beta-engineering.md) owns current priorities and release scope; the B3 evidence classes below retain their original task and candidate boundaries.
+Updated October 4, 2026. The initial private beta requires both **Codex-backed
+conversational intention** and **gameplay understanding, action selection and
+replanning**. One provider may serve the two roles. This document defines the
+Stardew adapter work beneath the shared [architecture](agent-architecture.md) and
+[engineering plan](private-beta-engineering.md).
 
-Stardew is the second initial-beta gameplay priority, after Mario. The target is conversational delegation of clicking activities: understand the user's goal, discuss a short plan for the next few minutes, accept an explicit yes for that plan, observe and execute, report what happened, then discuss corrections or the next activity. The existing prepared farm routines are a foundation for that target. They do not qualify arbitrary-farm delegation, choosing a corn planting location, watering tomatoes or exploring a cave.
+## Current behavior and its limits
 
-The current bounded Stardew integration owns disposable-session setup, visible perception, ordinary input and watering.
-Qualification requires actual isolated-game evidence on the tested source candidate.
-A working browser, fixture, copied directory or parsed request cannot satisfy it.
-Full beta readiness and owner acceptance are separate.
+| Area | Existing implementation/evidence | What remains missing |
+| --- | --- | --- |
+| Prepared-farm setup | Separate Day 2/Day 5 disposable copies, matching calibration, PID-bound image-reviewed preparation | Ordinary release setup must include its required local assets and explain compatibility without engineer file edits |
+| Watering | Real selected-patch watering, discussion, revised approval, resource reconciliation, return and Stop | General observed task choice; broader crop identification; tool/refill support where claimed |
+| Planting discussion | Live season/crop-rule discussion and calibrated location recommendations | Gameplay reasoning about unfamiliar supported observations; actual planting is a separate action capability |
+| Eastern inspection | Live fresh findings, reviewed continuation, farmhouse return and saved reopening | General observation-driven inspection and navigation beyond authored viewpoints |
+| Farm Cave | Conversation/control/persistence code, western survey, newer installed manual tool-free route and baseline/final reconciliation | Manual route record explicitly marks ordinary activity unverified; no complete companion delegation claim |
+| Language | Deterministic request matching and explicit follow-up handling | No Codex-backed conversational interpretation on this path |
+| Game decisions | Configured graph search, calibrated perception, closed-loop native pulses and authored activity lifecycle | No integrated AI state reasoning, reusable skill composition and online replanning |
+| Persistence/control | Saved results without restored authority and independent handback | Extend to pending inference, evolving state and model-selected activity |
 
-## Current module ownership
+Read [watering](gc3-watering-verification.md),
+[planting](gc3-planting-verification.md),
+[inspection](gc3-inspection-verification.md) and
+[cave](gc3-cave-verification.md) records for exact scope and source identity.
+Those real foundations do not establish the AI-player product or a released
+artifact. Another fixed corridor alone does not satisfy the next milestone.
 
-- `stardew_setup.py` owns explicit source/destination selection, source classification,
-  loading/persistence verification and fresh session attempts. The guarded fresh-game
-  launcher pins inspected binaries, redirects XDG config/data, blocks primary paths
-  and network access, and never grants input by launching. No automatic owner-save discovery.
-- `stardew_input.py` owns bounded ordinary native input and neutralization, with
-  foreground and process/window identity checked before input.
-- `stardew_perception.py` owns supported viewport recognition. Automatic recognition
-  requires a qualified pixel profile and complete coverage; unknown resources remain unknown.
-- `stardew_runtime.py`, `stardew_adapter.py` and `stardew_companion.py` own volatile
-  Stardew authority, observation validation, execution and watering reconciliation.
-- `request_planning.py` and `stardew_planning.py` own proposals and corrections.
-  A proposal is never permission to act.
-- `conversation_service.py`, `conversation_ui.py` and `lab_ui.py` route the ordinary
-  workspace into the Stardew runtime. Mario process/controller facts never satisfy it.
-- `beta_readiness.py` and `personal-beta-v3.yaml` require classified, hashed evidence
-  bound to HEAD and all active source files. `--gate-b3` cannot pass from unit evidence alone.
+The cave verification document retains an earlier incomplete survey checkpoint.
+Newer [manual route qualification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/gc3-cave/20261004-completion/manual-route-qualification.json)
+records approach/return, unchanged 15 dry crops, energy 270 and water 40, and
+confirmed manual handback. It explicitly sets ordinary activity verification to
+false. Preserve both evidence classes; installing a route does not establish the
+ordinary request/approval/findings/return loop.
 
-## Review and execution boundary
+## Existing ownership to reuse
 
-The unchanged watering contract means every initially planted crop, including
-already-watered targets in the initial inventory, followed by return to the reviewed
-farmhouse entrance. A visible subset is not silently treated as the whole farm.
-Start binds the exact reviewed proposal, session, complete target set and observation
-requirements. Any supported revision is reviewed and revalidated against remaining
-work; it cannot erase completed actions or resume saved authority.
+- `stardew_setup.py`: source/copy identity, isolated loading, persistence and
+  the current image-reviewed preparation path.
+- `stardew_input.py`: native pulse bounds, foreground/process/window checks
+  and release.
+- `stardew_perception.py`, `stardew_farm_perception.py`,
+  `stardew_farm_vision.py`, `stardew_planting.py`: current visible-state
+  recognition and calibrated game observations.
+- `stardew_viewpoint_navigation.py`, `stardew_farm_navigation.py`:
+  configured route search and observed movement.
+- `stardew_runtime.py`, `stardew_adapter.py`,
+  `stardew_companion.py`, `stardew_farm_tasks.py`: action authority,
+  resources, protection, reconciliation and outcomes.
+- `request_planning.py`, `stardew_planning.py`,
+  `conversation_service.py`, `conversation_ui.py`: current typed plans,
+  ordinary discussion and proposal/review/start flow.
+- Shared Codex integration, knowledge, skill catalog and memory: extend these
+  boundaries rather than creating another independent input path.
 
-Foreground gameplay input must stop when chat receives focus. Reclaim, stale
-observations, process/window changes, uncertain resources, incomplete coverage and
-reset revoke execution. Neutral handback and partial outcomes are recorded even
-when the task cannot complete. No promise of Mario-style play while typing applies.
+The initial all-crop B3 watering contract remains historical: every initially
+planted crop, including already-watered inventory entries, followed by return.
+Current selected activities preserve the complete observed initial protection
+boundary while executing only the approved selected work. Neither contract can
+silently turn an observed subset into a claim about the whole farm.
 
-## Evidence classes
-
-| Requirement | Required evidence |
-| --- | --- |
-| Actual source/session selection and load/persistence isolation | Visible live; owner-copy preservation only for an explicitly authorized source |
-| Complete initial planted set and resource recognition | Automatic visible live; calibrated fixture profiles remain development evidence |
-| Actual water changes and return point | Before/after visible live observations with reconciled resources |
-| Browser request/review/authorize/execute/outcome | Browser plus actual visible live execution |
-| Reclaim, focus loss and neutral handback | Actual visible live, with unit concurrency coverage |
-| Stale/reset/session mismatch, shortage, uncertainty | Focused unit/integration plus bounded live checks when feasible |
-| Canonical gate | Unit/integration; never gameplay or owner acceptance |
-
-## Selected farm-action extension
-
-`stardew_farm_tasks.py` owns selected harvest, planting, watering and small-stone
-clearing ledgers. Planning and runtime eligibility require supported targets,
-owned tools/seeds, visible resources, inventory capacity and observable
-postconditions. The browser routes reviewed proposals through the same session,
-reclaim and handback boundaries. The original all-crop watering contract remains
-separate from selected Day 5 work. See the [Stardew guide](stardew-operator-guide.md)
-for the supported configurations and target limits.
-
-The retained September 26 final-return repair completed the Day 5 combined routine,
-resource reconciliation, return and independent released-input verification on
-source `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`.
-Its [closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b8-final-return-repair/20260926/closeout.md) supersedes
-the earlier in-place delivery readiness failure without rewriting that attempt.
-Day 2 and Day 5 keep their original separate identities. This proof does not
-qualify later source, a packaged beta, new crops, other farms or exploration.
+The historical Day 5 combined routine completed on source
+`ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`;
+its [closeout](../artifacts/b8-final-return-repair/20260926/closeout.md) retains
+the separate seed/profile and evidence boundaries. It does not qualify later
+AI behavior or a package.
 
 ## Next engineering work and initial-beta acceptance
 
-Reuse the current request, runtime, input, history and setup owners. Expand their
-actual supported gameplay rather than creating a second service or presenting
-unimplemented activities as ready plans. A broad request can produce a discussion
-or clarification before all of its actions are supported; it must not gain Start
-eligibility until the applicable execution and outcome checks exist.
+Start with an actual **decision-and-replanning loop** in Stardew's slower
+activities. The conversational role interprets player intent; the gameplay role
+uses fresh scenes, mechanics, implemented skills and history to select useful
+work. The app validates and executes that work. Do not treat conversational
+paraphrasing as a substitute for gameplay reasoning.
 
-| Concern | Existing owners to extend | Required next behavior |
-| --- | --- | --- |
-| Intent, planning and dialogue | `request_planning.py`, `stardew_planning.py`, `conversation_service.py`, shared model gateway | Interpret activity goals and references, discuss choices, propose a short activity with limits, accept corrections and distinguish advice from executable work. Model proposals remain advisory until validated against current observed state and implemented actions. |
-| Visible game state | `stardew_perception.py`, `stardew_farm_perception.py`, `stardew_farm_vision.py`, `stardew_adapter.py` | Broaden supported crop, plot, tool, inventory, resource and location recognition beyond the two prepared configurations; preserve uncertainty and identify missing observations. |
-| Navigation and activities | `stardew_viewpoint_navigation.py`, `stardew_farm_navigation.py`, `stardew_farm_tasks.py`, `stardew_runtime.py` | Implement observable routes and activities for the chosen expansion, with recovery and postconditions. Choosing a planting location, tomato watering and cave exploration each require their own supported state/actions; configured farm corridors alone do not supply them. |
-| Approval and conversation during play | `conversation_service.py`, `conversation_ui.py`, `stardew_runtime.py`, `stardew_input.py` | Bind explicit yes to the exact current short plan and session, safely release input for discussion, replan remaining work and request new approval when scope changes. Keep Stop/Take control independent of inference and reporting. |
-| Save suitability and preservation | `stardew_setup.py`, existing session/loading verification | Engineer backups and copy isolation before offering an owner-selected save; verify that the copy loads and is suitable for the proposed work. Never assume the prepared-farm profile fits it or modify the original to make setup pass. |
-| Progress, results and continuity | `stardew_farm_tasks.py`, `stardew_runtime.py`, `conversation_service.py`, shared outcome/history owners | Report confirmed actions, unfinished work, uncertainty and released control in plain language; preserve corrections and useful context without restoring input authority. |
+### Conversational intention contract
 
-The next implementation plan must identify which configuration and activities it
-will support. The following owner requests are the initial-beta product targets;
-partial engineering delivery must name which remain blocked:
+Interpret held-out natural language, references, corrections and preferences.
+Produce a typed proposal containing goal, observed targets, requested outcome,
+time/resource limits, protection, return/stop expectations, ambiguities and
+observable success criteria. Preserve the original words and contextual
+references. Clarify uncertainty when it affects the intended work.
 
-1. **“lets explore and find a good spot to plant corn”.** Observe the supported
-   location, relevant resources, season and owned materials; explain what makes a
-   spot suitable and discuss a candidate before planting. Do not invent unseen
-   terrain, available seeds or crop compatibility. Planting requires implemented
-   preparation/planting actions and approval of that scope.
-2. **“time to water the tomatos”.** Identify the intended observed crop group,
-   clarify an ambiguous reference, propose the near-term watering activity and
-   carry it out after approval. Confirm the actual changed crops and resources.
-   Water availability, refill and return behavior must match implemented support;
-   a clicked target alone does not prove watering.
-3. **“lets go explore that cave”.** Resolve which cave and the supported approach,
-   discuss the next few minutes and any relevant limits, then execute the approved
-   supported exploration activity. Unknown routes or missing cave actions remain
-   explicit blockers. A plan must not imply that fighting, mining or other cave
-   actions are available merely because navigation is available.
-4. **Conversation and correction.** A short proposal is understandable without
-   crop IDs or engineering terms. Explicit yes starts only its current scope.
-   The user can interrupt, ask what is happening or change the plan; native input
-   is safely released for discussion, confirmed work remains recorded and revised
-   remaining work gets the required new approval.
-5. **Control and continuity.** Stop/Take control releases actual input promptly,
-   including during observation, planning and outcome work. Unconfirmed release
-   stops native qualification. Completed, partial and failed outcomes are
-   understandable; reopening retains configuration/history and explains fresh
-   session and approval requirements.
-6. **Ordinary setup and personal-data preservation.** The supported configuration
-   can be prepared through the documented app flow. Any future owner-save path
-   proves backup/copy preservation, loads the correct isolated copy and states
-   suitability limits. Setup effort and every engineer-assisted action are product
-   findings, separate from gameplay completion.
+Discussion can compare alternatives, explain mechanics or request a better view.
+A model reply does not authorize movement or farm work. Contextual approval binds
+the displayed current scope; an old yes or delayed model reply cannot revive an
+outdated plan. Examples such as watering a crop group, finding a suitable
+planting area and visiting a cave illustrate intentions, not a finite vocabulary.
 
-### Verification boundaries for the expansion
+### Grounded game state and perception
 
-- Focused unit/integration checks cover intent and clarification, proposal/yes
-  binding, stale and changed plans, resource/target uncertainty, interruption races,
-  partial accounting and save-preservation logic. Fixture tests do not establish
-  crop recognition, exploration or native input release in the game.
-- Actual disposable-game evidence must follow the ordinary conversational flow
-  for each newly claimed activity/configuration, retain the exact candidate and
-  before/after observations, and independently confirm outcome and input release.
-  Existing Day 2/Day 5 proof may support unchanged behavior only with explicit
-  source continuity; new support requires its own evidence.
-- Engineering assistance, manually prepared starting states and failure recovery
-  must be retained and labeled. They cannot be presented as ordinary user setup
-  or silently erase a partial attempt.
-- Package checks and owner usefulness review remain distinct from source-level
-  gameplay proof. An exact package must include the app-owned dependencies and
-  setup assets required for its claimed support; ignored local assets do not
-  establish tester availability. Product acceptance and any launch/distribution
-  decision are separate records.
+Build a current game-owned state representation suitable for the declared farm
+coverage:
+
+- Player position, facing/movement and camera transform, with uncertainty.
+- Terrain, observed obstacles, traversable space, meaningful landmarks,
+  interaction reach and protected areas.
+- Crop/plot identity and state where actually identifiable; unknown species or
+  watering state stays unknown.
+- Selected and owned tools, inventory/resources, water/energy, season/day/time
+  and relevant menus.
+- Current targets and outcomes, past observations and regions not yet inspected.
+
+Combine suitable visible perception methods with image-based model understanding
+where useful. Calibrated pixels can remain strong checks for known values, but a
+new scene should not always demand a new exact raster template. Evaluate robust
+player/entity recognition, tracking, camera movement and changed-object
+detection within the chosen supported settings.
+
+Carry evidence source, timestamp, confidence and identity with observations.
+Historical/off-screen state is not fresh truth. Use temporal consistency and
+independent checks for consequential actions; disagreement triggers reacquisition,
+a supported inspection, a question or a stop. Stardew current truth remains
+visible-game observation, not hidden save parsing used to bypass perception.
+
+Separate state estimation from interpretation of mechanics and from action
+authorization. A VLM's plausible object label or asserted confidence alone does
+not establish tool ownership, exact resource count or a verified effect.
+
+### Mechanics and knowledge
+
+Provide a game-owned knowledge source for supported activities: crop/season and
+growth rules, terrain/occupancy, tools and interaction range, water/energy use,
+navigation and chosen cave limits. Identify the relevant game/version and
+provenance. Stable mechanics, current observations, player reports and learned
+hypotheses remain distinct.
+
+Use that knowledge to make decisions. For example, a changed crop preference
+affects the suitability discussion; a shortage changes the task or proposes a
+supported remedy. A recognized crop name does not identify the observed crop,
+and a guide entry does not prove a currently owned tool or seed.
+
+### Reusable skills and online navigation
+
+Expose capabilities from the real implementation as a machine-readable catalog.
+Every skill supplies its allowed parameters, observed preconditions, expected
+effects, verification, resource/time limits and interruption behavior.
+
+Useful families include observe/inspect, move toward an observed target, face or
+aim, supported tool/interaction, and return/release. Engineering determines the
+decomposition. Tool selection/refill belongs in the catalog only when actually
+implemented and qualified. Existing Day 5 macros may remain narrowly labeled
+fallbacks, not evidence of general task composition.
+
+Move from a configured-corridor-only planner toward a map or spatial
+representation built and updated from observations within the declared region.
+Combine suitable path search/local motion planning with gameplay reasoning.
+Maintain observed obstacles, unknown areas and valid return options. The model
+selects subgoals and inspection/recovery choices; deterministic movement keeps
+pulses bounded and uses fresh position feedback.
+
+Support a meaningful detour or different target without adding an engineer-authored
+edge for that exact variation. Stop/reacquire when localization is unreliable.
+Inspect unknown space before committing movement where needed, and refuse
+unsupported or protected terrain. Clearing an obstacle is a separate tool action
+and authority scope; a blocked walk does not grant clearing permission.
+
+Independent validation rejects invented capability IDs, unobserved target
+references, invalid parameters, incompatible sessions and expanded authority.
+The AI may compose implemented skills, never manufacture new native commands.
+
+### Verify, replan and remember
+
+At each meaningful skill boundary:
+
+1. Compare the expected result with fresh observed position, target state and
+   resources.
+2. Credit only confirmed work; retain partial or ambiguous effects.
+3. Update state and the remaining goal.
+4. Choose the next skill, inspect further, try a supported alternative, discuss
+   a changed plan or stop.
+5. Preserve the decision and outcome so compatible later choices can use it.
+
+Stalls, obstacles, hidden targets, shortages and changed preferences must produce
+actual decisions. Repeating a failed pulse or changing only the status message is
+not replanning. Unknown effects are not blindly repeated.
+
+Persist goal context, observed facts, chosen actions, expected/actual effects,
+failures, useful discoveries and user corrections. Show why compatible memory
+changes a subsequent choice, and support inspection/reset of future guidance
+while retaining outcomes. Do not turn replay history into current game truth.
+
+### Timing, authority and discussion
+
+Stardew's slow loop can use Codex at activity/subgoal boundaries. Define request
+limits, cancellation, responsiveness and the safe state while inference is
+pending. Native input is released before conversation or slow planning.
+
+Approval may cover a bounded collection of supported skills and alternatives.
+Within-scope replanning does not need a new approval for every pulse. Material
+scope expansion, revised protected choices, expired/revoked authority or a new
+session requires a fresh displayed proposal. Discussion preserves completed work;
+returning focus does not silently resume.
+
+Stop and Take control revoke authority and release input independently of model
+availability, capture, persistence and service locks. Late replies cannot apply to
+a new control epoch. Reopening retains knowledge/results only.
+
+### Setup and useful coverage
+
+Initial private-beta scope can be bounded to explicitly supported farms, display
+settings and activity families. It must still handle meaningful variation within
+that scope, rather than requiring a new scripted route for every request.
+
+Finish the ordinary setup path: game/window detection, supported settings,
+permissions, Codex availability/authentication, selected disposable source,
+isolated loading and current observation. State manual prerequisites accurately
+and remove engineer-only asset registration from the advertised release path.
+
+Required prepared assets must be available to the local released app through an
+explicit setup/bundle path; ignored files on the engineering checkout do not
+satisfy that. Do not bundle game files, credentials or personal saves.
+
+An owner-selected save path requires backup/copy isolation and a suitability
+assessment before use. It can remain outside the initial supported matrix if
+clearly labeled. The player's original save is never modified to make
+qualification pass.
+
+## Required gameplay proof
+
+Choose a useful supported activity and complete it through ordinary conversation
+with a changed goal or gameplay condition. Demonstrate:
+
+- A real Codex interpretation and game-state decision reaches actual execution.
+- Fresh observations ground the chosen targets and skills.
+- A meaningful changed condition causes a revised action/approach without a new
+  phrase matcher, pixel template or route script for that individual check.
+- Expected effects are compared with actual work, resources and return/handback.
+- A second supported variation uses the same reusable skills.
+- Compatible memory changes a later decision.
+- Questions remain input-free; discussion, interruption, inference failure and
+  reopening preserve correct ownership and outcomes.
+
+Watering and planting-location discussion remain useful acceptance families.
+Cave reconnaissance may provide a spatial case when its approach is actually
+supported; a disabled cave plan or completed fixed route alone does not finish
+the AI milestone. Interior exploration, combat/mining and arbitrary farms remain
+separate capability decisions.
+
+## Evidence and local private-beta release
+
+| Evidence | What it establishes |
+| --- | --- |
+| Focused logic/fixtures | Goal contracts, proposals, validation, memory, concurrency and synthetic perception |
+| Held-out language/state evaluation | Interpretation and decision behavior beyond authored examples |
+| Retained-frame replay | Recognition/decision behavior on those frames, without native action or current freshness |
+| Real disposable gameplay | Actual perception, selected actions, changed effects, replanning and native handback for the tested scope |
+| Exact local artifact walkthrough | First use, Codex setup, assets, connection, AI activity, Stop and saved reopening in the released build |
+| Owner usefulness review | Whether that artifact delivers understandable, useful delegation |
+| Release record | Exact local beta identity, support matrix, known limits and rollback/recovery |
+
+Run the relevant shared and adapter checks, then evaluate real task success,
+interventions, refusal quality, repeated failures and decision latency over the
+declared configuration matrix. Keep setup assistance visible. A large repository
+test count does not establish game understanding or beta acceptance.
+
+The app is private and local. The selected Codex CLI still uses its configured
+model provider; local app data and provider-submitted images/context must be
+described accurately. Complete backend failures, cancellation, shutdown, history
+and save-preservation behavior before releasing the exact local candidate.
+No public SaaS deployment is required.
+
+Preserve working Mario evidence and shared control boundaries. Recording remains
+deferred to tentative beta v2. Minecraft connection with accurate capability
+labels belongs in the initial beta; full Minecraft gameplay and advanced no-code
+addition of other games remain later work.

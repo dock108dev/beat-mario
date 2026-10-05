@@ -82,6 +82,9 @@ local function emit(actor, buttons, detail)
       .. " x=" .. tostring(player_x())
       .. " y=" .. tostring(player_y())
       .. " form=" .. tostring(memory.readbyte(0xED))
+      .. " air=" .. tostring(memory.readbyte(0xD8))
+      .. " p_meter=" .. tostring(memory.readbyte(0x3DD))
+      .. " flight_timer=" .. tostring(memory.readbyte(0x56E))
       .. " lives=" .. tostring(memory.readbyte(0x736))
       .. " dying=" .. tostring(memory.readbyte(0xF1) ~= 0 and 1 or 0)
       .. " return_map=" .. tostring(memory.readbyte(0x14))
@@ -109,18 +112,71 @@ local function emit_agent_frame(held)
   end
 end
 
+-- Explicit bounded preparation presses from the ordinary player interface.
+-- Each press is session-bound, expires, neutralizes, then pauses for review.
+local prep_directory = assert(os.getenv("SMB3_B2_DIRECTORY"))
+local preparing
+local prep = nil
+local prep_nonce = nil
+local function prep_finish(reason)
+  if not prep then return end
+  prep.remaining = 0
+  prep.reason = reason
+end
+local function prep_poll()
+  if prep then
+    local detached = io.open(detach_path, "r")
+    if detached then detached:close(); prep_finish("detached") end
+    local reclaimed = io.open(reclaim_path, "r")
+    if reclaimed then reclaimed:close(); prep_finish("reclaimed") end
+    if os.time() >= prep.expires then prep_finish("expired") end
+    return
+  end
+  if active_epoch or (b2 and b2.active) or (demonstration and demonstration.active) then return end
+  local f = io.open(prep_directory .. "/preparation.request", "r")
+  if not f then return end
+  local nonce, bound, frames, expires, buttons = f:read("*l"):match("^(%w+) ([%w%-]+) (%d+) (%d+) ([%w,%-]+)$")
+  f:close()
+  if not nonce or nonce == prep_nonce then return end
+  prep_nonce = nonce
+  frames=tonumber(frames); expires=tonumber(expires)
+  if bound ~= session_id or frames < 1 or frames > 60 or expires <= os.time() or expires > os.time()+4 then return end
+  local held={}
+  for button in buttons:gmatch("[^,]+") do
+    if button ~= "none" then
+      local valid=false
+      for _, key in ipairs(ordered_buttons) do if button == key then valid=true end end
+      if not valid then return end
+      held[button]=true
+    end
+  end
+  prep={nonce=nonce, remaining=frames, expires=expires, held=held, neutral=false}
+  preparing=false
+  emit("player", button_text(held), "preparation_press")
+  emu.unpause()
+end
+
 -- GUI callbacks are invoked on paused redraws as well as game frames. This
 -- deliberately uses no global keyboard events and keeps the command mailbox
 -- and observer heartbeat responsive while the browser has focus.
 local last_heartbeat = 0
-local preparing = os.getenv("SMB3_B2_PAUSE_FOR_PLAN") == "1"
+preparing = os.getenv("SMB3_B2_PAUSE_FOR_PLAN") == "1"
 if b2 then
   gui.register(function()
-    if demonstration then demonstration.poll(b2.active or active_epoch ~= nil) end
+    prep_poll()
+    if demonstration then
+      local prior_play=demonstration.play_id
+      demonstration.poll(b2.active or active_epoch ~= nil or prep ~= nil)
+      if demonstration.play_id~=prior_play then
+        -- Explicit player preparation releases the prior override. Recording
+        -- remains passive; the controller owns this handoff.
+        joypad.set(1, {}); preparing=false
+      end
+    end
     if preparing and demonstration and demonstration.active then preparing = false end
     if b2.active then b2.poll() end
     local request = command()
-    if preparing and request and request.action == "start" then
+    if preparing and not prep and request and request.action == "start" and request.nonce ~= consumed_nonce then
       preparing = false
       emu.unpause()
     end
@@ -134,7 +190,12 @@ if b2 then
   end)
   emu.registerbefore(function()
     if demonstration then demonstration.before() end
-    if b2.active then
+    if prep then
+      prep_poll()
+      local input = {}
+      for _, button in ipairs(ordered_buttons) do input[button] = prep.remaining > 0 and prep.held[button] == true end
+      joypad.set(1, input)
+    elseif b2.active then
       local input = {}
       for _, button in ipairs(ordered_buttons) do
         input[button] = not b2.stopped and not b2.paused and b2.held[button] == true
@@ -144,10 +205,32 @@ if b2 then
   end)
   emu.registerafter(function()
     if demonstration then demonstration.after() end
+    if prep then
+      if prep.remaining > 0 then prep.remaining=prep.remaining-1
+      elseif not prep.neutral then prep.neutral=true
+      else
+        local neutral=true
+        for _, button in ipairs(ordered_buttons) do if joypad.get(1)[button] then neutral=false end end
+        local f=assert(io.open(prep_directory.."/preparation.ack", "w"))
+        f:write(prep.nonce.." "..(neutral and (prep.reason or "neutral") or "release_unconfirmed")); f:close()
+        local image=assert(io.open(image_dir.."/"..string.format("%09d_preparation.gd", movie.framecount()), "wb"))
+        image:write(gui.gdscreenshot()); image:close()
+        emit("player", "", neutral and "preparation_neutral" or "preparation_release_unconfirmed")
+        prep=nil; preparing=true; emu.pause()
+      end
+    end
     b2.audit_input()
   end)
 end
 if preparing then
+  -- A fresh CPU may not have initialized cartridge RAM yet. Bootstrap only
+  -- that cold state with neutral ordinary frames before freezing the review.
+  if memory.readbyte(0x727) == 255 then
+    local neutral = {}
+    for _, button in ipairs(ordered_buttons) do neutral[button] = false end
+    for _ = 1, 60 do joypad.set(1, neutral); emu.frameadvance() end
+    joypad.set(1, {})
+  end
   emit("player", "", "plan_review_paused")
   emu.pause()
 end
@@ -166,7 +249,7 @@ while true do
 
   local request = command()
   if request ~= nil and request.action == "start"
-      and request.nonce ~= consumed_nonce and active_epoch == nil then
+      and request.nonce ~= consumed_nonce and active_epoch == nil and prep == nil then
     active_epoch = tonumber(request.epoch)
     consumed_nonce = request.nonce
     local supported_policy = request.policy == "world_1_1_remainder_v1"
@@ -222,8 +305,8 @@ while true do
     _G.SMB3_TAKEOVER_FRAME_CALLBACK = nil
     _G.SMB3_B2_PLAN = nil
     if bounded then b2.active = false end
-    if bounded and b2.abort ~= "completed_route" and b2.abort ~= "completed_stop" then succeeded = false end
-    if succeeded or (bounded and b2.abort == "completed_stop") then
+    if bounded and b2.abort ~= "completed_route" and b2.abort ~= "completed_stop" and b2.abort ~= "reward_hit_observed" then succeeded = false end
+    if succeeded or (bounded and (b2.abort == "completed_stop" or b2.abort == "reward_hit_observed")) then
       emit("agent", "", "solution_returned_neutral")
     elseif (bounded and b2.abort == "reclaimed") or string.find(tostring(failure), "GAME_COMPANION_RECLAIM_REQUESTED", 1, true) then
       emit("player", "", "reclaimed_neutral")
@@ -231,6 +314,13 @@ while true do
       emit("player", "", "solution_failed_neutral")
     end
     active_epoch = nil
+    if bounded and b2.flight then
+      -- Preserve the prepared form and timer while the player reviews the
+      -- result. Authority is already revoked and neutral input acknowledged.
+      joypad.set(1, {})
+      preparing = true
+      emu.pause()
+    end
   end
 
   local input = joypad.get(1)

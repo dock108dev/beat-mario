@@ -47,6 +47,9 @@ def write_fields(path: Path, fields: dict[str, Any]) -> None:
 
 def validate_runtime_fields(fields: dict[str, Any]) -> None:
     validate_traversal(fields.get("path_choice"), fields.get("stop_point"))
+    if fields.get("path_choice") == "sky_hidden_1up":
+        if fields.get("flight_objective") != "sky_hidden_1up_v2" or fields.get("speed") != 1:
+            raise ValueError("Invalid flight wire contract")
     if fields.get("stairs_tactic") and (fields["stairs_tactic"] != "land_then_cross_v1"
                                        or fields.get("path_choice") != "coin_balanced"):
         raise ValueError("Unsupported route guidance")
@@ -147,6 +150,15 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         if type(expires) is not int or not time.time() < expires <= time.time() + 601:
             raise ValueError("Coin exploration requires an unexpired finite approval")
         fields["practice_expires_epoch"] = expires
+    if path == "sky_hidden_1up":
+        from smb3_agent import mario_flight
+        if (data.get("flight_compatibility") != mario_flight.COMPATIBILITY or speed != 1
+                or data.get("resource_limits") != {"maximum_attempts": 1, "maximum_seconds": 30, "maximum_frames": 900}
+                or data.get("coin_compatibility") or data.get("demonstration") or data.get("route_guidance")):
+            raise ValueError("Flight requires the one-attempt normal-speed hidden 1UP contract")
+        fields["flight_objective"] = "sky_hidden_1up_v2"
+    elif data.get("flight_compatibility"):
+        raise ValueError("Flight contract requires the hidden 1UP primitive")
     if data.get("route_guidance"):
         from smb3_agent.mario_coins import GUIDANCE_CONTRACT, STAIRS_TACTIC
         guidance = data["route_guidance"]
@@ -471,7 +483,7 @@ class MarioPlanRuntime:
     ) -> dict[str, Any]:
         with self._lock:
             self._sync()
-            if (self._state.get("plan") or {}).get("coin_compatibility") or (self._state.get("plan") or {}).get("demonstration"):
+            if any((self._state.get("plan") or {}).get(key) for key in ("coin_compatibility", "demonstration", "flight_compatibility")):
                 raise ValueError("Coin route changes require a fresh attempt")
             fields = runtime_fields(plan)
             if fields.get("jump_delay_frames", 0) != self._state.get("jump_delay_frames", 0):
@@ -593,6 +605,8 @@ class MarioPlanRuntime:
                 return self.snapshot()
             self._sync()
             if action == "speed":
+                if (self._state.get("plan") or {}).get("flight_compatibility") and speed != 1:
+                    raise ValueError("Flight reward attempts require normal speed")
                 if speed not in SUPPORTED_SPEEDS:
                     raise ValueError(
                         "Supported playback is 1× or turbo (uncapped faster); requested rate unavailable"

@@ -1,5 +1,11 @@
 # Game Companion private-beta review status
 
+## Active successor status — October 4, 2026
+
+The current source has bounded real Mario coaching/routes/flight and Stardew watering/discussion/inspection evidence. The contextual language LLM and adaptive game-playing agent are still missing from the ordinary Mario/Stardew path; no successor package demonstrates them. The active [engineering roadmap](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md) now lead with Codex integration and a useful model-driven vertical slice, then both games, setup, evaluation, packaging and local release. Recording is deferred to tentative beta v2.
+
+The October 3 owner discussion and package checkpoints below are historical records. Their source gaps and next instructions describe those dates; they are not current pickup instructions or new release acceptance.
+
 ## Owner product-direction review — October 3, 2026
 
 The owner paused the proposed app walkthrough and clarified the product. This is a product-scope discussion and documentation instruction, not a completed app/gameplay review, launch verdict or distribution decision. The package was identified and an opening step supplied; the owner did not report opening a screen, using a profile, approving gameplay or testing control release in this session.
@@ -26,7 +32,7 @@ Actual product usage remains unreviewed. No screen-level expected/actual behavio
 
 For the next app review, record each screen, task, expected/actual behavior, the user's own words and engineer assistance. Let the owner correct the closing review summary before recording that later review. Keep product findings separate from launch/distribution decisions.
 
-## Current source and retained packages
+## Historical October 3 source and retained packages
 
 The October 3 documentation work began on clean HEAD `482374ff83b202c6ac3c2ceae6ae1711dfe11c68`. It changes documentation only; future sessions must reconcile the new source identity. Mario route/control and Stardew prepared-farm foundations are real, but the corrected conversational learning/delegation experience remains unimplemented. The current grammar also does not recognize the exact urgent `STOP RIGHT NOW WAIT` phrase; direct Stop controls exist. These are source-inspection findings, not live test results.
 
@@ -34,7 +40,7 @@ The October 1 source corrections added Minecraft setup progress, independent dir
 
 | Candidate | What its evidence supports | Limits |
 | --- | --- | --- |
-| Current repository | Existing Mario/Stardew interfaces and source setup/control repairs | Corrected GC1–GC4 experience is upcoming; no new native/package proof |
+| Repository at the October 3 review | Existing Mario/Stardew interfaces and source setup/control repairs | Conversational slices had not yet been delivered at that checkpoint; see the active successor status above for current scope |
 | Retained `0.2.0-private.2` | Profile/setup/history/local-feedback and Minecraft calibration/camera flags; offline lifecycle smoke | Predates source repairs; aim/move/place/wall unavailable; packaged native Minecraft wall smoke unfinished |
 | Retained `0.2.0-private.1` | Exact packaged OpenTTD one-repayment smoke, release and reopening | Narrow reference task; no Minecraft native input or corrected two-game beta proof |
 | Retained B8 repaired delivery | Prepared Stardew Day 5 actions/return/release and its historical Mario checks | Exact source/configuration only; owner usefulness/acceptance remains separate |

@@ -1,26 +1,26 @@
 # Game Companion
 
-Game Companion is a conversational game player: explain your goal, watch it play, coach or change the approach, and take control whenever needed. **The initial beta must deliver Mario coaching and Stardew activity delegation.** The initial beta can connect Minecraft with its available abilities clearly labeled; Minecraft becomes the completed third playable option by beta end. Advanced-user guided setup for adding games without code follows implementation of the first two gameplay experiences.
+Game Companion is a conversational AI player for the owner's personal Mac: describe a goal in your own words, watch approved play, discuss or coach decisions, and take control whenever needed. The initial private beta must connect **a contextual language LLM and a game-understanding/play agent** for Mario and Stardew, using Codex CLI as the first backend.
 
-Start with [product direction](docs/product-direction.md), the [PM handoff](docs/private-beta-pm-handoff.md), the [engineering session plan](docs/private-beta-engineering.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Next work is GC1 priority conversation/control plus GC2 watched Mario play and persistent coaching, followed by GC3 Stardew delegation.
+Read [product direction](docs/product-direction.md), the complete [engineering plan](docs/private-beta-engineering.md), [architecture](docs/agent-architecture.md), [current handoff](docs/private-beta-pm-handoff.md) and [technical next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Next work is the first real Codex-backed language-plus-play vertical slice on Stardew, followed by both-game integration and all setup/evaluation/package work through local release.
 
 ## Current workflows and product gaps
 
-- **Mario:** real route/controller foundations, observations, bounded opening-path/stop/speed edits, direct controls and saved results. Coin-route discovery, conversational jump-timing/flight goals and coaching across attempts/lives are planned initial-beta work. Quickest/100% currently load the existing base with unknown full coverage. See the [Mario guide](docs/mario-player-guide.md).
-- **Stardew Valley:** retained Day 2 watering and selected Day 5 harvest/plant/water/stone routines on two prepared farms with exact local profiles/settings. General watering targets, planting-location choice, cave exploration and short approved activities require implementation. See the [Stardew guide](docs/stardew-operator-guide.md).
-- **Minecraft Java Creative:** setup/profile/history/feedback, calibration and small camera requests. Aim/movement/placement/wall Start remain disabled. Preserve this work for the later third-game integration.
-- **OpenTTD:** a narrow reference integration; one packaged repayment result belongs to retained private.1 and its recorded environment.
-- **Experimental adapters:** data-only fixture scaffolding and installation; this cannot add a new playable game without engineering. Guided no-code onboarding is deferred.
+- **AI integration:** ordinary Mario/Stardew still use deterministic language and largely authored task/tactic choices. The separate reference-profile model gateway is not the required two-role gameplay agent. Contextual Codex interpretation and adaptive action selection remain implementation work.
+- **Mario:** observed opening coaching, remembered stairs/pipe guidance, two World 1-1 finishes and two supported sky 1UP collections; immediate controls and persistent outcomes. Full coin coverage, arbitrary tactics and broader reliability remain unknown. See the factual [Mario guide](docs/mario-player-guide.md).
+- **Stardew:** observed selected watering, planting-location discussion and eastern-margin inspection/return on supported prepared settings. Farm Cave activity has local lifecycle and newer manual route evidence; ordinary companion delegation remains unverified. Adaptive model decisions, reusable observation/skills and supported variation remain engineering work. See the [Stardew guide](docs/stardew-operator-guide.md).
+- **Minecraft:** retained setup/calibration/camera capabilities. Aim/movement/placement/wall Start remain disabled. Connection carries forward with accurate limits; full third-game play follows during beta.
+- **OpenTTD and Experimental adapters:** reference integration and contributor fixtures. They are not initial two-game AI beta acceptance.
 
-The current Mario/Stardew intent interpreter uses a limited deterministic grammar. The exact urgent chat phrase `STOP RIGHT NOW WAIT` is unrecognized; dedicated Stop/Take control remain available. Repair conversational interruption first. Current capabilities and planned requirements are separate; no retained package establishes the corrected initial-beta experience.
+Recording source work is preserved but deferred to tentative beta v2. Current source behavior, target requirements, real gameplay and packaged delivery are separate. Existing evidence is linked from the engineering plan; prior results are not relabeled as model-driven or package proof.
 
-The [private-beta review](docs/private-beta-review.md) identifies retained packages and actual evidence. Private.2 enables Minecraft calibration/camera and predates newer source setup/control fixes. Its adjacent manifest/guide describe that exact app. The [repository quick start](docs/private-beta-quick-start.md) is an engineering-package guide; existing Mario/Stardew source use follows the launcher below.
+The release target is a successor personal Mac .app with integrated game/Codex setup and app-owned dependencies. Retained private.1/private.2 remain historical engineering review packages; their adjacent manifests/guides own those exact capabilities. See [retained review](docs/private-beta-review.md) and [quick start](docs/private-beta-quick-start.md).
 
-Gameplay requires fresh explicit authorization for a reviewed scope. Game switching waits for confirmed input release and handback. Observed outcomes, remembered coaching and honest remaining work are required; tests and model replies do not establish gameplay success. See [known limitations](docs/known-limitations.md).
+Gameplay uses an approved finite scope. Direct Stop/Take control, safe conversation, fresh observations and neutral handback remain controller responsibilities even after model integration. Reopening history or switching games never restores input authority.
 
 ## Requirements
 
-The retained private-beta review package bundles its app runtime. Games are installed separately; macOS permissions and supported game settings are explained in the [quick start](docs/private-beta-quick-start.md). Minecraft's bounded requests require no model installation. OpenTTD uses separately installed local Ollama with gemma3:4b.
+The retained private-beta review package bundles its app runtime. Games are installed separately; macOS permissions and supported game settings are explained in the [quick start](docs/private-beta-quick-start.md). Minecraft's current bounded requests require no model installation. OpenTTD uses separately installed local Ollama with gemma3:4b. The successor AI beta requires discoverable, signed-in Codex CLI; ordinary-app integration is still planned.
 
 For source-checkout development and the existing local launchers:
 
@@ -32,7 +32,9 @@ For source-checkout development and the existing local launchers:
 - Mednafen only for the optional legacy diagnostic path
 
 Credentials and generated gameplay evidence are not tracked. The application
-has no database, cloud service, scheduler, or production deployment target.
+has no database, hosted app service, scheduler, or public deployment target.
+The planned Codex-backed provider sends bounded game context/images for remote inference;
+its setup, lifecycle and data disclosure remain release work.
 
 ## Install and validate
 
@@ -59,13 +61,13 @@ browser workspace. For a quicker read-only check of the installed command surfac
 
 ## Launch and first use
 
-For current Mario/Stardew use, follow their factual player guides and the source-checkout launcher below. For retained Minecraft camera/calibration review, use the [engineering-package quick start](docs/private-beta-quick-start.md) and exact adjacent manifest/guide. Saved configuration/history restores no connection or gameplay authority. The corrected conversational features in the engineering plan remain upcoming work.
+For current Mario/Stardew use, follow their factual player guides and the source-checkout launcher below. For retained Minecraft camera/calibration review, use the [engineering-package quick start](docs/private-beta-quick-start.md) and exact adjacent manifest/guide. Saved configuration/history restores no connection or gameplay authority. The existing bounded workflows described in those guides are implemented; the new two-role AI integration remains upcoming work.
 
 The following instructions describe the source-checkout launcher and existing Mario/Stardew first use.
 
 The launcher uses the local `.venv` and game configuration; it does not install dependencies, games, prepared farms or calibration evidence. On another checkout, use the install instructions above. Delivery is in place, with prerequisites listed in the [delivery guide](docs/b8-personal-delivery.md). The full non-live gate is an engineering check, not an every-launch step.
 
-1. Double-click **Open Game Companion.command**. It uses this checkout's `.venv`, opens the loopback page and starts a background server if needed. Logs are in `artifacts/local-companion.log`. A missing environment or another application on port 8765 is an error; inspect it before retrying. Reusing a running Companion server does not verify its source version; reconcile its identity before owner review.
+1. Double-click **Open Game Companion.command**. It uses this checkout's `.venv`, opens the loopback page and starts a background server if needed. Logs are in `artifacts/local-companion.log`. A missing environment or another application on port 8765 is an error; inspect it before retrying. Reusing a running Companion server does not verify its source version; use the current launch target before reviewing new behavior.
 2. Choose Mario or Stardew Valley. Use the [Mario guide](docs/mario-player-guide.md) to verify the local game file/emulator and open a fresh companion session, or the [Stardew guide](docs/stardew-operator-guide.md) to select the correct prepared farm, verify isolation and connect its matching screen profile.
 3. Describe a bounded request; inspect the actual path/actions, targets, resources, destination and readiness reason. Correct ambiguities before reviewing. **Start reviewed plan** (Mario) or **Review scope → Start reviewed work** (Stardew) grants fresh permission. Opening the page or selecting a game does not.
 4. Keep **Pause**, **Stop** and **Take control** available. Read the outcome and remaining work when execution ends. Use the recovery steps below before trying again.
@@ -94,8 +96,8 @@ port.
 
 Mario first use uses the existing local configuration. The public
 `GAME_COMPANION_EXPERIMENTAL_ROOT` setting changes the local Experimental-
-adapter installation root. The application does not load a `.env` file and
-needs no credentials. See
+adapter installation root. The current source does not load a `.env` file. The planned Codex-backed beta
+uses the owner's CLI sign-in; current Mario/Stardew have no Codex provider yet. See
 [runtime and configuration](docs/runtime-and-configuration.md) for internal
 runner variables and local artifact paths.
 

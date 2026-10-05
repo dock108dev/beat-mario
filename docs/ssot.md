@@ -1,5 +1,20 @@
 # Current source-of-truth map
 
+## Active AI beta ownership
+
+GC-A0–GC-R in the [engineering plan](private-beta-engineering.md) replace the old slice-by-slice continuation. Current module owners below remain implementation foundations. The contextual LLM and gameplay decision interfaces are required additions; their exact module layout is an engineering choice.
+
+| Responsibility | Current owners to reuse | Required seam |
+| --- | --- | --- |
+| Contextual language | conversation_service, request_planning, model_gateway | Codex provider plus typed original intent, context and clarification |
+| Working game state | live_observation, Stardew observers, feedback_contracts | Fresh semantic entities/images, uncertainty, history and scene continuity |
+| Gameplay decisions | adapter planning/runtime, skill_runtime | Goal/subgoal/action selection, expected effect and observed replanning |
+| Skill validation/control | takeover, Mario Lua, stardew_companion/input/runtime | Composable finite skills under existing independent authority/release |
+| Memory | learning, run_library, custom_variants and discussion stores | Contextual retrieval and evidence that guidance changes a later decision |
+| Product/delivery | catalog, player_setup/store, app_runtime, delivery/readiness | Both-game/provider setup, app-owned assets and new beta criteria |
+
+A real model decision must reach the controller and receive an independently observed effect. Do not duplicate native input owners or label an existing deterministic planner as the new AI layer.
+
 This map describes code ownership and supported interfaces. Source identity and
 qualification evidence are separate: changing an implementation does not qualify
 a new delivery. The [private-beta engineering plan](private-beta-engineering.md)
@@ -7,7 +22,7 @@ owns release scope; the [PM handoff](private-beta-pm-handoff.md) records the cur
 delivery candidate, limitations and next work. The [B8 delivery record](b8-personal-delivery.md)
 retains its September 26 build identity.
 
-The [product direction](product-direction.md) now requires initial-beta Mario coaching and Stardew activity delegation. GC1–GC4 in the active plan own upcoming work; no existing readiness flag or historical evidence qualifies that full experience. Minecraft and advanced-user no-code onboarding follow implementation of the first two gameplay experiences. The domain map below describes existing owners to reuse, not completed new features.
+The [product direction](product-direction.md) now requires initial-beta Mario coaching and Stardew activity delegation. GC-A0–GC-R in the active plan own upcoming AI integration and release work; no existing readiness flag or historical evidence qualifies that full experience. Minecraft and advanced-user no-code onboarding follow implementation of the first two gameplay experiences. The domain map below describes existing owners to reuse, not completed new features.
 
 Domain: Ordinary player setup and Minecraft onboarding progress
 SSOT module/file: `src/smb3_agent/player_setup.py`, with read-only progress in `player_onboarding.py`

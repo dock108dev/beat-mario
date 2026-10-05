@@ -1,11 +1,17 @@
 # Game Companion UI design
 
+## Active model-driven interaction
+
+The UI target follows GC-A1–GC-U in the [engineering plan](private-beta-engineering.md): provider readiness/remedies, understood goal and clarification, readable approval, current action, observed progress, pending inference and meaningful replanning. Keep direct control available in every active/pending/error state and preserve drafts during asynchronous work.
+
+Show whether an adjustment applies now or later and whether its effect is observed. Distinguish historical findings from current observations and usable goals from missing capabilities. Use the existing design system and simple product language. The working bounded flows below are current implementation; new Codex-driven behavior remains planned until verified.
+
 Use the [design requirements](ui-design-requirements.md) and `src/smb3_agent/glass_ui.py` when changing the interface.
 The [private-beta engineering plan](private-beta-engineering.md) owns the user workflow to deliver; the [PM handoff](private-beta-pm-handoff.md) records current build limitations and next work.
 
 ## Planned conversational gameplay interaction
 
-GC1–GC4 in the active plan require a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. These behaviors are upcoming work; preserve the accepted visual system and change layout only where the new interaction needs it.
+The initial-beta interaction requires a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. Parts of these interactions exist in current bounded workflows; the model-driven integration is upcoming work; preserve the accepted visual system and change layout only where the new interaction needs it.
 
 ## Current layout and behavior
 

@@ -1,5 +1,7 @@
 # B4 engineering handoff — September 25, 2026
 
+> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
+
 Historical September 25 engineering handoff for its identified Stardew candidate. Its instructions and results describe that stage. Use the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md) for current release work.
 
 B4.1–B4.4 are technically complete for the bounded Day5 configuration below. Ordinary real work, combined return/handback, live safeguards, cumulative checks and affected regressions are complete. Owner acceptance and full-beta readiness remain open.

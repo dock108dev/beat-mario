@@ -681,3 +681,33 @@ def test_storage_and_neutralization_failures_remain_separate(tmp_path, monkeypat
     assert result["evidence_error"]
     assert runtime.controller.authorization is None
     assert runtime._review_digest is None
+
+
+def test_explicit_profile_connection_focuses_verified_hidden_process_before_window_detection(tmp_path, monkeypatch):
+    import sys
+    from smb3_agent import stardew_adapter
+    events = []
+    loading = SimpleNamespace(process_id=42, process_started_at='bound-start', window_id='visible-game')
+    session = SimpleNamespace(session_id='farm-a', loading=loading, input_ready=True)
+    runtime = StardewRuntime(setup=SimpleNamespace(session=session))
+    profile = SimpleNamespace(profile_id='reviewed-screen', qualified=lambda: True)
+    navigator = WateringNavigator({(0, 0)}, {}, (0, 0))
+    runtime.register_qualified_profile(profile, navigator, evidence_root=tmp_path)
+    class App:
+        def activateWithOptions_(self, options):
+            events.append('focus')
+            return True
+    class Native:
+        def __init__(self, **kwargs):
+            assert kwargs == {'process_id': 42, 'process_started_at': 'bound-start'}
+        def detect_window(self, **kwargs):
+            assert events == ['focus']
+            events.append('detect')
+            return SimpleNamespace(window_id='visible-game', foreground=True)
+    monkeypatch.setitem(sys.modules, 'AppKit', SimpleNamespace(
+        NSRunningApplication=SimpleNamespace(runningApplicationWithProcessIdentifier_=lambda pid: App()),
+        NSApplicationActivateIgnoringOtherApps=1))
+    monkeypatch.setattr(stardew_adapter, 'MacVisibleStardewBackend', Native)
+    monkeypatch.setattr(runtime, 'connect_live', lambda **kwargs: {'available': True})
+    assert runtime.connect_profile('reviewed-screen')['available']
+    assert events == ['focus', 'detect']

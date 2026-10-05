@@ -503,3 +503,63 @@ def retain_engineering_load_review(launch: EngineeringLaunch, window: WindowObse
                    'screenshots': {'load_menu': menu, 'loaded_game': loaded},
                    'automatic_target_perception': False, 'owner_source_access': False}, stream, indent=2)
     return path
+
+
+class ReconnectedEngineeringProcess:
+    """A retained isolated process, with no restored gameplay authority."""
+
+    def __init__(self, launch: EngineeringLaunch) -> None:
+        self.launch = launch
+
+    def poll(self):
+        import subprocess
+        started = subprocess.run(["ps", "-p", str(self.launch.process_id), "-o", "lstart="],
+                                 capture_output=True, text=True, check=False).stdout.strip()
+        return None if started and started == self.launch.process_started_at else 1
+
+    def terminate(self):
+        # Reconnection does not transfer process lifetime ownership. Companion
+        # close releases its inputs but preserves the already-open farm.
+        return None
+
+    def wait(self, timeout=None):
+        return self.poll()
+
+
+def reconnect_open_engineering() -> tuple[EngineeringLaunch, ReconnectedEngineeringProcess]:
+    """Select only retained launcher metadata, never discover personal saves."""
+    import json
+    from smb3_agent.stardew_adapter import MacVisibleStardewBackend
+    candidates = []
+    for path in Path("artifacts/stardew-engineering").glob("*/process.json"):
+        try:
+            value = json.loads(path.read_text())
+            launch = EngineeringLaunch(**{key: value[key] for key in EngineeringLaunch.__dataclass_fields__})
+            if Path(launch.root).resolve() != path.parent.resolve():
+                continue
+            process = ReconnectedEngineeringProcess(launch)
+            if process.poll() is None:
+                candidates.append((launch, process))
+        except (KeyError, ValueError, OSError):
+            continue
+    if len(candidates) != 1:
+        raise StardewAdapterError("Reconnect requires exactly one still-open disposable game launched by Companion. Close extra disposable games or open a fresh copy.")
+    launch, process = candidates[0]
+    native = MacVisibleStardewBackend(process_id=launch.process_id, process_started_at=launch.process_started_at)
+    from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSApplicationActivateAllWindows
+    import time
+    app = NSRunningApplication.runningApplicationWithProcessIdentifier_(launch.process_id)
+    if app is None:
+        raise StardewAdapterError("The retained disposable process is unavailable.")
+    app.unhide()
+    app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows)
+    for retry in range(40):
+        try:
+            window = native.detect_window(require_foreground=False)
+            break
+        except StardewAdapterError:
+            if retry == 39:
+                raise
+            time.sleep(0.025)
+    _verify_engineering_launch_identity(launch, window)
+    return launch, process

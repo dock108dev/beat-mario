@@ -1,0 +1,634 @@
+{
+  "schema": "planting-survey/v1",
+  "profiles": [
+    {
+      "profile_id": "pilot-day2-75pct-v1",
+      "image": "/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b3-engineering/20260925-integrated/1790307231267365000.png",
+      "sha256": "b3afc44f8ca99b91eff1db6fb8cb6b868b7faaebcecd0362b6a73998b8b55e84",
+      "origin": [
+        768.0,
+        456.0
+      ],
+      "season": "spring",
+      "day": 2,
+      "season_box": [
+        1383,
+        45,
+        1421,
+        74
+      ],
+      "day_box": [
+        1350,
+        0,
+        1479,
+        33
+      ],
+      "targets": [
+        {
+          "id": "survey-4-3",
+          "tile": [
+            4,
+            3
+          ],
+          "box": [
+            936,
+            576,
+            984,
+            624
+          ],
+          "state": "empty_dirt",
+          "label": "bare ground just right of the starter crops"
+        },
+        {
+          "id": "survey-5-2",
+          "tile": [
+            5,
+            2
+          ],
+          "box": [
+            984,
+            528,
+            1032,
+            576
+          ],
+          "state": "empty_dirt",
+          "label": "bare ground below the mailbox"
+        },
+        {
+          "id": "survey-1-2",
+          "tile": [
+            1,
+            2
+          ],
+          "box": [
+            792,
+            528,
+            840,
+            576
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-2-2",
+          "tile": [
+            2,
+            2
+          ],
+          "box": [
+            840,
+            528,
+            888,
+            576
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-3-2",
+          "tile": [
+            3,
+            2
+          ],
+          "box": [
+            888,
+            528,
+            936,
+            576
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-4-2",
+          "tile": [
+            4,
+            2
+          ],
+          "box": [
+            936,
+            528,
+            984,
+            576
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey--1-3",
+          "tile": [
+            -1,
+            3
+          ],
+          "box": [
+            696,
+            576,
+            744,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey--1-4",
+          "tile": [
+            -1,
+            4
+          ],
+          "box": [
+            696,
+            624,
+            744,
+            672
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-0-3",
+          "tile": [
+            0,
+            3
+          ],
+          "box": [
+            744,
+            576,
+            792,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-0-4",
+          "tile": [
+            0,
+            4
+          ],
+          "box": [
+            744,
+            624,
+            792,
+            672
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-1-3",
+          "tile": [
+            1,
+            3
+          ],
+          "box": [
+            792,
+            576,
+            840,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-1-4",
+          "tile": [
+            1,
+            4
+          ],
+          "box": [
+            792,
+            624,
+            840,
+            672
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-7-2",
+          "tile": [
+            7,
+            2
+          ],
+          "box": [
+            1080,
+            528,
+            1128,
+            576
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-9-3",
+          "tile": [
+            9,
+            3
+          ],
+          "box": [
+            1176,
+            576,
+            1224,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-9-4",
+          "tile": [
+            9,
+            4
+          ],
+          "box": [
+            1176,
+            624,
+            1224,
+            672
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-9-5",
+          "tile": [
+            9,
+            5
+          ],
+          "box": [
+            1176,
+            672,
+            1224,
+            720
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-10-3",
+          "tile": [
+            10,
+            3
+          ],
+          "box": [
+            1224,
+            576,
+            1272,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-11-3",
+          "tile": [
+            11,
+            3
+          ],
+          "box": [
+            1272,
+            576,
+            1320,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-11-4",
+          "tile": [
+            11,
+            4
+          ],
+          "box": [
+            1272,
+            624,
+            1320,
+            672
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-11-5",
+          "tile": [
+            11,
+            5
+          ],
+          "box": [
+            1272,
+            672,
+            1320,
+            720
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-12-3",
+          "tile": [
+            12,
+            3
+          ],
+          "box": [
+            1320,
+            576,
+            1368,
+            624
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey--2-4",
+          "tile": [
+            -2,
+            4
+          ],
+          "box": [
+            648,
+            624,
+            696,
+            672
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        },
+        {
+          "id": "survey--1-5",
+          "tile": [
+            -1,
+            5
+          ],
+          "box": [
+            696,
+            672,
+            744,
+            720
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        },
+        {
+          "id": "survey-0-6",
+          "tile": [
+            0,
+            6
+          ],
+          "box": [
+            744,
+            720,
+            792,
+            768
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        }
+      ],
+      "inspection_targets": [
+        {
+          "id": "east-margin-8-2",
+          "tile": [
+            8,
+            2
+          ],
+          "box": [
+            1128,
+            528,
+            1176,
+            576
+          ],
+          "state": "empty_dirt",
+          "label": "bare margin above the eastern crops"
+        },
+        {
+          "id": "east-margin-8-3",
+          "tile": [
+            8,
+            3
+          ],
+          "box": [
+            1128,
+            576,
+            1176,
+            624
+          ],
+          "state": "protected",
+          "label": "vegetation west of the eastern crops"
+        }
+      ],
+      "variants": [
+        {
+          "image": "/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/gc3-inspection/20261004/live-survey-calibration.png",
+          "sha256": "349cb8b2f0dec5553df55984e60f64b838d516e4b77956c7f80f5b2857400bdb",
+          "origin": [
+            768,
+            452
+          ],
+          "classification": "actual_live_calibration",
+          "session_id": "6797ea598e1af200ed6c62c2a65f36aa"
+        },
+        {
+          "image": "/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/gc3-inspection/20261004/live-survey-calibration-aligned.png",
+          "sha256": "3b7ed46437fb5cbf398c76db19d93a1958ffe05b76761677bd9ade9c3d9b382e",
+          "origin": [
+            768,
+            456
+          ],
+          "classification": "actual_live_calibration",
+          "session_id": "4bc5e05fd9ea2696b91e2786a8bf7238"
+        }
+      ]
+    },
+    {
+      "profile_id": "b4-day5-screen-v13",
+      "image": "/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b4-engineering/20260925-live/mature-resource.png",
+      "sha256": "6815c998e51e88d149aef1cae47ecc986be15400628815adac56f883180a0f27",
+      "origin": [
+        768.0,
+        357.5
+      ],
+      "season": "spring",
+      "day": 5,
+      "season_box": [
+        1383,
+        45,
+        1421,
+        74
+      ],
+      "day_box": [
+        1350,
+        0,
+        1479,
+        33
+      ],
+      "targets": [
+        {
+          "id": "survey-2-3",
+          "tile": [
+            2,
+            3
+          ],
+          "box": [
+            840,
+            478,
+            888,
+            526
+          ],
+          "state": "empty_dirt",
+          "label": "bare ground just right of the starter crops"
+        },
+        {
+          "id": "survey-3-3",
+          "tile": [
+            3,
+            3
+          ],
+          "box": [
+            888,
+            478,
+            936,
+            526
+          ],
+          "state": "empty_dirt",
+          "label": "bare ground below the mailbox"
+        },
+        {
+          "id": "survey-1-2",
+          "tile": [
+            1,
+            2
+          ],
+          "box": [
+            792,
+            430,
+            840,
+            478
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-1-3",
+          "tile": [
+            1,
+            3
+          ],
+          "box": [
+            792,
+            478,
+            840,
+            526
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-2-2",
+          "tile": [
+            2,
+            2
+          ],
+          "box": [
+            840,
+            430,
+            888,
+            478
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey-3-2",
+          "tile": [
+            3,
+            2
+          ],
+          "box": [
+            888,
+            430,
+            936,
+            478
+          ],
+          "state": "access",
+          "label": "access strip beside the porch"
+        },
+        {
+          "id": "survey--1-3",
+          "tile": [
+            -1,
+            3
+          ],
+          "box": [
+            696,
+            478,
+            744,
+            526
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey-0-3",
+          "tile": [
+            0,
+            3
+          ],
+          "box": [
+            744,
+            478,
+            792,
+            526
+          ],
+          "state": "occupied",
+          "label": "existing crop patch"
+        },
+        {
+          "id": "survey--2-4",
+          "tile": [
+            -2,
+            4
+          ],
+          "box": [
+            648,
+            526,
+            696,
+            574
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        },
+        {
+          "id": "survey--1-5",
+          "tile": [
+            -1,
+            5
+          ],
+          "box": [
+            696,
+            574,
+            744,
+            622
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        },
+        {
+          "id": "survey-0-6",
+          "tile": [
+            0,
+            6
+          ],
+          "box": [
+            744,
+            622,
+            792,
+            670
+          ],
+          "state": "protected",
+          "label": "vegetation beside the crop patch"
+        }
+      ]
+    }
+  ]
+}
