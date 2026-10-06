@@ -1,42 +1,96 @@
-# Game Companion engineering plan to private beta
+# Game Companion engineering plan to local private beta
 
-Updated October 5, 2026. This is the complete active technical roadmap for the owner's personal Mac private beta. [product direction](product-direction.md) owns the experience; [architecture](agent-architecture.md) defines the two AI responsibilities. Historical B/V2/PB plans and verification records describe their own implementations, not the new beta's completion.
+Updated October 5, 2026 after the owner rejected repeated micro-adjustment milestones. The next deliverable is a usable local Mac app candidate. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) contains the active delivery checklist; [product scope](product-direction.md) and [architecture](agent-architecture.md) define behavior. Dated verification records retain their evidence scope.
 
-## Source AI milestone — October 5 connected acceptance
+## Release target and initial scope
 
-Mario’s supported World 1-1 x≥700 segment has 3/3 native completions on the final unchanged source, with independently observed alive/grounded arrival and neutral handback for each passing run. The set includes two compatible-coaching trials and a walking-on-flat/raised-block landing preference variation. Earlier failures remain failed under their own candidate identities. Running maneuvers, a feedback-bounded run-up, native object/projectile/motion facts, neutral waiting and after-frame arrival checks address the retained blockers. This small engineering set establishes observed scope, not broad reliability. Prepared Stardew watering acceptance is preserved. See [verification](gc-ai-loop-verification.md). Wider Mario coverage, exact-package qualification and owner release remain open.
+Deliver one successor Game Companion.app that the owner can open from Finder, configure through ordinary controls, use for both supported games, interrupt and reopen. Contextual language and gameplay decisions use the existing Codex integration; local controllers retain timing, validation and release. Normal inference is remote, while game tools and histories are local.
 
-## Release target
+The initial local beta uses the capabilities already demonstrated in source:
 
-The player can talk naturally about a goal, have the companion understand the game and choose how to pursue it, watch approved play, correct its decisions, interrupt immediately and reopen useful remembered results. Deliver this for bounded but useful Mario and Stardew coverage through a Mac app. Minecraft connection/calibration carries forward with accurate capabilities; complete Minecraft play develops later during beta.
-
-This is a single-owner local application. Use the already installed, ChatGPT-authenticated Codex CLI as the first model backend. The app and game tools run locally; ordinary OpenAI-backed inference is remote. No hosted application service, public accounts, fleet infrastructure or custom model-training program is required. Validate the actual provider's latency and availability during implementation; installation/login alone establishes neither gameplay quality nor unlimited usage.
-
-Private-beta readiness requires two connected AI responsibilities:
-
-1. **Contextual language LLM:** original words and conversation/game context become an understood objective, targets, preferences, constraints, clarification and coaching.
-2. **Game-understanding/play agent:** current observations, mechanics, available capabilities and memory become action choices, verified effects and revised decisions during play.
-
-One model/provider may serve both. Existing deterministic controllers execute fast finite skills and remain responsible for timing and release. Engineering chooses modules, schemas, prompts and algorithms. The requirements below define behavior and interfaces, not prescribed phrases or a controller implementation.
-
-## Current foundation and honest status
-
-| Area | Available foundation | Remaining release work |
+| Capability | Source evidence | Initial candidate treatment |
 | --- | --- | --- |
-| Conversation | Ordinary game workspaces, typed plans, review/approval, priority interruption and history | Broader contextual/coaching evaluation and reusable strategy coverage |
-| Model integration | Separate local Ollama/reference-profile gateway; installed and signed-in Codex CLI inspected | Source Codex lifecycle implemented; packaged discovery and wider provider-limit evaluation pending |
-| Mario | Observed coached opening, remembered authored stairs/pipe tactics, two World 1-1 exits, two supported sky 1UP collections, outcome receipts | Wider hazards, other forms/starts and useful unseen combinations |
-| Stardew | Observed selected watering, planting discussion and eastern inspection on supported prepared settings | Prepared watering model decisions implemented; broader perception, skills and changed-condition coverage pending |
-| Cave | Local activity lifecycle, camera work and a newer manually verified tool-free route | Ordinary companion round trip remains unverified; manual route records do not establish delegated activity or AI play |
-| Learning | Persistent coaching, discoveries, outcomes and experimental instructions | Contextual retrieval/updates that demonstrably alter agent decisions, inspect/reset, contradiction handling |
-| Setup/delivery | Launchers, process/window isolation, prepared farms, player store and retained private.2 package | Integrated Mario/Stardew/Codex setup, app-owned assets, successor package and ordinary package verification |
-| Verification | Local gates plus bounded source-gameplay records | Real-model evaluations, adaptive play variation, new readiness contract and exact packaged two-game walkthrough |
+| Mario | World 1-1 adaptive early segment, 3/3 final native arrivals alive/grounded; compatible coaching, Stop and reopening | Include bounded segment, finite attempts, coaching and history; qualify the packaged path |
+| Stardew | Two prepared Day 2 model-directed watering variants with observed return/handback and pending-inference Stop | Include prepared-farm watering; repair current renderer/setup and qualify the packaged path |
+| Reconnaissance | Source composition and two actual-model simulated completions; native activity has not begun | Experimental or unavailable by default until native acceptance; does not block candidate construction |
+| Other retained activities | Independent source contracts for Mario routes/rewards, Stardew discussion/Day 5 and legacy games | Carry accurate status; enable only with declared prerequisites and applicable checks, or retain as secondary/experimental |
+| Recording, broader levels/farms, cave interiors, training | Deferred or incomplete | Later beta work; recording tentatively beta v2 |
 
-Recording source work is preserved but deferred to tentative beta v2. Full Mario coin coverage, arbitrary English action execution, later levels, arbitrary farms and broad reliability remain unknown. Prior successes provide regression assets and reusable skills; they do not complete the two AI layers.
+Both required games must work through the delivered app before the two-game beta is ready. Existing source evidence is a foundation; it does not qualify a new package or the current broken Stardew setup. Do not advertise unverified abilities to make the beta appear broader.
 
-## Ordered work packages
+## Repository review — October 5
 
-Status is **Foundation**, **Partial** or **Open**; mark a package complete only when its exit is evidenced. Tasks may progress together where dependencies permit. Complete one model-driven vertical slice early, then extend it; avoid building all infrastructure before it affects ordinary gameplay.
+- Actual source now has both model roles, visual Mario skills, compatible memory, watering decisions and guarded cancellation. Do not repeat provider scaffolding or demand a new game objective before delivering them.
+- GC-U added catalog model/permission status, direct Mario/Stardew setup and guarded process/window preparation. The latest retained setup reached the porch but clipped the toolbar/water bar; resource recognition refused. Reported bounds alone did not resolve it. This blocks current Stardew availability and needs a usable remedy.
+- The generic `/setup` store/UI still owns only Minecraft/OpenTTD templates. `app_runtime.py` opens that historical surface. Integrate the existing catalog/game-owned setup into the app entry and persistence flow rather than creating a competing setup subsystem.
+- `player_store.py` still declares private.2; the builder hardcodes bundle build 20002, copies the historical quick start, includes whole data/public trees and does not declare required FCEUX Lua resources. A successor identity, explicit resource set and current guide are needed.
+- The initial GC-D inventory has 90 references, with eligibility, transitive images/calibration, absolute-path resolution and prepared-save import still pending. Inventory is not an implemented bundle.
+- The frozen app changes working directory to Application Support. Required resources, profile registrations, scene assets and writable history must resolve correctly there. Games, owner game files and Codex authentication remain external.
+- Readiness still targets historical B-series v3; the built-in smoke checks historical profile/HTTP behavior. A current capability matrix and packaged Mario/Stardew walkthrough must replace those as the new beta's acceptance path.
+- Server-close cleanup exists, but discards its failure list; the app entry lacks the source signal handling. Exercise and repair owned provider/input/worker cleanup in the delivered app.
+
+The retained GC-U canonical record is 1,659 tests. Later executable-discovery maintenance has focused checks, not new native/package qualification. This review is documentation/source inspection; no game, model or package was launched.
+
+## Complete initial-beta delivery checklist
+
+These are the remaining technical requirements through local release. Work proceeds as one delivery milestone with three exits, rather than another chain of isolated gameplay patches.
+
+### Build the reviewable app candidate — GC-U / GC-D1
+
+- [ ] Define a current versioned capability/readiness contract for the initial scope, keeping legacy B/PB records intact. Separate required beta capabilities from experimental/later work.
+- [ ] Open the app on the actual Mario/Stardew/Codex catalog/readiness flow; integrate game-owned setup, selection and saved bindings without another authority owner.
+- [ ] Preserve existing profiles, coaching and history through any schema/data migration; reopening restores no live permission.
+- [ ] Make executable selection/discovery, CLI sign-in, macOS permission status and missing-prerequisite remedies usable from a Finder launch.
+- [ ] Complete Mario disposable-session setup and Stardew owner-controlled prepared-copy/import/setup. Preserve primary/frozen saves and declare manual Load/porch/tool steps.
+- [ ] Resolve Stardew rendered layout/resource visibility with a reproducible ordinary remedy; retain genuine geometry, resource, focus and freshness refusals.
+- [ ] Complete the resource inventory for enabled capabilities, including transitive calibration/survey images, manifests, registries, FCEUX scripts, helpers and Python/runtime dependencies.
+- [ ] Choose explicit bundled assets and owner-imported/external prerequisites. Avoid wholesale copying of ignored data, personal saves, receipts or credentials.
+- [ ] Replace repository-relative/absolute developer paths with read-only app resources and writable Application Support registrations/history.
+- [ ] Package required OCR/helper resources, or expose a verified external prerequisite where the initial scope actually needs it.
+- [ ] Give the successor distinct version/build/output/manifest and preserve retained private.1/private.2 apps.
+- [ ] Include a matching current quick start, scoped capability list, readable recovery steps and inspectable local diagnostics/feedback.
+- [ ] Implement independent owned-process/input cleanup for Quit, provider cancellation, signal/termination and interrupted startup; surface cleanup failures.
+- [ ] Build and locally sign a self-consistent Mac candidate. Candidate construction and asset/path fixes proceed while Stardew or experimental checks remain pending.
+
+**Exit:** an actual app exists with its declared resources, setup and guide, plus an explicit list of remaining qualification blockers. A package may be reviewable before it is beta-ready.
+
+### Qualify and repair the delivered experience — GC-Q / GC-D2
+
+- [ ] Launch the candidate from Finder with isolated user data and no dependency on the developer shell or repository current directory.
+- [ ] Check first-use readiness, current authentication, game/asset selection and actionable missing permission/dependency remedies.
+- [ ] Run the ordinary Mario request/review/play/coach-or-compatible-retry/Stop loop with observed segment result and handback.
+- [ ] Run the ordinary prepared Stardew request/correction/review/watering/return loop with fresh resource/crop observations and handback.
+- [ ] Confirm game switching releases prior control, invalidates plans/targets and rejects old model replies.
+- [ ] Check cancellation during pending inference and active execution on paths affected by packaging/setup changes; preserve finite authority and no continuation.
+- [ ] Check provider unavailable/slow/invalid output, disconnect/focus/window change and fresh-review recovery without widening authorization.
+- [ ] Verify persisted configuration, results and applicable guidance after restart/update, without restored session or control.
+- [ ] Verify Quit and unexpected termination clean up owned inputs, provider children and workers; unrelated games/services remain untouched.
+- [ ] Check readable small/supported-window layouts, keyboard/focus/drafts, loading/empty/error states and current-versus-historical results.
+- [ ] Preview local feedback/diagnostics with build identity and relevant context, excluding credentials and unrelated captures.
+- [ ] Repair blockers exposed by this integrated walkthrough and rerun affected checks; run meaningful affected tests and the canonical repository gate.
+- [ ] Record exact app/resources/capabilities and evidence, preserving earlier failed outcomes. Test counts and source successes are not package proof.
+
+**Exit:** both declared games work end to end through the delivered app, with controls, persistence and recovery verified. Reconnaissance can remain experimental without holding this exit.
+
+### Prepare owner use and local release — GC-R
+
+- [ ] Deliver the app, manifest, readable quick start, known limitations and concise walkthrough for the owner.
+- [ ] Provide simple local report/triage and update/rollback steps that preserve user data and accepted evidence.
+- [ ] List accepted limits and unresolved optional work separately from release-blocking setup/control/gameplay failures.
+- [ ] Complete the owner's usefulness review of the actual candidate and obtain the local beta decision; do not manufacture acceptance from engineering trials.
+- [ ] Record the released candidate and a finite post-beta backlog. No hosted service, external tester campaign or notarization requirement is implied for this personal Mac release.
+
+**Exit:** the owner has a usable declared-scope beta and a recorded local release decision.
+
+## Current engineering pickup
+
+Implement and build the successor local app using the checklist above. Complete packaging, resource relocation, app entry and usable setup as a single concrete delivery task. Address the Stardew layout problem as part of that experience. If it remains blocked, finish independent candidate work and report the exact two-game qualification blocker rather than ending with only another setup repair.
+
+Reconnaissance native qualification remains valid follow-on work; keep it visibly experimental until it passes. Broader hazards, complete levels/coins and arbitrary farm support develop after the initial scoped beta.
+
+## Technical contracts and broader coverage backlog
+
+The GC packages below retain shared technical contracts and the broader game roadmap. Their wider exits are not all prerequisites for the initial local candidate. Use the delivery checklist above for required initial-beta work; qualify only the declared enabled capabilities and keep incomplete features experimental or unavailable. Do not restart completed provider or gameplay work.
 
 | Package | Deliverable | Dependencies | Current status |
 | --- | --- | --- | --- |
@@ -48,11 +102,11 @@ Status is **Foundation**, **Partial** or **Open**; mark a package complete only 
 | GC-A5 | Adaptive gameplay decision loop | GC-A1–A4 | Partial: native watering and visual Mario decisions consume fresh effects |
 | GC-A6 | Supervision, coaching and applicable memory | GC-A2/A5; existing store/control | Partial: compatible coaching applied on a later native Mario attempt |
 | GC-M | Model-driven Mario experience | GC-A2–A6 | Partial: supported segment completed 3/3 with completing variation/coaching; wider coverage open |
-| GC-S | Model-driven Stardew activities | GC-A2–A6 | Partial: watering accepted; reconnaissance source implemented, native setup/acceptance pending |
-| GC-U | Ordinary setup, conversation and shared usability | GC-A1; both adapters | Partial |
-| GC-Q | Model, gameplay, control and regression evaluation | Starts with A1; exit after M/S/U | Actual-model and source live trials; wider evaluation pending |
-| GC-D1 | Complete app resources, packaging and readiness contract | GC-U; release capability set | Partial retained delivery |
-| GC-D2 | Exact-package end-to-end qualification and repairs | M/S/Q/D1 | Open |
+| GC-S | Model-driven Stardew activities | GC-A2–A6 | Watering source accepted; current setup recovery blocks availability; reconnaissance experimental |
+| GC-U | Ordinary setup, conversation and shared usability | GC-A1; both adapters | Source readiness/entry/preparation implemented; integrated app walkthrough pending |
+| GC-Q | Model, gameplay, control and regression evaluation | Enabled beta scope and D2 | Source evidence retained; exact-app checks pending; broader evaluation later |
+| GC-D1 | Complete app resources, packaging and readiness contract | Declared beta scope; source foundations | Next: build candidate alongside setup recovery; inventory exists, builder incomplete |
+| GC-D2 | Exact-package end-to-end qualification and repairs | D1; enabled beta capabilities | Open: integrated walkthrough and repairs |
 | GC-R | Local private-beta release preparation and owner decision | D2 | Open |
 
 ### GC-A0 — contracts and responsibility boundaries
@@ -157,7 +211,7 @@ Status is **Foundation**, **Partial** or **Open**; mark a package complete only 
 - Connect language goals, working state and gameplay decisions to short approved activities, target selection and navigation.
 - Deliver useful watering on observed targets with tool/water/energy checks, per-target effects, discussion/correction and revised continuation.
 - Deliver planting-location discussion grounded in terrain, occupancy, access and crop/season rules; finding a spot grants no planting/purchase permission.
-- Deliver one meaningful exploration/reconnaissance activity. Clarify the destination and actual entrance/interior coverage. Complete any required supported route work within reusable perception/navigation improvements.
+- Later coverage: qualify the implemented reconnaissance activity and its target/preference variation before enabling it as accepted gameplay. Initial beta can ship with reconnaissance experimental or unavailable; cave/interior coverage remains separately declared.
 - Verify task/target/resource/preference variation without engineering coordinates and without a custom full script for each variation.
 - Provide usable disposable/copy setup and backup/isolation checks, clear manual prerequisites, supported settings and tool/refill remedies.
 - Preserve protected crops/resources and final return accounting; do not label unknown species or off-screen state as confirmed.
@@ -166,8 +220,7 @@ Status is **Foundation**, **Partial** or **Open**; mark a package complete only 
 
 ### GC-U — ordinary setup and coherent product UI
 
-
-GC-S native acceptance remains pending. GC-U source setup adds catalog Codex readiness/refresh, macOS permission status, direct Mario/Stardew setup, explicit installation selection, Finder FCEUX discovery and corrected Mario setup returns. Preparation binds every step to its displayed process/window/bounds, moves the SDL pointer before clicking, and releases input after each step. A fresh isolated Day 2 copy reached the porch through the ordinary controls. Supported reported bounds were restored, but the rendered toolbar remains below retained calibration and its water bar is clipped; selected-can recognition refused. Guarded screen-rectangle capture did not resolve that rendering mismatch. Stop confirmed neutral input and player handback; the test game was closed without saving. No reconnaissance trial began. Canonical validation passed 1659 tests and all checks. Repair the disposable renderer/window layout without changing resource guards, then run the finite two-investigation/Stop/Take-control/reopening set and focused Mario/Stardew usability walkthrough. GC-S/GC-U source qualification remains pending. The initial GC-D inventory covers 90 referenced resources; packaging, exact-app GC-Q/GC-D qualification and recording remain separate, with recording deferred to tentative beta v2.
+Source setup includes catalog Codex readiness, permission status, direct game setup and guarded preparation. Its recorded native trial reached the porch but could not recognize the selected can because the toolbar/resource bar was clipped. Resolve that as a Stardew usability blocker during candidate delivery. Source setup is partial; the app entry, persisted bindings and packaged walkthrough still need integration. Reconnaissance remains experimental until its separate native checks pass. Build/package work proceeds concurrently with renderer recovery.
 
 - Integrate Mario, Stardew and Codex setup in the real app catalog/profile flow; current generic setup templates focus on Minecraft/OpenTTD.
 - Detect or guide game/emulator paths, CLI availability/sign-in, macOS permissions, selected process/window/display and supported settings with readable remedies.
@@ -212,7 +265,7 @@ GC-S native acceptance remains pending. GC-U source setup adds catalog Codex rea
 - Verify the packaged app from Finder using isolated user data, without relying on the developer shell or undocumented repository assets.
 - Check Codex discovery/sign-in/inference, first-use game setup and actionable missing-dependency/permission remedies.
 - Run Mario goal/play/coach/retry/Stop, neutral game switch, Stardew request/plan/approve/activity/discuss/replan/Stop, historical reopening and feedback preview.
-- Check initial Minecraft connection/calibration entry with truthful available capabilities. Full Minecraft gameplay remains a later-beta deliverable.
+- Preserve truthful legacy Minecraft/OpenTTD entries if included; their new native campaigns do not block the two-game local beta. Full Minecraft gameplay remains later work.
 - Verify provider unavailable/slow states, disconnect, window/focus changes, safe recovery, quit and restart. Confirm no leftover owned inputs/workers/games and no restored authority.
 - Record engineering assistance and repair it or expose an acceptable manual step in the guide. Source-gameplay success does not replace package verification.
 
@@ -231,7 +284,7 @@ GC-S native acceptance remains pending. GC-U source setup adds catalog Codex rea
 
 ## Progress policy
 
-Use the task exits to decide what comes next. Routine Git/version identification is part of engineering, not a separate reconciliation project. Make reversible decisions autonomously. Preserve saves, credentials, accepted routes, evidence and incoming work.
+Use the consolidated delivery exits above to decide what comes next. Independent packaging/setup work continues while an experimental gameplay check is pending. Routine Git/version identification is part of engineering, not a separate reconciliation project. Make reversible decisions autonomously. Preserve saves, credentials, accepted routes, evidence and incoming work.
 
 A perception fix, new primitive or route repair is valuable when it unlocks the current AI milestone. Report the capability it enabled and demonstrate the connected behavior. Extend reusable capabilities that improve the connected model loops rather than adding isolated scripted scenarios.
 
@@ -239,7 +292,7 @@ If live access is unavailable, complete useful independent implementation and id
 
 ## Documentation ownership and completion
 
-Maintain this repository-local plan as the active worklist, product direction as the intended experience, architecture/runtime/security as contracts, player guides as implemented behavior, and dated verification records as evidence. The PM handoff contains only current pickup/status. Historical plans are references, not active next actions.
+Maintain this repository-local plan and the Desktop tracker as the active worklists, product direction as the intended experience, architecture/runtime/security as contracts, player guides as implemented behavior, and dated verification records as evidence. The PM handoff contains only current pickup/status. Historical plans are references, not active next actions.
 
 At every integrated closeout record actual model-driven behavior, automated checks, live/game/package evidence, remaining gaps and the next work package. Documentation updates do not themselves implement or qualify the new beta.
 
@@ -249,18 +302,13 @@ Use [opening/discovery verification](gc1-gc2-coaching-verification.md), [route v
 
 After initial local release: wider levels/farms/settings, completed Minecraft gameplay during beta, advanced guided no-code eligible-game onboarding, recording/demonstration qualification tentatively in beta v2, and eventual independent practice. These are not hidden initial-release gates.
 
-## Documentation pass coverage
+## Historical documentation pass coverage
 
 This pass reviewed the repository README and all top-level docs for scope/status consistency. Updated active product/architecture/engineering/PM/worklist, conversation/learning/limits, game interfaces/guides/onboarding, runtime/setup/ownership, observation/goals, security/recovery, UI/evaluation/metrics, assets/development/index and retained-package entry guidance. The plan contains the complete task sequence.
 
 Historical B/V2/PB handoffs are explicitly labeled references. Dated verification records retain their results; the cave record has a status clarification for newer manual-route artifacts without converting them to ordinary activity success. Stable route schemas, FCEUX/reliability operator mechanics and accepted-route records remain implementation references. Retained app manifests/adjacent guides and gameplay artifacts were not changed.
 
 This is a documentation update only: no Codex-backed runtime, new game skill, package, gameplay verification or release acceptance is established by it.
-
-## Next source activity
-
-GC-S native acceptance remains pending. GC-U source setup adds catalog Codex readiness/refresh, macOS permission status, direct Mario/Stardew setup, explicit installation selection, Finder FCEUX discovery and corrected Mario setup returns. Preparation binds every step to its displayed process/window/bounds, moves the SDL pointer before clicking, and releases input after each step. A fresh isolated Day 2 copy reached the porch through the ordinary controls. Supported reported bounds were restored, but the rendered toolbar remains below retained calibration and its water bar is clipped; selected-can recognition refused. Guarded screen-rectangle capture did not resolve that rendering mismatch. Stop confirmed neutral input and player handback; the test game was closed without saving. No reconnaissance trial began. Canonical validation passed 1659 tests and all checks. Repair the disposable renderer/window layout without changing resource guards, then run the finite two-investigation/Stop/Take-control/reopening set and focused Mario/Stardew usability walkthrough. GC-S/GC-U source qualification remains pending. The initial GC-D inventory covers 90 referenced resources; packaging, exact-app GC-Q/GC-D qualification and recording remain separate, with recording deferred to tentative beta v2.
-
 
 ## Demonstrated bounded Mario milestone — October 5
 
@@ -272,4 +320,4 @@ GC-S native acceptance remains pending. GC-U source setup adds catalog Codex rea
 
 ## October 5 source maintenance — SSOT enforcement
 
-FCEUX setup, live observation, Show, engineering harness and default reliability preflight now share `executable_discovery.py`; missing discovery refuses launch without a bare-name fallback. README, runtime/configuration and the SSOT map describe the implemented Codex roles and retained diagnostic/controller boundaries. Focused validation passed 218 synthetic component tests (208 before this pass), Ruff and syntax/whitespace checks. This source maintenance changes the candidate; prior native/package evidence keeps its original identity. GC-S renderer repair and pending acceptance remain the next gameplay work. See [SSOT decisions](ssot.md#october-5-ssot-enforcement-pass).
+FCEUX setup, live observation, Show, engineering harness and default reliability preflight now share `executable_discovery.py`; missing discovery refuses launch without a bare-name fallback. README, runtime/configuration and the SSOT map describe the implemented Codex roles and retained diagnostic/controller boundaries. Focused validation passed 218 synthetic component tests (208 before this pass), Ruff and syntax/whitespace checks. This source maintenance changes the candidate; prior native/package evidence keeps its original identity. Current pickup is consolidated local app delivery; renderer recovery is a component of the supported Stardew walkthrough, and reconnaissance is experimental. See [SSOT decisions](ssot.md#october-5-ssot-enforcement-pass).

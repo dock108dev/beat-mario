@@ -24,3 +24,9 @@ have their own manifests and capabilities. A fully qualified two-game package,
 broader scene coverage and general farm adoption remain incomplete. See
 [known limitations](known-limitations.md), [architecture](agent-architecture.md),
 and the [player guides](README.md#run-and-use) for implemented behavior.
+
+## Initial local beta delivery — October 5
+
+The next product outcome is one usable Mac app with ordinary setup, actual Codex-backed conversation/play, immediate control and persistent results. Initial enabled gameplay is the supported Mario adaptive early segment and prepared Day 2 model-directed watering. Package and verify those existing capabilities before broadening the game roadmap.
+
+Current rendering/setup failures still block Stardew availability and must be resolved in the delivered flow. Reconnaissance is source-implemented but remains experimental/unavailable until native-qualified; it does not block candidate construction. Full levels/coins, arbitrary farms, cave interiors and broader game coverage follow during beta. Recording stays deferred to tentative beta v2. The [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) distinguishes a reviewable app from a qualified two-game beta and the owner's release decision.

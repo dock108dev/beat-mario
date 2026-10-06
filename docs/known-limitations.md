@@ -10,11 +10,11 @@ The ordinary source app implements Codex contextual language and gameplay roles 
 | --- | --- | --- |
 | Language | Contextual Codex interpretation in both ordinary workspaces | Wider conversation quality, latency and availability evaluation |
 | Mario | Current-image/native-state decisions compose finite maneuvers beyond x=160; compatible coaching affects decisions | Final segment 3/3; occupied-pipe consistency, wider hazards, full level and complete coins remain open |
-| Stardew | Two model watering variants return to farmhouse; pending Stop has no continuation | Prepared profiles and daylight/camera coverage only; other activities retain existing controllers |
+| Stardew | Two model watering variants returned on their qualified source; pending Stop had no continuation | Current renderer clips toolbar/water pixels and blocks recognized setup. Prepared/daylight limits remain. Reconnaissance has simulated evidence only and stays experimental until native-qualified |
 | Learning | Cartridge-compatible advice, supersession, future reset and linked native receipts | No demonstrated improvement, custom training or unattended practice |
 | Cave | Manual exterior route/return foundation retained | Ordinary delegated round trip and interior exploration remain unverified |
 | Recording | Existing source preserved | Deferred to tentative beta v2 |
-| Delivery | Source checks and native trials | Successor package, walkthrough and owner acceptance pending |
+| Delivery | Source Codex/game readiness and guarded preparation are implemented; initial resource inventory exists | Historical app entry/templates and private.2 builder remain; successor assets/imports, data paths, exact-package walkthrough and owner acceptance pending |
 
 Normal Codex inference sends selected context and game images remotely. Credentials are reused through the installed CLI and are not retained in evidence. CLI availability does not guarantee account allowance or model quality. Stop cancels owned inference and releases input. Reopening stores descriptive history, not authority. After canceled watering work, request a new goal against a fresh observation rather than reusing the canceled proposal.
 
@@ -90,3 +90,7 @@ The ordinary conversation loop explores three bounded scheduled-jump patterns an
 Current source observed two consecutive World 1-1 finishes with two coins each after app-delivered remembered stairs/pipe instructions. This supersedes the experimental route's earlier stairs failure boundary, not the separate demonstration qualification. Instruction application, stairs landing, level exit and neutral handback have separate receipts. The vocabulary is a finite supported tactic contract; arbitrary gameplay instructions and generalized autonomous learning are unavailable. Historical route evidence and private.2 retain their original meaning. Two attempts are limited repeat evidence, not broad reliability or full coin coverage. See [route verification](gc2-route-verification.md).
 
 The supported World 1-1 sky-brick 1UP was subsequently collected twice with independent target, collection, life-credit and handback receipts. This requires prepared Raccoon/Tanooki Mario at the declared early-runway entry; acquiring those prerequisites remains player-controlled. It does not qualify arbitrary rewards, flight areas or broader strategy. See [flight verification](gc2-flight-verification.md).
+
+## Delivery priority
+
+The current [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) builds and qualifies a personal Mac candidate with the proven bounded Mario/watering scope. Current Stardew recovery is required for usable watering; independent packaging and setup work continues while that blocker is repaired. Reconnaissance, cave travel and wider gameplay are not serial gates to candidate construction. No retained package is upgraded by these documentation changes.

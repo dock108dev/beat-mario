@@ -122,7 +122,8 @@ def test_unavailable_inspection_has_useful_remedy(tmp_path):
 
 def test_visual_surface_and_saved_discussion():
     html=render_stardew_conversation_workspace()
-    assert 'stardew-planting-visual' in html and 'Saved location discussion' in html
+    assert 'stardew-planting-visual' in html and 'Earlier location discussion' in html
+    assert 'id="stardew-planting-discussion"' in html
     assert 'createElementNS' in STARDEW_CONVERSATION_JS and 'Saved recommendation from an earlier view' in STARDEW_CONVERSATION_JS
 
 

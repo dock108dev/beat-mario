@@ -203,3 +203,11 @@ own behavior-preserving slice rather than a mechanical file split.
 - Use `route_patch.py` for accepted-tree mutation.
 - Preserve live evidence; tests cannot promote gameplay acceptance.
 - Update this document when entry points, required tools, or validation change.
+
+## Current local-beta delivery work
+
+The active [engineering checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) and [handoff](private-beta-pm-handoff.md) now target one reviewable Mac candidate followed by its ordinary two-game qualification. Build/setup work proceeds alongside supported Stardew renderer recovery; experimental reconnaissance does not block construction.
+
+The reviewed builder still imports private.2 VERSION, hardcodes bundle build 20002, copies the retained quick start, adds whole data/public directories and declares no explicit FCEUX script resource set. App runtime changes to Application Support and opens the historical Minecraft/OpenTTD `/setup` flow. Integrate the current game catalog/setup owners, scope-aware readiness, explicit resource/import inventory, writable data and app lifecycle. The 90-reference GC-U inventory is an input to that work, not a finished bundle. Preserve previous apps and their manifests.
+
+Validate from Finder against the app's own resources and declared external prerequisites. Source pytest or the existing offline HTTP/profile smoke does not demonstrate Mario/Stardew packaged gameplay. Check actual model/game/control, switch, recovery, persistence and Quit on the candidate; recheck only affected behaviors after repairs. Run the canonical gate after integrated engineering changes. This documentation pass itself requires documentation/link checks and performs no new model/game/package trials.

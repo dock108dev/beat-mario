@@ -23,6 +23,8 @@
 
 ## Planning and evidence records
 
+Current pickup: build a usable local Mac candidate with supported Mario and prepared Stardew watering, then qualify its ordinary setup/play/control/persistence loop. [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) and the [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) contain the remaining release tasks. Source reconnaissance stays experimental until native-qualified; it does not block independent packaging work.
+
 The named engineering, handoff, review and verification files retain development
 plans and exact candidate evidence. They are records, not prerequisites for setup.
 [Engineering plan](private-beta-engineering.md) and
