@@ -2,25 +2,11 @@
 
 ## Current abilities and the private-beta target
 
-Current source can execute the supported World 1-1 coaching, surface-route and
-sky-1UP cases described below. The retained verification records establish actual
-controller behavior and outcomes for those cases. The ordinary Mario interpreter
-still uses deterministic request matching, and its route choices and tactics are
-mostly authored in advance. These foundations do not yet establish the intended
-AI player.
+The ordinary source app uses Codex to understand your wording and a separate gameplay role to choose finite maneuvers. Ask to play the early World 1-1 segment, specify preferences and an attempt limit, choose **Apply change** to review, then **Start reviewed plan**. The experimental goal is x=700, alive and grounded. The model sees paused game images and native progress, predicts effects, then chooses again; the controller owns input timing. It may stop early on unsafe state, inference failure or exhausted limits. Arrival is reported only when independently observed.
 
-The next development priority is a Codex-backed conversational interpreter and a
-separate gameplay reasoning role. The first understands your own wording, goals
-and corrections; the second uses the current game situation to choose actions,
-check their effects and revise the approach. Both roles may use the same Codex
-provider. The app continues to handle controls and immediate interruption.
+For example, ask for short 8-frame hops on clear flat ground, longer running jumps for obstacles, or intermediate landings on visible raised blocks. A high-hop-on-flat trial failed near an enemy; that preference is not qualified as reliably completing. Ask to remember a correction for future compatible segments. **Remembered Mario guidance** shows active or superseded advice. A later compatible plan retrieves it; outcomes distinguish requested advice, matching native application receipts and unknown improvement. Current facts and fresh instructions take priority. **Reset future guidance** resets future advice while retaining historical attempts. Questions grant no input.
 
-For the initial private beta, those roles must affect actual play within a stated
-supported scope. They must handle a changed request or gameplay condition without
-needing a new script for that individual case. This is planned work, not a
-description of current availability. See the [Mario integration
-contract](b2-integration-contract.md) and [engineering plan](private-beta-engineering.md).
-Recording remains deferred to tentative beta v2.
+Each segment attempt permits at most 32 decisions, 1200 skill frames and 480 seconds; the reviewed finite attempt count and retry expiry still apply. **Stop** and **Take control** release input and cancel pending inference. After cancellation, open a fresh attempt and request/review a new goal. Saved history reopens without restoring a plan or control. Codex inference is remote; the app and game controls run locally. The final native engineering set completed 3/3 supported segments, including a raised-block preference trial. Full-level adaptive completion, complete coin coverage and broad reliability remain unverified. Existing coin routes and flight/reward controllers retain their separate scopes. See [verification](gc-ai-loop-verification.md). Recording remains deferred to tentative beta v2.
 
 ## Fly to the sky hidden 1UP
 
@@ -32,7 +18,7 @@ Ask **“Fly to the hidden 1UP.”** Companion names the hidden 1UP inside the s
 4. Watch the separate flight, area, revelation and collection results. Collection requires the target mushroom's game-owned hit receipt. Unknown observations stay unconfirmed; an extra life from 100 coins does not prove the hidden reward.
 5. **Stop**, **Take control** or **STOP RIGHT NOW WAIT** interrupts play. Confirm handback before more input. The finished flight pauses with control returned. After release, **Open fresh attempt** opens a new disposable session; prepare again and review a fresh request before Start. Saved results can be reopened without playing.
 
-This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. Final repository gate: **1,444 tests passed**, plus lint/security/contracts/renders. See [flight verification](gc2-flight-verification.md). The active next work is the shared Codex language/gameplay loop on Stardew, followed by Mario strategy integration; full coin coverage remains unknown and recording stays deferred to tentative beta v2.
+This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. See [flight verification](gc2-flight-verification.md). Full coin coverage remains unknown; recording is not a qualified ordinary workflow.
 
 ## Send instructions for the next attempt
 
@@ -42,13 +28,14 @@ You can teach the supported stair instruction directly: “At the stairs land on
 
 Current source observed the stairs and pipe continuation reaching the World 1-1 exit with **two coins**. Two consecutive reviewed attempts finished; collecting every coin is unverified. Urgent chat Stop during a paused pipe crossing also returned control with native confirmation. The supported next-attempt instructions are limited to this stair tactic, a failure-derived pipe continuation and the existing opening timing. The supported flight/reward case above is verified through real source gameplay; broader English tactics and wider learning remain development work. No recording or player demonstration is required. See [route verification](gc2-route-verification.md).
 
-## October 4 priority update — recording deferred
+## Recording limitations
 
 Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
 
-**Current continuation:** build the shared conversational interpretation and gameplay reasoning roles, prove the decision-and-replanning loop in Stardew, then apply it to Mario's faster play loop. Existing Mario successes remain useful baselines. Recording remains deferred.
-
-Guide for the currently implemented Mario adapter. The [product direction](product-direction.md) defines the corrected beta target: watch Mario play, coach it during supported moments, and have it remember and test changes across attempts and lives. The first opening-jump coaching loop is implemented in current source; surface coin-route discovery is implemented experimentally; full coin coverage remains planned; the supported flight/reward case above has real source gameplay evidence. The [private-beta engineering plan](private-beta-engineering.md) owns GC1 priority interruption, GC2 coachable Mario play and exact-build acceptance. For a retained package, read its adjacent manifest, quick start and owner review before using it; current source documentation does not establish packaged abilities.
+This guide describes the source adapter. Current source documentation does not
+establish a packaged app's abilities; use that app's versioned manifest for its
+supported features. Full coin coverage, arbitrary strategies and generalized
+learning remain unsupported.
 
 Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
 
@@ -168,3 +155,9 @@ historical accepted routes. Full coin-universe coverage, broader game support,
 independent training and recording remain separately labeled work. The
 [integration contract](b2-integration-contract.md) defines the AI and gameplay
 completion checks; source results alone do not establish a released package.
+
+## Integrated source setup — October 5
+
+Start at the game catalog to check Codex and macOS permissions, then open **Set up Mario and open a disposable session**. Select your supported local game file, confirm the FCEUX input mapping and open a fresh session through the existing first-use controls. Setup changes return to the Mario setup panel. FCEUX discovery checks the launch environment and the standard Homebrew/local executable locations so readiness and launch use the same installed program. No game file or emulator is bundled by these source changes.
+
+**Refresh Codex readiness** checks existing sign-in after login or connectivity recovery. Credentials remain with Codex. Remote inference receives selected game context/images; controllers, approvals and input release remain local. Reopening or switching games restores no gameplay authority. Source and exact-package evidence remain separate.

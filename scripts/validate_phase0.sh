@@ -17,7 +17,7 @@ echo "== bash syntax =="
 bash -n scripts/validate_phase0.sh
 
 echo "== ruff lint =="
-"${python_bin}" -m ruff check src tests scripts/security_check.py
+"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py
 
 echo "== tracked generated-file guard =="
 tracked_generated="$(

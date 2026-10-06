@@ -91,6 +91,72 @@ function M.finish(reason)
   emu.unpause()
   event("terminal", "reason=" .. reason .. " speed_restored=" .. (ok and "1" or "0"))
 end
+function M.strategy_after_frame()
+  if not M.strategy or M.stopped then return end
+  -- A neutral boundary frame can still move Mario through inertia. Check the
+  -- resulting native state before pausing for another model decision.
+  if M.segment and M.completed_opening then
+    local lives=memory.readbyte(0x736)
+    if M.last_lives and lives<M.last_lives then M.finish("death"); return end
+    M.last_lives=lives
+    if memory.readbyte(0xF1)~=0 then M.finish("unsafe_player_state"); return end
+    if memory.readbyte(0x727)==0 and memory.readbyte(0x70A)==1
+        and memory.readbyte(0x14)==0 and x()>=700 and y()>0 and y()<500
+        and memory.readbyte(0xD8)==0 then
+      event("segment_arrival_observed", "target_x=700 grounded=1 alive=1")
+      M.finish("completed_stop"); return
+    end
+  end
+  if not M.paused or not M.strategy_observation_pending then return end
+  M.strategy_observation_pending=false
+  M.strategy_frame=movie.framecount()
+
+  local nearest=9999
+  local objects=""
+  for i=1,9 do
+    if memory.readbytesigned(0x660+i)~=0 then
+      local dx=memory.readbyte(0x90+i)+memory.readbyte(0x75+i)*256-x()
+      local ey=memory.readbyte(0xA2+i)+memory.readbyte(0x87+i)*256
+      objects=objects.." object_"..i.."_x="..(x()+dx).." object_"..i.."_y="..ey
+        .." object_"..i.."_state="..memory.readbytesigned(0x660+i)
+        .." object_"..i.."_id="..memory.readbytesigned(0x670+i)
+      if dx>=-8 and math.abs(ey-y())<120 and dx<nearest then nearest=dx end
+    end
+  end
+  for i=0,7 do
+    local id=memory.readbyte(0x7FC6+i)
+    if id~=0 then
+      local dx=memory.readbyte(0x5C9+i)-(x()%256)
+      if dx>127 then dx=dx-256 end
+      if dx< -128 then dx=dx+256 end
+      objects=objects.." special_"..i.."_id="..id.." special_"..i.."_dx="..dx
+        .." special_"..i.."_y="..(memory.readbyte(0x5BF+i)+memory.readbyte(0x7FD5+i)*256)
+    end
+  end
+  if M.segment then
+    local image_dir=os.getenv("SMB3_LIVE_IMAGE_DIR")
+    if image_dir then
+      local f=assert(io.open(image_dir.."/"..string.format("%09d_strategy_%d.gd",M.strategy_frame,M.strategy_boundary_id),"wb"))
+      f:write(gui.gdscreenshot()); f:close()
+    end
+  end
+  event("strategy_boundary", "boundary_id="..M.strategy_boundary_id.." air="..memory.readbyte(0xD8)
+    .." lives="..memory.readbyte(0x736).." form="..memory.readbyte(0xED)
+    .." world="..memory.readbyte(0x727).." object_set="..memory.readbyte(0x70A)
+    .." enemy_dx="..nearest.." skill_frames="..M.strategy_frames
+    .." vx="..memory.readbytesigned(0xBD).." vy="..memory.readbytesigned(0xCF)
+    .." scroll_y="..memory.readbyte(0xFC)
+    .." scroll_x="..(memory.readbyte(0xFD)+memory.readbyte(0x12)*256)
+    .." coins="..memory.readbyte(0x7967)
+    .." dying="..memory.readbyte(0xF1).." return_map="..memory.readbyte(0x14)..objects)
+end
+local function strategy_boundary(immediate)
+  neutral(); M.paused=true; M.strategy_remaining=0
+  M.strategy_boundary_id=M.strategy_boundary_id+1
+  M.strategy_observation_pending=true
+  emu.pause()
+  if immediate then M.strategy_after_frame() end
+end
 function M.start(request)
   local initial = read_fields(directory .. "/initial.request")
   assert(initial and initial.session_id == session and initial.epoch == request.epoch,
@@ -106,6 +172,10 @@ function M.start(request)
   M.delay_remaining = M.jump_delay_frames
   M.hop_frames = 0; M.hop_started = false; M.hop_done = false
   M.route_complete = false; M.last_lives = nil
+  M.strategy=initial.strategy=="1" or initial.strategy=="2"
+  M.segment=initial.strategy=="2"
+  assert(not M.strategy or (tonumber(initial.speed)==1 and ((not M.segment and M.path_choice=="opening_hop" and M.stop_point=="world_1_1_opening_end") or (M.segment and M.path_choice=="adaptive_segment" and M.stop_point=="world_1_1_segment_end"))), "INVALID_STRATEGY_SCOPE")
+  M.strategy_remaining=0; M.strategy_frames=0; M.strategy_calls=0; M.strategy_boundary_id=0
   M.flight=nil
   if M.path_choice == "sky_hidden_1up" then
     assert(initial.flight_objective == "sky_hidden_1up_v2" and initial.stop_point == "world_1_1_hidden_1up"
@@ -184,12 +254,42 @@ function M.poll()
       if M.flight and c.speed == "turbo" then reject(c,"flight_requires_normal_speed")
       elseif c.speed == "1" or c.speed == "1.0" or c.speed == "turbo" then speed(c.speed == "turbo" and "turbo" or "1")
       else reject(c,"unsupported_speed") end
+    elseif c.action == "strategy_skill" then
+      M.seen[c.command_id]=true
+      local frames=tonumber(c.frames); local delay=tonumber(c.delay_frames)
+      if not M.strategy or not M.paused or tonumber(c.boundary_id)~=M.strategy_boundary_id
+          or tonumber(c.boundary_frame)~=movie.framecount() or M.strategy_frame~=movie.framecount()
+          or memory.readbyte(0x727)~=0 or memory.readbyte(0x70A)~=1
+          or memory.readbyte(0xF1)~=0 or x()<1 or x()>=(M.segment and 780 or 160) or y()<1 or y()>500
+          or not frames or frames%1~=0 or not delay or delay%1~=0 then
+        reject(c,"changed_strategy_boundary"); M.finish("changed_strategy_boundary"); return
+      elseif (c.skill~="hop" and c.skill~="walk_right" and c.skill~="inspect" and not (M.segment and (c.skill=="land_right" or c.skill=="retreat_hop" or c.skill=="retreat" or c.skill=="run_hop" or c.skill=="run_right" or c.skill=="build_run" or c.skill=="wait" or c.skill=="land_run_right")))
+          or frames<1 or frames>(M.segment and 48 or 26) or delay<0 or delay>12
+          or (c.skill=="retreat_hop" and delay~=0)
+          or ((c.skill=="build_run" or c.skill=="wait") and (delay~=0 or memory.readbyte(0xD8)~=0))
+          or ((c.skill=="walk_right" or c.skill=="run_right") and (frames>(M.segment and 48 or 24) or delay~=0))
+          or ((c.skill=="hop" or c.skill=="run_hop" or c.skill=="retreat_hop") and (frames>26 or (M.segment and memory.readbyte(0xD8)~=0)))
+          or ((c.skill=="land_right" or c.skill=="retreat_hop" or c.skill=="retreat" or c.skill=="land_run_right") and delay~=0)
+          or ((c.skill=="land_right" or c.skill=="land_run_right") and memory.readbyte(0xD8)==0)
+          or (c.skill=="inspect" and (frames~=1 or delay~=0))
+          or M.strategy_calls>=(M.segment and 32 or 6) or M.strategy_frames+frames+delay>(M.segment and 1200 or 180) then
+        reject(c,"invalid_strategy_skill"); M.finish("invalid_strategy_skill"); return
+      end
+      M.strategy_calls=M.strategy_calls+1
+      if c.skill=="inspect" then strategy_boundary(true)
+      else
+        M.strategy_skill=c.skill; M.strategy_delay=delay; M.strategy_remaining=frames
+        M.paused=false
+        event("strategy_skill", "command_id="..c.command_id.." skill="..c.skill.." frames="..frames.." delay_frames="..delay)
+        emu.unpause()
+      end
     elseif c.action == "pause" then
       M.seen[c.command_id] = true
       neutral(); M.paused = true; event("paused", "command_id=" .. c.command_id); emu.pause()
     elseif c.action == "resume" then
       M.seen[c.command_id] = true
-      M.paused = false; event("resumed", "command_id=" .. c.command_id); emu.unpause()
+      if M.strategy then reject(c,"strategy_requires_fresh_start")
+      else M.paused = false; event("resumed", "command_id=" .. c.command_id); emu.unpause() end
     else reject(c,"unsupported_command") end
   end
 end
@@ -226,6 +326,7 @@ function M.boundary(name)
     M.completed_opening = true
     M.last_lives = memory.readbyte(0x736)
     if M.coin_route then event("coin_observation", "counter=" .. tostring(memory.readbyte(0x7967))) end
+    if M.strategy then strategy_boundary() end
   end
   if name == "world_1_1_exit" then
     M.completed_exit = true
@@ -253,6 +354,15 @@ function M.before_frame(held)
   local lives = memory.readbyte(0x736)
   if M.last_lives and lives < M.last_lives then M.finish("death"); error("GAME_COMPANION_B2_STOP_death") end
   if M.completed_opening then M.last_lives = lives end
+  if M.segment and M.completed_opening and memory.readbyte(0xF1)~=0 then
+    M.finish("unsafe_player_state"); error("GAME_COMPANION_B2_STOP_unsafe_player_state")
+  end
+  if M.segment and M.completed_opening and memory.readbyte(0x70A)==1
+      and memory.readbyte(0x727)==0 and memory.readbyte(0x14)==0
+      and x()>=700 and y()>0 and y()<500 and memory.readbyte(0xD8)==0 then
+    event("segment_arrival_observed", "target_x=700 grounded=1")
+    M.finish("completed_stop"); error("GAME_COMPANION_B2_STOP_completed_stop")
+  end
   if M.stop_point == "world_1_1_opening_end" and M.completed_opening
       and memory.readbyte(0x70A) == 1 and x() >= 160 then
     M.finish("completed_stop"); error("GAME_COMPANION_B2_STOP_completed_stop")
@@ -299,6 +409,9 @@ function M.before_frame(held)
       event("demonstration_frame", "demonstration_id=" .. M.demo_id .. " index=" .. M.demo_index)
       M.demo_index=M.demo_index+1
     end
+  end
+  if M.strategy and M.paused then
+    for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do held[key]=false end
   end
   M.held = held
   -- All eight buttons are specified: chat/physical key state cannot leak through
@@ -580,6 +693,28 @@ end
 function M.coin_jump_frames(position)
   if M.path_choice == "coin_balanced" then return position < 700 and 18 or 22 end
   return M.path_choice == "coin_high" and 28 or 12
+end
+function M.strategy_step(held)
+  if not M.strategy then return false end
+  M.poll()
+  if M.abort then error("GAME_COMPANION_B2_STOP_"..M.abort) end
+  for _,key in ipairs({"A","B","up","down","left","right","start","select"}) do held[key]=false end
+  if M.paused then return true end
+  if M.strategy_delay>0 then
+    held.right=true; held.B=M.strategy_skill=="run_hop"; M.strategy_delay=M.strategy_delay-1; M.strategy_frames=M.strategy_frames+1
+  elseif M.strategy_remaining>0 then
+    if M.strategy_skill=="build_run" and (memory.readbytesigned(0xBD)>=40 or memory.readbyte(0xD8)~=0) then
+      event("strategy_yield", "reason=runup_observed vx="..memory.readbytesigned(0xBD))
+      strategy_boundary(); return true
+    end
+    held.right=M.strategy_skill~="retreat" and M.strategy_skill~="retreat_hop" and M.strategy_skill~="wait"; held.left=M.strategy_skill=="retreat" or M.strategy_skill=="retreat_hop"; held.A=M.strategy_skill=="hop" or M.strategy_skill=="run_hop" or M.strategy_skill=="retreat_hop"
+    held.B=M.strategy_skill=="run_hop" or M.strategy_skill=="run_right" or M.strategy_skill=="build_run" or M.strategy_skill=="land_run_right"
+    if (M.strategy_skill=="land_right" or M.strategy_skill=="land_run_right") and memory.readbyte(0xD8)==0 then
+      held.right=false; held.B=false; strategy_boundary(); return true
+    end
+    M.strategy_remaining=M.strategy_remaining-1; M.strategy_frames=M.strategy_frames+1
+  else strategy_boundary() end
+  return true
 end
 function M.opening_step(held)
   if M.path_choice ~= "opening_hop" then return false end

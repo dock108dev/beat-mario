@@ -1,12 +1,22 @@
-# Product clarity verification
+# UI verification
 
-## Verification for the corrected AI beta
+## Interaction checks
 
-Existing visual records below retain their original identities. GC-U/Q/D2 in the [engineering plan](private-beta-engineering.md) need new ordinary and packaged checks for Codex readiness, interpretation/clarification, pending decisions, observed progress, replan, provider unavailable/error, immediate control, switching and historical reopening.
+Check provider readiness, clarification, pending decisions, observed progress,
+replanning, errors, immediate control, switching and historical reopening.
+Inspect supported screen sizes, keyboard focus, draft preservation and long
+conversation. Fixture/browser checks, native gameplay and packaged interaction
+are separate evidence classes. The records below retain exact source identities.
 
-Inspect supported screen sizes, keyboard focus/drafts, long contextual conversation, readable images/targets and setup remedies. Mark fixture/replay previews separately from live model/gameplay. No new UI or gameplay was exercised by this documentation update.
+## October 5 current-source presentation cleanup
 
-Retained visual and interaction checks for their recorded source snapshots. The [private-beta engineering plan](private-beta-engineering.md) owns the current workflow and the [PM handoff](private-beta-pm-handoff.md) records current candidate checks and remaining work.
+Synthetic render/browser evidence is retained locally in `artifacts/ui-clarity-20261005/review.html`, with before/after source snapshots, identical fixtures, screenshots and measurements. These before images were captured at the start of this pass; older September images below remain historical. No owner data, game process, model call, installed build or frozen package was used.
+
+Matched catalog, Mario empty/ready/pending, and Stardew empty/ready/stale-update/partial-result states were checked at 1440×900 and 390×844. The desktop Stardew Start action moved from y=1,148 to y=608; narrow Start moved from y=2,111 to y=1,343 and still requires scrolling. Catalog selection moved from y=1,013 to y=691 on narrow screens. Mario's narrow page height fell from 4,905 to 2,636px by disclosing optional tools. These are placements for these fixtures, not usability percentages.
+
+Focused validation passed 76 existing tests (two HTTP tests excluded to avoid real provider/storage initialization), Ruff, Python/JavaScript syntax and whitespace checks. Browser checks covered no page overflow/exceptions, doubled text sizes, visible keyboard focus, disclosure interaction, preserved drafts, independently reachable Stop, stale-update feedback, relevant guidance/manual closure, retained earlier messages, current advice, confirmed-zero accounting and completed-versus-partial results. A first enlarged-text screenshot attempt failed because the preview harness scaled inherited font sizes repeatedly; the corrected harness captures computed sizes before scaling and passed. Screen-reader behavior, physical-browser coverage, native gameplay response, exact-app qualification and owner acceptance remain unverified.
+
+Outside this presentation pass: the Day 5 request still needs opaque plot IDs; add verified user-facing target references without changing identity/approval rules. The tracked Stardew renderer/window mismatch also blocks native watering-can recognition; repair it on an isolated farm before the pending native acceptance.
 
 ## Historical September 26 ordinary-workspace cleanup
 
@@ -17,7 +27,7 @@ Source on local main as reviewed September 26; synthetic presentation evidence o
 - Matched empty/ready Stardew and Mario plan screens at both widths, plus doubled computed text sizes at 390px: no page-level horizontal overflow. Keyboard focus, history disclosure, draft preservation through polling, disabled empty-state actions and reachable Stop were checked. Failed-refresh feedback warns of stale display data and clears on recovery; action errors are preserved by a focused regression.
 - 63 focused tests passed, along with Ruff, Python compilation, JavaScript syntax and whitespace checks. No production service/game, owner save, live gameplay, release or acceptance was exercised. Native behavior, screen readers and exhaustive contrast pairs remain unverified. Preview assets are local ignored evidence; the report remains readable without its temporary server.
 
-Recorded follow-up: the Day 5 request example needed opaque plot IDs at this snapshot. Human-readable labels would require a verified target mapping while retaining stored IDs. Current prioritization belongs in the PM handoff.
+Recorded follow-up: the Day 5 request example needed opaque plot IDs at this snapshot. Human-readable labels would require a verified target mapping while retaining stored IDs. The displayed labels must retain their stored target IDs.
 
 ## Historical September 23 cleanup
 
@@ -39,8 +49,8 @@ September 21, 2026 · source implementation and engineering review only.
 
 ## Retained review
 
-Screenshots and browser check results are retained in `review.html` in the optional shared `UI Templates` folder. That gallery is outside this repository and is not available in a standalone checkout. Browser specimens are local fixtures or isolated startup states. Web review checked representative 1440px/390px layouts, page exceptions, and page-level horizontal overflow; it is not an exhaustive audit of every state, contrast pair, screen reader, browser, installed build, or physical phone. [UI design](ui-design.md) records the repository's active interface guidance.
-
-Template gallery search, form submit feedback, dialog opening, and Escape dismissal were exercised. Shared styles include keyboard focus, reduced-motion, and reduced-transparency handling. Native Godot is a basic translucent fallback, not a true blur material. Native games retain their desktop layout and illustrated artwork.
-
-See [design and future template use](ui-design.md). No owner acceptance or release qualification is inferred. Rebuild/relaunch the appropriate source application to see the change; installed or frozen copies remain their original versions.
+The retained browser specimens use fixtures or isolated startup states.
+Representative 1440px/390px layouts were checked for page exceptions and
+horizontal overflow. Those checks do not establish every interaction, contrast
+pair, screen reader, browser, installed build or physical phone. See
+[UI design](ui-design.md) for current repository guidance.

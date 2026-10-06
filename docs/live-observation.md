@@ -6,7 +6,7 @@ GC-A3 in the [engineering plan](private-beta-engineering.md) adapts current obse
 
 Current passive observation and opt-in control distinctions below remain authoritative. The model consumes evidence and proposes actions; it does not alter passive observer authority or establish completion by explanation. Extend current scene coverage through reusable semantics where needed, with uncertain/off-screen information retained honestly. Runtime model images may be sent through Codex; local trace storage and optional feedback export are separate.
 
-Mario adapter observation reference. GC2 coached play uses the existing read-only observation/control boundaries below and needs additional supported goal/coin/action facts. Current release work is in the [private-beta engineering plan](private-beta-engineering.md); retained Minecraft selected-window observations are in the [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path).
+Mario coaching uses the read-only observation/control boundaries below. Observed goal, coin and action facts remain bounded by the supported scenes. Minecraft selected-window observations are described in [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path).
 
 Valid completed observations also create an adapter-neutral learning
 attempt referencing the original run, input trace, and observation evidence.

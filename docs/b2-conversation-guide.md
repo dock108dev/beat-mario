@@ -1,14 +1,17 @@
 # Conversation, contextual intent and game decisions
 
-Updated October 4, 2026. This contributor guide separates the implemented conversation/control foundations from the active model-driven beta work. [Product direction](product-direction.md), [architecture](agent-architecture.md#october-4-architecture-correction--two-model-driven-responsibilities) and the [engineering plan](private-beta-engineering.md) own the release requirements. The [Mario player guide](mario-player-guide.md) and [Stardew guide](stardew-operator-guide.md) own ordinary player procedures.
+This contributor guide describes conversation, reviewed plans and control.
+[Architecture](agent-architecture.md#conversation-gameplay-and-control) defines
+the model and controller roles. The [Mario guide](mario-player-guide.md) and
+[Stardew guide](stardew-operator-guide.md) describe player procedures and limits.
 
 ## Current implementation
 
-The ordinary Mario and Stardew services construct `request_planning.Planner`, a deterministic grammar. Adapter planners and service branches resolve supported request families, selected targets, modifiers and narrow follow-ups. These paths do not currently call a model for contextual language understanding or ongoing gameplay decisions.
+The ordinary source app creates one Codex provider and separate contextual language sessions for Mario and Stardew. Original wording, recent conversation, prior intent, compatible descriptive history and fresh supported game context go to the language model. Its validated intent then enters existing adapter planners and control owners. Prepared Day 2 watering additionally calls a distinct gameplay role at target boundaries and feeds observed effects into its next decision. Other activities retain their existing strategy controllers. See [verification](gc-ai-loop-verification.md).
 
-Mario has source-qualified opening coaching, experimental coin-route selection, remembered stairs/pipe instructions, two observed World 1-1 exits and two supported sky 1UP collections. Stardew has source-qualified Day 2 selected watering, passive planting-location discussion and eastern-margin inspection/return. These successes establish the named activities and their controllers. They do not establish general conversational understanding, adaptive strategy, arbitrary farms or packaged beta delivery. Cave reconnaissance remains disabled; its exterior survey is partial.
+Mario now also has an experimental visual early-segment model loop and compatible descriptive coaching (see verification); it retains source-qualified opening coaching, experimental coin-route selection, remembered stairs/pipe instructions, two observed World 1-1 exits and two supported sky 1UP collections. Stardew has source-qualified Day 2 selected watering, passive planting-location discussion and eastern-margin inspection/return. These successes establish the named activities and their controllers. They do not establish unrestricted conversation coverage, arbitrary farms or packaged beta delivery. Cave delegation remains unverified; source reconnaissance composition has native acceptance pending.
 
-`model_gateway.LocalOllamaGateway` is real model infrastructure used by the separate profile/OpenTTD reference flow. Its proposal schema selects one available skill and screen target. It does not yet supply either of the two ordinary Mario/Stardew AI roles. The existing typed plans, observations, controllers, interruption and outcome ledgers are reusable foundations.
+`model_gateway.LocalOllamaGateway` is real model infrastructure used by the separate profile/OpenTTD reference flow. Its proposal schema selects one available skill and screen target. It does not supply either ordinary Mario/Stardew AI role. The existing typed plans, observations, controllers, interruption and outcome ledgers are reusable foundations.
 
 Player recording/demonstration source is preserved but deferred to a later beta, tentatively beta v2. No recording is required for this implementation sequence.
 
@@ -46,7 +49,7 @@ Failed movement, changed resources, an absent target or unexpected outcomes must
 
 ## Codex-backed local application integration
 
-The first backend is the owner's installed, signed-in Codex CLI, as established in the architecture document. Use it during ordinary app operation. Choose non-interactive execution or the app-server integration according to the needed persistent conversation, tool interaction and cancellation behavior. Installation/authentication discovery has already been checked; runtime integration, quality, latency and account-limit handling remain implementation work.
+The first backend is the owner's installed, signed-in Codex CLI, as established in the architecture document. Use it during ordinary app operation. Choose non-interactive execution or the app-server integration according to the needed persistent conversation, tool interaction and cancellation behavior. Installation/authentication discovery has already been checked; the source runtime integration is implemented; wider quality evaluation and exact packaged discovery remain pending.
 
 The app stays local, while ordinary OpenAI-backed Codex inference sends selected context and images to the remote model. Keep that distinction visible in setup and diagnostics. Reuse saved CLI authentication; do not copy credentials into profiles, evidence or packages. Package launch must locate the configured executable outside an interactive terminal and show useful recovery for missing CLI, signed-out state or unavailable service.
 
@@ -92,3 +95,12 @@ Evaluation needs separate forms of evidence:
 Cover ambiguity, exclusions, revised priorities, identical wording in different contexts, invalid provider output, service failure, canceled/stale replies, unknown observations, incompatible memory and interrupted reopening. Keep understandable explanations and evidence records; private chain-of-thought collection is unnecessary.
 
 Retain original words, supplied observations, resolved intent, chosen actions, model-call provenance, expected/actual effects, subsequent decisions, uncertainty and handback. [Learning](learning.md) owns retained knowledge and application; [Mario integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) locate current controller/runtime seams. Historical B-series contracts retain their named scope and cannot certify this new architecture.
+
+## Adaptive Mario segments in the source app — October 5
+
+The legacy opening scope remains x≥160 with six decisions, 180 skill frames and 120 seconds. Ask to play the early segment to use the separate x≥700 grounded scope: 32 decisions, 1200 skill frames and 480 seconds. Review with **Apply change**, then Start. The model receives the exact paused NES image, world progress, scroll, velocity, grounded state, enemy proximity and prior effects. It composes hops, walking, observed landing, retreat, inspection and Stop while native controllers own frame timing and authority checks.
+
+Meaningful high/short-hop preferences alter actual choices; obstacle facts can justify longer jumps. Ask to remember a correction for compatible future segments, inspect active/superseded advice, or reset future guidance while preserving outcomes. Later native execution has matching guidance-ID/skill receipts; improvement stays unknown. The exact native trials extend beyond opening over raised terrain, but stop before the x=700 arrival. Stop/Take control cancel pending inference and retry permission. Reopening restores descriptive history only. Full-level adaptive strategy, complete coins and generalized flight remain later coverage. See [verification](gc-ai-loop-verification.md).
+
+
+Supported-segment closeout: Mario’s supported World 1-1 x≥700 segment has 3/3 native completions on the final unchanged source, with independently observed alive/grounded arrival and neutral handback for each passing run. The set includes two compatible-coaching trials and a walking-on-flat/raised-block landing preference variation. Earlier failures remain failed under their own candidate identities. Running maneuvers, a feedback-bounded run-up, native object/projectile/motion facts, neutral waiting and after-frame arrival checks address the retained blockers. This small engineering set establishes observed scope, not broad reliability. Prepared Stardew watering acceptance is preserved. See [verification](gc-ai-loop-verification.md). Wider Mario coverage, exact-package qualification and owner release remain open.

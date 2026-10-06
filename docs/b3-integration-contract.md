@@ -1,6 +1,6 @@
 # Stardew integration and evidence contract
 
-Updated October 4, 2026. The initial private beta requires both **Codex-backed
+Updated October 5, 2026. The initial private beta requires both **Codex-backed
 conversational intention** and **gameplay understanding, action selection and
 replanning**. One provider may serve the two roles. This document defines the
 Stardew adapter work beneath the shared [architecture](agent-architecture.md) and
@@ -13,13 +13,13 @@ Stardew adapter work beneath the shared [architecture](agent-architecture.md) an
 | Prepared-farm setup | Separate Day 2/Day 5 disposable copies, matching calibration, PID-bound image-reviewed preparation | Ordinary release setup must include its required local assets and explain compatibility without engineer file edits |
 | Watering | Real selected-patch watering, discussion, revised approval, resource reconciliation, return and Stop | General observed task choice; broader crop identification; tool/refill support where claimed |
 | Planting discussion | Live season/crop-rule discussion and calibrated location recommendations | Gameplay reasoning about unfamiliar supported observations; actual planting is a separate action capability |
-| Eastern inspection | Live fresh findings, reviewed continuation, farmhouse return and saved reopening | General observation-driven inspection and navigation beyond authored viewpoints |
+| Eastern inspection | Historical fixed-route native evidence; reusable source model-directed reconnaissance on porch/eastern views | New reconnaissance native returns, variation and control set pending; arbitrary exploration unsupported |
 | Farm Cave | Conversation/control/persistence code, western survey, newer installed manual tool-free route and baseline/final reconciliation | Manual route record explicitly marks ordinary activity unverified; no complete companion delegation claim |
-| Language | Deterministic request matching and explicit follow-up handling | No Codex-backed conversational interpretation on this path |
-| Game decisions | Configured graph search, calibrated perception, closed-loop native pulses and authored activity lifecycle | No integrated AI state reasoning, reusable skill composition and online replanning |
+| Language | Contextual Codex interpretation in ordinary Stardew conversation with exact reviewed scope | Broader language evaluation and integrated release setup |
+| Game decisions | Accepted model-selected watering; source reconnaissance composes observations, viewpoint movement and return with fresh effects | Reconnaissance native acceptance pending; Day 5 and broader coverage remain separate |
 | Persistence/control | Saved results without restored authority and independent handback | Extend to pending inference, evolving state and model-selected activity |
 
-Read [watering](gc3-watering-verification.md),
+Read [reconnaissance verification](gc-s-recon-verification.md), [connected AI](gc-ai-loop-verification.md), [watering](gc3-watering-verification.md),
 [planting](gc3-planting-verification.md),
 [inspection](gc3-inspection-verification.md) and
 [cave](gc3-cave-verification.md) records for exact scope and source identity.
@@ -27,7 +27,7 @@ Those real foundations do not establish the AI-player product or a released
 artifact. Another fixed corridor alone does not satisfy the next milestone.
 
 The cave verification document retains an earlier incomplete survey checkpoint.
-Newer [manual route qualification](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/gc3-cave/20261004-completion/manual-route-qualification.json)
+Newer [manual route verification](gc3-cave-verification.md)
 records approach/return, unchanged 15 dry crops, energy 270 and water 40, and
 confirmed manual handback. It explicitly sets ordinary activity verification to
 false. Preserve both evidence classes; installing a route does not establish the
@@ -61,11 +61,11 @@ silently turn an observed subset into a claim about the whole farm.
 
 The historical Day 5 combined routine completed on source
 `ed84e02a095d00df858cfd286fa458fb85267f983561b36483a5dfb712653b94`;
-its [closeout](/Users/michaelfuscoletti/Desktop/beat-mario/artifacts/b8-final-return-repair/20260926/closeout.md) retains
+the [delivery record](b8-personal-delivery.md) retains
 the separate seed/profile and evidence boundaries. It does not qualify later
 AI behavior or a package.
 
-## Next engineering work and initial-beta acceptance
+## Wider coverage requirements
 
 Start with an actual **decision-and-replanning loop** in Stardew's slower
 activities. The conversational role interprets player intent; the gameplay role

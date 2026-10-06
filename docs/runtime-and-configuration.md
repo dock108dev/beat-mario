@@ -1,14 +1,14 @@
 # Runtime, configuration, and data
 
-## Active AI beta runtime target
+## AI runtime
 
-The current ordinary Mario/Stardew paths are deterministic; their Codex provider is not implemented. GC-A1 in the [engineering plan](private-beta-engineering.md) adds a supported app-owned Codex integration using saved CLI authentication, text/images, structured decisions and owned cancellation. The app must supply its own validated game tools; launching Codex does not automatically inherit this chat's computer-control tools.
+`lab_ui.py` creates one app-owned `codex_provider.CodexProvider` and injects it into both ordinary conversation services. `companion_ai.LanguageSession` interprets original contextual requests; `WateringAgent`, `mario_strategy.MarioStrategyAgent` and `stardew_recon.ReconAgent` choose bounded skills through existing controllers. Prepared watering and the supported Mario segment have native evidence; reconnaissance native acceptance and wider/package coverage remain open. The provider uses CLI-managed authentication, structured text/image requests and owned cancellation. Provider failure is explicit; the ordinary app does not silently switch to the deterministic parser. See [architecture](agent-architecture.md) for ownership and control boundaries.
 
 The conversation and gameplay roles have separate bounded contexts. Scope/goal revision, observation/session identity and control generation bind replies; late output cannot execute. Provider sessions are descriptive, never gameplay permission. Runtime tools compose supported adapter skills instead of editing source.
 
-Source launch currently runs from the checkout; the packaged app runs from Application Support. GC-D1 must separate read-only bundled resource paths from writable profiles, variants, histories and provider state. Relative planting-survey paths and ignored prepared-farm/profile/calibration registrations need explicit resource resolution/adoption, including their image dependencies. FCEUX scripts must be supplied and located as app resources. Finder launch cannot assume the developer shell's executable PATH.
+Source launch currently runs from the checkout; the packaged app runs from Application Support. Bundled resource paths and writable profiles, variants, histories and provider state have different roots; full package resource adoption remains incomplete. Relative planting-survey paths and ignored prepared-farm/profile/calibration registrations need explicit resource resolution/adoption, including their image dependencies. FCEUX scripts must be supplied and located as app resources. Finder launch cannot assume the developer shell's executable PATH.
 
-Provider unavailability, login loss, rate limits, timeouts and invalid output produce visible remedies and safe release. GC-U/D2 integrate both-game setup, switch/reconnect, Quit, signals and restart; cleanup failures remain observable. Normal Codex inference sends selected game context/images to OpenAI, while reports remain local until explicitly shared.
+Provider unavailability, login loss, rate limits, timeouts and invalid output produce visible remedies and safe release. Both-game setup, switching and restart need current observations; cleanup failures remain observable. Normal Codex inference sends selected game context/images to OpenAI, while reports remain local until explicitly shared.
 
 Game Companion is a local Mac application with a loopback-only player UI, plus
 Python engineering commands. The packaged app bundles its runtime; ordinary
@@ -18,12 +18,10 @@ OpenTTD uses visible observations, a local Ollama proposal and one reviewed
 repayment. Mario uses FCEUX for supported live execution and
 retains a separate Mednafen diagnostic path. Stardew provides isolated prepared-copy setup and guarded live browser controls for the locally qualified Day 2/Day 5 configurations; its public CLI remains inspection-only. Experimental adapters are
 declarative, fixture-only catalog entries. There is no database, migration,
-cloud API, or production deployment target.
+hosted application API, or production deployment target.
 
-The [PM handoff](private-beta-pm-handoff.md) records the active sequence: contextual Codex language and gameplay roles, reusable observations/skills, adaptive decisions and memory, both game experiences, ordinary setup, evaluation and a successor two-game Mac app. These AI and delivery requirements are not provided by the current deterministic parser or historical readiness flags. Minecraft/no-code expansion follows the first two gameplay experiences.
 Current source and retained private.2 enable Minecraft calibration/camera only;
-the building task is unfinished. Source corrections passed 1,327 canonical local
-tests; Minecraft gameplay/package integration belongs to the later GC5 stage. The [review records](private-beta-review.md)
+the building task is unfinished. Minecraft gameplay/package acceptance remains separate from the current two-game AI work. The [review records](private-beta-review.md)
 identify retained packages and their exact evidence.
 
 ## Runtime components
@@ -93,12 +91,12 @@ save/load for that isolated process. Legacy passive observation remains read-onl
 
 Custom variants and outcome ledgers live under `artifacts/conversation/`; saved
 revisions never restore runtime authority. The `game-companion-personal-beta/v3`
-contract and `python -m smb3_agent.beta_readiness` inspect the retained B-series requirements. GC-D1 must version new readiness/scenario contracts for the corrected conversational beta; existing commands cannot certify it. Historical campaign manifests retain their meanings. See the [conversation guide](b2-conversation-guide.md).
+contract and `python -m smb3_agent.beta_readiness` inspect a historical readiness checklist. That checklist does not include current Codex/adaptive-play requirements and cannot certify the wider conversational experience. Historical campaign manifests retain their meanings. See the [conversation guide](b2-conversation-guide.md).
 
 ## Operator configuration
 
 The application does not load `.env` files and does not need a sample env file.
-There is no ordinary-game Codex provider in current source yet. The successor beta uses CLI-managed sign-in as described above. OpenTTD requires separately installed
+Ordinary Mario/Stardew use CLI-managed Codex sign-in as described above. `codex_provider.discover_codex` checks PATH and bounded Node/Homebrew installation locations; no credential file is copied into app data. Setup can refresh readiness after sign-in. OpenTTD requires separately installed
 local Ollama with `gemma3:4b` at its fixed loopback endpoint. Minecraft's current
 narrow typed requests do not require a model installation.
 
@@ -143,8 +141,7 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 
 ## Local executables and integrations
 
-- FCEUX must be on `PATH` for live FCEUX runs. Python launches it as a local
-  subprocess with the tracked Lua script and the operator's game-file path.
+- `executable_discovery.py` owns FCEUX resolution for setup, live observation, Show, engineering runs and default reliability preflight: PATH first, then executable files in `/opt/homebrew/bin` and `/usr/local/bin`. Launches use the resolved path and explicitly refuse a missing executable. Python supplies the tracked Lua script and configured game-file path.
 - Git must be available for source-state evidence and route-patch worktrees.
 - Mednafen, AppleScript, Accessibility permission, screen-capture permission,
   and a visible desktop session are required only by the optional macOS
@@ -160,7 +157,7 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
   remain on loopback. Current Minecraft requests are parsed into finite skills.
 - Packaged review builds include Python dependencies and OCR resources. Games,
   worlds, model weights and account credentials are separately owned prerequisites.
-  No Codex/external inference provider is implemented in the current ordinary-game path; it is required successor-beta work.
+  The source Codex provider is implemented; retained review packages keep their original manifests and do not acquire source capabilities automatically.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions

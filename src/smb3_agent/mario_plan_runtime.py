@@ -56,10 +56,16 @@ def validate_runtime_fields(fields: dict[str, Any]) -> None:
     if fields.get("pipe_tactic") and (fields["pipe_tactic"] != "land_on_pipe_then_cross_v1"
                                      or not fields.get("stairs_tactic")):
         raise ValueError("Unsupported pipe guidance")
+    if fields.get("strategy") is not None:
+        scope = (fields.get("path_choice"), fields.get("stop_point"), fields.get("speed"))
+        expected = {1: ("opening_hop", "world_1_1_opening_end", 1),
+                    2: ("adaptive_segment", "world_1_1_segment_end", 1)}
+        if type(fields["strategy"]) is not int or expected.get(fields["strategy"]) != scope:
+            raise ValueError("Invalid strategy wire scope")
     delay = fields.get("jump_delay_frames", 0)
     if type(delay) is not int or not 0 <= delay <= 12:
         raise ValueError("Opening jump delay must be an integer from 0 to 12 frames")
-    if delay and (fields.get("path_choice") != "opening_hop" or fields.get("stop_point") != "world_1_1_opening_end"):
+    if delay and not ((fields.get("path_choice"), fields.get("stop_point")) == ("opening_hop", "world_1_1_opening_end") or (fields.get("strategy") == 2 and fields.get("path_choice") == "adaptive_segment" and fields.get("stop_point") == "world_1_1_segment_end")):
         raise ValueError("Coached timing supports only the World 1-1 opening hop")
     if fields.get("speed") not in SUPPORTED_SPEEDS:
         raise ValueError(
@@ -134,7 +140,10 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         from smb3_agent.mario_coaching import COMPATIBILITY
         if data.get("coaching_compatibility") != COMPATIBILITY:
             raise ValueError("Incompatible coaching profile")
-        if path != "opening_hop" or fields["stop_point"] != "world_1_1_opening_end":
+        from smb3_agent.mario_segment import CONTRACT as SEGMENT
+        expanded = (path == "adaptive_segment" and fields["stop_point"] == "world_1_1_segment_end"
+                    and data.get("strategy_contract") == SEGMENT)
+        if not expanded and (path != "opening_hop" or fields["stop_point"] != "world_1_1_opening_end"):
             raise ValueError("Coaching supports only the experimental opening hop")
         fields["jump_delay_frames"] = delay
         expires = data.get("practice_expires_epoch")
@@ -187,6 +196,15 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         raise ValueError(
             "Resolve plan ambiguities and unsupported parts before starting"
         )
+    if data.get("strategy_contract"):
+        from smb3_agent.mario_strategy import CONTRACT
+        from smb3_agent.mario_segment import CONTRACT as SEGMENT
+        scopes = {CONTRACT: ("opening_hop", "world_1_1_opening_end", 1),
+                  SEGMENT: ("adaptive_segment", "world_1_1_segment_end", 2)}
+        expected = scopes.get(data["strategy_contract"])
+        if not expected or (path, fields["stop_point"]) != expected[:2] or speed != 1 or not data.get("coaching_compatibility"):
+            raise ValueError("Adaptive strategy requires a bounded normal-speed compatible scope")
+        fields["strategy"] = expected[2]
     validate_runtime_fields(fields)
     return fields
 
@@ -265,6 +283,10 @@ class MarioPlanRuntime:
                     pass
                 elif event == "cancelled":
                     self._state["pending"] = None
+                elif event == "strategy_boundary" and not self._requested_stop:
+                    self._state.update(state="paused", strategy_boundary=dict(row))
+                elif event == "strategy_skill" and not self._requested_stop:
+                    self._state["state"] = "playing"
                 elif event in {"paused", "resumed"} and not self._requested_stop:
                     self._state["state"] = "paused" if event == "paused" else "playing"
                 elif event == "speed_ack":
@@ -426,6 +448,8 @@ class MarioPlanRuntime:
                 emulator_pid=live.emulator_pid,
                 plan=_plan_data(plan),
                 pending=None,
+                strategy_boundary=None,
+                strategy_stop=None,
                 requested_speed=fields["speed"],
                 applied_speed=None,
                 speed_intervals=[],
@@ -473,6 +497,31 @@ class MarioPlanRuntime:
         self._record("command_submitted", **wire)
         return command_id
 
+    def strategy_skill(self, choice, boundary):
+        from smb3_agent.mario_strategy import validate_choice
+        validate_choice(choice, expanded=self._state.get("strategy") == 2)
+        with self._lock:
+            self._sync()
+            if (self._requested_stop or not self._state.get("strategy") or self._state["owner"] != "agent"
+                    or self._state["state"] != "paused" or self._state.get("strategy_boundary") != boundary):
+                raise ValueError("Mario skill boundary or authority changed")
+            if choice["skill"] == "stop":
+                return self.abort_strategy("strategy_stopped", choice["reason"])
+            return self._send("strategy_skill", skill=choice["skill"], frames=choice["frames"],
+                              delay_frames=choice["delay_frames"], boundary_id=boundary["boundary_id"],
+                              boundary_frame=boundary["frame"])
+
+    def abort_strategy(self, reason, detail):
+        """Retain the gameplay stop cause alongside native neutral handback."""
+        if reason not in {"strategy_stopped", "decision_budget_exhausted", "wall_budget_exhausted",
+                          "no_progress", "unsafe_player_state", "inference_failed", "decision_refused"}:
+            raise ValueError("Unknown gameplay stop reason")
+        with self._lock:
+            if self._requested_stop or self._state.get("owner") != "agent":
+                return self.snapshot()
+            self._state["strategy_stop"] = {"reason": reason, "detail": str(detail)[:500]}
+            return self.control("stop")
+
     def queue_edit(
         self,
         plan: Any,
@@ -482,6 +531,8 @@ class MarioPlanRuntime:
         replace_pending: bool = False,
     ) -> dict[str, Any]:
         with self._lock:
+            if self._state.get("strategy"):
+                raise ValueError("Stop and review a fresh adaptive strategy instead of editing its live scope")
             self._sync()
             if any((self._state.get("plan") or {}).get(key) for key in ("coin_compatibility", "demonstration", "flight_compatibility")):
                 raise ValueError("Coin route changes require a fresh attempt")
@@ -604,6 +655,8 @@ class MarioPlanRuntime:
                 self._record("reclaim_requested", cause=action)
                 return self.snapshot()
             self._sync()
+            if action in {"resume", "speed"} and self._state.get("strategy"):
+                raise ValueError("Adaptive skill boundaries require a fresh reviewed Start after interruption")
             if action == "speed":
                 if (self._state.get("plan") or {}).get("flight_compatibility") and speed != 1:
                     raise ValueError("Flight reward attempts require normal speed")

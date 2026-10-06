@@ -50,7 +50,34 @@ jobs:
         run: uv sync --locked --all-extras
 
       - name: Run canonical repository gate
+        id: validate
+        env:
+          PYTEST_ADDOPTS: --junitxml=${{ runner.temp }}/test-results/junit.xml
         run: PYTHON=.venv/bin/python scripts/validate_phase0.sh
+
+      - name: Summarize validation
+        if: ${{ always() && !cancelled() && hashFiles('scripts/ci_report.py') != '' }}
+        env:
+          GATE_OUTCOME: ${{ steps.validate.outcome }}
+        run: >-
+          python3 scripts/ci_report.py
+          --report "${{ runner.temp }}/test-results/junit.xml"
+          --output-dir "${{ runner.temp }}/test-results"
+          --summary "$GITHUB_STEP_SUMMARY"
+          --gate-outcome "$GATE_OUTCOME"
+
+      - name: Retain test results
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-test-results
+          path: |
+            ${{ runner.temp }}/test-results/junit.xml
+            ${{ runner.temp }}/test-results/metrics.json
+            ${{ runner.temp }}/test-results/summary.md
+          if-no-files-found: ignore
+          retention-days: 7
+          include-hidden-files: false
 
   dependency-review:
     name: dependency-review

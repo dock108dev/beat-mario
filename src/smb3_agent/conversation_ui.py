@@ -15,6 +15,7 @@ CONVERSATION_CSS = """
 .conversation-controls{align-self:start;position:sticky;top:8px;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;background:rgba(248,251,255,.97);border:1px solid #cad7ed;border-radius:18px;box-shadow:0 5px 18px #334d7918}.conversation-controls strong{margin-right:auto}.conversation-controls button{min-height:44px}.conversation-controls .danger{background:#ac2944;border-color:#ac2944;color:white}
 .conversation-chat,.conversation-plan{min-width:0;padding:20px}.conversation-chat{display:flex;flex-direction:column;gap:12px}.conversation-workspace form{margin:0}.conversation-workspace label{display:block;font-weight:650;font-size:13px;margin-bottom:6px}.conversation-workspace textarea,.conversation-workspace input,.conversation-workspace select{width:100%;box-sizing:border-box;font:inherit}.conversation-workspace textarea{resize:vertical;min-height:110px;line-height:1.5}.conversation-inline{display:flex;flex-wrap:wrap;gap:8px;align-items:end}.conversation-inline>div{flex:1;min-width:180px}.conversation-inline button{flex:none}.conversation-workspace button{white-space:normal}.conversation-workspace .meta{font-size:12px;line-height:1.45;color:#54647b}.conversation-transcript{list-style:none;padding:0;margin:0;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:8px}.conversation-transcript li{background:#edf3ff;border-radius:14px;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45;font-size:14px}.conversation-transcript li[data-role=user]{background:#e1edff}.conversation-transcript strong{display:block;font-size:12px;margin-bottom:4px}.conversation-empty{color:#54647b}.conversation-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 16px}.conversation-status dt{font-size:12px;color:#54647b}.conversation-status dd{margin:4px 0 0;overflow-wrap:anywhere;font-size:14px}.conversation-status .wide{grid-column:1/-1}.conversation-plan ol{padding-left:22px;font-size:14px;line-height:1.5}.conversation-plan ol li+li{margin-top:6px}.conversation-plan .callout{margin:12px 0}.conversation-plan details{margin-top:14px}.conversation-plan summary{cursor:pointer;min-height:32px}.conversation-plan pre{max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.conversation-workspace [hidden]{display:none!important}.conversation-alert{flex-basis:100%;overflow-wrap:anywhere;margin:0;padding:12px 16px;border-radius:12px;background:#fff0f2;border:1px solid #c66679;color:#861c33}.conversation-outcome{border-top:1px solid #d8e1ef;padding-top:16px;margin-top:16px}.conversation-history{font-size:13px;line-height:1.5;padding-left:20px}.conversation-launch{border-top:1px solid #d8e1ef;padding-top:14px}.conversation-launch p{margin:0 0 8px}.conversation-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.conversation-speed{margin-top:16px}.conversation-plan .conversation-subtitle{font-size:12px;color:#54647b;margin:8px 0}.conversation-workspace .conversation-boundary{color:#314763;font-weight:550}
 .conversation-workspace{align-items:start;gap:12px}.conversation-intent-choice{grid-column:1/-1}.conversation-intent-choice>div{flex:0 1 400px}.conversation-workspace h2{font-size:20px;margin-bottom:12px}.conversation-chat,.conversation-plan{padding:16px}.conversation-workspace .meta,.conversation-workspace label,.conversation-status dt{font-size:14px;line-height:1.5}.conversation-workspace p{margin:8px 0}.conversation-status{margin:12px 0;gap:8px}.conversation-status dt{text-transform:none;letter-spacing:0}.conversation-status dd{margin-top:2px}.conversation-workspace textarea{min-height:96px;font:inherit}.conversation-workspace .conversation-transcript{max-height:none;overflow:visible}.conversation-launch{padding-top:0;border-top:0;margin-top:12px!important}.conversation-launch p{margin:6px 0}.conversation-outcome{padding-top:12px;margin-top:12px}.conversation-saved,.conversation-records{grid-column:1/-1;min-width:0}.conversation-workspace summary{cursor:pointer;min-height:44px;display:list-item;padding:10px 0;font-weight:650}.conversation-workspace details>form{margin-top:12px}.conversation-records pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}.conversation-chat .conversation-outcome{margin-top:0}.conversation-controls{padding:8px 12px}.conversation-status .wide{grid-column:1/-1}
+.conversation-tools{grid-column:1/-1;min-width:0;padding:12px 16px}.conversation-tools>summary{padding:0;display:list-item}.conversation-tools[open]>summary{margin-bottom:12px}.conversation-plan pre{max-height:none;overflow:visible}.conversation-workspace details p{overflow-wrap:anywhere}
 @media(max-width:820px){.conversation-workspace{grid-template-columns:minmax(0,1fr)}.conversation-workspace>header{align-items:start}.conversation-controls{top:0}.conversation-controls strong{flex-basis:100%}.conversation-chat,.conversation-plan{padding:16px}.conversation-inline button{flex:0 1 auto}.conversation-transcript{max-height:210px}}
 @media(prefers-reduced-transparency:reduce){.conversation-controls{background:#f8fbff}}
 """
@@ -36,14 +37,10 @@ def render_conversation_workspace(
     <p id="conversation-error" class="conversation-alert" role="alert" hidden></p>
   </div>
 <section id="mario-conversation" class="conversation-workspace" data-testid="mario-conversation" data-initial-state="{encoded}" data-csrf="{token}" aria-label="Mario conversation and plan">
-    <form data-conversation-form="select_intent" class="conversation-inline conversation-intent-choice">
-      <div><label for="conversation-intent">Route objective</label><select id="conversation-intent" name="intent"><option value="existing base route">Existing route</option><option value="faster">Faster</option><option value="fastest">Fastest</option><option value="quickest">Quickest</option><option value="100% clear">100% clear</option></select></div>
-      <button type="submit">Review plan</button>
-    </form>
   <section class="session-card conversation-chat" aria-labelledby="conversation-chat-heading">
     <h2 id="conversation-chat-heading">Ask Companion</h2>
     <form data-conversation-form="message" id="conversation-message-form">
-      <label for="conversation-draft">Ask a question or describe a change</label>
+      <label for="conversation-draft">What would you like to do?</label>
       <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="Let’s find a coin route to the end for three attempts." required aria-describedby="conversation-typing-note"></textarea>
       <p class="meta" id="conversation-typing-note">Mario can play while you type. Questions give advice; supported changes update future steps.</p>
       <button type="submit" class="primary-button" data-testid="conversation-send">Send</button>
@@ -73,7 +70,7 @@ def render_conversation_workspace(
       <button type="button" data-conversation-action="apply" data-testid="conversation-apply">Apply change</button>
     </div>
     <p id="conversation-eligibility" class="meta"></p>
-    <p class="meta">Mario opens in a separate window. Start permits this plan and its supported edits to play.</p>
+    <p class="meta">Mario opens in a separate window. Start permits only the reviewed plan and its supported edits.</p>
     <div id="conversation-playing" class="conversation-outcome">
       <h3>Now playing</h3>
       <p id="conversation-current">No plan is running.</p>
@@ -90,7 +87,12 @@ def render_conversation_workspace(
     <p id="conversation-performance" class="meta"></p>
     <div class="conversation-outcome"><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
   </section>
-  <section class="session-card" data-testid="player-demonstrations"><h2>Let me show you</h2>
+<details class="session-card conversation-tools"><summary>Route shortcuts</summary>    <form data-conversation-form="select_intent" class="conversation-inline conversation-intent-choice">
+      <div><label for="conversation-intent">Route objective</label><select id="conversation-intent" name="intent"><option value="existing base route">Existing route</option><option value="faster">Faster</option><option value="fastest">Fastest</option><option value="quickest">Quickest</option><option value="100% clear">100% clear</option></select></div>
+      <button type="submit">Review plan</button>
+    </form>
+</details>
+  <details id="conversation-recording-tools" class="session-card conversation-tools" data-testid="player-demonstrations"><summary>Record or reuse a demonstration</summary>
     <p>Choose Open Mario for companion play above. Then choose Play Mario yourself, focus the emulator and enter World 1-1. Position yourself at the start of any route or useful segment, then record it. You control every input while recording.</p>
     <button type="button" data-conversation-action="player_play">Play Mario yourself</button>
     <button type="button" data-conversation-action="record_start">Start recording</button>
@@ -118,17 +120,17 @@ def render_conversation_workspace(
     <details><summary>Saved segment action review</summary><div id="conversation-demo-images"></div><pre id="conversation-demo-preview"></pre></details>
     <button type="button" data-conversation-action="demo_disable">Stop using demonstration</button>
     <p>Use proposes one attempt: balanced approach, then the recorded sequence when position, motion and form match. Review and Start authorize play. Drift stops playback; different enemy timing may prevent success. Saved demonstrations never resume gameplay on reopening.</p>
-  </section>
-  <section class="session-card"><h3>Flight rewards</h3><p>Ask “Fly to the hidden 1UP.” Prepare Raccoon or Tanooki Mario on the early runway after the first pipe, then review the observed requirements.</p><button type="button" data-conversation-action="player_play">Prepare flight form yourself</button><button type="button" data-conversation-action="demo_fresh">Open fresh attempt</button><p>After confirmed handback, open a fresh paused disposable game, prepare the form, then ask again, review and Start. No recording is needed.</p><p id="conversation-flight"></p>
+  </details>
+  <details id="conversation-flight-tools" class="session-card conversation-tools"><summary>Prepare a flight reward</summary><p>Ask “Fly to the hidden 1UP.” Prepare Raccoon or Tanooki Mario on the early runway after the first pipe, then review the observed requirements.</p><button type="button" data-conversation-action="player_play">Prepare flight form yourself</button><button type="button" data-conversation-action="demo_fresh">Open fresh attempt</button><p>After confirmed handback, open a fresh paused disposable game, prepare the form, then ask again, review and Start. No recording is needed.</p><p id="conversation-flight"></p>
     <details><summary>Preparation controls</summary><p>Each press uses ordinary game input, releases all buttons and pauses Mario. Get the Mushroom from the right upper question block before the pipe. Stomp the red Koopa, carry its shell right and release it before the ground question block. Follow immediately to collect the Leaf. Return to the low green platform after the pipe, then ask for flight again. Stop remains available. No recording is needed.</p>
     <form data-conversation-form="preparation_press"><label>Preparation control <select name="buttons"><option value="wait">Wait / release jump</option><option value="start">Start / confirm menu</option><option value="up">Up / map north</option><option value="down">Down / map south</option><option value="left">Walk left</option><option value="right">Walk right</option><option value="jump">Jump / enter level</option><option value="jump_right">Jump right</option><option value="jump_left">Jump left</option><option value="run_right">Run right / carry shell</option><option value="run_jump_right">Run and jump right</option></select></label>
-    <label>Press duration <select name="frames"><option value="15">Quarter second</option><option value="30">Half second</option><option value="60">One second</option><option value="1">One frame</option><option value="5">Brief tap</option></select></label><button type="submit">Press preparation control</button></form></details></section>
-  <section class="session-card"><h3>Coin-route discoveries</h3><p id="conversation-coins"></p></section>
-  <section class="session-card"><h3>Remembered opening guidance</h3><p id="conversation-guidance"></p><p id="conversation-retry-budget"></p>
+    <label>Press duration <select name="frames"><option value="15">Quarter second</option><option value="30">Half second</option><option value="60">One second</option><option value="1">One frame</option><option value="5">Brief tap</option></select></label><button type="submit">Press preparation control</button></form></details></details>
+  <details id="conversation-coin-tools" class="session-card conversation-tools"><summary>Coin-route discoveries</summary><p id="conversation-coins"></p></details>
+  <details id="conversation-guidance-tools" class="session-card conversation-tools"><summary>Remembered guidance and retry</summary><p id="conversation-guidance"></p><p id="conversation-retry-budget"></p>
     <button type="button" data-conversation-action="retry">Try again with guidance</button>
     <button type="button" data-conversation-action="reset_guidance">Reset future guidance</button>
     <p class="meta">Try again reopens a fresh disposable cartridge session within the approved budget. Stop, Take control or an unrelated session change requires fresh approval. Reset keeps prior results.</p>
-  </section>
+  </details>
   <details class="session-card conversation-saved"><summary>Save or reopen a route</summary>
     <form data-conversation-form="save_variant" class="conversation-inline"><div><label for="conversation-variant-name">Route name</label><input id="conversation-variant-name" name="name" maxlength="100" required placeholder="My opening hop"></div><button type="submit">Save route</button></form>
     <form data-conversation-form="load_variant" class="conversation-inline conversation-speed"><div><label for="conversation-variant">Saved route</label><select id="conversation-variant" name="variant_id"><option value="">No saved routes</option></select></div><button type="submit">Reopen</button></form>
@@ -186,13 +188,19 @@ CONVERSATION_JS = r''' (() => {
   const speed = value => value === "turbo" ? "Faster (uncapped)" : value == null ? "not yet acknowledged" : `${value}×`;
   const stopLabel = value => ({world_1_1_opening_end:"after the World 1-1 opening",world_1_1_exit:"after clearing World 1-1",full_route:"at the existing route's ending"}[value] || label(value));
   const boundaryLabel = value => ({world_1_1_opening:"World 1-1 opening",world_1_1_exit:"World 1-1 exit",next_supported_boundary:"Next supported boundary"}[value] || label(value));
-  const eligibilityLabel = value => ({requires_runtime_validation:"Requires a compatible live game and fresh authorization",clarification_required:"Clarification needed",planning_only:"Plan only; execution is unavailable",eligible:"Prerequisites observed; Start rechecks them",blocked:"Prepare the missing prerequisites, then ask again",unsupported:"Unsupported plan",executable:"Ready for fresh runtime checks"}[value] || label(value));
+  const eligibilityLabel = value => ({requires_runtime_validation:"Open a compatible game; Start will check it again",clarification_required:"Clarification needed",planning_only:"You can inspect this plan, but Companion cannot play it",eligible:"Prerequisites observed; Start rechecks them",blocked:"Prepare the missing prerequisites, then ask again",unsupported:"Unsupported plan",executable:"Ready for the game checks before Start"}[value] || label(value));
   const displayCopy = value => {
     const copy = String(value ?? "");
     if (copy === "Select a route intent, then review the actual base and supported edit scope.") return "Choose an objective and review your plan.";
     if (copy === "Start live observation to open a visible player-controlled game.") return "";
     if (copy === "No optimized variant is available. The loaded route is world_8_finish_game; playback speed does not establish a faster game-frame route.") return "A quicker route is not available; this loads the existing route. Playback speed does not shorten the route.";
     return copy.replaceAll("No optimized variant is available. The loaded route is world_8_finish_game; playback speed does not establish a faster game-frame route.", "A quicker route is not available; this loads the existing route. Playback speed does not shorten the route.").replaceAll("No full-completion variant is available. The loaded route is world_8_finish_game; finishing it does not establish 100% completion, and coverage remains unknown.", "No 100% route is available. This loads the existing route; finishing it does not prove 100% completion. Coverage is unknown.").replaceAll("Requested a quicker game-frame route; loaded the existing base route.", "You asked for a quicker route.").replaceAll("world_8_finish_game", "existing route to the game ending").replaceAll("same-game-frame", "same game speed");
+  };
+  const revealRelevant = (name, relevant) => {
+    const panel = node(name);
+    if (!panel) return;
+    if (relevant && panel.dataset.relevant !== "true") panel.open = true;
+    panel.dataset.relevant = String(Boolean(relevant));
   };
   const printable = value => typeof value === "object" && value !== null ? JSON.stringify(value) : label(value);
   let state = {};
@@ -216,24 +224,29 @@ CONVERSATION_JS = r''' (() => {
   function render(next) {
     state = next || {};
     const plan = state.plan || {};
+    revealRelevant("recording-tools", state.recording?.active || state.recording?.draft || state.demonstration_review);
+    revealRelevant("flight-tools", plan.flight_compatibility || state.flight_progress);
+    revealRelevant("coin-tools", plan.coin_compatibility || state.coin_progress);
+    revealRelevant("guidance-tools", state.retry_scope || state.guidance?.error);
     const current = state.current_plan;
     const pending = state.pending_plan;
     const runtime = state.runtime || {};
     const live = state.live || {};
     text("owner", `Mario · ${runtime.owner === "agent" ? "Companion is playing" : "You control the game"}${runtime.status && runtime.status !== "idle" ? ` · ${label(runtime.status)}` : ""}`);
     text("session", runtime.session_id || live.session_id || "No live session");
-    text("requested", plan.requested_objective || "Existing base route");
+    text("requested", state.ai?.state === "interpreting" ? "Understanding your request…" : plan.requested_objective || "No request yet");
     const loadedVariant = (state.variants || []).find(variant => variant.variant_id === plan.variant_id);
-    text("loaded", plan.flight_compatibility ? "World 1-1 sky hidden 1UP flight" : plan.coin_compatibility ? "Experimental World 1-1 coin discovery" : plan.coaching_compatibility ? "Experimental World 1-1 opening practice" : `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : " · Base"}`);
-    text("fallback", displayCopy(plan.fallback_explanation) || "Faster and 100% routes are not available. These choices load the existing route.");
+    text("loaded", !state.plan ? "No plan selected" : plan.path_choice === "adaptive_segment" ? "Adaptive World 1-1 early segment" : plan.flight_compatibility ? "World 1-1 sky hidden 1UP flight" : plan.coin_compatibility ? "Experimental World 1-1 coin discovery" : plan.coaching_compatibility ? "Experimental World 1-1 opening practice" : `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : ""}`);
+    text("fallback", `${displayCopy(plan.fallback_explanation) || (state.plan ? "Review supported execution limits before Start." : "Describe a goal or open Mario to prepare a fresh session.")} ${state.ai?.provider?.message || ""} ${state.ai?.provider?.inference || ""}`);
     text("plan-label", plan.revision ? `Plan version ${plan.revision}` : "");
     list("actions", (plan.actions || []).map(action => ({...action, jump_delay_frames:plan.jump_delay_frames, coaching_compatibility:plan.coaching_compatibility})), action => {
       const parameters = action.parameters || {};
       if (["mario_traverse", "mario_path", "traverse_route", "follow_route"].includes(action.kind)) {
+        if (plan.strategy_contract) return item((plan.change_summary || []).join(" "));
         if (plan.flight_compatibility) return item((plan.change_summary || []).join(" "));
         if (plan.coin_compatibility) return item(`${(plan.change_summary || []).join(" ")} Stop after clearing World 1-1.`);
         const path = parameters.path_choice === "opening_hop" ? "Take the opening hop in World 1-1." : "Use the default World 1-1 opening.";
-        return item(`${plan.coaching_compatibility ? `Practice opening jump: ${plan.jump_delay_frames ?? 0} delay frames, 26 held jump frames.` : "Follow the existing route."} ${path} Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
+        return item(`${plan.path_choice === "adaptive_segment" ? "Compose observed jumps, walks, landing and retreat to x ≥ 700, grounded." : plan.coaching_compatibility ? `Practice opening jump: ${plan.jump_delay_frames ?? 0} delay frames, 26 held jump frames.` : "Follow the existing route."} ${path} Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
       }
       if (["mario_stop", "stop", "stop_at"].includes(action.kind)) return item(`Stop ${stopLabel(parameters.stop_point || plan.stop_point)}.`);
       if (["mario_speed", "set_speed"].includes(action.kind)) return item(`Set playback to ${speed(parameters.speed || plan.requested_speed)}.`);
@@ -288,7 +301,7 @@ CONVERSATION_JS = r''' (() => {
     }
     list("revisions", revisions, revision => item(summarizePlan(revision)));
     const guidance = state.guidance || {}, budget = state.retry_scope;
-    text("guidance", guidance.error || `World 1-1 experimental opening jump: delay ${guidance.jump_delay_frames ?? 0} frames before holding jump for 26 frames. ${(guidance.coaching || []).length} remembered corrections. ${(guidance.coaching || []).map(row => row.original_words).join(" · ")}`);
+    text("guidance", guidance.error || `Current observations take priority over remembered advice. World 1-1 experimental opening jump: delay ${guidance.jump_delay_frames ?? 0} frames before holding jump for 26 frames. ${(guidance.coaching || []).length} remembered corrections. ${(guidance.coaching || []).map(row => `${row.original_words}${row.status ? ` (${row.status})` : ""}`).join(" · ")}`);
     text("retry-budget", budget ? `${budget.remaining} of ${budget.maximum_attempts} attempts remain; 10-minute scope, checked again before every retry.` : "Review and approve exploration or opening practice for a finite attempt budget.");
     const flight = state.flight_progress || state.outcome?.flight_result || state.flight_knowledge?.last_result;
     text("flight", `${state.flight_knowledge?.attempts || 0} compatible flight attempts remembered. ${flight ? `Result ${flight.status}; flight ${flight.flight_observed ? "observed" : "unverified"}; area ${flight.area_reached ? "reached" : "unverified"}; reward ${flight.reward_revealed ? "revealed" : "unverified"}; collection ${flight.reward_collected === true ? "confirmed" : "unconfirmed"}; coin-rollover lives ${flight.coin_rollover_lives}; life change ${flight.life_change}.` : "Ask to fly to the hidden 1UP in World 1-1. Flight form and runway must be observed before Start."}`);
@@ -299,6 +312,10 @@ CONVERSATION_JS = r''' (() => {
     if (outcome?.coaching_result) {
       const result = outcome.coaching_result;
       text("outcome", `${label(outcome.status)} · Requested ${result.requested_delay_frames} delay frames · ${result.controller_application_observed ? "Controller confirmed timing applied" : "Timing application unconfirmed"} · ${result.segment_completed ? "Opening stop reached" : "Opening stop not reached"} · ${result.improvement_observed === true ? "Opening completion improved; causation unknown" : result.improvement_observed === false ? "Applied timing did not improve stop completion" : "Improvement unknown"} · ${outcome.neutralized ? "Inputs released" : "Input release unconfirmed"}`);
+    }
+    if (outcome?.strategy_result) {
+      const result = outcome.strategy_result;
+      text("outcome", `${label(outcome.status)} · ${result.skills.map(s => `${s.skill}: ${s.frames} frames, delay ${s.delay_frames}`).join(" → ") || "No skill receipt"} · ${result.segment_arrival_observed === undefined ? (result.opening_stop_observed ? "Opening stop observed" : "Opening stop not observed") : (result.segment_arrival_observed ? "Early segment arrival observed, grounded" : "Early segment arrival unconfirmed")} · ${result.requested_guidance ? `Remembered guidance ${result.guidance_application_observed ? "applied with a controller receipt" : "application unconfirmed"}; improvement unknown · ` : ""}${outcome.neutralized ? "Inputs released" : "Input release unconfirmed"} · ${outcome.controller_owner === "player" ? "Control returned to you" : "Handback unconfirmed"}`);
     }
     const recording = state.recording || {}, draft = recording.draft;
     text("recording", recording.active ? `Player recording: ${recording.active.status}. Companion input is disabled.` : draft ? `${draft.frame_count} recorded frames · ${draft.reason}. Review, trim if needed and save.` : "No recording in progress. Ten-minute maximum; World 1-1 only.");
@@ -451,6 +468,7 @@ def render_stardew_conversation_workspace(state: Mapping[str, object] | None = N
     prepared_options = ''.join(f'<option value="{html.escape(row["id"], quote=True)}">{html.escape(row["label"])}</option>'
                                for row in (state or {}).get("runtime", {}).get("prepared_farms", []))
     prepared = (f'<form data-action="launch_engineering"><label>Prepared test farm<select name="prepared_id">{prepared_options}</select></label>'
+                '<details><summary>Choose installed Stardew location</summary><label>Stardew installation folder<input name="installation" placeholder="Leave blank to discover the installed game"></label><p>Select the actual installation containing Contents/MacOS. The inspected executable and runtime must match; no save folders are searched.</p></details>'
                 '<button type="submit" class="primary-button">Open fresh farm copy</button><p>The original farm stays unchanged. Choose Load in the game, then verify this new session. Opening does not permit gameplay.</p></form>' if prepared_options else '')
     setup_open = '' if (state or {}).get('runtime', {}).get('observation') else ' open'
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -468,19 +486,22 @@ body{{color:var(--text)}}main{{padding:16px}}h1{{font-size:26px;margin:8px 0}}.c
 <p id="stardew-error" class="conversation-alert" role="alert" hidden></p></div>
 <p id="stardew-status" role="status"></p><div class="conversation-buttons stardew-view-tools"><button data-action="observe">Refresh farm view</button><a href="#stardew-setup-panel">Farm setup</a></div>
 <section class="conversation-workspace" aria-label="Stardew conversation and plan">
-<div class="conversation-chat card"><h2>What should Companion do?</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Where should we plant corn? Or: please water the dry crop patch" required></textarea><button type="submit" class="primary-button">Send request</button></form><details><summary>Example Day 5 request</summary><p>Harvest farm--1-3, then plant parsnip seeds on farm--1-3, then water them and clear farm-0-5 and return to the farmhouse entrance.</p></details>
-<p class="meta">Requests for work and Refresh farm view focus the game. Planting-location discussion focuses and captures the supported farm without gameplay input. Other questions and control requests do not. Start focuses Stardew; switching away pauses play and requires a fresh view, review and Start.</p>
-<ul id="stardew-messages" class="conversation-transcript" aria-live="polite"></ul></div>
-<div class="conversation-plan card"><section aria-label="Planting location discussion"><h2>Where should we plant?</h2><p id="stardew-planting-summary">Ask where to grow a crop. Discussing a location never permits farm work.</p><div id="stardew-planting-visual"></div><ul id="stardew-planting-assessments"></ul><details><summary>Saved location discussion</summary><ul id="stardew-planting-discussion"></ul></details></section><p>For another view, ask: Inspect the eastern crop margin. Review the displayed walk before Start.</p><p id="stardew-inspection-result"></p><div id="stardew-inspection-image"></div><section aria-label="Cave entrance reconnaissance"><h2>Visit a cave entrance</h2><p>Ask “Explore a cave”, then choose “Farm Cave”. Review the exterior visit and farmhouse return before approval. Entry and interior exploration need a further supported plan.</p><p id="stardew-cave-coverage"></p><p id="stardew-cave-result"></p><div id="stardew-cave-image"></div><p>If return stops, findings remain saved. Ask “Return home” for a newly reviewed return; saved permission never resumes.</p></section><h2>Your farm plan</h2><p id="stardew-observation"></p>
+<div class="conversation-chat card"><h2>Ask Companion</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Where should we plant corn? Or: please water the dry crop patch" required></textarea><button type="submit" class="primary-button">Send request</button></form><p class="meta">Work and planting-location requests bring Stardew to the front. Questions give advice; only Start permits work.</p>
+<details><summary>Examples and game focus</summary><p>Ask “Water the dry crops” or “Where should we plant corn?” For another view, ask “Inspect the eastern crop margin” and review the walk before Start.</p><p>For the Farm Cave, ask “Explore a cave”, then choose “Farm Cave”. Only a verified exterior visit and return can run; entry and interior exploration need a further supported plan.</p><p><strong>Day 5 example:</strong> Harvest farm--1-3, then plant parsnip seeds on farm--1-3, then water them and clear farm-0-5 and return to the farmhouse entrance.</p><p>Refresh farm view and planting-location discussion focus and capture the game. Location discussion uses no gameplay input. Other questions and control requests do not focus it.</p></details>
+<ul id="stardew-messages" class="conversation-transcript" aria-live="polite"></ul><details id="stardew-earlier" hidden><summary>Earlier messages</summary><ul id="stardew-older-messages" class="conversation-transcript"></ul></details></div>
+<div class="conversation-plan card"><section id="stardew-plan-review"><h2>Your farm plan</h2><p id="stardew-observation"></p>
 <p id="stardew-plan">Request a task to prepare a proposal.</p><ol id="stardew-actions"></ol><p id="stardew-limits"></p><p id="stardew-issues"></p>
-<div class="conversation-buttons"><button data-action="apply" id="stardew-review">Review scope</button><button data-action="start" id="stardew-start" class="primary-button">Start reviewed work</button><button data-action="cancel_pending">Cancel review</button></div>
-<p id="stardew-review-status"></p><section class="conversation-outcome"><h3>Result and remaining work</h3><p id="stardew-outcome">No attempt yet.</p><pre id="stardew-ledger"></pre></section>
+<div class="conversation-buttons"><button data-action="apply" id="stardew-review">Review plan</button><button data-action="start" id="stardew-start" class="primary-button">Start reviewed work</button><button data-action="cancel_pending">Cancel review</button></div>
+<p id="stardew-review-status"></p><section class="conversation-outcome"><h3>Result and remaining work</h3><p id="stardew-outcome">No attempt yet.</p><pre id="stardew-ledger"></pre></section></section>
+<section id="stardew-planting-panel" class="conversation-outcome" aria-label="Planting location discussion" hidden><h3>Planting advice</h3><p id="stardew-planting-summary"></p><div id="stardew-planting-visual"></div><ul id="stardew-planting-assessments"></ul><details><summary>Earlier location discussion</summary><ul id="stardew-planting-discussion"></ul></details><p>Location advice does not permit planting.</p></section>
+<section id="stardew-inspection-panel" class="conversation-outcome" aria-label="Farm inspection findings" hidden><h3>Farm findings</h3><p id="stardew-inspection-result"></p><div id="stardew-inspection-image"></div></section>
+<section id="stardew-cave-panel" class="conversation-outcome" aria-label="Cave entrance reconnaissance" hidden><h3>Farm Cave findings</h3><p id="stardew-cave-coverage"></p><p id="stardew-cave-result"></p><div id="stardew-cave-image"></div><p>If the return stopped, ask “Return home” and review a new plan. Saved findings never resume play.</p></section>
 <h3>Choose targets</h3><form data-action="select_targets"><div id="stardew-targets"></div><button type="submit">Use selected targets</button></form><details class="stardew-history"><summary>Saved results</summary><p>Inspect past work and recovery advice. Reopening never permits play.</p><ol id="stardew-history" class="conversation-history"></ol></details>
 <details><summary>Session and evidence details</summary><pre id="stardew-details"></pre></details></div>
 </section><details id="stardew-setup-panel" class="session-card stardew-setup"{setup_open}><summary>Farm setup and screen recognition</summary><p><strong>Pilot / B3Test · Day 2:</strong> water all 15 initial crops. <strong>Pilot / B4Test · Day 5:</strong> harvest and replant the left parsnip, water it, clear the selected small stone, then return. These are separate prepared farms.</p><h3>Open or reconnect a disposable farm</h3><p>Close the previous test game. Open a fresh copy below, load the named farm, exit to the porch and select the watering can.</p>
 {prepared}
 <div class="conversation-buttons"><button data-action="reconnect_engineering">Reconnect open disposable game</button><button data-action="show_engineering_game">Show game window</button></div><p>In the game: choose Load → Pilot/B3Test, walk left from the bed to the door, walk down onto the porch, then click the watering can in toolbar slot 3. These preparation steps are player controlled. Back here, check the farm session and connect screen recognition. Reconnect never restores a plan or permission.</p>
-<details><summary>Prepare through Companion when native attachment is unavailable</summary><p>View the disposable game screen first. Use Load only on the title screen; choose Pilot only on the load list. In the bedroom walk left toward the door, then down to the porch. Each walk button permits 0.8 seconds and releases input. Repeat only after checking the new screen. Select the can on the farm. Pause clock between survey steps keeps daylight steady while you review images. End that pause with Toggle game menu before checking the session.</p><div id="stardew-preparation-view"></div><div class="conversation-buttons"><button data-preparation="view">View preparation screen</button><button data-preparation="load">Choose Load</button><button data-preparation="choose">Choose Pilot farm</button><button data-preparation="left">Walk left for 0.8 seconds</button><button data-preparation="down">Walk down for 0.8 seconds</button><button data-preparation="right">Walk right for 0.8 seconds</button><button data-preparation="up">Walk up for 0.8 seconds</button><button data-preparation="up_short">Nudge up for 0.1 seconds</button><button data-preparation="left_short">Nudge left for 0.1 seconds</button><button data-preparation="right_short">Nudge right for 0.1 seconds</button><button data-preparation="down_short">Nudge down for 0.1 seconds</button><button data-preparation="up_fine">Nudge up for 0.05 seconds</button><button data-preparation="up_micro">Adjust up for 0.015 seconds</button><button data-preparation="down_micro">Adjust down for 0.015 seconds</button><button data-preparation="left_micro">Adjust left for 0.015 seconds</button><button data-preparation="right_micro">Adjust right for 0.015 seconds</button><button data-preparation="survey_pause">Pause clock between survey steps</button><button data-preparation="can">Select watering can</button><button data-preparation="menu">Toggle game menu</button></div></details><details><summary>Advanced: empty engineering session</summary><button data-action="launch_engineering">Open isolated engineering game</button><p>An empty session is not a qualified prepared farm.</p></details>
+<details><summary>Prepare through Companion when native attachment is unavailable</summary><p>View the disposable game screen first. Use Load only on the title screen; choose Pilot only on the load list. In the bedroom walk left toward the door, then down to the porch. Each walk button permits 0.8 seconds and releases input. Repeat only after checking the new screen. Select the can on the farm. Pause clock between survey steps keeps daylight steady while you review images. End that pause with Toggle game menu before checking the session.</p><div id="stardew-preparation-view"></div><div class="conversation-buttons"><button data-preparation="view">View preparation screen</button><button data-preparation="window">Restore supported window</button><button data-preparation="load">Choose Load</button><button data-preparation="choose">Choose Pilot farm</button><button data-preparation="left">Walk left for 0.8 seconds</button><button data-preparation="down">Walk down for 0.8 seconds</button><button data-preparation="right">Walk right for 0.8 seconds</button><button data-preparation="up">Walk up for 0.8 seconds</button><button data-preparation="up_short">Nudge up for 0.1 seconds</button><button data-preparation="left_short">Nudge left for 0.1 seconds</button><button data-preparation="right_short">Nudge right for 0.1 seconds</button><button data-preparation="down_short">Nudge down for 0.1 seconds</button><button data-preparation="up_fine">Nudge up for 0.05 seconds</button><button data-preparation="up_micro">Adjust up for 0.015 seconds</button><button data-preparation="down_micro">Adjust down for 0.015 seconds</button><button data-preparation="left_micro">Adjust left for 0.015 seconds</button><button data-preparation="right_micro">Adjust right for 0.015 seconds</button><button data-preparation="survey_pause">Pause clock between survey steps</button><button data-preparation="can">Select watering can</button><button data-preparation="menu">Toggle game menu</button></div></details><details><summary>Advanced: empty engineering session</summary><button data-action="launch_engineering">Open isolated engineering game</button><p>An empty session is not a qualified prepared farm.</p></details>
 <details><summary>Advanced: copy a selected existing save</summary><p>No save is discovered automatically. Choose the exact source and a new destination. Copying alone does not verify where the game loads or saves.</p>
 <form data-action="setup" class="setup-fields"><label>Source kind<select name="setup_source_kind"><option value="engineering_source">Dedicated engineering save</option><option value="owner_copy">Selected owner save</option></select></label><label>Selected source directory<input name="source" required autocomplete="off"></label>
 <label>New disposable destination<input name="destination" required autocomplete="off"></label>
@@ -510,7 +531,7 @@ STARDEW_CONVERSATION_JS = r'''
     state = next;
     const run = state.runtime || {}, plan = state.plan, observation = run.observation || {}, planningObservation = run.planning_observation || observation;
     text("owner", run.owner === "agent" || run.input_owner === "agent" ? "Companion controls the game" : run.handback_confirmed === false ? "Handback not confirmed" : "You control the game");
-    text("status", run.reason || run.status || "Setup required");
+    text("status", `${state.ai?.state === "interpreting" ? "Understanding your request… " : ""}${run.reason || (run.status || "Setup required").replaceAll("_", " ")} ${state.ai?.provider?.message || ""} ${state.ai?.provider?.inference || ""}`);
     const setup = run.setup?.session_id ? run.setup : (run.engineering_launches || []).at(-1) || run.setup || {}, save = setup.save || {};
     text("setup", setup.classification === "fresh_engineering_namespace" ? `Engineering session ${setup.session_id.slice(0, 8)} · ${setup.blocker || ""} Folder and process identity are in Session and evidence details.` : setup.session_id ? `Session ${setup.session_id} · ${setup.classification === "engineering_source" ? "Engineering source" : "Selected owner copy"}. Source: ${save.primary_path || save.source_path || "unknown"}. Disposable: ${save.disposable_path || "unknown"}. ${setup.blocker || ""}` : "No farm session is open.");
     const steps = run.setup_steps || [];
@@ -552,13 +573,24 @@ STARDEW_CONVERSATION_JS = r'''
       if (caveView?.image) { const img = document.createElement("img"); img.src = caveView.image; img.alt = cave.historical ? "Saved Farm Cave exterior view" : "Fresh Farm Cave exterior view"; img.style.width = "100%"; caveImage.append(img); }
     }
     const inspection = state.inspection_result;
-    text("inspection-result", inspection ? `${inspection.historical ? "Saved inspection; no control authority. " : ""}${inspection.status}. ${inspection.findings?.message || "No fresh second-view findings yet."} ${inspection.handback_confirmed ? "Input released; player handback confirmed." : "Handback not yet confirmed."}` : "");
-    const inspectionImage = node("inspection-image"), found = inspection?.findings?.observation;
-    if (inspectionImage.dataset.identity !== (found?.observation_id || "none")) {
-      inspectionImage.dataset.identity = found?.observation_id || "none"; inspectionImage.replaceChildren();
-      if (found?.image) { const img = document.createElement("img"); img.src = found.image; img.alt = inspection.historical ? "Saved eastern crop margin inspection" : "Fresh eastern crop margin inspection"; img.style.width = "100%"; inspectionImage.append(img); }
+    text("inspection-result", inspection ? `${inspection.historical ? "Saved inspection; no control authority. " : ""}${inspection.status}. ${inspection.assessment ? `${inspection.assessment_source === "model" ? "Model assessment" : "Return limit"}: ${inspection.assessment} ` : ""}${inspection.return_reason || ""} ${inspection.findings?.message || "No fresh findings yet."} ${inspection.handback_confirmed ? "Input released; player handback confirmed." : "Handback not yet confirmed."}` : "");
+    const inspectionImage = node("inspection-image");
+    const findings = inspection?.observations?.length ? inspection.observations : (inspection?.findings ? [inspection.findings] : []);
+    const findingIdentity = findings.map(f => f.observation?.observation_id).join(",") || "none";
+    if (inspectionImage.dataset.identity !== findingIdentity) {
+      inspectionImage.dataset.identity = findingIdentity; inspectionImage.replaceChildren();
+      for (const finding of findings) {
+        const found = finding.observation, caption = document.createElement("p");
+        caption.textContent = `${finding.viewpoint || "Eastern margin"} · ${found?.observed_at || "Observation time unknown"}. ${finding.message || ""} Captured findings describe that view at that time; unseen objects need reacquisition.`;
+        inspectionImage.append(caption);
+        if (found?.image) { const img = document.createElement("img"); img.src = found.image; img.alt = `${inspection.historical ? "Saved" : "Captured"} reconnaissance view`; img.style.width = "100%"; inspectionImage.append(img); }
+      }
     }
+    node("inspection-panel").hidden = !inspection;
+    node("cave-panel").hidden = !cave && plan?.normalized_intent !== "inspect_cave";
     const planting = state.planting_recommendation;
+    node("planting-panel").hidden = !planting;
+    node("plan-review").hidden = !plan && Boolean(planting || inspection || cave);
     text("planting-summary", planting ? `${planting.historical ? "Saved recommendation from an earlier view; ask again to inspect current conditions. " : ""}${planting.message}` : "Ask where to grow a crop. Discussing a location never permits farm work.");
     const visual = node("planting-visual"), survey = planting?.observation;
     const visualIdentity = planting?.recommendation_id || "none";
@@ -614,19 +646,23 @@ STARDEW_CONVERSATION_JS = r'''
     text("issues", [...(plan?.ambiguities || []), ...(plan?.unsupported_parts || []), plan?.fallback_explanation || ""].join(" "));
     node("review").disabled = plan?.execution_eligibility !== "requires_runtime_validation";
     node("start").disabled = !state.reviewed;
-    text("review-status", state.reviewed ? "Plan reviewed. Start permits this work only after the game is checked again." : "Review the plan, then Start to permit play.");
+    text("review-status", state.reviewed ? "Plan reviewed. Start checks the game again before permitting this work. Switching away pauses play; refresh and review to continue." : "Review the plan before Start. Switching away pauses play; refresh and review again to continue.");
     const messageSignature = JSON.stringify(state.messages || []);
     if (messageSignature !== messagesSignature) {
       messagesSignature = messageSignature;
-      node("messages").replaceChildren(...(state.messages || []).slice(-8).map(message => { const li = document.createElement("li"); li.dataset.role = message.role; li.textContent = `${message.role === "user" ? "You" : "Companion"}: ${message.text}`; return li; }));
+      const messageItem = message => { const li = document.createElement("li"); li.dataset.role = message.role; li.textContent = `${message.role === "user" ? "You" : "Companion"}: ${message.text}`; return li; };
+      node("messages").replaceChildren(...(state.messages || []).slice(-2).map(messageItem));
+      node("older-messages").replaceChildren(...(state.messages || []).slice(0, -2).map(messageItem));
+      node("earlier").hidden = (state.messages || []).length <= 2;
     }
     const outcome = state.outcome, ledger = run.ledger, tool = observation.tool || {};
+    node("ledger").hidden = !ledger && !inspection && !cave;
     text("outcome", outcome ? `${({completed:"Completed",stopped:"Stopped",failed:"Stopped after a problem",active:"In progress"}[outcome.status] || (outcome.status || "Partial").replaceAll("_", " "))}. ${outcome.stop_reason || run.reason || ""} ${run.neutralized === true ? "Inputs released." : "Input release is unconfirmed."} ${run.handback_confirmed ? "Control returned to you." : "Handback is unconfirmed."}` : "No attempt yet.");
     text("ledger", ledger?.contract === "selected-farm-actions/v2" ? `${(ledger.steps || []).map(step => `${step.kind.replaceAll("_", " ")} ${step.target_id}: ${step.status.replaceAll("_", " ")}`).join("\n")}\nSeeds consumed: ${ledger.seed_consumed} · Energy spent: ${ledger.energy_spent} · Water consumed: ${ledger.can_water_consumed}\nObserved inventory: ${JSON.stringify(ledger.current_inventory)}\nReturn point: ${ledger.final_position?.at_farmhouse_entrance === true ? "Reached" : "Not confirmed"}` : ledger ? `${ledger.watered_count ?? "Unknown"} confirmed watered · ${ledger.remaining_count ?? "Unknown"} remaining to reconcile\nLast reconciled energy: ${ledger.energy_current ?? "Unknown"} · Water in can: ${ledger.can_water_current ?? "Unknown"}\nTool uses: ${ledger.tool_uses ?? "Unknown"} · Refills: ${ledger.refills ?? "Unknown"}\nReturn point: ${ledger.final_position?.at_farmhouse_entrance === true ? "Reached" : "Not confirmed"}` : "Crop, energy, can-water and refill accounting remain unknown.");
     if (plan?.normalized_intent === "inspect_cave" && cave) {
       text("outcome", `${cave.status}. Arrival ${cave.arrival_observation ? "observed" : "unknown"}. ${cave.findings?.message || "No fresh entrance findings yet."} ${cave.handback_confirmed ? "Control returned to you." : "Handback unconfirmed."}`);
       text("ledger", "No tools, combat or purchases. Farmhouse return: " + (cave.return_observation ? "Observed" : "Not confirmed; request a revised return plan."));
-    } else if (plan?.normalized_intent === "inspect_planting" && inspection) {
+    } else if (["inspect_planting", "inspect_recon"].includes(plan?.normalized_intent) && inspection) {
       text("outcome", `${inspection.status}. ${inspection.findings?.message || "No fresh second-view findings yet."} ${inspection.handback_confirmed ? "Input released; control returned to you." : "Handback unconfirmed."}`);
       text("ledger", "Inspection uses no tools, water, seeds or purchases. Farmhouse return: " + (inspection.return_observation?.position?.at_farmhouse_entrance ? "Observed" : "Not confirmed"));
     }

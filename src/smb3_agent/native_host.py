@@ -41,7 +41,7 @@ def foreground_process_id(*, error_type=HostError) -> int:
 
 def capture_selected(window: WindowObservation, destination: Path, *, detect_window,
                      require_foreground=True, error_type=HostError, started=None,
-                     normalize=True) -> Path:
+                     normalize=True, screen_region=False) -> Path:
     if not (window.trusted if require_foreground else window.observable) or window.bounds is None:
         raise error_type("window_loss")
     current = detect_window()
@@ -49,10 +49,13 @@ def capture_selected(window: WindowObservation, destination: Path, *, detect_win
         current.process_id != window.process_id
         or current.process_started_at != window.process_started_at
         or current.window_id != window.window_id
+        or current.bounds != window.bounds
     ):
         raise error_type("process_loss")
     if destination.exists():
         raise error_type("screen evidence destination already exists")
+    if screen_region and (not require_foreground or not window.trusted):
+        raise error_type("screen-region capture requires the identified foreground window")
     import subprocess
     from PIL import Image
     from datetime import datetime, timezone
@@ -67,7 +70,9 @@ def capture_selected(window: WindowObservation, destination: Path, *, detect_win
     if started is not None:
         started(datetime.now(timezone.utc).isoformat())
     try:
-        result = subprocess.run(["/usr/sbin/screencapture", "-x", "-o", "-t", "tiff", "-l", window.window_id, str(raw)],
+        selector = (["-R", ','.join(map(str, window.bounds))] if screen_region
+                    else ["-l", window.window_id])
+        result = subprocess.run(["/usr/sbin/screencapture", "-x", "-o", "-t", "tiff", *selector, str(raw)],
                                 capture_output=True, timeout=1.5, check=False)
     except subprocess.TimeoutExpired as exc:
         raise error_type("visible capture exceeded freshness bound; no frame accepted") from exc
@@ -75,6 +80,12 @@ def capture_selected(window: WindowObservation, destination: Path, *, detect_win
         raise error_type("native visible capture failed; check screen-recording permission")
     after = detect_window()
     if (after.process_id, after.process_started_at, after.window_id, after.bounds) != (window.process_id, window.process_started_at, window.window_id, window.bounds):
+        import json
+        from dataclasses import asdict
+        destination.with_suffix(".capture-refusal.json").write_text(json.dumps({
+            "reason": "process/window changed during visible capture",
+            "before": asdict(window), "after": asdict(after), "frame_accepted": False,
+        }, indent=2))
         raise error_type("process/window changed during visible capture")
     with Image.open(raw) as image:
         if image.size not in {(width, height), (width*2, height*2)}:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explicit disposable PB1 experiment entry, not the full onboarding/product UI."""
+"""Explicit disposable profile experiment entry, not the full onboarding/product UI."""
 from __future__ import annotations
 
 import argparse

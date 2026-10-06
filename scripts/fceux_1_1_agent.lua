@@ -1800,7 +1800,10 @@ local function run_agent(attempt)
       last_x = m.x
     end
 
-    if b2_plan and b2_plan.opening_step(held) then
+    if b2_plan and b2_plan.strategy_step(held) then
+      apply()
+      advance_frame()
+    elseif b2_plan and b2_plan.opening_step(held) then
       apply()
       advance_frame()
     elseif b2_plan and b2_plan.stairs_step(held, m) then

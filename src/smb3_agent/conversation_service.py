@@ -34,7 +34,7 @@ def _retain_refusal(service: Any, action: str, payload: dict, reason: str, game:
 
 class ConversationService:
     def __init__(self, live_manager: Any, *, artifacts_root: Path = Path("artifacts/conversation"),
-                 runtime: Any = None) -> None:
+                 runtime: Any = None, provider: Any = None) -> None:
         if runtime is None:
             from smb3_agent.mario_plan_runtime import MarioPlanRuntime
             runtime = MarioPlanRuntime(live_manager)
@@ -67,6 +67,10 @@ class ConversationService:
         self._attempt: dict[str, Any] | None = None
         self._outcome: dict[str, Any] | None = None
         self._last_message = "Select a route intent, then review the actual base and supported edit scope."
+        from smb3_agent.companion_ai import LanguageSession
+        self.ai = LanguageSession(self, provider, "mario") if provider else None
+        from smb3_agent.mario_strategy import MarioStrategyAgent
+        self.strategy = MarioStrategyAgent(self, provider) if provider else None
 
     def _message(self, role: str, text: str, kind: str) -> None:
         value = {"role": role, "text": text, "kind": kind,
@@ -114,7 +118,7 @@ class ConversationService:
             "current_plan": prior,
             "requested_speed": self.runtime.snapshot().get("requested_speed"),
             "applied_speed": self.runtime.snapshot().get("applied_speed"),
-            "reviewed_edit_scope": ["path", "stop_point", "speed"] if self._active() else [],
+            "reviewed_edit_scope": ["path", "stop_point", "speed"] if self._active() and not (self._current or {}).get("strategy_contract") else [],
             "supported_speeds": [1, "turbo"],
         }
 
@@ -182,6 +186,11 @@ class ConversationService:
         if self._attempt is None:
             return
         record = deepcopy(self._attempt)
+        record['native_stop_reason'] = terminal
+        stop = runtime.get('strategy_stop')
+        if terminal == 'reclaimed' and stop:
+            terminal = stop['reason']
+            record['stop_detail'] = stop['detail']
         frame = runtime.get("terminal_frame")
         if frame is None:
             # Failed/disconnected attempts without a terminal receipt keep the
@@ -209,7 +218,43 @@ class ConversationService:
             "comparison_compatible": False,
             "comparison_reason": "Session-plan timing includes its actual entry/stop; compare only matching boundaries and actor classes.",
         })
-        if record.get("initial_plan", {}).get("coaching_compatibility") == COMPATIBILITY:
+        if record.get("initial_plan", {}).get("strategy_contract"):
+            events = runtime.get("events", [])
+            record["strategy_result"] = {
+                "contract": record["initial_plan"]["strategy_contract"],
+                "skills": [{k: e.get(k) for k in ("skill", "frames", "delay_frames", "frame", "x", "y")}
+                           for e in events if e.get("event") == "strategy_skill"],
+                "boundaries": [dict(e) for e in events if e.get("event") == "strategy_boundary"],
+                "opening_stop_observed": terminal == "completed_stop" and any(
+                    e.get("event") == "terminal" and int(e.get("x", 0)) >= 160 for e in events),
+            }
+            from smb3_agent import mario_segment
+            if record['initial_plan']['strategy_contract'] == mario_segment.CONTRACT:
+                decisions = [row for row in (self.ai.records if self.ai else [])
+                             if row.get('role') == 'mario_gameplay' and row.get('supplied', {}).get('authority', {}).get('session_id') == record['session_id']]
+                compatible, incompatible = mario_segment.compatible_guidance(record['initial_plan'].get('coaching', []), getattr(self.live_manager, '_game_file_sha256', None))
+                requested_ids = [row['decision'].get('guidance_id') for row in decisions if row['decision'].get('guidance_id')]
+                skills = record['strategy_result']['skills']
+                record['strategy_result'].update(
+                    segment_arrival_observed=terminal == 'completed_stop' and any(e.get('event') == 'segment_arrival_observed' for e in events),
+                    requested_guidance=compatible, incompatible_guidance_ids=incompatible,
+                    model_selected_guidance_ids=requested_ids,
+                    guidance_application_observed=any(
+                        row['decision'].get('guidance_id') and any(
+                            str(receipt.get('frame')) == str(row['supplied']['observation']['frame'])
+                            and receipt.get('skill') == row['decision']['skill']
+                            and int(receipt.get('frames', 0)) == row['decision']['frames']
+                            and int(receipt.get('delay_frames', 0)) == row['decision']['delay_frames']
+                            for receipt in skills) for row in decisions),
+                    guidance_decisions=[{'requested_guidance_id': row['decision'].get('guidance_id'),
+                        'selected_behavior': deepcopy(row['decision']), 'observed_effect': deepcopy(row.get('effect'))}
+                        for row in decisions if row['decision'].get('guidance_id')],
+                    improvement_observed=None,
+                    guidance_explanation='A referenced remembered constraint and native skill receipts establish application; improvement is unknown.')
+                record['strategy_result']['opening_stop_observed'] = False
+            if terminal not in {"completed_stop", "death"} or not live.input_neutralized:
+                self._retry_scope = None
+        if record.get("initial_plan", {}).get("coaching_compatibility") == COMPATIBILITY and not record["initial_plan"].get("strategy_contract"):
             expected = record["initial_plan"].get("jump_delay_frames", 0)
             applied = any(event.get("event") == "alternate_started"
                           and str(event.get("jump_delay_frames")) == str(expected)
@@ -352,6 +397,7 @@ class ConversationService:
             return {
                 "schema_version": "game-companion-conversation/v1",
                 "conversation_id": self.conversation_id, "game_id": "mario",
+                "ai": self.ai.snapshot() if self.ai else None,
                 "plan": deepcopy(self._plan), "current_plan": deepcopy(self._current),
                 "pending_plan": deepcopy(self._pending), "runtime": runtime,
                 "messages": deepcopy(self._messages[-60:]), "message": self._last_message,
@@ -480,6 +526,11 @@ class ConversationService:
         plan = (self._coin_plan("Retry using remembered coin discoveries", attempts=scope["maximum_attempts"])
                 if scope.get("coin_discovery") else
                 self._coached_plan("Retry with remembered opening-jump guidance", attempts=scope["maximum_attempts"]))
+        if scope.get("strategy_contract"):
+            plan.update(strategy_contract=scope["strategy_contract"], model_intent=deepcopy(scope["model_intent"]))
+            from smb3_agent import mario_segment
+            if scope['strategy_contract'] == mario_segment.CONTRACT:
+                mario_segment.expand_plan(plan)
         plan = self._bound_plan(plan)
         if time.monotonic() >= scope["deadline"]:
             self._retry_scope = None
@@ -506,6 +557,8 @@ class ConversationService:
                          "start_frame": (started_runtime or {}).get("start_frame", observation["frame"]),
                          "starting_observation": observation,
                          "started_at": datetime.now(timezone.utc).isoformat()}
+        if plan.get("strategy_contract") and self.strategy:
+            self.strategy.start(plan)
 
     def _bound_plan(self, plan: dict[str, Any]) -> dict[str, Any]:
         live, observation = self._live()
@@ -514,6 +567,8 @@ class ConversationService:
         if plan.get("session_id") not in {None, live.session_id}:
             raise ValueError("This plan belongs to another session; select or reopen it for this session")
         result = deepcopy(plan)
+        if result.get("strategy_contract") and self.strategy is None:
+            raise ValueError("Adaptive opening strategy requires an available gameplay provider")
         if result.get("flight_compatibility"):
             requirements = mario_flight.prerequisites(observation)
             if not requirements["ready"]:
@@ -562,6 +617,13 @@ class ConversationService:
         priority = urgent_control(str(payload.get("text", ""))) if action == "message" else None
         if priority:
             action = priority
+        if self.ai:
+            if action == "message":
+                return self.ai.submit(payload)
+            if action not in {"apply", "start"}:
+                self.ai.cancel()
+        if action in {"stop", "reclaim", "pause", "demo_disable"} and self.strategy:
+            self.strategy.stop()
         if action in {"stop", "reclaim", "demo_disable"}:
             # Revoke before waiting for conversation planning or its lock.
             self._interrupted.set()
@@ -569,7 +631,7 @@ class ConversationService:
             self._retry_scope = None
             if self.recording.current:
                 self.recording.stop()
-            elif action != "demo_disable" or self._active() or self.live_manager.snapshot().control_owner == "agent":
+            elif self._active() or self.live_manager.snapshot().control_owner == "agent" or (action != "demo_disable" and self.live_manager.snapshot().session_id):
                 self.runtime.control("stop" if action == "demo_disable" else action, command_id=request_id)
             with self._lock:
                 if action == "demo_disable":
@@ -886,8 +948,10 @@ class ConversationService:
                 self._retry_scope = {"session_id": plan["session_id"], "maximum_attempts": maximum,
                                      "remaining": maximum - 1, "deadline": time.monotonic() + 600,
                                      "expires_epoch": plan["practice_expires_epoch"],
-                                     "coin_discovery": bool(plan.get("coin_compatibility"))}
-                self._message("assistant", f"Started bounded exploration: {plan['change_summary'][0]}" if plan.get("coin_compatibility") else f"Started opening practice: {plan['jump_delay_frames']} frames of jump delay; {maximum - 1} compatible retries remain. Timing application requires a controller receipt.", "started")
+                                     "coin_discovery": bool(plan.get("coin_compatibility")),
+                                     "strategy_contract": plan.get("strategy_contract"),
+                                     "model_intent": deepcopy(plan.get("model_intent"))}
+                self._message("assistant", f"Started adaptive Mario strategy; {maximum - 1} compatible retries remain. Native skill receipts establish parameter application." if plan.get("strategy_contract") else f"Started bounded exploration: {plan['change_summary'][0]}" if plan.get("coin_compatibility") else f"Started opening practice: {plan['jump_delay_frames']} frames of jump delay; {maximum - 1} compatible retries remain. Timing application requires a controller receipt.", "started")
             else:
                 self._retry_scope = None
                 self._message("assistant", "Started the reviewed bounded plan. Opening path and supported stop edits are included; other changes need review.", "started")
@@ -935,7 +999,7 @@ class ConversationService:
             self.coaching.reset()
             self._retry_scope = None
             self._plan = None
-            self._message("assistant", "Future opening guidance reset. Current play is unchanged; prior outcomes remain in history. Review a new plan before another attempt.", "reset")
+            self._message("assistant", "Future Mario guidance reset. Current play is unchanged; prior outcomes remain in history. Review a new plan before another attempt.", "reset")
         elif action == "save_variant":
             if self._plan is None:
                 raise ValueError("Prepare a custom plan before saving")
@@ -971,6 +1035,8 @@ class ConversationService:
             raise ValueError("Unsupported conversation action")
 
     def invalidate_for_switch(self) -> bool:
+        if self.ai:
+            self.ai.cancel()
         """Retain the terminal result before forgetting session-bound proposals."""
         with self._lock:
             self._sync()
@@ -986,6 +1052,15 @@ class ConversationService:
             return True
 
     def close(self) -> None:
+        if self.strategy:
+            self.strategy.stop()
+        if self.ai:
+            self.ai.cancel()
+            if isinstance(self, StardewConversationService):
+                self.runtime.control("stop")
+            elif self._active() or self.live_manager.snapshot().control_owner == "agent":
+                self.runtime.control("stop", command_id=uuid4().hex)
+            self.ai.close()
         with self._lock:
             if self.recording.current:
                 self.recording.stop()
@@ -1002,7 +1077,7 @@ class StardewConversationService:
     """
 
     def __init__(self, *, runtime: Any = None,
-                 artifacts_root: Path = Path("artifacts/stardew-conversation")) -> None:
+                 artifacts_root: Path = Path("artifacts/stardew-conversation"), provider: Any = None) -> None:
         if runtime is None:
             from smb3_agent.stardew_runtime import StardewRuntime
             runtime = StardewRuntime()
@@ -1035,6 +1110,9 @@ class StardewConversationService:
         if inspection_file.is_file():
             try:
                 self._inspection_saved = {**json.loads(inspection_file.read_text()), "historical": True}
+                if self._inspection_saved.get("status") == "running":
+                    self._inspection_saved.update(status="interrupted_on_reopen",
+                        reason="Saved during an activity; return and handback were not established by this record.")
             except (ValueError, TypeError):
                 pass
         self._planting = None
@@ -1048,6 +1126,9 @@ class StardewConversationService:
                 self._planting_messages = []
         else:
             self._planting_messages = []
+
+        from smb3_agent.companion_ai import LanguageSession
+        self.ai = LanguageSession(self, provider, "stardew") if provider else None
 
     def _message(self, role: str, text: str, kind: str) -> None:
         event = {"role": role, "text": text, "kind": kind,
@@ -1069,7 +1150,7 @@ class StardewConversationService:
                 temporary.replace(self.root / "cave-result.json")
                 self._cave_saved = deepcopy(cave)
             inspection = runtime.get("inspection_result")
-            if inspection and inspection.get("status") != "running" and inspection != self._inspection_saved:
+            if inspection and inspection != self._inspection_saved:
                 self.root.mkdir(parents=True, exist_ok=True)
                 temporary = self.root / "inspection-result.tmp"
                 temporary.write_text(json.dumps(inspection))
@@ -1094,6 +1175,7 @@ class StardewConversationService:
                     for row in self.history.list()]
             return {"schema_version": "game-companion-conversation/v1",
                     "game_id": "stardew", "conversation_id": self.conversation_id,
+                    "ai": self.ai.snapshot() if self.ai else None,
                     "plan": deepcopy(self._plan), "reviewed": self._reviewed == self._plan and self._plan is not None,
                     "current_plan": runtime.get("current_plan"), "pending_plan": None,
                     "messages": deepcopy(self._messages[-60:]), "runtime": runtime,
@@ -1112,9 +1194,26 @@ class StardewConversationService:
         targets = context.get("observation", {}).get("targets", [])
         context["selected_targets"] = [item for item in targets if item.get("id") in self._selected]
         context["reviewed_edit_scope"] = []  # Every changed scope needs fresh explicit review/Start.
+        inspection = getattr(self.runtime, "inspection_result", None) or self._inspection_saved
+        if inspection:
+            findings = inspection.get("observations") or ([inspection["findings"]] if inspection.get("findings") else [])
+            context["reconnaissance_history"] = {
+                "status": inspection.get("status"), "historical": True, "input_authority": False,
+                "return_observed": bool(inspection.get("return_observation", {}).get("position", {}).get("at_farmhouse_entrance")),
+                "findings": [{"viewpoint": f.get("viewpoint"), "message": f["message"],
+                    "observed_at": f["observation"]["observed_at"], "observation_id": f["observation"]["observation_id"]}
+                    for f in findings[-3:]]}
         return context
 
     def dispatch(self, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        if self.ai:
+            priority = urgent_control(str((payload or {}).get("text", ""))) if action == "message" else None
+            if priority:
+                action = priority
+            if action == "message":
+                return self.ai.submit(payload or {})
+            if action not in {"apply", "start"}:
+                self.ai.cancel()
         try:
             return self._dispatch_request(action, payload)
         except ValueError as exc:
@@ -1383,6 +1482,8 @@ class StardewConversationService:
                 f"Refills: {ledger.get('refills', 'unknown')}. " + str(state.get("reason") or ""))
 
     def invalidate_for_switch(self) -> bool:
+        if self.ai:
+            self.ai.cancel()
         state = self.runtime.snapshot()
         if state.get("status") == "running" or state.get("owner") == "agent":
             return False
@@ -1393,5 +1494,12 @@ class StardewConversationService:
         return True
 
     def close(self) -> None:
+        if self.ai:
+            self.ai.cancel()
+            if isinstance(self, StardewConversationService):
+                self.runtime.control("stop")
+            elif self._active() or self.live_manager.snapshot().control_owner == "agent":
+                self.runtime.control("stop", command_id=uuid4().hex)
+            self.ai.close()
         self.runtime.close()
         self.snapshot()

@@ -10,7 +10,7 @@ Current source has subsequent Minecraft setup/control corrections plus Mario coa
 
 Minecraft connection/calibration is retained preparation for a later third-game stage. The wall/building sections describe unavailable future work. The current personal-beta roadmap first builds the contextual language and adaptive gameplay capabilities, then integrates and qualifies the two-game product. Recording and demonstration learning are deferred to tentative beta v2; advanced-user no-code onboarding follows later.
 
-`scripts/build_private_beta.py` still copies this historical guide and uses the private.2 output/version. Engineering must give a successor build distinct identity, complete Mario/Stardew/Codex resources and a matching current guide before using that builder for the new beta. The [development guide](development.md#personal-beta-delivery-work) records the actual setup, resource, provider and lifecycle gaps. Existing adjacent private.1/private.2 manifests and supplied guides remain authoritative for those apps; preserve them.
+`scripts/build_private_beta.py` still copies this historical guide and uses the private.2 output/version. Engineering must give a successor build distinct identity, complete Mario/Stardew/Codex resources and a matching current guide before using that builder for the new beta. The [development guide](runtime-and-configuration.md#deployment-and-operations-boundary) records the actual setup, resource, provider and lifecycle gaps. Existing adjacent private.1/private.2 manifests and supplied guides remain authoritative for those apps; preserve them.
 
 ## Install and permissions
 

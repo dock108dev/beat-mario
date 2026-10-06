@@ -1,25 +1,26 @@
 # Security model and hardening
 
-## Codex-backed personal beta boundary — planned
+## Model inference and local authority
 
-GC-A1/A4 introduces remote model inference into the local app. The current OpenTTD Ollama path remains separate; ordinary Mario/Stardew have no Codex provider yet. The application should send only selected game images and relevant conversation/state/rules/memory. Game text, screenshots and imported notes are source data, not permission to bypass the player's goal or execute arbitrary instructions.
+Ordinary Mario and Stardew use `codex_provider.CodexProvider` for structured
+inference through the installed CLI. Authentication stays CLI-managed; credentials
+are not copied into game profiles, prompts or reports. Selected game images and
+relevant context may leave the machine for inference. The OpenTTD Ollama path is
+separate and uses a loopback endpoint.
 
-Reuse CLI-managed sign-in without copying secrets into profiles, packages, prompts or reports. Expose capabilities through the existing validated adapter dispatcher. Runtime model tools must not acquire an unrestricted source-editing or native-input path. Current targets, preconditions, parameters, finite scope and canceled generations are checked independently of model output.
+Game text, screenshots, imported notes and model replies are data, not permission.
+Validated adapter dispatch checks current targets, preconditions, parameters,
+reviewed finite scope and control generation independently of the model. Runtime
+inference does not receive a source-editing or unrestricted native-input path.
+Stop and release remain independent of provider requests; canceled or stale
+output cannot recreate authority.
 
-Independent Stop and release remain available during provider requests and skill execution. Game switch, late reply, failure and restart never restore authority. Explain inference transmission separately from local feedback export. Persist diagnostic context with bounded retention and redaction; retain raw game captures only in the established local evidence paths. Verify these behavior changes under GC-Q and exact packaged launch under GC-D2.
-
-Game Companion is a single-operator, local game-assistance and automation tool.
-It has no user accounts, authenticated web sessions, database, hosted application service,
-webhook, or third-party callback.
-Its important trust boundaries are the local player/Route Lab HTTP server,
-selected-window capture/native input, local model proposals, player configuration
-and ignored gameplay evidence, helper/emulator subprocesses, and reviewed route-patch workflow.
-
-This describes current source controls. October 1 source corrections passed the
-1,327-test canonical local gate; retained private.1/private.2 packages have their
-own manifests and review limits. The [PM handoff](private-beta-pm-handoff.md) and
-[review status](private-beta-review.md) separate corrected source from packaged
-evidence. Minecraft aim/move/place/wall remain disabled.
+Game Companion is single-operator and local. It has no user accounts, authenticated
+web sessions, database or hosted service. The HTTP UI must remain on loopback.
+Raw diagnostic captures and local gameplay evidence require inspection before
+sharing; inference transfer and explicit feedback export are separate operations.
+Source controls do not qualify an older packaged app. Minecraft
+movement/placement/wall execution remains disabled.
 
 ## First use and product persistence
 

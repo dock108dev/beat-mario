@@ -475,7 +475,8 @@ class MarioProductSessionManager:
 
     def first_use_state(self) -> FirstUseState:
         game = self.detect_game_file()
-        emulator_path = shutil.which("fceux")
+        from smb3_agent.executable_discovery import discover_fceux
+        emulator_path = discover_fceux(which=shutil.which)
         emulator = EmulatorIdentity(
             Path(emulator_path).resolve() if emulator_path else None,
             bool(emulator_path),

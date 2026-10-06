@@ -18,6 +18,7 @@ import yaml
 
 from smb3_agent.companion_session import Observation, ObservationSource
 from smb3_agent.failure_diagnostics import failure_stack, log_failure
+from smb3_agent.executable_discovery import require_fceux
 from smb3_agent.fceux_images import convert_gd_directory, write_contact_sheet
 from smb3_agent.goals import load_goal_contract, resolve_goal_path
 from smb3_agent.observe import build_state_trace, write_state_trace
@@ -408,6 +409,7 @@ def run_show_demonstration(
     validate_show_definition(definition)
     if frame_sleep_seconds <= 0:
         raise ShowError("Show frame delay must be positive")
+    executable = require_fceux()
     artifacts_dir.mkdir(parents=True, exist_ok=False)
     log_path = artifacts_dir / "fceux_1_1.log"
     image_dir = artifacts_dir / "images"
@@ -427,7 +429,7 @@ def run_show_demonstration(
         "SMB3_AGENT_FRAME_SLEEP_SECONDS": str(frame_sleep_seconds), "SMB3_CAPTURE_TICKS": "1",
         "SMB3_AGENT_IMAGE_DIR": str(image_dir.resolve()), "SMB3_POST_1_1_PROBE": "",
     })
-    command = ["fceux", "--no-config", "1", "--sound", "0", "--loadlua", str(SHOW_SCRIPT_PATH.resolve()), str(request.game_path.resolve())]
+    command = [executable, "--no-config", "1", "--sound", "0", "--loadlua", str(SHOW_SCRIPT_PATH.resolve()), str(request.game_path.resolve())]
     execution: dict[str, Any] = {"command": command[:-1] + ["<configured-game-file>"], "started_at": _now(), "returncode": None, "timed_out": False, "input_stopped": False}
     progress("Starting a separate visible 1-1 demonstration process.")
     with stdout_path.open("wb") as stdout_file, stderr_path.open("wb") as stderr_file:

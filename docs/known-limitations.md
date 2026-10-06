@@ -1,34 +1,22 @@
 # Known limitations
 
-Updated October 4, 2026. These describe inspected source capabilities and remaining product gaps. [Product direction](product-direction.md), the [two-role architecture](agent-architecture.md#october-4-architecture-correction--two-model-driven-responsibilities) and the [engineering plan](private-beta-engineering.md) describe the required private beta separately. Retained source/game results and packages keep their original evidence scope.
+Updated October 5, 2026. These describe inspected source capabilities and remaining product gaps. [Product direction](product-direction.md), the [two-role architecture](agent-architecture.md#conversation-gameplay-and-control) and the [engineering plan](private-beta-engineering.md) describe the required private beta separately. Retained source/game results and packages keep their original evidence scope.
 
 ## Initial-beta implementation gaps
 
-The initial private beta requires both a contextual language LLM and a gameplay agent that observes, chooses/composes supported actions, verifies effects and revises decisions. The owner's installed, signed-in Codex CLI is the first intended backend. Its presence is confirmed; integration into ordinary gameplay, contextual quality, decision quality, latency and usage-limit handling are not implemented or verified by that check. No retained package demonstrates the required two-role Mario/Stardew experience.
+The ordinary source app implements Codex contextual language and gameplay roles for prepared watering and a bounded Mario segment. Both Stardew variants and pending gameplay-inference Stop passed native acceptance. Mario has 3/3 final-candidate native x≥700 arrivals with neutral handback; occupied-pipe failures and broad reliability remain open. See [verification](gc-ai-loop-verification.md) for exact candidates, outcomes and evidence classes. No retained package demonstrates this two-game experience.
 
 | Area | Current source and evidence | Remaining limitation |
 | --- | --- | --- |
-| Language | Mario/Stardew use a deterministic grammar and task-specific conversation branches. A separate OpenTTD profile uses local Ollama. | Ordinary contextual LLM interpretation, rich multi-turn references and model-backed task decisions are absent. |
-| Mario | Opening timing coaching, experimental scheduled coin routes, remembered stairs/pipe instructions, two World 1-1 finishes and two supported sky 1UP collections have live source evidence. | High-level choices are mainly authored tactics/routes. Arbitrary instructions, general flight, complete coin coverage and broader reliability remain unverified. |
-| Stardew | Supported Day 2 selected watering, live planting-location discussion, eastern-margin inspection/return, corrections, Stop and saved results have live source evidence. | Two prepared farms and qualified display/viewpoints only. General crop identity, arbitrary farms, automatic tool selection/refill and adaptive task composition remain absent. |
-| Cave | Partial western survey saw the Farm Cave exterior; camera anchors and navigation-only state accounting are implemented. | Travel remains disabled. Foliage/player recognition, debris clearance and a complete tool-free approach/return are unqualified. Interior exploration is unavailable. |
-| Learning | Local opening guidance, authored-route outcome selection, history and engineering promotion are implemented. | General contextual retrieval and outcome-driven model decisions remain required; stored notes and fixed route selection do not establish them. |
-| Recording | Recording/review/application source and executable local checks are preserved. | Real demonstration application remains unverified and deferred to a later beta, tentatively beta v2. |
-| Delivery | Retained review packages and source launchers exist. | New AI contracts, backend/setup experience, two-game packaged walkthrough and owner usefulness remain unqualified. |
+| Language | Contextual Codex interpretation in both ordinary workspaces | Wider conversation quality, latency and availability evaluation |
+| Mario | Current-image/native-state decisions compose finite maneuvers beyond x=160; compatible coaching affects decisions | Final segment 3/3; occupied-pipe consistency, wider hazards, full level and complete coins remain open |
+| Stardew | Two model watering variants return to farmhouse; pending Stop has no continuation | Prepared profiles and daylight/camera coverage only; other activities retain existing controllers |
+| Learning | Cartridge-compatible advice, supersession, future reset and linked native receipts | No demonstrated improvement, custom training or unattended practice |
+| Cave | Manual exterior route/return foundation retained | Ordinary delegated round trip and interior exploration remain unverified |
+| Recording | Existing source preserved | Deferred to tentative beta v2 |
+| Delivery | Source checks and native trials | Successor package, walkthrough and owner acceptance pending |
 
-The immediate development task is the Codex-backed two-role loop using current watering/inspection skills, followed by Mario decision integration and required product coverage. A bespoke cave manifest is no longer the lead work item. Preserve its partial evidence for later reusable perception/navigation work.
-
-Questions and passive planting discussion permit no farm action. Native Stardew discussion releases input; a revised continuation requires a current reviewed plan. Choosing a planting location grants no planting, clearing or purchase authority. Reopening any result grants no live connection or gameplay authority.
-
-Minecraft is later beta expansion; advanced-user no-code onboarding and independent training remain deferred. Current contributor onboarding creates data-only fixture scaffolds and does not generate live perception or gameplay control.
-
-## Required Codex integration remains unimplemented
-
-The current `model_gateway.py` supports only the loopback Ollama screen/skill proposal contract. It has no ordinary Codex provider, contextual intent schema or adaptive gameplay decision schema. Current Mario/Stardew services do not invoke it. Engineering must connect the installed CLI or app-server through bounded structured contracts, app-owned context/session state and validated controller dispatch.
-
-Ordinary OpenAI-backed Codex inference sends selected game context/images to a remote model. A local app and locally stored histories do not imply local inference. The target setup must describe this and reuse existing authentication without storing credentials in profiles, evidence or packages. Neither a specific subscription allowance nor service availability is established by CLI discovery.
-
-The required runtime must handle slow inference, invalid/incomplete outputs, signed-out/unavailable service, limits, cancellation and stale replies. Native release is independent of provider cancellation; late output cannot reauthorize or queue input. Backend failure must be visible rather than silently replaced by narrower phrase matching. Actual-model evaluation and live adaptive gameplay remain separate from simulated provider tests.
+Normal Codex inference sends selected context and game images remotely. Credentials are reused through the installed CLI and are not retained in evidence. CLI availability does not guarantee account allowance or model quality. Stop cancels owned inference and releases input. Reopening stores descriptive history, not authority. After canceled watering work, request a new goal against a fresh observation rather than reusing the canceled proposal.
 
 ## Retained review-package scope
 
@@ -53,7 +41,7 @@ gameplay success, or the game-owned ending. That proof requires the configured
 local environment, FCEUX, and the goal-specific fresh-run gate.
 
 Ignored gameplay archives are local records and are not automatically uploaded
-or replicated. Selected images/context supplied to the planned Codex provider
+or replicated. Selected images/context supplied to the current Codex provider
 are a separate inference transfer. Another checkout cannot reproduce an acceptance
 claim without compatible local assets/runtime and a fresh run.
 

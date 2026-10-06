@@ -2,16 +2,16 @@
 
 ## Active model-driven interaction
 
-The UI target follows GC-A1–GC-U in the [engineering plan](private-beta-engineering.md): provider readiness/remedies, understood goal and clarification, readable approval, current action, observed progress, pending inference and meaningful replanning. Keep direct control available in every active/pending/error state and preserve drafts during asynchronous work.
+The model-backed workspace presents provider readiness/remedies, understood goal and clarification, readable approval, current action, observed progress, pending inference and meaningful replanning. Keep direct control available in every active/pending/error state and preserve drafts during asynchronous work.
 
-Show whether an adjustment applies now or later and whether its effect is observed. Distinguish historical findings from current observations and usable goals from missing capabilities. Use the existing design system and simple product language. The working bounded flows below are current implementation; new Codex-driven behavior remains planned until verified.
+Show whether an adjustment applies now or later and whether its effect is observed. Distinguish historical findings from current observations and usable goals from missing capabilities. Use the existing design system and simple product language. The bounded source flows include Codex-backed language and gameplay. Wider coverage and packaged usability still need their own verification.
 
 Use the [design requirements](ui-design-requirements.md) and `src/smb3_agent/glass_ui.py` when changing the interface.
-The [private-beta engineering plan](private-beta-engineering.md) owns the user workflow to deliver; the [PM handoff](private-beta-pm-handoff.md) records current build limitations and next work.
+See [known limitations](known-limitations.md) for unsupported workflows.
 
-## Planned conversational gameplay interaction
+## Conversational gameplay interaction
 
-The initial-beta interaction requires a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. Parts of these interactions exist in current bounded workflows; the model-driven integration is upcoming work; preserve the accepted visual system and change layout only where the new interaction needs it.
+The initial-beta interaction requires a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. These interactions exist in bounded source workflows; wider model-driven coverage remains open; preserve the accepted visual system and change layout only where the new interaction needs it.
 
 ## Current layout and behavior
 
@@ -26,3 +26,9 @@ CSS is embedded by the page renderers to preserve the content-security policy an
 ## Visual checks
 
 Check the affected screens at supported sizes, including keyboard focus, long content, disabled actions and error recovery. Existing review records are in [UI verification](ui-verification.md).
+
+## Workspace layout
+
+The catalog keeps sign-in and permission status, setup links and the inference transfer notice visible; full requirements/privacy use a named disclosure. Mario starts with conversation and plan review. Route shortcuts, recording, flight preparation, coin discoveries and guidance use named disclosures; newly relevant active guidance opens once and the player can close it without polling reopening it. Stop/Take control remain outside disclosures.
+
+Stardew shows the current plan, observed resources and limits before optional activity teaching. Planting, inspection and cave findings appear when present, with historical/uncertain meanings retained. Advice without an executable plan is not preceded by empty review controls. The latest two messages stay visible and all earlier messages remain accessible. Current blockers, review/Start consequences, errors, partial results and resource/return accounting remain visible. Synthetic desktop/narrow comparison and accessibility checks are recorded in [UI verification](ui-verification.md); native gameplay and exact-package acceptance remain separate.

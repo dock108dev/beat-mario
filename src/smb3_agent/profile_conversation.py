@@ -1,4 +1,4 @@
-"""Ordinary conversation service over the shared PB1 plan/session/history runtime."""
+"""Ordinary conversation service over the shared plan/session/history runtime."""
 from copy import deepcopy
 from dataclasses import asdict
 from pathlib import Path

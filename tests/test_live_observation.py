@@ -497,7 +497,9 @@ def test_configured_separate_show_does_not_masquerade_as_live_observation(
 
 def test_manager_clean_detach_releases_observer_without_terminating_game(
     tmp_path: Path,
+    monkeypatch,
 ) -> None:
+    monkeypatch.setattr('smb3_agent.executable_discovery.discover_fceux', lambda: '/fixture/fceux')
     class FakeProcess:
         pid = 4242
         terminate_calls = 0
@@ -541,7 +543,7 @@ def test_manager_clean_detach_releases_observer_without_terminating_game(
     assert manager._thread.is_alive() is False
     command = launched["command"]
     assert isinstance(command, list)
-    assert command[:2] == ["fceux", "--loadlua"]
+    assert command[:2] == ["/fixture/fceux", "--loadlua"]
     assert "--loadstate" not in command
     assert "--savestate" not in command
     assert stopped.artifact_dir is not None

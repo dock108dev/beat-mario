@@ -278,6 +278,7 @@ POST_PATHS = frozenset(
         "/api/profile/conversation",
         "/api/camera-practice",
         "/api/player",
+        "/backend-refresh",
         "/notes",
         "/observation-action",
         "/issue-action",
@@ -409,6 +410,9 @@ def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
         except Exception:
             failures.append("Mario conversation cleanup unconfirmed")
             LOGGER.exception("Conversation stop failed during shutdown; continuing input cleanup")
+    provider = getattr(server, "codex_provider", None)
+    if provider is not None:
+        provider.close()
     for name, kind in (("show_manager", ShowSessionManager),
                        ("live_observation_manager", LiveObservationManager)):
         manager = getattr(server, name, None)
@@ -482,12 +486,14 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     server.delivery_game_processes = OwnedGameProcesses()
     setattr(server, "live_observation_manager", LiveObservationManager(
         learning_store=learning_store, launcher=server.delivery_game_processes.launch))
+    from smb3_agent.codex_provider import CodexProvider
+    server.codex_provider = CodexProvider()
     setattr(server, "conversation_service", ConversationService(
         getattr(server, "live_observation_manager"),
-        artifacts_root=ARTIFACT_DIR / "conversation",
+        artifacts_root=ARTIFACT_DIR / "conversation", provider=server.codex_provider,
     ))
     setattr(server, "stardew_conversation_service", StardewConversationService(
-        artifacts_root=ARTIFACT_DIR / "stardew-conversation"))
+        artifacts_root=ARTIFACT_DIR / "stardew-conversation", provider=server.codex_provider))
     if getattr(sys, "frozen", False):
         from smb3_agent.player_store import user_data_root
         server.camera_practice_service = CameraPracticeService(root=user_data_root()/"sessions/camera", native_enabled=True)
@@ -728,11 +734,16 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/delivery":
             self._send_json({**self.server.delivery_identity, "csrf_token": self._csrf_token()})
             return
+        if path == "/api/backend":
+            self._send_json(dict(self.server.codex_provider.status))
+            return
         if path == "/":
             self._send_html(
                 render_combined_catalog(
                     self._catalog_session(),
                     csrf_token=self._csrf_token(),
+                    backend=dict(self.server.codex_provider.status),
+                    permissions=_source_permissions(),
                 )
             )
             return
@@ -954,6 +965,10 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if self.server.delivery_stopping:
             raise LabUiError("Delivery is shutting down; no new actions are accepted")
+        if path == "/backend-refresh":
+            self.server.codex_provider.refresh()
+            self._redirect("/")
+            return
         if path == "/api/player":
             acquired = False
             try:
@@ -1314,7 +1329,7 @@ class _Handler(BaseHTTPRequestHandler):
                     self._product_session_manager().select_game_file(
                         Path(_single(data, "game_file_path"))
                     )
-                    self._redirect("/#setup")
+                    self._redirect("/mario#setup")
                     return
                 if path == "/setup-pick-game-file":
                     if sys.platform != "darwin":
@@ -1337,12 +1352,12 @@ class _Handler(BaseHTTPRequestHandler):
                             "configuration_error",
                             detail="Game-file selection was cancelled or could not be opened.",
                         )
-                        self._redirect("/#setup")
+                        self._redirect("/mario#setup")
                         return
                     self._product_session_manager().select_game_file(
                         Path(selection.stdout.strip())
                     )
-                    self._redirect("/#setup")
+                    self._redirect("/mario#setup")
                     return
                 if path == "/setup-choice":
                     product = self._product_session_manager()
@@ -1354,7 +1369,7 @@ class _Handler(BaseHTTPRequestHandler):
                         )
                     except MarioProductError as exc:
                         product.mark_failure("configuration_error", detail=str(exc))
-                        self._redirect("/#setup")
+                        self._redirect("/mario#setup")
                         return
                     setup = product.first_use_state()
                     if not setup.launch_ready or setup.game_file.path is None:
@@ -1368,14 +1383,14 @@ class _Handler(BaseHTTPRequestHandler):
                     except LiveObservationError as exc:
                         failure_id = "duplicate_session" if "already" in str(exc).lower() else "launch_failure"
                         product.mark_failure(failure_id, detail=str(exc))
-                        self._redirect("/#setup")
+                        self._redirect("/mario#setup")
                         return
                     product.mark_started(started.session_id)
                     self._redirect("/#live")
                     return
                 if path == "/setup-retry":
                     self._product_session_manager().clear_error()
-                    self._redirect("/#setup")
+                    self._redirect("/mario#setup")
                     return
                 if path == "/objective-config":
                     self._product_session_manager().mark_stage(ProductStage.TELL_COACHING)
@@ -2723,10 +2738,20 @@ def render_experimental_onboarding(
     )
 
 
+def _source_permissions() -> dict:
+    try:
+        from smb3_agent.screen_host import MacSelectedWindowHost
+        return MacSelectedWindowHost.permissions()
+    except (ImportError, AttributeError, OSError):
+        return {"capture": None, "input": None}
+
+
 def render_combined_catalog(
     session: CatalogSession,
     *,
     csrf_token: str | None = None,
+    backend: dict | None = None,
+    permissions: dict | None = None,
 ) -> str:
     selected_id = session.selected_adapter_id
     selected = session.registry.entry(selected_id) if selected_id else None
@@ -2771,6 +2796,24 @@ def render_combined_catalog(
         if selected_id
         else ""
     )
+    model = backend or {"state": "unavailable", "message": "Open the source app to check Codex availability."}
+    permission_values = permissions or {}
+    permission_text = ', '.join(f'{label}: ' + ('ready' if permission_values.get(key) is True else 'required' if permission_values.get(key) is False else 'unknown')
+                               for key, label in [('capture', 'Screen Recording'), ('input', 'Accessibility input')])
+    backend_panel = (
+        '<section class="catalog-workspace" aria-labelledby="model-heading">'
+        '<h2 id="model-heading">Setup status</h2>'
+        f'<p id="backend-status" role="status">Codex: {_esc(model.get("state", "unknown").replace("_", " "))}. {_esc(model.get("message", "Status unknown"))}</p>'
+        '<form method="post" action="/backend-refresh"><button type="submit">Check Codex sign-in</button></form>'
+        '<script>(() => { let pending = false; async function update() { if (pending) return; pending = true; try { const r = await fetch("/api/backend", {cache:"no-store"}); if (r.ok) { const s = await r.json(); document.getElementById("backend-status").textContent = `Codex: ${String(s.state || "unknown").replaceAll("_", " ")}. ${s.message}`; } } catch (_) { document.getElementById("backend-status").textContent = "Codex status unavailable. Reopen the local app and refresh readiness."; } finally { pending = false; } } setInterval(update,1500); update(); })();</script>'
+        '<p class="meta">Game context and images are sent to OpenAI for inference.</p><p><a href="/mario#setup">Set up Mario and open a disposable session</a> · '
+        '<a href="/stardew#stardew-setup-panel">Set up Stardew and verify a disposable farm</a></p>'
+        '<details><summary>Game requirements and inference privacy</summary>'
+        '<p>Companion sends the current request, selected game image, observed game facts and compatible history to OpenAI through your installed, signed-in Codex CLI. Game input and save protection run locally. Credentials stay with Codex.</p>'
+        '<p>Mario needs your supported game file, FCEUX and input mapping. Stardew needs the inspected game installation, prepared seed and matching screen calibration. These source-checkout resources are not bundled yet. Each game shows its current setup checks and remedies.</p>'
+        '<p>macOS: allow Screen Recording for visible game capture and Accessibility for ordinary input in System Settings → Privacy &amp; Security. After changing permissions, restart the launching app if macOS requires it; reconnect, refresh the visible game and review again. No previous approval resumes.</p></details></section>'
+    )
+    backend_panel = backend_panel.replace('</h2>', f'</h2><p>{_esc(permission_text)}</p>', 1)
     return _page(
         title="Game Companion",
         csrf_token=csrf_token,
@@ -2782,7 +2825,7 @@ def render_combined_catalog(
         </style>
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
           <header class="catalog-header"><h1>Game Companion</h1><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
-          {recovery_panel}
+          {recovery_panel}{backend_panel}
           <main>{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
         </div>
         """,
@@ -2792,7 +2835,7 @@ def render_combined_catalog(
 def _catalog_display_reason(reason: str) -> str:
     return {
         "Select an owner-provided primary save, create a verified disposable copy, and establish a visible window.":
-            "Live Stardew play is not connected in this app yet. You can inspect the watering controls; live use still needs verification.",
+            "No farm is connected. Live play needs a verified disposable farm and game window. You can inspect the controls now.",
     }.get(reason, reason)
 
 

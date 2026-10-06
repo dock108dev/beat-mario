@@ -8,6 +8,7 @@ from pathlib import Path
 import tomllib
 
 import pytest
+import yaml
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -89,7 +90,7 @@ def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
     assert all(re.search(r"@[0-9a-f]{40}$", action_ref) for action_ref in action_refs)
 
 
-def test_workflow_has_no_live_gameplay_or_artifact_steps() -> None:
+def test_workflow_has_no_live_gameplay_steps() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8").lower()
 
     forbidden = (
@@ -100,9 +101,39 @@ def test_workflow_has_no_live_gameplay_or_artifact_steps() -> None:
         "savestate",
         "goal run",
         "command run",
-        "upload-artifact",
     )
     assert all(token not in workflow for token in forbidden)
+
+
+def test_diagnostics_upload_only_temporary_test_reports() -> None:
+    workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
+    steps = workflow["jobs"]["verify"]["steps"]
+    gate = next(step for step in steps if step.get("name") == "Run canonical repository gate")
+    report_path = "${{ runner.temp }}/test-results/junit.xml"
+    assert gate["env"]["PYTEST_ADDOPTS"] == f"--junitxml={report_path}"
+    uploads = [
+        step
+        for job in workflow["jobs"].values()
+        for step in job["steps"]
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    ]
+    assert len(uploads) == 1
+    upload = uploads[0]
+    assert upload in steps and steps.index(upload) > steps.index(gate)
+    assert upload["if"] == "${{ always() && !cancelled() }}"
+    assert upload["with"] == {
+        "name": "ci-test-results",
+        "path": "\n".join((report_path, "${{ runner.temp }}/test-results/metrics.json", "${{ runner.temp }}/test-results/summary.md")) + "\n",
+        "if-no-files-found": "ignore",
+        "retention-days": 7,
+        "include-hidden-files": False,
+    }
+    assert not gate.get("continue-on-error", False)
+    assert not workflow["jobs"]["verify"].get("continue-on-error", False)
+    summary = next(step for step in steps if step.get("name") == "Summarize validation")
+    assert steps.index(gate) < steps.index(summary) < steps.index(upload)
+    assert summary["env"]["GATE_OUTCOME"] == "${{ steps.validate.outcome }}"
+    assert '"$GITHUB_STEP_SUMMARY"' in summary["run"]
 
 
 def test_dependabot_covers_locked_python_and_actions_dependencies() -> None:
@@ -121,7 +152,7 @@ def test_canonical_gate_covers_complete_rom_free_surface() -> None:
         "git diff --check",
         "git diff --cached --check",
         "bash -n scripts/validate_phase0.sh",
-        '"${python_bin}" -m ruff check src tests scripts/security_check.py',
+        '"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py',
         '"${python_bin}" scripts/security_check.py',
         '"${python_bin}" -m pytest -q',
         "goal validate data/goals/world_8_double_whistle.yaml",
@@ -239,6 +270,21 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
     assert "status: v2_14_campaign_entry_contract_ready" in final_campaign
     assert CAMPAIGN_ENTRY_SCHEMA_PATH.is_file()
     assert "Status: **in progress" not in roadmap
+
+    # Current guides must work without the maintainer's private workspace.
+    current_guides = (
+        README_PATH,
+        RUNTIME_DOC_PATH,
+        STARDEW_GUIDE_PATH,
+        *(REPOSITORY_ROOT / "docs" / name for name in (
+            "development.md", "agent-architecture.md", "product-direction.md",
+            "security.md", "error-handling.md", "ssot.md", "ui-design.md",
+            "ui-design-requirements.md", "mario-player-guide.md",
+        )),
+    )
+    for source in current_guides:
+        text = source.read_text(encoding="utf-8")
+        assert not re.search(r"\]\(/Users/|UI Templates|Desktop (?:tracker|worklist)", text), source
 
 
 def test_public_documentation_omits_legacy_game_acquisition_language() -> None:

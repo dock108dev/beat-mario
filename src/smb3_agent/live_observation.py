@@ -16,6 +16,7 @@ from typing import Any, Callable
 
 from smb3_agent.companion_session import Freshness, Observation, ObservationSource
 from smb3_agent.fceux_images import convert_gd_directory, write_contact_sheet
+from smb3_agent.executable_discovery import require_fceux
 from smb3_agent.learning import (
     AttemptContract,
     LocalLearningStore,
@@ -814,6 +815,10 @@ class LiveObservationManager:
                         "Active observer thread is missing its session state"
                     )
                 return self._accumulator.snapshot()
+            try:
+                executable = require_fceux()
+            except FileNotFoundError as exc:
+                raise LiveObservationError(str(exc)) from exc
             session_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
             token = secrets.token_hex(16)
             artifact_dir = self._artifacts_root / session_id
@@ -873,7 +878,7 @@ class LiveObservationManager:
             stdout = (artifact_dir / "fceux_stdout.log").open("wb")
             stderr = (artifact_dir / "fceux_stderr.log").open("wb")
             command = [
-                "fceux",
+                executable,
                 *(
                     [
                         "--no-config",
@@ -1277,7 +1282,7 @@ class LiveObservationManager:
                 raise LiveObservationError(
                     "The full route requires fresh power-on; review a World 1-1 stop for this entry"
                 )
-            if not flight and not fresh and fields["stop_point"] != "world_1_1_opening_end":
+            if not flight and not fresh and fields["stop_point"] != "world_1_1_opening_end" and fields.get("strategy") != 2:
                 raise LiveObservationError(
                     "Returning from player control at the World 1-1 opening supports only "
                     "the opening stop. Review that bounded stop, or open a fresh session "
@@ -1320,7 +1325,7 @@ class LiveObservationManager:
                 solution=solution,
                 scope="bounded_plan",
                 stop_condition="plan_stop",
-                timeout_seconds=30 if flight else min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
+                timeout_seconds=30 if flight else 300 if fields.get("strategy") == 2 else 120 if fields.get("strategy") else min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
                 if fields.get("practice_expires_epoch") else
                 (1800 if fields["stop_point"] == "full_route" else 180),
                 _bounded_plan=True,

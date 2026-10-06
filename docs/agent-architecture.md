@@ -1,79 +1,35 @@
-# Game Companion Architecture
+# Game Companion architecture
 
-## October 4 architecture correction — two model-driven responsibilities
+## Conversation, gameplay and control
 
-This is the active product and implementation requirement. Game Companion must have both contextual language understanding and a game-playing decision loop. The first backend is the owner's installed, signed-in Codex CLI for this personal local application. The two roles may share one model/backend, but have separate inputs, outputs, session state and verification.
+`lab_ui.py` creates one `codex_provider.CodexProvider` for ordinary Mario and
+Stardew conversation services. `companion_ai.LanguageSession` interprets original
+requests using bounded context. `WateringAgent`, `mario_strategy.MarioStrategyAgent`
+and `stardew_recon.ReconAgent` choose supported skills at finite boundaries.
+Prepared watering and the bounded Mario segment have native evidence;
+reconnaissance acceptance, wider activity coverage and package qualification
+remain open.
 
-Current ordinary Mario and Stardew services construct the deterministic Planner and dispatch recognized request families. Their controllers have real observation feedback, interruption and outcome verification, but high-level choices are largely authored tactics, configured routes and calibrated scene rules. LocalOllamaGateway is currently connected to the separate profile/OpenTTD flow. Existing gameplay results establish those implementations, not general model-driven understanding or adaptive play. These foundations should become reusable capabilities beneath the decision loop.
+The roles keep separate context and session state. The language layer resolves
+intent, preferences, questions and clarification. The gameplay layer chooses a
+skill and expected effect from fresh observations and supported mechanics.
+Deterministic plan validation binds proposals to implemented capabilities;
+controllers own frame timing, input release and independent outcome checks.
+Model output cannot expand reviewed scope, bypass resource/protection checks,
+edit source, or recreate canceled permission.
 
-### Responsibility 1 — contextual language-to-game LLM
+Replies are bound to observation/session identity, goal/plan revision and control
+generation. Late replies cannot start actions. Stop/Take control remains
+independent of inference. Historical findings retain their age and uncertainty;
+reopening descriptive results creates no live connection or authority.
 
-The conversation layer understands what the player means across turns. It must handle original wording, incomplete descriptions, references to what is visible, priorities, exclusions, corrections, questions and coaching without requiring a prescribed vocabulary.
+The shared provider uses the installed Codex CLI and its saved sign-in for
+structured text/image inference. Remote inference is separate from local
+feedback exports. `model_gateway.LocalOllamaGateway` serves the narrow
+OpenTTD/profile flow. Read [runtime configuration](runtime-and-configuration.md),
+[security](security.md), and [module ownership](ssot.md) for these boundaries.
 
-Input context includes the player's words, relevant conversation, selected game, current goal/plan/progress, fresh observed entities and images, available game capabilities, applicable mechanics and compatible remembered guidance. Keep it compact and task-relevant. Earlier observations must retain their age and uncertainty.
-
-The output describes the requested objective, relevant targets/references, constraints, preferences, time/resource limits, proposed completion conditions and interaction type. It identifies clarification needs and capabilities the request would require. It also provides a concise player-facing interpretation. Engineering chooses the schema and provider abstraction.
-
-Understanding a request is separate from having the ability to execute it. Preserve the intended objective even if a prerequisite or skill is missing. Explain the actual gap rather than substituting the nearest scripted task. Resolve a reference such as another patch or a previous jump using context; ask a question when the intended target remains materially ambiguous.
-
-A correction updates the represented goal and constraints, then informs the gameplay agent. Coaching records the intended behavior change and applicable game event, rather than just storing a phrase or mapping it to a fixed preset. Questions request an answer or observation without gameplay authority.
-
-The LLM may interpret an approval reference, but the app binds approval to the displayed current scope and session. Independent Stop/Take control remains immediately available. Neither role can restore canceled authority.
-
-Acceptance includes wording withheld from implementation, multi-turn references, compound preferences, exclusions, changed priorities and accurately understood unsupported requests. Vary context as well as phrasing: identical words about different observed targets must resolve appropriately. Show actual model calls and resulting typed intent; simulated model replies and deterministic shortcuts do not establish model understanding. Provider failure must be visible, with input released rather than silent substitution by a narrower parser.
-
-### Responsibility 2 — game understanding and adaptive play
-
-The gameplay agent determines how to accomplish the understood objective from the current game. It uses mechanics, perception, spatial context, resources, available skills and observed consequences. This is an active decision layer during play, not just an initial plan explanation.
-
-Its working state includes player location/motion/form, relevant objects and targets, terrain and possible routes, resources/time, completed work, hazards, observations with confidence/age, remembered outcomes and missing information. Separate observed facts, inferred possibilities, general game knowledge and historical evidence. A model's visual guess or knowledge of a typical map is not confirmation of the current scene.
-
-Expose reusable adapter capabilities with preconditions, bounded parameters, expected effects, outcome checks and failure states. Capabilities may include inspecting an area, moving toward an observed target, acting on a selected target, executing a supported jump/flight maneuver or returning control. The model may compose implemented capabilities and ask for more observation; it may not invent executable skill IDs or expand input permission. Geometry, collision handling and fast movement can use ordinary algorithms.
-
-The decision loop is:
-goal + fresh state + rules + capabilities -> choose the next subgoal/action -> validate -> execute a bounded skill -> observe the result -> update state -> continue, replan, clarify or stop.
-
-Each decision identifies the selected action/target, why it serves the goal, the expected observable effect and what would trigger a new decision. Keep explanations concise; no private chain-of-thought collection is required. The app validates the action against current conditions and approved constraints before dispatch.
-
-After execution, independent observation determines the actual effect. Unexpected obstruction, resource loss, changed target, lost visibility or failed action must feed a revised decision. Distinguish a feasible alternative, a need to inspect, a missing implemented skill and a fundamentally blocked objective. Limit repetition and stop when it has no evidence-backed new approach; changing timing endlessly without learning is not adaptive play.
-
-Perception must let the agent reason over supported variations in scenes and targets, not require engineers to install a new complete route for each request. Use current precise recognizers where reliable, and extend perception where its missing information blocks the decision. Visual model inference can propose object/location interpretations; critical movement and outcome checks still need sufficient independent grounding.
-
-Memory retains coaching, discoveries, effective and failed actions, context and uncertainty. Retrieve applicable knowledge and show it affecting later decisions. A stored record or automatic selection from three fixed routes alone does not demonstrate learning. This does not require training a new neural network or an unattended practice service.
-
-Acceptance includes a changed starting condition, target, constraint or obstacle selected after implementation, with the same agent choosing a different grounded action or revising a plan without a bespoke script edit. Demonstrate progress or completion from the approved goal, verified outcomes and usable handback. Test both interpretation and gameplay choice: novel wording alone proves only the first layer.
-
-### Local Codex integration and execution boundary
-
-Use Codex as an inference/agent backend during ordinary app use, not merely as the engineer writing the app. Engineering can start with non-interactive calls or choose the app-server integration if its persistent threads, tool interaction and cancellation are a better fit. Keep this personal integration small; no hosted product service or new training pipeline is required.
-
-The installed CLI supports image inputs, JSON event output and schema-constrained final output. Its exec interface reuses saved CLI authentication. Official references: [non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode) and [app-server](https://learn.chatgpt.com/docs/app-server). Installed CLI help and login status were inspected on October 4. No inference was performed and game-playing quality, latency and account limits were not measured by this documentation update. The normal OpenAI-backed CLI sends inference to a remote model even though the application and tools run locally.
-
-Give the roles game-state/image access and a small explicit interface to validated adapter capabilities. Runtime gameplay does not edit repository code or patch controllers in response to each obstacle. Improvements to a reusable skill are engineering work; the agent's job is to compose supported skills using current state.
-
-The existing fast controller continues to handle frame timing, movement feedback, input release and postconditions. Codex makes semantic/task decisions at useful boundaries, not each Mario frame. Stardew is the first complete adaptive-play integration because its slower activities fit these boundaries. Connect shared contextual intent to both game interfaces and then extend Mario strategy at suitable skill boundaries.
-
-Measure actual inference latency and decisions per activity. Pause or maintain only the currently validated finite skill while a new decision is pending. Stale replies, invalid output, model unavailability and cancellation cannot initiate more input.
-
-### Immediate milestone and evidence
-
-Deliver one connected Stardew activity where real Codex interpretation creates the goal, a real Codex-backed gameplay agent selects/composes actions, existing controllers execute, and fresh results cause a later decision or replan. Use available watering/inspection skills so progress is not contingent on finishing a cave manifest first.
-
-Include a changed preference and a supported changed scene/resource/target condition that require different decisions without code changes between trials. Extend a reusable observation or skill if necessary. Preserve operating controls and prior game evidence.
-
-Record original language, resolved goal, evidence supplied, chosen skill/parameters, expected effect, actual effect, later decision, uncertainty and handback. Show which decisions actually came from the model. Keep real model, local simulation, live game and packaged evidence distinct.
-
-AI capability is the next development gate. Pause the one-off cave detour qualification campaign as the lead task; retain its frames and current manual-route versus ordinary-activity evidence for future work. A foliage fix or route patch is appropriate when it unlocks this adaptive loop, but is not completion of the two AI responsibilities.
-
-After the Stardew vertical slice works, extend model-driven task decisions into Mario and evaluate a second activity/state variation. Then continue product coverage and delivery. Recording stays deferred to tentative beta v2. Historical game successes remain valid under their original scope, without implying the new architecture is implemented.
-
-Game Companion is a conversational player: it interprets the user's intent,
-plays within an agreed scope, accepts coaching and reports observed results.
-The active implementation begins with the shared Codex language and gameplay
-roles on a useful Stardew activity, followed by Mario strategy integration. Minecraft connects during the initial beta and develops into the
-third playable option by the end of beta. The [private-beta engineering
-plan](private-beta-engineering.md) owns current scope and the [PM
-handoff](private-beta-pm-handoff.md) owns remaining delivery work.
+## Implemented subsystems
 
 The repository already has typed plans, explicit player control, game-owned
 observations, bounded runtimes and retained outcomes. FCEUX supplies the Mario
@@ -81,59 +37,14 @@ backend; Stardew, profile-based reference work and Minecraft have their own
 runtime semantics. These are foundations for the required product integration;
 their existence is not proof of the complete conversational gameplay loop.
 
-## Required product integration
+## Runtime invariants
 
-The shared product must connect conversation, game decisions, execution and
-attempt memory. The intended loop is:
-
-```text
-user intent or coaching
--> fresh game context and compatible attempt memory
--> understandable proposed goal, constraints and stop point
--> player approval where required
--> game-owned decisions and bounded execution
--> fresh outcome checks and conversational updates
--> interrupt, revise or finish with confirmed input release
--> retained discoveries, corrections and outcome for the next attempt
-```
-
-Mario is watched play that the user can coach. A goal such as finding a 100%
-coin route requires attempts across routes and lives, remembered discoveries
-and corrections, and honest progress toward the goal. An instruction such as
-"wait a few more frames" must bind to an identifiable timing decision and
-produce an inspectable change in play. Selected supported commands can affect
-the current attempt; other coaching is retained for the next one. Acknowledge
-whether a correction was applied, awaits a safe execution boundary, is queued
-for the next attempt or needs clarification. Later self-directed practice is
-separate from this initial coached-play requirement.
-
-Stardew uses short approved activities: understand "water the tomatoes" or an
-exploration/planting goal, discuss choices when needed, state the intended work
-for the next few minutes, receive approval, perform the clicking and movement,
-then check in at an observed decision or task boundary. Goal reasoning,
-navigation, resources and outcomes remain Stardew-owned. Conversational
-check-ins must make changes and interruptions useful without requiring the
-player to direct every click. These are required experiences, not claims that
-the existing watering and farm-task implementations already cover them.
-
-Higher-level intent interpretation and game decisions must use the model with typed
-adapter planning and compatible knowledge. The fast game feedback loop must
-continue through adapter-owned observations, finite primitives and checked
-postconditions; it must not wait for a language model on each frame or input.
-Direct Stop and Take control revoke authority and release input independently
-of model availability, planning and task locks. "STOP RIGHT NOW WAIT" takes
-priority over the goal and coaching queue. A requested scope change cannot
-silently expand the player's approval, and saved learning never grants new
-input authority.
-
-Minecraft builds on the slower Stardew activity loop. Its present calibration
-and camera path remains a component reference while Mario and Stardew lead
-delivery. Later, Minecraft also informs guided advanced-user setup for another
-eligible game without writing code. That no-code teaching/onboarding discussion
-and implementation are deferred until the first two gameplay experiences are
-implemented; they are not an initial beta gate. See [new-game
-onboarding](new-game-onboarding.md) for the separate contributor scaffold and
-its proof limits.
+Language interpretation and gameplay choice use current context but never own
+input permission. An action must match its reviewed session, scope, control
+generation and fresh preconditions. Independent observers classify actual
+completion, uncertainty and handback. Saved state is descriptive; reopening
+requires new setup and approval. Guarded adapter skills remain the execution
+boundary for both model-directed and deterministic plans.
 
 ## Components
 
@@ -239,7 +150,7 @@ The product work must connect these owners to intent interpretation, route/life
 practice and remembered coaching. The present bounded grammar and accepted
 route execution are not evidence that arbitrary coin, flight or hidden-item
 goals can already be played. Preserve typed validation while expanding only
-the concrete supported behavior needed by the active engineering plan.
+the concrete supported behavior described in the player guides.
 
 ## Stardew companion adapter
 
@@ -682,15 +593,11 @@ validation. Catalog status and implementation evidence determine implementation
 readiness; exact clean Git identity, authoritative contract hashes,
 deterministic gate records, fixtures/assets, safety requirements, and blank
 owner fields determine campaign entry. Scheduled technical validation and
-pending owner action are completion blockers for that versioned campaign. The
-active private-beta delivery path follows the engineering plan linked above.
+pending owner action are completion blockers for that versioned campaign. Current package support is described in [known limitations](known-limitations.md).
 
 ## Experimental adapter onboarding and discovery
 
-This is the existing contributor infrastructure reference. The future guided
-advanced-user add-game product is deferred until Mario coaching and Stardew
-delegation are implemented; its discussion and implementation are not the next
-engineering task or an initial beta launch gate. An installed scaffold does
+This is the existing contributor infrastructure reference. Guided native integration of arbitrary new games is unsupported. An installed scaffold does
 not add playable no-code game support.
 
 `experimental_adapters.py` owns the versioned adapter contract, deterministic
@@ -711,3 +618,9 @@ writes a local ownership manifest, and atomically promotes only into an absent
 adapter-ID directory. Removal rechecks every owned hash and refuses unknown,
 modified, symlinked, ambiguous, or active state; it never reaches the external
 evidence and history namespaces.
+
+### Opening strategy implementation seam
+
+`mario_strategy.py` retrieves the adapter-owned skill/mechanics guidance and supplies contextual intent plus concise independent prior effects to the shared provider. `MarioPlanRuntime.strategy_skill` checks volatile ownership and the exact paused boundary; Lua rechecks session, epoch, revision, frame, scene, parameters and finite budgets before joypad execution. `fceux_live_takeover.lua` publishes the boundary after the neutral frame entering the emulator pause. Model inference holds no controller or conversation lock. Native Stop/reclaim remains independent. Existing deterministic routes, coin guidance and flight contracts retain their separate owners.
+
+Stardew pauses its disposable game clock around slow model discussion/decisions and reacquires current pixels before accepting gameplay output. Canceled output cannot resume work. Failed selected-window captures retain before/after identity and bounds; pointer-bound refusals name the requested point and observed geometry. Calibration remains limited to supported daylight scenes; failed recognition requires player-directed reacquisition and new review.

@@ -1,4 +1,4 @@
-"""PB3 feedback evidence contracts. Validation does not grant input authority.
+"""Feedback evidence contracts. Validation does not grant input authority.
 
 Detectors own interpretation; policy consumes bounded observations. Native
 posting, model confidence and HID release cannot establish camera outcomes.

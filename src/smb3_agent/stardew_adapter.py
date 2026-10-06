@@ -630,6 +630,7 @@ class MacVisibleStardewBackend:
         from smb3_agent.native_host import capture_selected
         return capture_selected(window, destination, detect_window=self.detect_window,
             error_type=StardewAdapterError,
+            screen_region=True,
             started=lambda at: setattr(self, "last_capture_started_at", at))
 
 def load_stardew_contract(path: Path = ADAPTER_CONTRACT_PATH) -> Mapping[str, Any]:

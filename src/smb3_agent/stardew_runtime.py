@@ -52,6 +52,9 @@ class WateringNavigator:
         self._waypoint = None
         self._waypoint_pulses = 0
 
+    def agent_context(self):
+        return {"units": "tiles", "walkable": sorted(self.walkable), "return_tile": self.return_tile}
+
     def validate_scope(self, screen: ScreenObservation) -> None:
         """Reject an incomplete route before acquiring execution authority.
 
@@ -193,6 +196,7 @@ class StardewRuntime:
         self.controller, self.observer, self.driver, self.navigator = controller, observer, driver, navigator
         self.evidence_root = evidence_root
         self.maximum_observation_age = maximum_observation_age
+        self.gameplay_agent = None
         self.screen: ScreenObservation | None = None
         self.current_plan: ConversationPlan | None = None
         self._review_digest: str | None = None
@@ -218,6 +222,7 @@ class StardewRuntime:
         self._cave_route = None
         self._cave_observer = None
         self._cave_resume_clock = None
+        self._inference_clock = None
         self._cave_baseline = None
         self.inspection_result = None
         self._inspection_navigation = None
@@ -322,7 +327,7 @@ class StardewRuntime:
         from smb3_agent.stardew_adapter import MacVisibleStardewBackend
         from smb3_agent.stardew_input import MacOrdinaryInputDriver
         from smb3_agent.stardew_setup import _verify_engineering_launch_identity
-        if step not in {"view", "load", "choose", "left", "right", "up", "down", "up_short", "left_short", "right_short", "down_short", "up_fine", "left_micro", "right_micro", "up_micro", "down_micro", "can", "menu", "survey_pause"}:
+        if step not in {"view", "window", "load", "choose", "left", "right", "up", "down", "up_short", "left_short", "right_short", "down_short", "up_fine", "left_micro", "right_micro", "up_micro", "down_micro", "can", "menu", "survey_pause"}:
             raise StardewAdapterError("Unsupported preparation step.")
         if (self.controller and step not in {"view", "menu"}) or self.status in {"running", "stopping"} or self._tick_lock.locked():
             raise StardewAdapterError("Preparation controls are available only before screen connection.")
@@ -345,8 +350,14 @@ class StardewRuntime:
         try:
             window = native.detect_window()
             guard(window)
-            if window.bounds != (0, 33, 1512, 949):
-                raise StardewAdapterError("Preparation requires the supported 1512×949 game window at (0,33).")
+            supported = window.bounds == (0, 33, 1512, 949)
+            if step not in {"view", "window"} and not supported:
+                raise StardewAdapterError(f"Current game window is {window.bounds}; preparation requires 1512×949 at (0,33). View preparation screen, restore the declared window/display settings in the game, then View again. No preparation input sent.")
+            if step != "view" and self.preparation_view.get("window") != asdict(window):
+                raise StardewAdapterError("The game window changed since the displayed preparation image. View preparation screen again before choosing a step.")
+            driver.expected_pointer_window = window
+            if step == "window" and window.bounds != (232, 132, 1280, 748):
+                raise StardewAdapterError("Window recovery supports only the displayed centered 1280×748 title window on the qualified Mac display. Other display layouts require manual Windowed Borderless settings, then a fresh View.")
             survey = self._survey_paused or step == "survey_pause"
             def menu():
                 authority()
@@ -369,14 +380,24 @@ class StardewRuntime:
                         menu()
                     survey = False
                 else:
-                    points = {"load": (630, 835), "choose": (680, 270), "can": (531, 895)}
+                    points = {"load": (630, 835), "choose": (680, 270), "can": (531, 895), "window": (1478, 161)}
                     x,y = points[step]
+                    target = (x, y+33)
+                    if step == "window":
+                        target = (1478, 194)
                     driver.arm()
+                    # SDL menu hit-testing follows motion, not the coordinates
+                    # carried by a button event. Bind both to the displayed frame.
+                    driver.send(InputCommand(InputKind.MOUSE, "move", "move", 0,
+                        target=target, purpose="prepare_disposable"))
+                    time.sleep(0.08)
+                    authority()
                     driver.send(InputCommand(InputKind.MOUSE, "left_button", "click", 50,
-                        target=(x, y+33), purpose="prepare_disposable"))
+                        target=target, purpose="prepare_disposable"))
                 driver.neutralize()
                 time.sleep(0.3)
-            capture = native.capture(native.detect_window(), Path(launch.root) / f"preparation-{uuid4().hex}.png")
+            current = native.detect_window()
+            capture = native.capture(current, Path(launch.root) / f"preparation-{uuid4().hex}.png")
             authority()
             paused_capture = None
             if survey:
@@ -384,8 +405,20 @@ class StardewRuntime:
                 self._survey_paused = True
                 paused_capture = native.capture(native.detect_window(), Path(launch.root) / f"survey-paused-{uuid4().hex}.png")
             self.preparation_view = {"id": uuid4().hex, "image": "data:image/png;base64,"+base64.b64encode(capture.read_bytes()).decode(),
-                "screenshot": str(capture), "step": step, "input_released": True, "clock_paused_after_capture": self._survey_paused, "paused_screenshot": str(paused_capture) if paused_capture else None}
+                "screenshot": str(capture), "step": step, "window": asdict(current), "supported_geometry": current.bounds == (0, 33, 1512, 949), "input_released": True, "clock_paused_after_capture": self._survey_paused, "paused_screenshot": str(paused_capture) if paused_capture else None}
             self.reason = ("Survey clock paused after this capture. Walk/View briefly resumes, captures and pauses again; Menu ends survey pause. " if self._survey_paused else "") + "Check the displayed game screen before choosing the next preparation step. Steps release input; no farm-work authority."
+            if current.bounds != (0, 33, 1512, 949):
+                self.reason = f"Unsupported game window {current.bounds}. Farm preparation remains disabled. On the centered title screen, choose Restore supported window, then View again; this presses only the visible window-mode icon. Other layouts require manual Windowed Borderless settings. Use the qualified 3024×1964 display, 75% zoom and 100% UI."
+        except StardewAdapterError as exc:
+            if step != "window" or str(exc) not in {"window_loss"}:
+                raise
+            self.preparation_view = None
+            self.reason = "Window-mode transition was attempted and input released. Choose View preparation screen to verify the current window before any further setup step. No farm-work authority granted."
+            (Path(launch.root) / f"window-transition-{uuid4().hex}.json").write_text(json.dumps({
+                "step": step, "outcome": "refresh_required", "reason": str(exc),
+                "process_id": launch.process_id, "process_started_at": launch.process_started_at,
+                "input_authority": False,
+            }, indent=2))
         finally:
             driver.neutralize()
             self._preparation_driver = None
@@ -423,6 +456,7 @@ class StardewRuntime:
         self._cave_route = None
         self._cave_observer = None
         self._cave_resume_clock = None
+        self._inference_clock = None
         self._cave_baseline = None
         self.inspection_result = None
         self._inspection_navigation = None
@@ -479,6 +513,11 @@ class StardewRuntime:
                 pointer.arm()
                 if farm_registration:
                     profile.read_menu(native, pointer, Path(launch.root))
+                window = native.detect_window()
+                _verify_engineering_launch_identity(launch, window)
+                if window.bounds[2:] != profile.viewport_size:
+                    raise StardewAdapterError("viewport scale or dimensions changed before verification pointer")
+                pointer.expected_pointer_window = window
                 pointer.send(InputCommand(InputKind.MOUSE, "move", "move", 0,
                     target=(window.bounds[0]+profile.hud_hover[0], window.bounds[1]+profile.hud_hover[1]),
                     purpose="verify_prepared_energy"))
@@ -586,6 +625,7 @@ class StardewRuntime:
         self._cave_route = None
         self._cave_observer = None
         self._cave_resume_clock = None
+        self._inference_clock = None
         self._cave_baseline = None
         self.inspection_result = None
         self._inspection_navigation = None
@@ -703,10 +743,17 @@ class StardewRuntime:
                 target["patch"] = name
                 target["label"] = f"{name}, row {target['tile_y']}, column {target['tile_x']}"
         if valid:
-            observation.update(watering_activity=not isinstance(self.screen.farm, FarmObservation), energy=self.screen.energy,
+            observation.update(player_location=asdict(self.screen.position), observed_at=self.screen.observed_at,
+                               watering_activity=not isinstance(self.screen.farm, FarmObservation), energy=self.screen.energy,
                                water=self.screen.tool.watering_can_units,
                                selected_tool=self.screen.tool.selected_tool,
                                energy_cost_upper_bound=getattr(self.navigator, "energy_cost_upper_bound", None))
+            if self._planting_observer and self.screen.farm is None:
+                from smb3_agent.stardew_recon import catalog
+                try:
+                    observation["reconnaissance_viewpoints"] = catalog(self.navigator)
+                except StardewAdapterError:
+                    pass
         return PlanningContext(game_id="stardew", conversation_id=conversation_id,
                                session_id=self.controller.save.nonce if self.controller else None,
                                observation_id=self.screen.observation_id if valid else None,
@@ -776,7 +823,7 @@ class StardewRuntime:
             if self.screen and self.screen.navigation_coverage is not None:
                 raise StardewAdapterError("Refresh complete farmhouse coverage before farm work or eastern inspection.")
             self._cave_baseline = None
-            if plan.normalized_intent == "inspect_planting":
+            if plan.normalized_intent in {"inspect_planting", "inspect_recon"}:
                 return self._start_inspection(plan, background=background)
             self._inspection_navigation = None
             farm_task = isinstance(self._review_screen.farm, FarmObservation)
@@ -855,11 +902,19 @@ class StardewRuntime:
                 if farm_task:
                     self.controller.operator.ledger = farm_ledger
                 if activity and not farm_task:
+                    # A prior Stop without an attempt leaves the operator reclaimed.
+                    # Fresh Start validates this player-owned baseline before reuse.
+                    self.controller.operator.attach_player_owned(current)
                     self.controller.operator.establish_task(current)
                     self.controller.operator.ledger.requested_crop_ids = tuple(requested)
                 self.controller.authorize_do(current, owner_confirmation=True, input_driver=InputKind.MOUSE,
                                              expires_at=(datetime.now(timezone.utc)+timedelta(seconds=120 if activity else 600)).isoformat())
                 self.current_plan = plan
+                if self.gameplay_agent:
+                    if self.gameplay_agent.plan_id != plan.plan_id:
+                        self.gameplay_agent = None
+                    else:
+                        self.gameplay_agent.reset()
                 self._cancel = threading.Event()
                 self.status, self.reason = "running", ("Executing the reviewed farm routine. Keep the game foreground." if farm_task else "Watering the reviewed crop targets. Keep the game foreground.")
                 if background:
@@ -876,13 +931,28 @@ class StardewRuntime:
             raise StardewAdapterError("Inspection coverage currently supports only the prepared Day 2 farm.")
         return proposal(self.screen, self.navigator, text, conversation_id)
 
+    def propose_recon(self, text, conversation_id, intent):
+        from smb3_agent.stardew_recon import proposal
+        self.observe()
+        if self.screen is None or self._planting_observer is None or self.screen.farm is not None:
+            raise StardewAdapterError("Reconnaissance requires the connected prepared Day 2 farm.")
+        return proposal(self.screen, self.navigator, text, conversation_id, intent)
+
     def _start_inspection(self, plan, *, background):
         from smb3_agent.stardew_inspection import proposal, InspectionNavigator
         if self._activate_game:
             self._activate_game()
         current = self.observer()
         self._validate(current)
-        expected = proposal(current, self.navigator, plan.original_request, plan.conversation_id)
+        recon = plan.normalized_intent == "inspect_recon"
+        if recon:
+            from smb3_agent.stardew_recon import ReconAgent, proposal as recon_proposal
+            if not isinstance(self.gameplay_agent, ReconAgent) or self.gameplay_agent.plan_id != plan.plan_id:
+                raise StardewAdapterError("Reconnaissance needs its current plan-bound gameplay agent.")
+            expected = recon_proposal(current, self.navigator, plan.original_request, plan.conversation_id,
+                                      self.gameplay_agent.intent)
+        else:
+            expected = proposal(current, self.navigator, plan.original_request, plan.conversation_id)
         if (plan.actions != expected.actions or plan.resource_limits != expected.resource_limits
                 or plan.stop_point != expected.stop_point or current.farm is not None
                 or not self._task_unchanged(self._review_screen, current)):
@@ -899,13 +969,17 @@ class StardewRuntime:
             self.controller.operator.attach_player_owned(current)
             self.controller.operator.establish_task(current)
             self.controller.authorize_do(current, owner_confirmation=True, input_driver=InputKind.KEYBOARD,
-                expires_at=(datetime.now(timezone.utc)+timedelta(seconds=120)).isoformat())
+                expires_at=(datetime.now(timezone.utc)+timedelta(seconds=plan.resource_limits['maximum_seconds'])).isoformat())
             self._inspection_navigation = InspectionNavigator(self.navigator)
+            if recon:
+                self.gameplay_agent.reset()
             self.inspection_result = {"plan": plan.to_dict(), "status": "running", "findings": None,
-                                      "handback_confirmed": False}
+                                      "handback_confirmed": False, "observations": []}
             self.current_plan, self.screen = plan, current
             self._cancel = threading.Event()
             self.status, self.reason = "running", "Inspecting the eastern crop margin; 120 seconds including return."
+            if recon:
+                self.reason = "Investigating the reviewed question; model choices and observations stay within the return budget."
             if background:
                 self._worker = threading.Thread(target=self._run, args=(self._cancel,), daemon=True, name="stardew-inspection")
                 self._worker.start()
@@ -927,6 +1001,8 @@ class StardewRuntime:
         if not envelope.trusted:
             raise StardewAdapterError(envelope.stale_reasons[0])
         self.screen = current
+        if self.current_plan.normalized_intent == "inspect_recon":
+            return self.gameplay_agent.tick(self, current)
         command, event = self._inspection_navigation.next_inspection_command(current)
         if event == "observe":
             observation = self._planting_observer(inspection=True)
@@ -1165,6 +1241,10 @@ class StardewRuntime:
                 reserve = minimum if minimum is not None else 1
                 if current.energy - cost < reserve:
                     raise StardewAdapterError("reviewed energy reserve would be crossed")
+            if self.gameplay_agent and not farm_task:
+                remaining = self.gameplay_agent.choose(self, current, remaining)
+                current = self.screen
+                self.require_authority()
             command, _target = (self.navigator.next_farm_command(current, ledger.next_step) if farm_task
                                 else self.navigator.next_command(current, remaining))
             if command is None:
@@ -1209,6 +1289,8 @@ class StardewRuntime:
                 self.driver.arm()
             result = self.controller.perform_input(command, current, self.driver, after)
             self.screen = result
+            if self.gameplay_agent:
+                self.gameplay_agent.effect(self, command, current, result)
             if command.purpose == "navigate" and getattr(self.navigator, "poses", None):
                 self._pending_navigation_observation = result
             self._retain("step", {"before": asdict(current), "command": asdict(command), "after": asdict(result),
@@ -1409,6 +1491,7 @@ class StardewRuntime:
             finally:
                 clock_driver.neutralize()
         self._cave_resume_clock = lambda: cave_clock(False)
+        self._inference_clock = cave_clock
         def observe_native(*, refresh_menu=True, cave=False):
             if not cave:
                 cave_clock(False)
@@ -1427,12 +1510,25 @@ class StardewRuntime:
                         self.require_authority()
                 pointer = MacOrdinaryInputDriver(window_provider=native.detect_window,
                     isolation_guard=self.setup_manager.require_verified, authority_guard=observation_permission)
-                bx, by, _, _ = current.bounds
                 try:
                     pointer.arm()
                     from smb3_agent.stardew_farm_perception import FarmPixelProfile
                     if isinstance(profile, FarmPixelProfile) and refresh_menu:
                         profile.read_menu(native, pointer, evidence_root)
+                    # Menu transitions may change SDL geometry. Bind the point to
+                    # a fresh supported window, never to the pre-menu origin.
+                    current = native.detect_window()
+                    if (current.process_id, current.process_started_at, current.window_id) != expected:
+                        raise StardewAdapterError("configured process/window changed after inventory")
+                    self.setup_manager.require_verified(current)
+                    bx, by, width, height = current.bounds
+                    self._retain("pointer-geometry", {"window": asdict(current),
+                        "profile_viewport": profile.viewport_size, "local_point": profile.hud_hover,
+                        "screen_point": (bx+profile.hud_hover[0], by+profile.hud_hover[1]),
+                        "coordinate_space": "normalized window points"})
+                    if (width, height) != profile.viewport_size:
+                        raise StardewAdapterError("viewport scale or dimensions changed before observation pointer")
+                    pointer.expected_pointer_window = current
                     pointer.send(InputCommand(InputKind.MOUSE, "move", "move", 0,
                         target=(bx+profile.hud_hover[0], by+profile.hud_hover[1]), purpose="observe_energy_tooltip"))
                 finally:
@@ -1609,16 +1705,36 @@ class StardewRuntime:
                     self.require_authority()
                     current_window = native.detect_window()
         def activate_native():
-            current = native.detect_window(require_foreground=False)
+            # SDL can hide its window while Companion is foreground. Activate the
+            # already verified process before looking for its on-screen window.
+            # This explicit observation/Start hook never runs during agent input.
+            if backend is None:
+                from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSApplicationActivateAllWindows
+                app = NSRunningApplication.runningApplicationWithProcessIdentifier_(expected[0])
+                if app is None:
+                    raise StardewAdapterError("the verified game process is unavailable")
+                app.unhide()
+                if not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows):
+                    raise StardewAdapterError("could not show the verified game; select its window and retry")
+                import time
+                for retry in range(20):
+                    try:
+                        current = native.detect_window()
+                        break
+                    except StardewAdapterError:
+                        if retry == 19:
+                            raise
+                        time.sleep(.025)
+            else:
+                current = native.detect_window(require_foreground=False)
+                if not current.foreground:
+                    from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
+                    app = NSRunningApplication.runningApplicationWithProcessIdentifier_(current.process_id)
+                    if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
+                        raise StardewAdapterError("could not focus the reviewed game; focus it and retry Start")
             if (current.process_id, current.process_started_at, current.window_id) != expected:
                 raise StardewAdapterError("cannot focus a changed game process/window")
-            if not current.foreground:
-                # Explicit Start transfers focus to the already verified process.
-                # No gameplay event is emitted until a new trusted observation.
-                from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
-                app = NSRunningApplication.runningApplicationWithProcessIdentifier_(current.process_id)
-                if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
-                    raise StardewAdapterError("could not focus the reviewed game; focus it and retry Start")
+            self.setup_manager.require_verified(current)
         self.controller = StardewCompanionController(save, manager=self.setup_manager.manager)
         self.observer, self.navigator, self.evidence_root = observe_native, navigator, evidence_root
         self.driver = MacOrdinaryInputDriver(window_provider=native.detect_window,

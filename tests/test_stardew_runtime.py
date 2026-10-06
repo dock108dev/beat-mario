@@ -265,7 +265,8 @@ def test_neutralization_failure_revokes_authority_and_denies_handback(tmp_path):
     assert not commands
 
 
-def test_explicit_observe_activates_bound_background_process_before_capture(tmp_path, monkeypatch):
+@pytest.mark.parametrize("hidden_native", [False, True])
+def test_explicit_observe_activates_bound_background_process_before_capture(tmp_path, monkeypatch, hidden_native):
     import sys
     import smb3_agent.stardew_input as input_module
     import smb3_agent.stardew_perception as perception_module
@@ -285,6 +286,8 @@ def test_explicit_observe_activates_bound_background_process_before_capture(tmp_
             events.append(("capture", True))
             return state[0].screenshot_references[0]
     class Application:
+        def unhide(self):
+            events.append(("unhide", True))
         def activateWithOptions_(self, options):
             events.append(("activate", options))
             background[0] = False
@@ -292,7 +295,7 @@ def test_explicit_observe_activates_bound_background_process_before_capture(tmp_
     native_app = Application()
     monkeypatch.setitem(sys.modules, "AppKit", SimpleNamespace(
         NSRunningApplication=SimpleNamespace(runningApplicationWithProcessIdentifier_=lambda pid: native_app),
-        NSApplicationActivateIgnoringOtherApps=1))
+        NSApplicationActivateIgnoringOtherApps=1, NSApplicationActivateAllWindows=2))
     monkeypatch.setattr(input_module, "MacOrdinaryInputDriver", lambda **kwargs: runtime.driver)
     class Perception:
         def __init__(self, profile):
@@ -300,14 +303,18 @@ def test_explicit_observe_activates_bound_background_process_before_capture(tmp_
         def recognize(self, capture, window, identity):
             return replace(state[0], window=window, observed_at=datetime.now(timezone.utc).isoformat())
     monkeypatch.setattr(perception_module, "VisibleWateringPerception", Perception)
-    runtime.setup_manager.session = SimpleNamespace(save=save, session_id=save.nonce, input_ready=True)
+    runtime.setup_manager.session = SimpleNamespace(save=save, session_id=save.nonce, input_ready=True,
+        loading=SimpleNamespace(process_id=10, process_started_at="process-start"))
     runtime.setup_manager.manager = runtime.controller.manager
+    import smb3_agent.stardew_adapter as adapter_module
+    monkeypatch.setattr(adapter_module, "MacVisibleStardewBackend", lambda **kwargs: Backend())
     runtime.connect_live(profile=SimpleNamespace(qualified=lambda: True), navigator=runtime.navigator,
-                         evidence_root=tmp_path / "native-factory", backend=Backend())
+                         evidence_root=tmp_path / "native-factory", backend=None if hidden_native else Backend())
     background[0] = True
     events.clear()
     runtime.observe()
-    assert events[:3] == [("detect", False), ("activate", 1), ("detect", True)]
+    assert events[:3] == ([("unhide", True), ("activate", 3), ("detect", True)] if hidden_native
+                          else [("detect", False), ("activate", 1), ("detect", True)])
     assert ("capture", True) in events
     assert runtime.screen.window.foreground
     assert not commands
@@ -711,3 +718,94 @@ def test_explicit_profile_connection_focuses_verified_hidden_process_before_wind
     monkeypatch.setattr(runtime, 'connect_live', lambda **kwargs: {'available': True})
     assert runtime.connect_profile('reviewed-screen')['available']
     assert events == ['focus', 'detect']
+
+
+def preparation_runtime(tmp_path, monkeypatch, bounds=(0, 33, 1512, 949)):
+    from dataclasses import asdict
+    import smb3_agent.stardew_adapter as adapter
+    import smb3_agent.stardew_input as inputs
+    import smb3_agent.stardew_setup as setup
+    window = WindowObservation(10, 'start', 'window', 'Stardew', bounds, True, True, True)
+    commands = []
+    class Native:
+        def __init__(self, **kwargs):
+            pass
+        def detect_window(self):
+            return window
+        def capture(self, current, path):
+            Image.new('RGB', bounds[2:]).save(path)
+            return path
+    class Driver:
+        def __init__(self, **kwargs):
+            self.authority = kwargs['authority_guard']
+        def arm(self):
+            self.authority()
+        def send(self, command):
+            self.authority()
+            commands.append(command)
+        def neutralize(self):
+            pass
+    monkeypatch.setattr(adapter, 'MacVisibleStardewBackend', Native)
+    monkeypatch.setattr(inputs, 'MacOrdinaryInputDriver', Driver)
+    monkeypatch.setattr(setup, '_verify_engineering_launch_identity', lambda *_: None)
+    monkeypatch.setattr('time.sleep', lambda *_: None)
+    runtime = StardewRuntime()
+    runtime._engineering_launches = [(SimpleNamespace(process_id=10, process_started_at='start', root=str(tmp_path)), SimpleNamespace(poll=lambda: None))]
+    runtime.preparation_view = {'id': 'displayed', 'window': asdict(window)}
+    monkeypatch.setattr(runtime, 'show_engineering_game', lambda: None)
+    monkeypatch.setattr(runtime, 'snapshot', lambda: {})
+    return runtime, commands
+
+
+def test_preparation_click_moves_sdl_pointer_before_press(tmp_path, monkeypatch):
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch)
+    runtime.prepare_engineering('load', 'displayed')
+    assert [(c.control, c.target) for c in commands] == [('move', (630, 868)), ('left_button', (630, 868))]
+    assert runtime.preparation_view['supported_geometry'] is True
+
+
+def test_preparation_changed_displayed_geometry_refuses_all_input(tmp_path, monkeypatch):
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch)
+    runtime.preparation_view['window']['bounds'] = (10, 33, 1512, 949)
+    with pytest.raises(StardewAdapterError, match='changed since'):
+        runtime.prepare_engineering('load', 'displayed')
+    assert commands == []
+
+
+def test_unsupported_preparation_geometry_remains_viewable_but_cannot_click(tmp_path, monkeypatch):
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch, (10, 50, 1280, 720))
+    runtime.prepare_engineering('view')
+    assert runtime.preparation_view['supported_geometry'] is False
+    with pytest.raises(StardewAdapterError, match='No preparation input sent'):
+        runtime.prepare_engineering('load', runtime.preparation_view['id'])
+    assert commands == []
+
+
+def test_window_recovery_is_bound_to_centered_title_geometry_and_releases(tmp_path, monkeypatch):
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch, (232, 132, 1280, 748))
+    runtime.prepare_engineering('window', 'displayed')
+    assert [(c.control, c.target, c.duration_ms) for c in commands] == [('move', (1478, 194), 0), ('left_button', (1478, 194), 50)]
+    assert runtime.preparation_view['input_released'] is True
+
+
+def test_window_recovery_refuses_another_display_origin(tmp_path, monkeypatch):
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch, (10, 50, 1280, 748))
+    with pytest.raises(StardewAdapterError, match='manual Windowed Borderless'):
+        runtime.prepare_engineering('window', 'displayed')
+    assert commands == []
+
+
+def test_window_transition_refusal_invalidates_old_frame_and_requires_fresh_view(tmp_path, monkeypatch):
+    import smb3_agent.stardew_adapter as adapter
+    runtime, commands = preparation_runtime(tmp_path, monkeypatch, (232, 132, 1280, 748))
+    native_type = adapter.MacVisibleStardewBackend
+    class Transition(native_type):
+        def detect_window(self):
+            if commands:
+                raise StardewAdapterError('window_loss')
+            return super().detect_window()
+    monkeypatch.setattr(adapter, 'MacVisibleStardewBackend', Transition)
+    runtime.prepare_engineering('window', 'displayed')
+    assert runtime.preparation_view is None
+    assert 'View preparation screen' in runtime.reason
+    assert len(list(tmp_path.glob('window-transition-*.json'))) == 1

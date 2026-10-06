@@ -1,5 +1,6 @@
 # GC3 live planting survey and reviewed inspection — October 4, 2026
 
+This dated record qualifies the earlier fixed inspection controller. Current model-directed reconnaissance source status and pending native acceptance are in [GC-S verification](gc-s-recon-verification.md). The active milestone is reconnaissance composition and qualification, followed by GC-U setup/usability.
 > Dated source-gameplay evidence. Recorded results and source identity retain their original scope; any next-work instruction below belongs to that checkpoint. Continue from the active [two-role AI engineering roadmap](private-beta-engineering.md). These controller-based results do not establish model-driven play or successor-package acceptance. Recording remains deferred to tentative beta v2.
 
 Current source adds a player-directed disposable preparation view, a Day 2 eastern crop-margin inspection proposal, exact displayed-plan approval, bounded observed navigation, fresh second-view findings and retained results. Live surveys and second-view findings are recorded below; return and reopening have separate evidence gates.
@@ -38,6 +39,6 @@ Earlier live Stop and typing/focus interruption receipts remain separate: `inter
 
 ## Remaining boundary
 
-Day 2 qualified corridors and two extra sampled margin tiles only. Day 5 passive discussion retains its earlier calibration; this inspection does not qualify Day 5 movement, arbitrary farms, larger plots or cave travel. Choosing a location or approving inspection permits no planting, clearing, purchasing, selling, gifts or overnight save. Recording remains deferred to tentative beta v2. Next: separately reviewed cave-entrance reconnaissance with a newly qualified approach/return and fresh entrance image. Arrival remains separate from interior exploration.
+Day 2 qualified corridors and two extra sampled margin tiles only. Day 5 passive discussion retains its earlier calibration; this inspection does not qualify Day 5 movement, arbitrary farms, larger plots or cave travel. Choosing a location or approving inspection permits no planting, clearing, purchasing, selling, gifts or overnight save. Recording remains deferred to tentative beta v2. Current continuation is [GC-S reconnaissance qualification](gc-s-recon-verification.md), then GC-U integrated setup/usability. Separate cave entrance work retains its own evidence; arrival remains separate from interior exploration.
 
 Cave successor status: [entrance reconnaissance implementation and pending independent route gate](gc3-cave-verification.md). The eastern inspection evidence above qualifies no cave corridor.

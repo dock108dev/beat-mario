@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
+from smb3_agent.executable_discovery import require_fceux
+
 
 STATE_RE = re.compile(r"\battempt_(?P<attempt>\d+)_(?P<event>[A-Za-z0-9_]+)\b")
 X_RE = re.compile(r"\bx=(?P<x>-?\d+)\b")
@@ -1394,7 +1396,7 @@ def run_fceux_1_1(
         with stdout_path.open("wb") as stdout_file, stderr_path.open("wb") as stderr_file:
             completed = subprocess.run(
                 [
-                    "fceux",
+                    require_fceux(),
                     "--no-config",
                     "1",
                     "--sound",

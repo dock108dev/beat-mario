@@ -55,6 +55,7 @@ class MacBoundedInputDriver(OrdinaryInputDriver):
         self._dispatch = threading.Lock()
         self._held: list[tuple[int, object]] = []
         self.last_pulse_timing = None
+        self.expected_pointer_window = None
         self.gameplay_emission_count = 0
         self._down_started = None
         super().__init__(keyboard=self._pulse, mouse=self._pulse, neutralizer=self._neutralize)
@@ -122,12 +123,20 @@ class MacBoundedInputDriver(OrdinaryInputDriver):
                 down = q.CGEventCreateKeyboardEvent(None, code, True)
                 up = q.CGEventCreateKeyboardEvent(None, code, False)
             elif command.kind is InputKind.MOUSE:
+                expected = self.expected_pointer_window
+                if expected is not None and (
+                    window.process_id, window.process_started_at, window.window_id, window.bounds
+                ) != (expected.process_id, expected.process_started_at, expected.window_id, expected.bounds):
+                    raise self.error_type(
+                        f"Pointer geometry changed: expected={expected.bounds}, current={window.bounds}, "
+                        f"expected_window={expected.window_id}, current_window={window.window_id}; reacquire and review"
+                    )
                 if command.target is None or window.bounds is None:
                     raise self.error_type("Mouse input requires a reviewed screen point")
                 x, y = command.target
                 bx, by, width, height = window.bounds
                 if not (bx <= x < bx + width and by <= y < by + height):
-                    raise self.error_type("Mouse target is outside the game window")
+                    raise self.error_type(f"Mouse target is outside the game window: target={command.target}, bounds={window.bounds}, window={window.window_id}")
                 mapping = {"left_button": (q.kCGEventLeftMouseDown, q.kCGEventLeftMouseUp, q.kCGMouseButtonLeft),
                            "right_button": (q.kCGEventRightMouseDown, q.kCGEventRightMouseUp, q.kCGMouseButtonRight),
                            "move": (q.kCGEventMouseMoved, q.kCGEventMouseMoved, q.kCGMouseButtonLeft)}

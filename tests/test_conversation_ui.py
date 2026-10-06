@@ -196,7 +196,7 @@ def test_conversation_http_contract_keeps_controls_available_and_csrf(
     from smb3_agent.companion_catalog import CatalogPreferenceStore
 
     class FakeConversationService:
-        def __init__(self, live_manager, *, artifacts_root) -> None:
+        def __init__(self, live_manager, *, artifacts_root, provider=None) -> None:
             self.manager = live_manager
             self.artifacts_root = artifacts_root
             self.calls = []

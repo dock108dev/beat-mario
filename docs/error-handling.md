@@ -1,14 +1,18 @@
-# Error Handling and Operations
+# Error handling and operations
 
-## Planned AI provider and adaptive-play recovery
+## Provider and gameplay recovery
 
-The [complete beta plan](private-beta-engineering.md) adds real contextual interpretation and gameplay decisions. Cover provider absence/sign-out/limits/timeouts, malformed replies, stale observation/goal generations and failed skills with readable product remedies. Release input before slow provider cleanup; preserve actual completed/uncertain work and invalidate queued decisions.
+The current Codex provider reports absence, sign-in failure, request limits,
+timeouts and malformed output. Owned cancellation invalidates pending work;
+runtimes reject stale observation, goal and control generations. Stop/Take
+control releases input independently of inference. Confirmed work and uncertain
+outcomes remain distinct in saved results.
 
-An unsuccessful skill feeds fresh observations to a new decision: inspect, take a supported alternative, revise scope or explain the missing capability. Bound no-progress repetition. Do not blindly replay an action whose effect is unknown. Reconnect/reopening restores descriptive state, with fresh approval for new work.
-
-Existing server-close cleanup is wired; the beta still needs observed Quit/signal/crash, pending-inference and active-input behavior, honest cleanup-failure reporting and ownership-aware cleanup of new Codex children. These requirements are planned, not evidence that the provider already exists.
-
-Engineering operations reference. Current build readiness and the complete user path are tracked in the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md). The maintenance records below keep their original source/evidence scope.
+A failed skill requires fresh observations before further work. Supported
+alternatives still need current scope and preconditions; unknown effects must not
+be blindly replayed. Reopening restores descriptive history only. New work needs
+fresh compatible setup and review. Source-gameplay results do not establish
+packaged Quit, crash recovery or general scene coverage.
 
 This document is the source of truth for failure handling outside the gameplay
 observer contract. Gameplay success and failure rules remain in the goal,

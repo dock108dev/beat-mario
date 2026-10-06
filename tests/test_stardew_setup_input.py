@@ -84,6 +84,16 @@ def test_guard_failure_emits_nothing():
     assert q.events == []
 
 
+def test_pointer_cannot_use_origin_from_before_window_move():
+    q = QuartzFixture()
+    d = driver(q, provider=lambda: replace(window(), bounds=(10, 0, 100, 100)))
+    d.expected_pointer_window = window()
+    # Point remains inside both windows; bounds-only checking would accept it.
+    with pytest.raises(StardewAdapterError, match="Pointer geometry changed"):
+        d.send(InputCommand(InputKind.MOUSE, "move", "move", 0, target=(50, 50)))
+    assert q.events == []
+
+
 def test_neutral_reclaim_interrupts_held_key_and_no_queued_actions():
     q = QuartzFixture()
     d = driver(q)
@@ -556,3 +566,28 @@ def test_reconnect_rejects_missing_and_multiple_open_copies(tmp_path, monkeypatc
         (root / "process.json").write_text(json.dumps(launch.status()))
     with pytest.raises(StardewAdapterError, match="exactly one"):
         reconnect_open_engineering()
+
+
+def test_source_startup_preferences_are_display_only_and_declare_supported_mode():
+    import xml.etree.ElementTree as ET
+    from smb3_agent.stardew_setup import supported_startup_preferences
+    values = {item.tag: item.text for item in ET.fromstring(supported_startup_preferences())}
+    assert values == {'windowMode': '1', 'fullscreenResolutionX': '3024', 'fullscreenResolutionY': '1964'}
+
+
+def test_stardew_capture_uses_guarded_screen_origin_not_sdl_window_image_origin(tmp_path, monkeypatch):
+    from smb3_agent.stardew_adapter import MacVisibleStardewBackend
+    from PIL import Image
+    current = replace(window(), bounds=(0, 33, 100, 100))
+    backend = MacVisibleStardewBackend(process_id=123, process_started_at='start')
+    monkeypatch.setattr(backend, 'detect_window', lambda: current)
+    captured = []
+    def run(args, **kwargs):
+        captured.append(args)
+        Image.new('RGB', (200, 200)).save(args[-1])
+        return type('Result', (), {'returncode': 0})()
+    monkeypatch.setattr('subprocess.run', run)
+    backend.capture(current, tmp_path/'frame.png')
+    assert captured[0][captured[0].index('-R')+1] == '0,33,100,100'
+    assert '-l' not in captured[0]
+    assert Image.open(tmp_path/'frame.png').size == (100, 100)

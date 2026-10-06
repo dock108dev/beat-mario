@@ -1,6 +1,10 @@
 # Adaptive Assistance and Reviewable Solution Learning
 
-Updated October 4, 2026. Engineering reference for implemented local learning records and the required memory used by contextual language and gameplay decisions. [Product direction](product-direction.md), [architecture](agent-architecture.md#october-4-architecture-correction--two-model-driven-responsibilities) and the [engineering plan](private-beta-engineering.md) own the initial-beta work. Current source applies narrow experimental coaching and chooses among authored coin routes using retained outcomes. It does not yet supply general model-driven learning. Independent training and player demonstrations are later work.
+Local learning records store compatible coaching and observed outcomes for later
+attempts. Model-directed Mario play retrieves descriptive context; deterministic
+coin routes also use retained outcomes. Generalized improvement, model training
+and player demonstration qualification are unsupported. See
+[architecture](agent-architecture.md#conversation-gameplay-and-control).
 
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.

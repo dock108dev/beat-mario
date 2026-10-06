@@ -1,4 +1,4 @@
-"""Finite PB3 capability registry. Profiles select implementations, never predicates/code."""
+"""Finite capability registry. Profiles select implementations, never predicates/code."""
 from types import MappingProxyType
 
 IMPLEMENTED = MappingProxyType({

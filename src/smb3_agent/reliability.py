@@ -7,12 +7,12 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import traceback
 from typing import Any, Callable
 
 from smb3_agent.fceux_harness import BatchSummary, parse_fceux_log
+from smb3_agent.executable_discovery import require_fceux
 from smb3_agent.fceux_images import (
     convert_gd_directory,
     load_gd_screenshot,
@@ -330,7 +330,7 @@ def run_reliability_gate(
     timeout_seconds: int | None = None,
     goal_id: str = ACTIVE_PRODUCT_GOAL_ID,
     goal_runner: Callable[..., GoalRunResult] = run_goal_contract,
-    emulator_resolver: Callable[[str], str | None] = shutil.which,
+    emulator_resolver: Callable[[str], str | None] | None = None,
     progress: Callable[[str], None] | None = None,
 ) -> ReliabilityResult:
     profile = _reliability_profile(goal_id)
@@ -494,7 +494,7 @@ def run_watchable_playback(
     contact_sheet_columns: int = 4,
     goal_id: str = ACTIVE_PRODUCT_GOAL_ID,
     goal_runner: Callable[..., GoalRunResult] = run_goal_contract,
-    emulator_resolver: Callable[[str], str | None] = shutil.which,
+    emulator_resolver: Callable[[str], str | None] | None = None,
     progress: Callable[[str], None] | None = None,
 ) -> WatchableResult:
     profile = _reliability_profile(goal_id)
@@ -663,7 +663,7 @@ def run_watchable_playback(
 def _load_product_contract(
     *,
     game_path: Path,
-    emulator_resolver: Callable[[str], str | None],
+    emulator_resolver: Callable[[str], str | None] | None,
     requested_runs: int,
     profile: ReliabilityProfile,
 ) -> tuple[GoalContract, SegmentCatalog, tuple[dict[str, str], ...]]:
@@ -671,8 +671,7 @@ def _load_product_contract(
         raise ValueError("requested run count must be at least one")
     if not game_path.is_file():
         raise FileNotFoundError(f"Local game file not found: {game_path}")
-    if emulator_resolver("fceux") is None:
-        raise FileNotFoundError("fceux executable was not found on PATH")
+    require_fceux(resolver=emulator_resolver)
 
     contract = load_goal_contract(resolve_goal_path(profile.goal_id))
     catalog = load_segment_catalog(contract.catalog_path)

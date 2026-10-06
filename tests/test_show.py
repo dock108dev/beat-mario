@@ -148,6 +148,7 @@ def test_process_exit_alone_cannot_pass() -> None:
 def test_timeout_stops_owned_process_and_retains_failure_artifacts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr("smb3_agent.executable_discovery.discover_fceux", lambda: "/fixture/fceux")
     class FakeProcess:
         pid = 424242
 

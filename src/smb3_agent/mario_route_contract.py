@@ -9,7 +9,7 @@ from types import MappingProxyType
 
 BASE_ROUTE_ID = "world_8_finish_game"
 OPENING_BOUNDARY = "world_1_1_opening"
-SUPPORTED_STOP_POINTS = ("world_1_1_opening_end", "world_1_1_exit", "full_route", "world_1_1_hidden_1up")
+SUPPORTED_STOP_POINTS = ("world_1_1_opening_end", "world_1_1_exit", "full_route", "world_1_1_hidden_1up", "world_1_1_segment_end")
 SUPPORTED_SPEEDS = (1, "turbo")
 
 
@@ -20,6 +20,7 @@ class Traversal:
 
 
 TRAVERSALS = MappingProxyType({
+    "adaptive_segment": Traversal("world_1_1_adaptive_segment_v1", ("world_1_1_segment_end",)),
     "sky_hidden_1up": Traversal("world_1_1_sky_hidden_1up_v2", ("world_1_1_hidden_1up",)),
     "coin_balanced": Traversal("world_1_1_coin_balanced_v1", ("world_1_1_exit",)),
     "coin_high": Traversal("world_1_1_coin_high_v1", ("world_1_1_exit",)),

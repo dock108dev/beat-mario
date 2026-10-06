@@ -1,28 +1,25 @@
 # Current source-of-truth map
 
-## Active AI beta ownership
+## Language, gameplay and control ownership
 
-GC-A0–GC-R in the [engineering plan](private-beta-engineering.md) replace the old slice-by-slice continuation. Current module owners below remain implementation foundations. The contextual LLM and gameplay decision interfaces are required additions; their exact module layout is an engineering choice.
+The current source connects Codex-backed language and bounded gameplay roles to
+existing guarded controllers. This map identifies the canonical module owners;
+it does not qualify wider activities or packaged delivery.
 
 | Responsibility | Current owners to reuse | Required seam |
 | --- | --- | --- |
-| Contextual language | conversation_service, request_planning, model_gateway | Codex provider plus typed original intent, context and clarification |
+| Contextual language | companion_ai.LanguageSession, codex_provider, conversation_service | Original intent/context and clarification; request_planning remains controller-plan validation, model_gateway serves OpenTTD only |
 | Working game state | live_observation, Stardew observers, feedback_contracts | Fresh semantic entities/images, uncertainty, history and scene continuity |
-| Gameplay decisions | adapter planning/runtime, skill_runtime | Goal/subgoal/action selection, expected effect and observed replanning |
+| Gameplay decisions | companion_ai.WateringAgent, mario_strategy, stardew_recon | Model-selected finite skills, expected effects and independently observed replanning through adapter runtimes |
 | Skill validation/control | takeover, Mario Lua, stardew_companion/input/runtime | Composable finite skills under existing independent authority/release |
 | Memory | learning, run_library, custom_variants and discussion stores | Contextual retrieval and evidence that guidance changes a later decision |
 | Product/delivery | catalog, player_setup/store, app_runtime, delivery/readiness | Both-game/provider setup, app-owned assets and new beta criteria |
 
 A real model decision must reach the controller and receive an independently observed effect. Do not duplicate native input owners or label an existing deterministic planner as the new AI layer.
 
-This map describes code ownership and supported interfaces. Source identity and
-qualification evidence are separate: changing an implementation does not qualify
-a new delivery. The [private-beta engineering plan](private-beta-engineering.md)
-owns release scope; the [PM handoff](private-beta-pm-handoff.md) records the current
-delivery candidate, limitations and next work. The [B8 delivery record](b8-personal-delivery.md)
-retains its September 26 build identity.
-
-The [product direction](product-direction.md) now requires initial-beta Mario coaching and Stardew activity delegation. GC-A0–GC-R in the active plan own upcoming AI integration and release work; no existing readiness flag or historical evidence qualifies that full experience. Minecraft and advanced-user no-code onboarding follow implementation of the first two gameplay experiences. The domain map below describes existing owners to reuse, not completed new features.
+Source identity and qualification evidence remain separate. Saved profiles,
+historical results and readiness flags cannot establish a new delivery or
+restore input permission.
 
 Domain: Ordinary player setup and Minecraft onboarding progress
 SSOT module/file: `src/smb3_agent/player_setup.py`, with read-only progress in `player_onboarding.py`
@@ -141,3 +138,45 @@ Domain: Player-controlled Mario demonstrations
 SSOT module/file: `src/smb3_agent/mario_demonstrations.py`, `scripts/fceux_demonstration.lua`
 Why this is authoritative: Versioned cartridge-bound player action/state traces, atomic named demonstration records, trim/integrity checks, passive frame synchronization and review images. `live_observation.py` binds recorder ownership; `mario_plan_runtime.py` and `fceux_b2_plan.lua` own approved real input application; `conversation_service.py` retains application outcomes and volatile selection/approval. Saved demonstrations do not modify accepted routes.
 Known callers: Ordinary `/mario` conversation API/UI and retained outcome history.
+
+
+## October 5 SSOT enforcement pass
+
+Domain: FCEUX executable eligibility and resolution
+SSOT module/file: `src/smb3_agent/executable_discovery.py` (`discover_fceux`, `require_fceux`)
+Why this is authoritative: Setup and every Python FCEUX launch now use PATH-first, bounded Finder discovery. Missing discovery explicitly refuses launch rather than trying an unresolved name. Harness failures retain an execution receipt; live/Show refuse before creating session artifacts when discovery is missing.
+Known callers: `mario_product.first_use_state`, `LiveObservationManager.start`, `show.run_show_demonstration`, `fceux_harness.run_fceux_1_1`, default reliability/watchable preflight.
+
+Domain: Ordinary Mario/Stardew model inference and language
+SSOT module/file: `src/smb3_agent/codex_provider.py`, `companion_ai.py` (`LanguageSession`)
+Why this is authoritative: `lab_ui._new_lab_ui_server` injects one provider into both services. Local schema validation, bounded subprocesses and generation/cancellation guards constrain results. Provider errors do not activate an alternative ordinary parser.
+Known callers: `conversation_service.ConversationService`, `StardewConversationService`, `WateringAgent`, `mario_strategy.MarioStrategyAgent`, `stardew_recon.ReconAgent`.
+
+Domain: Bounded gameplay decisions
+SSOT module/file: `src/smb3_agent/companion_ai.py` (`WateringAgent`), `mario_strategy.py`, `stardew_recon.py`
+Why this is authoritative: Each owns the supported game/task decision scope and supplies finite choices to existing controller validators. Shared provider transport does not own input, success or native release.
+Known callers: Mario conversation/runtime; Stardew runtime, navigation and reconnaissance orchestration.
+
+Domain: Direct conversational Stop/Take control
+SSOT module/file: `src/smb3_agent/mario_coaching.py` (`urgent_control`)
+Why this is authoritative: Shared priority classification runs before ordinary inference. Planner control detection and HTTP dispatch reuse it; it grants no new input authority.
+Known callers: Both conversation services, `request_planning._control_request`, `lab_ui._Handler`.
+
+Domain: Native input and window contracts
+SSOT module/file: `src/smb3_agent/native_input.py`, `native_host.py`, `host_contracts.py`
+Why this is authoritative: Shared bounded native input/window owners implement release and selected-window guards. Stardew wrappers specialize game errors and purposes rather than duplicate input.
+Known callers: Stardew input/runtime and native Minecraft/OpenTTD providers.
+
+Removed paths: live observation's `discover_fceux() or "fceux"` fallback, bare-name Show/harness launch commands, and default PATH-only reliability resolver. No complete module was deleted. Existing shared setup discovery was retained.
+
+Tests: `tests/test_executable_discovery.py` intercepts all three launch paths, checks missing discovery refuses input, verifies failure receipts and default reliability preflight, and protects PATH/Finder precedence. The existing live-detach and Show-timeout fixtures now pin synthetic discovery. Tests use disposable game bytes, never an owner game/save or real emulator.
+
+Retained boundaries and follow-up decisions:
+
+- Mednafen diagnostic CLI, OpenTTD/Ollama reference provider and Experimental fixture adapters are explicitly exposed workflows, not alternative implementations of the ordinary Mario/Stardew model roles.
+- Deterministic controller planning and supported older activities remain used by `LanguageSession._apply` through service dispatch; removing them would delete advertised coin/flight/farm capabilities. Provider-less service construction remains a direct engineering/test interface, not an ordinary-app outage fallback. Decommissioning that interface requires a caller/fixture migration separate from this executable pass.
+- Minecraft aim/move/place/wall remain refused by `CHECKED_FEATURES` at review/start. Their unfinished native implementations and versioned contracts support pending roadmap work and retained evidence. A separate Minecraft scope decision must either qualify those families or remove their implementation, declarations and contributor tests together; false flags do not advertise working gameplay.
+- Reliability's explicit resolver injection remains for synthetic component checks; default production resolution uses the shared discovery module. Native Lua checks remain independent protocol/controller guards.
+- Namespace aliases, typed-plan conversions, game-specific input wrappers, launch cleanup owners and historical contracts retain the rationale above. None restores authority from storage.
+
+This is a source maintenance pass over identified executable-policy conflicts and current documentation. It does not claim every repository subsystem has been exhaustively deduplicated or that the resulting source has new live, package or owner acceptance.

@@ -361,6 +361,12 @@ def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_
     config_root, data_root = target / 'config', target / 'data'
     config_root.mkdir()
     data_root.mkdir()
+    # Fresh namespaces must not inherit the game's unsupported first-run window
+    # defaults. Only app-owned display preferences are created; saves are copied
+    # unchanged below and the visible viewport still requires qualification.
+    preferences = config_root / 'StardewValley/startup_preferences'
+    preferences.parent.mkdir()
+    preferences.write_text(supported_startup_preferences(), encoding='utf-8')
     protected = [Path.home() / '.config/StardewValley', Path.home() / '.local/share/StardewValley',
                  Path.home() / 'Library/Application Support/StardewValley']
     profile = target / 'isolation.sb'
@@ -393,6 +399,14 @@ def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_
     with (target / 'process.json').open('x') as stream:
         json.dump({**launch.status(), 'returncode': process.poll()}, stream, indent=2)
     return launch, process
+
+
+def supported_startup_preferences() -> str:
+    """Declared source-Mac display settings, never owner save or auth data."""
+    return ('<?xml version="1.0" encoding="utf-8"?>\n<StartupPreferences>'
+            '<windowMode>1</windowMode><fullscreenResolutionX>3024</fullscreenResolutionX>'
+            '<fullscreenResolutionY>1964</fullscreenResolutionY>'
+            '</StartupPreferences>\n')
 
 
 def _verify_engineering_launch_identity(launch: EngineeringLaunch, window: WindowObservation) -> None:

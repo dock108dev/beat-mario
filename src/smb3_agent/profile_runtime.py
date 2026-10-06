@@ -1,4 +1,4 @@
-"""PB1 finite profile execution using shared plans, sessions and attempt history.
+"""Finite profile execution using shared plans, sessions and attempt history.
 
 The reusable family is one grounded text-button action with independently read
 integer entry conditions and reconciled deltas. This is not generic navigation.

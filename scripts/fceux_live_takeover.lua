@@ -204,6 +204,7 @@ if b2 then
     end
   end)
   emu.registerafter(function()
+    if b2.active then b2.strategy_after_frame() end
     if demonstration then demonstration.after() end
     if prep then
       if prep.remaining > 0 then prep.remaining=prep.remaining-1

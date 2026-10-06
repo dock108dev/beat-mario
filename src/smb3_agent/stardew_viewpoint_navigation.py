@@ -35,6 +35,11 @@ class ViewpointNavigator:
         self._observation_return = None
         self._remaining_count = None
 
+    def agent_context(self):
+        return {"units": "world_pixels", "poses": self.poses,
+                "edges": {k: sorted(v) for k, v in self.edges.items()},
+                "watering_viewpoints": self.watering, "return_pose": self.return_pose}
+
     def reset(self):
         self._waypoint = self._last_node = None
         self._waypoint_pulses = self._total_pulses = 0
