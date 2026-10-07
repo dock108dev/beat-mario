@@ -1,6 +1,6 @@
 # Current engineering status — October 6, 2026
 
-This is the current evidence and resumption record. The [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) orders the remaining work. **Engineering acceptance is open; owner usefulness review and the local beta decision have not begun.** This documentation audit adds no gameplay acceptance.
+This repository record binds qualification evidence to the retained candidate and lists remaining engineering checks. **Engineering acceptance is open; owner usefulness review and the local beta decision have not begun.** This documentation audit adds no gameplay acceptance.
 
 ## Exact candidate and stopped state
 
@@ -47,8 +47,18 @@ Candidate.30 completed a native Mario early segment with grounded alive endpoint
 
 Stop at the first unmet gate, retain sanitized evidence, repair the reusable cause, and restart from a fresh authorized boundary. Never terminate unrelated processes or overwrite prior packages, saves, history or credentials. Engineering setup remains engineer-owned. Wider farms, full-level Mario, cave exploration, recording and unrestricted play are outside this milestone; recording remains tentative beta v2.
 
+## Working checkout and retained build
+
+The working checkout contains subsequent presentation, packaging-tool and
+source/documentation maintenance changes. Public guides describe portable source
+setup and current implemented contracts; named engineering/review/verification
+records retain their exact historical scope. Player-facing planning labels were
+replaced with feature constraints. These source edits do not update candidate.35
+or inherit its native qualification. Runtime/resource changes require a new
+frozen build and affected qualification before acceptance.
+
 ## Documentation and acceptance boundaries
 
-This audit postdates the immutable runtime snapshot. Corrected repository guides and adjacent `Quick Start.md` are current; documentation embedded inside the retained app still reflects its build-time snapshot. Preserve its resource hashes and include corrected embedded documentation in the next runtime build. Earlier candidate headings/checklists in retained records are historical, even when their original wording says “current” or “next.” Follow this record and the Desktop tracker for resumption.
+This audit postdates the immutable runtime snapshot. Corrected repository guides and adjacent `Quick Start.md` are current; documentation embedded inside the retained app still reflects its build-time snapshot. Preserve its resource hashes and include corrected embedded documentation in the next runtime build. Earlier candidate headings/checklists in retained records are historical, even when their original wording says “current” or “next.” Follow this record for resumption.
 
 Owner usefulness review and the local beta/release decision follow engineering acceptance. No synthetic test count, helper assertion, model explanation, stored advice or earlier-candidate success substitutes for final native evidence.

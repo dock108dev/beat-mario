@@ -589,6 +589,8 @@ class MacVisibleStardewBackend:
                     if diagnostics is not None:
                         diagnostics.append(request)
                 requested = True
+            if cancelled is not None and cancelled():
+                raise StardewAdapterError("Game focus preparation interrupted")
             try:
                 observed = self.detect_window()
                 if expected_viewport is not None:
@@ -605,6 +607,8 @@ class MacVisibleStardewBackend:
                         continue
                 return observed
             except StardewAdapterError as exc:
+                if cancelled is not None and cancelled():
+                    raise StardewAdapterError("Game focus preparation interrupted") from None
                 stable_geometry, stable_reads = None, 0
                 if diagnostics is not None and (not diagnostics or diagnostics[-1].get("focus_wait_refusal") != str(exc)):
                     diagnostics.append({"focus_wait_refusal": str(exc), "attempt": attempt})

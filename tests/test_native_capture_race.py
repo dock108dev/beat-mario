@@ -35,7 +35,8 @@ def test_replaced_game_cannot_receive_fallback_focus(monkeypatch):
         native_host.request_unbundled_activation(42, 'bound-start')
 
 
-def test_cancelled_focus_wait_does_not_repeat_activation(monkeypatch):
+@pytest.mark.parametrize('cancelled_during', ['activation', 'detection'])
+def test_cancelled_focus_wait_does_not_repeat_activation(monkeypatch, cancelled_during):
     import sys
     from types import SimpleNamespace
     from smb3_agent.stardew_adapter import MacVisibleStardewBackend, StardewAdapterError
@@ -46,11 +47,16 @@ def test_cancelled_focus_wait_does_not_repeat_activation(monkeypatch):
         NSRunningApplication=SimpleNamespace(runningApplicationWithProcessIdentifier_=lambda _: app),
         NSApplicationActivateIgnoringOtherApps=1, NSApplicationActivateAllWindows=2))
     native = MacVisibleStardewBackend(process_id=42, process_started_at='bound-start')
-    monkeypatch.setattr(native, 'detect_window', lambda **kwargs: (_ for _ in ()).throw(StardewAdapterError('not visible')))
+    def detect(**kwargs):
+        assert cancelled_during == 'detection', 'Cancelled focus must not inspect windows'
+        events.append('detect')
+        raise StardewAdapterError('not visible')
+    monkeypatch.setattr(native, 'detect_window', detect)
+    monkeypatch.setattr(native, '_activation_window_exists', lambda **kwargs: pytest.fail('Cancelled focus must not inspect metadata'))
     monkeypatch.setattr('time.sleep', lambda _: None)
     with pytest.raises(StardewAdapterError, match='interrupted'):
-        native.activate_window(cancelled=lambda: bool(events))
-    assert events == ['unhide', 'activate']
+        native.activate_window(cancelled=lambda: ('activate' if cancelled_during == 'activation' else 'detect') in events)
+    assert events == ['unhide', 'activate'] + (['detect'] if cancelled_during == 'detection' else [])
 
 
 def test_focus_is_requested_again_only_after_real_window_appears(monkeypatch):
@@ -75,6 +81,7 @@ def test_focus_is_requested_again_only_after_real_window_appears(monkeypatch):
         return replace(window, foreground=False)
     native = MacVisibleStardewBackend(process_id=42, process_started_at='bound-start')
     monkeypatch.setattr(native, 'detect_window', detect)
+    monkeypatch.setattr(native, '_activation_window_exists', lambda **kwargs: False)
     monkeypatch.setattr('time.sleep', lambda _: None)
     assert native.activate_window() is window
     assert events == ['request', 'request']

@@ -239,6 +239,7 @@ def test_activation_requires_observed_foreground_even_when_api_returns_false(mon
             raise StardewAdapterError("background")
         return observed
     monkeypatch.setattr(backend, "detect_window", detect)
+    monkeypatch.setattr(backend, "_activation_window_exists", lambda **kwargs: False)
     if foreground:
         assert backend.activate_window() is observed
     else:

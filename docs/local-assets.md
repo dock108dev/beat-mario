@@ -1,14 +1,19 @@
 # Local Game Companion Lab Assets
 
-## Successor private-beta resource work
+## Runtime and packaging resources
 
-Candidate.35 inventories 196 packaged resources in its immutable build manifest and resolves them from app resources. See [current status](current-engineering-status.md) for exact identity and remaining native gates. Existing ignored Stardew farm/profile registrations, calibration manifests and retained samples cannot be an unexplained setup dependency. Adopt/create them through product setup or include eligible app-owned resources with a complete dependency manifest.
+Read-only contracts/controllers resolve from the repository in source mode and
+from app resources in packaged mode. Writable profiles, variants and history
+remain in the user data root. `release_resources.py` builds an explicit inventory
+and checks eligible calibration evidence before staging; see
+[packaging prerequisites](development.md#local-review-packaging). Retained local
+farm/profile registrations and calibration samples are excluded from a fresh
+clone. Prepared-profile workflows require those inputs; ordinary source launch
+does not install them.
 
-Separate read-only packaged data from writable user profiles/variants/history. Include the FCEUX Lua controllers and required Python/native/OCR resources or explicit tested prerequisites. Use an explicit release inventory rather than copying ignored personal art, runtime evidence and developer data along with all data/public files.
-
-Games, primary saves and credentials remain separately owned. Captures sent for selected model inference are different from files included in the app or feedback report. The retained art/fixture descriptions below remain optional/reference uses.
-
-Optional artwork and engineering-asset reference. The [private-beta engineering plan](private-beta-engineering.md) and [quick start](private-beta-quick-start.md) describe current engineering priorities and retained review-package prerequisites. New GC4 Mario/Stardew delivery must include or guide creation of the actual setup assets it needs; ignored assets do not establish tester availability.
+Games, original saves and credentials remain separately owned. Selected captures
+sent for inference are separate from packaged assets and feedback reports.
+Optional reference artwork is not a runtime prerequisite.
 
 Game Companion Lab can use local-only images from:
 
