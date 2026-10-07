@@ -4,7 +4,7 @@ Mario engineering source-patch reference. Current beta delivery follows the [pri
 
 This is the existing **engineering source-change** workflow. The implemented player-facing [typed plan/revision flow](b2-integration-contract.md) handles live custom paths. Conversational edits remain runtime plans rather than unchecked source patches or worktree promotion while a game runs. Reuse provenance and review principles while keeping runtime plan authority distinct from source-patch validation and historical route acceptance.
 
-Rank 33 adds `beat-mario.route-patch/v1`, the only executable route-change
+`beat-mario.route-patch/v1` is the only executable route-change
 contract accepted by the CLI and Game Companion Lab. Descriptive variant proposals
 remain review aids; they cannot validate or promote themselves.
 
@@ -25,7 +25,7 @@ The tracked example is `data/lab/route-patch-template.yaml`. A patch records:
 
 Review, validation, comparison, promotion, and rollback decisions live in
 separate Route Lab-owned artifacts. A submitted patch cannot declare those
-results. Full-file text replacement is deliberate: Rank 33 does not accept raw
+results. Full-file text replacement is deliberate: the schema does not accept raw
 hunks, so ambiguous, overlapping, offset, and already-applied hunks cannot be
 interpreted differently at preview and application time.
 
@@ -74,7 +74,7 @@ Profiles fail closed:
 
 - `canonical_phase`: non-live route-data and Route Lab changes;
 - `canonical_rank27`: canonical gate plus the 5/5 World 8 arrival regression;
-- `canonical_rank27_rank28`: canonical gate plus Rank 27 5/5 and Big Tanks
+- `canonical_rank27_rank28`: canonical gate plus World 8 arrival 5/5 and Big Tanks
   3/3;
 - `documentation_static`: bounded diff/static validation. It is explicitly not
   route-execution proof and cannot be promoted through the route-patch loop.
@@ -107,6 +107,6 @@ stale bases or preimages, missing hashes, duplicate operations, no-op/already
 applied content, excessive sizes, protected gate files, command declarations,
 and self-declared approval or validation results before an accepted-tree write.
 
-Rank 33 edits existing tracked UTF-8 text files only. File creation, deletion,
+The source-patch workflow edits existing tracked UTF-8 text files only. File creation, deletion,
 rename, binary diffs, and reviewed rebase are intentionally unsupported and
 fail closed.

@@ -69,8 +69,8 @@ requires fresh exact-process verification and explicit authorization.
   must be local and multimodal. Structured proposals are constrained by finite
   profiles and independently read targets/values. Canceling kills the request
   worker and discards late replies; it cannot prove Ollama stopped GPU computation.
-  No Codex inference provider is enabled in the current ordinary-game implementation; the planned provider boundary is described above. Current Minecraft typed requests do not
-  need model inference.
+  Ordinary Mario/Stardew use the separate Codex provider described above.
+  Current Minecraft typed requests do not need model inference.
 - Profiles, history, reports, settings backups and session diagnostics live outside
   installation in the user data root. Normal report export includes selected
   configuration, sanitized recent outcomes and the user's text; raw screenshots,
@@ -89,7 +89,7 @@ requires fresh exact-process verification and explicit authorization.
   non-symlinked file beneath the repository so the same backend remains safe
   when reached from Route Lab.
 - Savestates, screenshots, traces, and generated session records are
-  stored local runtime data. Repository and CI guards keep them out of tracked source. The planned Codex provider may transmit selected game captures/context for inference as disclosed above.
+  stored local runtime data. Repository and CI guards keep them out of tracked source. The Codex provider transmits selected game captures/context for inference as disclosed above.
 - Emulator processes use fixed argument vectors rather than a shell. Product
   FCEUX runs receive a sanitized environment; diagnostic overrides remain
   explicit operator-only CLI inputs.

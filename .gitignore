@@ -55,3 +55,8 @@ venv/
 # Disposable Python packaging output at the repository root.
 /build/
 /dist/
+
+# Runtime diagnostics if a source server is launched from the checkout.
+/app-lifecycle.json
+/cleanup-failures.json
+/runtime.log

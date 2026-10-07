@@ -205,10 +205,14 @@ class MacBoundedInputDriver(OrdinaryInputDriver):
                 self._release()
         if release_failures:
             raise self.error_type("Timed input release failed") from release_failures[0]
+        # A delayed scheduler may skip every in-pulse poll. Always verify the
+        # final focus/authority after key-up; never report that pulse as valid
+        # merely because its deadline elapsed before a poll could run.
         if self.pulse_guard is not None:
-            current = self._guard()
-            if (current.process_id, current.process_started_at, current.window_id) != (window.process_id, window.process_started_at, window.window_id):
-                raise self.error_type("Process/window changed during input")
+            self.pulse_guard(window)
+        current = self._guard()
+        if (current.process_id, current.process_started_at, current.window_id) != (window.process_id, window.process_started_at, window.window_id):
+            raise self.error_type("Process/window changed during input")
 
     def _release(self) -> None:
         # Retain failed releases for a subsequent neutralization attempt.

@@ -1325,7 +1325,7 @@ class LiveObservationManager:
                 solution=solution,
                 scope="bounded_plan",
                 stop_condition="plan_stop",
-                timeout_seconds=30 if flight else 300 if fields.get("strategy") == 2 else 120 if fields.get("strategy") else min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
+                timeout_seconds=30 if flight else min(300, fields.get("strategy_seconds", 300)) if fields.get("strategy") == 2 else min(120, fields.get("strategy_seconds", 120)) if fields.get("strategy") else min(180, max(1, fields["practice_expires_epoch"] - int(time.time())))
                 if fields.get("practice_expires_epoch") else
                 (1800 if fields["stop_point"] == "full_route" else 180),
                 _bounded_plan=True,

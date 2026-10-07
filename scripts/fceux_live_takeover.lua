@@ -290,7 +290,7 @@ while true do
       b2.finish(succeeded and b2.route_complete and "completed_route" or "controller_failure")
     end
     if bounded then
-      -- Keep the B2 registerbefore override active for one complete neutral
+      -- Keep the plan controller registerbefore override active for one complete neutral
       -- frame. An empty table would clear the mask back to pass-through, and
       -- an immediate joypad.get would mislabel cached agent input as player.
       b2.force_neutral()
@@ -315,12 +315,14 @@ while true do
       emit("player", "", "solution_failed_neutral")
     end
     active_epoch = nil
-    if bounded and b2.flight then
-      -- Preserve the prepared form and timer while the player reviews the
-      -- result. Authority is already revoked and neutral input acknowledged.
+    if bounded and (b2.flight or b2.strategy) then
+      -- Keep the observed result stable while the player reviews it. Inertia
+      -- after input release must not run Mario into a new hazard during handback.
+      -- Authority is already revoked and neutral input acknowledged.
       joypad.set(1, {})
       preparing = true
       emu.pause()
+      emit("player", "", "player_review_pause")
     end
   end
 

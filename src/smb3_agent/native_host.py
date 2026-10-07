@@ -39,6 +39,58 @@ def foreground_process_id(*, error_type=HostError) -> int:
         raise error_type("Fresh macOS foreground identity is unavailable") from exc
 
 
+def request_unbundled_activation(pid: int, started_at: str, *, error_type=HostError, cancelled=None) -> dict:
+    """Request focus for an owned direct game launch without a bundle identity.
+
+    The request is never focus proof. Callers must observe current OS foreground,
+    window visibility and exact identity before accepting pixels or sending input.
+    """
+    import ctypes
+    import subprocess
+    import sys
+    import threading
+    import time
+    if cancelled is not None and cancelled():
+        raise error_type('Game focus preparation interrupted')
+    if getattr(sys, 'frozen', False) and threading.current_thread() is not threading.main_thread():
+        from PyObjCTools import AppHelper
+        finished, abandoned, result = threading.Event(), threading.Event(), {}
+        def on_main():
+            try:
+                if not abandoned.is_set():
+                    result['value'] = request_unbundled_activation(pid, started_at,
+                        error_type=error_type, cancelled=cancelled)
+            except Exception as exc:
+                result['error'] = exc
+            finally:
+                finished.set()
+        AppHelper.callAfter(on_main)
+        deadline = time.monotonic() + 2
+        while not finished.wait(.05):
+            if (cancelled is not None and cancelled()) or time.monotonic() >= deadline:
+                abandoned.set()
+                raise error_type('Game focus preparation interrupted or main event loop unavailable')
+        if 'error' in result:
+            raise result['error']
+        return result.get('value', {})
+    actual = subprocess.run(['ps', '-p', str(pid), '-o', 'lstart='],
+                            capture_output=True, text=True, timeout=2).stdout.strip()
+    if not started_at or actual != started_at:
+        raise error_type('Owned game process changed before focus request')
+    native, serial_type = _foreground_binding()
+    serial = serial_type()
+    native.GetProcessForPID.argtypes = [ctypes.c_int32, ctypes.POINTER(serial_type)]
+    native.GetProcessForPID.restype = ctypes.c_int32
+    native.SetFrontProcessWithOptions.argtypes = [ctypes.POINTER(serial_type), ctypes.c_uint32]
+    native.SetFrontProcessWithOptions.restype = ctypes.c_int32
+    lookup = native.GetProcessForPID(pid, ctypes.byref(serial))
+    requested = native.SetFrontProcessWithOptions(ctypes.byref(serial), 0) if lookup == 0 else None
+    return {"owned_pid": pid, "process_start_verified": True,
+            "serial_lookup_status": lookup, "focus_request_status": requested,
+            "foreground_after_request": foreground_process_id(error_type=error_type),
+            "request_thread_main": threading.current_thread() is threading.main_thread()}
+
+
 def capture_selected(window: WindowObservation, destination: Path, *, detect_window,
                      require_foreground=True, error_type=HostError, started=None,
                      normalize=True, screen_region=False) -> Path:

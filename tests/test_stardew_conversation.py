@@ -75,7 +75,7 @@ def test_live_narrowing_is_blocked_and_b4_stays_unavailable():
     assert "all initially" in narrow.message
     harvest = Planner().plan("Harvest all observed crops", context)
     assert harvest.plan.execution_eligibility == "unavailable_live"
-    assert "B4" in harvest.message
+    assert "unavailable through this planning path" in harvest.message
 
 
 @pytest.mark.parametrize("field,value", [("source", "fixture"), ("validated", False),

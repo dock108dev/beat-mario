@@ -214,9 +214,11 @@ class StardewRuntime:
         self.evidence_error: str | None = None
         self._paused_scope: tuple[str, ...] | None = None
         self._planting_observer = None
+        self._goal_preparation = None
         self.preparation_view = None
         self._survey_paused = False
         self._preparation_driver = None
+        self._preparation_neutral_failure = None
         self.cave_result = None
         self._cave_navigation = None
         self._cave_route = None
@@ -260,26 +262,9 @@ class StardewRuntime:
         native = MacVisibleStardewBackend(process_id=loading.process_id, process_started_at=loading.process_started_at)
         # The browser may hide an isolated full-screen SDL window. Explicit
         # connection focuses the already verified process before enumeration.
-        from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
-        app = NSRunningApplication.runningApplicationWithProcessIdentifier_(loading.process_id)
-        if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
-            raise StardewAdapterError("focus the verified engineering game and retry connection")
-        import time
-        for attempt in range(20):
-            try:
-                window = native.detect_window(require_foreground=False)
-                break
-            except StardewAdapterError:
-                if attempt == 19:
-                    raise
-                time.sleep(0.025)
+        window = native.activate_window()
         if window.window_id != loading.window_id:
             raise StardewAdapterError("verified game window changed before calibration connection")
-        if not window.foreground:
-            from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
-            app = NSRunningApplication.runningApplicationWithProcessIdentifier_(window.process_id)
-            if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
-                raise StardewAdapterError("focus the verified engineering game and retry connection")
         return self.connect_live(profile=profile, navigator=navigator, evidence_root=root)
 
     def show_engineering_game(self) -> dict:
@@ -292,30 +277,8 @@ class StardewRuntime:
             raise StardewAdapterError("The disposable game has exited. Open a fresh farm copy.")
         from smb3_agent.stardew_adapter import MacVisibleStardewBackend
         from smb3_agent.stardew_setup import _verify_engineering_launch_identity
-        from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
         native = MacVisibleStardewBackend(process_id=launch.process_id, process_started_at=launch.process_started_at)
-        # An isolated SDL window can be off-screen after switching to Companion.
-        # Focus the still-owned live child before requiring an on-screen window;
-        # exact process/window isolation is then checked before any input.
-        app = NSRunningApplication.runningApplicationWithProcessIdentifier_(launch.process_id)
-        if app is not None:
-            app.unhide()
-            from AppKit import NSApplicationActivateAllWindows
-            app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows)
-        if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
-            raise StardewAdapterError("Select the open Stardew window yourself, then choose Load, Pilot/B3Test, exit to the porch and select the watering can.")
-        import time
-        for retry in range(40):
-            try:
-                window = native.detect_window(require_foreground=False)
-                break
-            except StardewAdapterError:
-                if retry == 39:
-                    raise
-                app.unhide()
-                from AppKit import NSApplicationActivateAllWindows
-                app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows)
-                time.sleep(0.025)
+        window = native.activate_window()
         _verify_engineering_launch_identity(launch, window)
         self.reason = "Disposable game shown. Choose Load → Pilot/B3Test, walk out to the porch and select the watering can. Then Check isolated farm session and connect its qualified profile. No watering permission granted."
         return self.snapshot()
@@ -424,7 +387,7 @@ class StardewRuntime:
             self._preparation_driver = None
         return self.snapshot()
 
-    def verify_engineering_session(self) -> dict:
+    def verify_engineering_session(self, *, preserve_preparation=False) -> dict:
         if self.status in {"running", "stopping"} or self._tick_lock.locked():
             raise StardewAdapterError("neutral handback is required before setup verification")
         if self._survey_paused:
@@ -437,7 +400,10 @@ class StardewRuntime:
         from smb3_agent.stardew_adapter import MacVisibleStardewBackend
         native = MacVisibleStardewBackend(process_id=launch.process_id, process_started_at=launch.process_started_at)
         window = native.detect_window(require_foreground=False)
-        self.control("stop", reason="engineering session verification invalidates prior review")
+        if not preserve_preparation:
+            self.control("stop", reason="engineering session verification invalidates prior review")
+        elif self.controller:
+            raise StardewAdapterError("Preparation cannot preserve existing gameplay control.")
         if self.controller and not self.controller.operator.input_neutralized:
             raise StardewAdapterError("neutral handback is unconfirmed")
         if self.controller:
@@ -473,15 +439,17 @@ class StardewRuntime:
             if len(matches) > 1:
                 raise StardewAdapterError("ambiguous farm action profile registration")
             farm_registration = matches[0] if matches else None
-        if prepared.is_file() and (registry.is_file() or farm_registration):
+        from smb3_agent.candidate_resources import calibration_registration
+        if prepared.is_file() and (registry.is_file() or farm_registration or calibration_registration()):
             from smb3_agent.stardew_farm_vision import PreparedFarmPixelProfile
             from smb3_agent.stardew_viewpoint_navigation import ViewpointNavigator
             from smb3_agent.stardew_input import MacOrdinaryInputDriver
             from smb3_agent.stardew_setup import _verify_engineering_launch_identity
-            registration = farm_registration or json.loads(registry.read_text())
+            from smb3_agent.candidate_resources import calibration_registration
+            registration = farm_registration or calibration_registration() or json.loads(registry.read_text())
             manifest = Path(registration["manifest"])
             evidence_base = Path("artifacts/b4-engineering" if farm_registration else "artifacts/b3-engineering").resolve()
-            if (manifest.resolve() != manifest or evidence_base not in manifest.parents
+            if (manifest.resolve() != manifest or (evidence_base not in manifest.parents and registration != calibration_registration())
                     or hashlib.sha256(manifest.read_bytes()).hexdigest() != registration["sha256"]):
                 raise StardewAdapterError("local prepared-farm calibration registration changed")
             if farm_registration:
@@ -495,20 +463,15 @@ class StardewRuntime:
             if not profile.qualified():
                 raise StardewAdapterError("prepared-farm screen calibration is not qualified")
             # Explicit setup verification may focus only this fresh isolated game.
-            from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps
-            app = NSRunningApplication.runningApplicationWithProcessIdentifier_(window.process_id)
-            if app is None or not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps):
-                raise StardewAdapterError("focus the engineering game and retry verification")
             import time
-            for _ in range(20):
-                window = native.detect_window(require_foreground=False)
-                if window.foreground:
-                    break
-                time.sleep(0.025)
-            window = native.detect_window()
+            window = native.activate_window()
+            verification_generation = self._generation
+            def verification_authority():
+                if self._generation != verification_generation or (preserve_preparation and self._goal_preparation.cancel.is_set()):
+                    raise StardewAdapterError("Preparation verification canceled.")
             pointer = MacOrdinaryInputDriver(window_provider=native.detect_window,
                 isolation_guard=lambda current: _verify_engineering_launch_identity(launch, current),
-                authority_guard=lambda: None)
+                authority_guard=verification_authority)
             try:
                 pointer.arm()
                 if farm_registration:
@@ -577,15 +540,25 @@ class StardewRuntime:
         return self._planting_observer()
 
     def observe(self) -> dict:
+        self.refresh_observation()
+        return self.snapshot()
+
+    def refresh_observation(self) -> None:
+        import time
+        started = time.monotonic()
+        timings = {}
         try:
             self._require_configured()
             if self.status == "running":
-                return self.snapshot()
+                return
             if self._activate_game is not None:
                 self._activate_game()
             screen = self.observer()
+            timings['observer_seconds'] = time.monotonic() - started
             self._validate(screen)
+            timings['validated_seconds'] = time.monotonic() - started
             envelope = self.controller.observe(screen)
+            timings['converted_seconds'] = time.monotonic() - started
             if not envelope.trusted:
                 raise StardewAdapterError(envelope.stale_reasons[0])
             self.screen = screen
@@ -599,7 +572,9 @@ class StardewRuntime:
             if self.status == "running":
                 self.control("stop", reason=reason)
             self.reason = reason
-        return self.snapshot()
+        finally:
+            timings['total_seconds'] = time.monotonic() - started
+            self._observation_refresh_timing = timings
 
     def setup(self, payload: dict) -> dict:
         # JSON may select a source copy, never assert calibration/isolation verification.
@@ -609,7 +584,7 @@ class StardewRuntime:
         self.screen = self._review_screen = None
         self.current_plan = None
         self._review_digest = None
-        if self.controller and not self.controller.operator.input_neutralized:
+        if not self.snapshot()['handback_confirmed']:
             raise StardewAdapterError("new setup refused because neutral handback is unconfirmed")
         if self.controller:
             self._retired_attempts.extend(attempt_payload(attempt) for attempt in self.controller.attempts)
@@ -641,7 +616,7 @@ class StardewRuntime:
             self._engineering_launches = [(launch, process)]
             self.reason = "Open disposable game reconnected. Show its window, load Pilot/B3Test if needed, exit to the porch and select the watering can. Check the farm session and connect screen recognition; no gameplay authority restored."
             return self.snapshot()
-        if action == "launch_engineering":
+        if action in {"launch_engineering", "launch_selected_copy"}:
             from smb3_agent.stardew_setup import DisposableSessionSetup, discover_installations, launch_fresh_engineering
             self.setup_manager = DisposableSessionSetup()
             if any(process.poll() is None for _, process in self._engineering_launches):
@@ -656,8 +631,11 @@ class StardewRuntime:
             if (app / "Stardew Valley.app").is_dir():
                 app = app / "Stardew Valley.app"
             destination = Path(payload["destination"]) if payload.get("destination") else Path("artifacts/stardew-engineering") / uuid4().hex
-            launch, process = launch_fresh_engineering(app, destination, **(
-                {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {}))
+            launch_options = ({"selected_source": Path(payload["source"]),
+                               "copy_authorized": payload.get("copy_authorized") is True}
+                              if action == "launch_selected_copy" else
+                              {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {})
+            launch, process = launch_fresh_engineering(app, destination, **launch_options)
             self._engineering_launches.append((launch, process))
             if process.poll() is not None:
                 log_path = Path(launch.root) / "game.log"
@@ -666,7 +644,9 @@ class StardewRuntime:
                                if "Bad CPU type" in detail else
                                f"The engineering game exited before setup completed (code {process.poll()}). Its launch log is retained in Session and evidence details.")
             else:
-                self.reason = ("Prepared farm copied into a fresh isolated session. Choose Load in the game; fresh loading verification and observation are required. No gameplay authority restored."
+                self.reason = ("Selected save copied unchanged into an isolated game. Approve observed preparation; support and resources will be checked before watering review. The original is preserved."
+                               if action == "launch_selected_copy" else
+                               "Prepared farm copied into a fresh isolated session. Choose Load in the game; fresh loading verification and observation are required. No gameplay authority restored."
                                if payload.get("prepared_id") else "Fresh isolated title-screen launch requested. No prepared farm is loaded; input is disabled.")
             return self.snapshot()
         if action in {"create_owner_copy", "create_engineering_copy"}:
@@ -687,14 +667,24 @@ class StardewRuntime:
         self.reason = "Disposable copy created; actual isolated loading and qualified visible perception are still required."
         return self.snapshot()
 
+    def connect_selected_scene(self, launch, native, profile, navigator, screenshot, load_screenshot):
+        """Internal observed handoff, never accepts browser-provided live facts."""
+        from smb3_agent.stardew_setup import verify_selected_scene
+        verify_selected_scene(self.setup_manager, launch, native.detect_window(), profile,
+                              screenshot, load_screenshot)
+        self.register_qualified_profile(profile, navigator, evidence_root=Path(launch.root)/"watering-attempts")
+        self.connect_live(profile=profile, navigator=navigator,
+                          evidence_root=Path(launch.root)/"watering-attempts")
+        self.observe()
+
     def planning_context(self, conversation_id: str = "stardew-conversation", current_plan=None) -> PlanningContext:
         valid = False
         if self.screen:
             try:
                 self._validate(self.screen)
                 valid = True
-            except (ValueError, OSError):
-                pass
+            except (ValueError, OSError) as exc:
+                observation_error = str(exc)
         targets = [{"id": c.crop_id, "kind": "crop", "planted": c.planted, "watered": None if c.occluded else c.watered,
                     "visible": not c.occluded, "confidence": c.confidence,
                     "label": f"crop at row {c.tile_y}, column {c.tile_x}",
@@ -705,6 +695,11 @@ class StardewRuntime:
                        "isolation_verified": valid,
                        "initial_target_ids": [t["id"] for t in targets], "return_point": "farmhouse_entrance",
                        "targets": targets}
+        if self.screen and not valid:
+            observation['validation_error'] = observation_error
+        selected_copy = getattr(getattr(self.setup_manager, 'session', None), 'classification', None) == 'selected_owner_copy'
+        observation['scene_scope'] = ('visible local farmhouse spring-seed patch; other terrain and crops are outside support'
+                                      if selected_copy else 'frozen engineering farm calibration')
         if valid and isinstance(self.screen.farm, FarmObservation):
             farm = self.screen.farm
             targets = [{"id": t.target_id, "kind": "crop" if t.planted else "debris" if t.state == "debris" else "plot",
@@ -763,6 +758,11 @@ class StardewRuntime:
     def review(self, plan: ConversationPlan) -> dict:
         if self.status in {"running", "stopping"} or self._tick_lock.locked() or (self._worker and self._worker.is_alive()):
             raise StardewAdapterError("pause and obtain fresh review after neutral handback before changing watering scope")
+        for profile, _, nonce, _ in self._qualified_profiles.values():
+            if self.controller and nonce == self.controller.save.nonce:
+                restrict = getattr(profile, 'review_targets', None)
+                if restrict and plan.actions and plan.actions[0].target_ids:
+                    restrict(plan.actions[0].target_ids)
         self.current_plan = plan
         self._review_digest = plan_digest(plan)
         self._review_screen = self.screen
@@ -807,6 +807,9 @@ class StardewRuntime:
         return self._task_state(replace(before, position=q, crops=after.crops)) == self._task_state(after)
 
     def start(self, plan: ConversationPlan, *, background: bool = True) -> dict:
+        from smb3_agent.paths import is_packaged
+        if is_packaged() and (plan.normalized_intent != "farm_routine" or any(action.kind != "water" for action in plan.actions)):
+            raise StardewAdapterError("This candidate enables prepared Day 2 watering only; reconnaissance and wider farm work are unavailable.")
         with self._lock:
             self._require_configured()
             with self._authority_lock:
@@ -828,7 +831,7 @@ class StardewRuntime:
             self._inspection_navigation = None
             farm_task = isinstance(self._review_screen.farm, FarmObservation)
             if plan.ambiguities or plan.unsupported_parts or not plan.actions or (not farm_task and any(a.kind != "water" for a in plan.actions)):
-                raise StardewAdapterError("only unambiguous watering is executable without qualified B4 recognition")
+                raise StardewAdapterError("only unambiguous watering is executable without qualified farm-action recognition")
             if plan.stop_point != "farmhouse_entrance":
                 raise StardewAdapterError("only the reviewed farmhouse entrance return point is supported")
             if self._activate_game is not None:
@@ -840,7 +843,10 @@ class StardewRuntime:
             initial = {c.crop_id for c in current.crops if c.planted}
             requested = [target for action in plan.actions for target in action.target_ids]
             farm_ledger = FarmLedger.from_plan(plan, current) if farm_task else None
-            activity = plan.resource_limits.get("maximum_seconds") == 120
+            seconds = plan.resource_limits.get("maximum_seconds")
+            if seconds is not None and (type(seconds) is not int or not 1 <= seconds <= 180):
+                raise StardewAdapterError("reviewed watering duration must be between 1 and 180 seconds")
+            activity = type(seconds) is int and 1 <= seconds <= 180 and not farm_task
             if activity:
                 if not requested or not set(requested) <= initial or len(set(requested)) != len(requested):
                     raise StardewAdapterError("reviewed watering targets must be unique observed planted crops")
@@ -854,6 +860,13 @@ class StardewRuntime:
                     raise StardewAdapterError("Select the watering can, then request and review again.")
                 if current.tool.watering_can_units < count:
                     raise StardewAdapterError("Refill the watering can yourself, then request a fresh plan; automatic refill is unavailable.")
+                water_reserve = plan.resource_limits.get("minimum_water", 0)
+                water_uses = plan.resource_limits.get("maximum_water_uses", 32)
+                if (type(water_reserve) is not int or not 0 <= water_reserve <= 40
+                        or type(water_uses) is not int or not 0 <= water_uses <= 32):
+                    raise StardewAdapterError("Invalid reviewed watering resource limits")
+                if count > water_uses or current.tool.watering_can_units - count < water_reserve:
+                    raise StardewAdapterError("Selected crops exceed the reviewed water reserve or use limit; request fewer targets and review again.")
                 if cost is None or current.energy - count * cost < reserve:
                     raise StardewAdapterError("The patch exceeds the known energy budget; recover energy or choose a smaller patch and review again.")
             if not farm_task and not activity and (set(requested) != initial or len(requested) != len(initial)):
@@ -908,7 +921,7 @@ class StardewRuntime:
                     self.controller.operator.establish_task(current)
                     self.controller.operator.ledger.requested_crop_ids = tuple(requested)
                 self.controller.authorize_do(current, owner_confirmation=True, input_driver=InputKind.MOUSE,
-                                             expires_at=(datetime.now(timezone.utc)+timedelta(seconds=120 if activity else 600)).isoformat())
+                                             expires_at=(datetime.now(timezone.utc)+timedelta(seconds=seconds if activity else 600)).isoformat())
                 self.current_plan = plan
                 if self.gameplay_agent:
                     if self.gameplay_agent.plan_id != plan.plan_id:
@@ -932,6 +945,9 @@ class StardewRuntime:
         return proposal(self.screen, self.navigator, text, conversation_id)
 
     def propose_recon(self, text, conversation_id, intent):
+        from smb3_agent.paths import is_packaged
+        if is_packaged():
+            raise StardewAdapterError("Reconnaissance is experimental and unavailable in this candidate; native qualification is pending.")
         from smb3_agent.stardew_recon import proposal
         self.observe()
         if self.screen is None or self._planting_observer is None or self.screen.farm is not None:
@@ -1268,6 +1284,13 @@ class StardewRuntime:
                 self._cancel.set()
                 self._retain("outcome", attempt_payload(self.controller.active_attempt))
                 return self.snapshot()
+            if command.purpose == "water_crop" and not farm_task:
+                limits = self.current_plan.resource_limits
+                if current.tool.watering_can_units - 1 < limits.get("minimum_water", 0):
+                    raise StardewAdapterError("reviewed water reserve would be crossed")
+                used = len(ledger.confirmed_watered_ids & set(ledger.task_crop_ids))
+                if used >= limits.get("maximum_water_uses", 32):
+                    raise StardewAdapterError("reviewed watering-use limit reached")
             # Authorization remains exact plan/session; controller still validates kind
             # on every call. Only these two reviewed ordinary kinds are admitted.
             from dataclasses import replace
@@ -1345,12 +1368,21 @@ class StardewRuntime:
             return self.snapshot()
         if action not in {"pause", "stop", "reclaim", "take_control", "cancel"}:
             raise StardewAdapterError("unsupported Stardew control")
+        if self._goal_preparation:
+            self._goal_preparation.stop()
+        self._cancel.set()  # revoke before native cleanup, including failures
+        neutral_failure = None
         if self._preparation_driver:
             self._generation += 1
-            self._preparation_driver.neutralize()
-        self._cancel.set()  # revoke before waiting for terminal commit or any lock
+            try:
+                self._preparation_driver.neutralize()
+                self._preparation_neutral_failure = None
+            except Exception as exc:
+                log_failure(LOGGER, "stardew_preparation_neutralize", exc)
+                neutral_failure = f"preparation input release failed ({type(exc).__name__})"
+                self._preparation_neutral_failure = neutral_failure
+        neutral_failure = neutral_failure or self._preparation_neutral_failure
         self._pending_navigation_observation = None
-        neutral_failure = None
         if self.driver:
             try:
                 self.driver.neutralize()
@@ -1409,6 +1441,7 @@ class StardewRuntime:
                     {"id": "farm", "label": "Verify saved test farm", "status": "complete" if getattr(getattr(self.setup_manager, "session", None), "input_ready", False) else "pending"},
                     {"id": "perception", "label": "Connect verified screen recognition", "status": "complete" if self.observer else "pending"}],
                 "status": self.status, "reason": self.reason,
+                "observation_refresh_timing": getattr(self, '_observation_refresh_timing', None),
                 "evidence_error": self.evidence_error,
                 "session_id": self.controller.save.nonce if self.controller else None,
                 "observation_id": self.screen.observation_id if self.screen else None,
@@ -1418,13 +1451,16 @@ class StardewRuntime:
                 "current_plan": self.current_plan.to_dict() if self.current_plan else None,
                 "reviewed_observation": asdict(self._review_screen) if self._review_screen else None,
                 "preparation_view": self.preparation_view,
+                "goal_preparation": self._goal_preparation.result if self._goal_preparation else None,
                 "cave_result": self.cave_result,
                 "cave_available": self._cave_route is not None,
                 "inspection_result": self.inspection_result,
                 "outcome": outcome, "attempts": ([] if compact else self._retired_attempts) + ([attempt_payload(a, compact=compact) for a in self.controller.attempts] if self.controller else []),
                 "owner": self.controller.operator.owner.value if self.controller else "player",
-                "neutralized": self.controller.operator.input_neutralized if self.controller else True,
-                "handback_confirmed": self.controller.operator.input_neutralized and self.controller.authorization is None if self.controller else True,
+                "neutralized": not self._preparation_neutral_failure and (self.controller.operator.input_neutralized if self.controller else True),
+                "handback_confirmed": not self._preparation_neutral_failure and
+                    not (self._goal_preparation and self._goal_preparation.result.get('status') == 'preparing') and
+                    (self.controller.operator.input_neutralized and self.controller.authorization is None if self.controller else True),
                 "planning_observation": self.planning_context().observation,
                 "setup": (self._engineering_launches[-1][0].status() if self._engineering_launches and not getattr(self.setup_manager, "session", None)
                           else self.setup_manager.status() if self.setup_manager and hasattr(self.setup_manager, "status") else None),
@@ -1483,18 +1519,73 @@ class StardewRuntime:
             try:
                 permission()
                 clock_driver.arm()
-                clock_driver.send(InputCommand(InputKind.KEYBOARD, "escape", "press", 50,
+                clock_driver.send(InputCommand(InputKind.KEYBOARD, "escape", "press", 200,
                     purpose="pause_cave_clock" if paused else "resume_cave_clock"))
                 cave_clock_paused = paused
                 import time
                 time.sleep(0.2)  # Capture the world after the menu transition, never its prior frame.
+                permission()
+                if backend is None and isinstance(profile, PreparedFarmPixelProfile):
+                    from PIL import Image
+                    from smb3_agent.stardew_view_settings import ViewSettingFeatures
+                    current = native.detect_window()
+                    self.setup_manager.require_verified(current)
+                    path = native.capture(current, evidence_root / f"clock-effect-{uuid4().hex}.png")
+                    permission()
+                    menu_visible = ViewSettingFeatures().locate(
+                        Image.open(path).convert('RGB'), 'options-icon', (350,130,1050,205)) is not None
+                    cave_clock_paused = menu_visible
+                    self._retain('clock-effect', {'requested_paused':paused,
+                        'observed_menu_visible':menu_visible,'screenshot':str(path),
+                        'observed_at':native.last_capture_started_at})
+                    if menu_visible != paused:
+                        raise StardewAdapterError('The expected game-owned menu transition was not observed; inspect before fresh review')
             finally:
                 clock_driver.neutralize()
         self._cave_resume_clock = lambda: cave_clock(False)
         self._inference_clock = cave_clock
-        def observe_native(*, refresh_menu=True, cave=False):
+        tool_marker_enabled = False  # Ordinary preparation independently verifies Off.
+        def set_tool_marker(enabled):
+            nonlocal tool_marker_enabled, cave_clock_paused
+            from smb3_agent.stardew_selected_scene import SelectedSceneProfile
+            if backend is not None or not isinstance(profile, SelectedSceneProfile) or tool_marker_enabled == enabled:
+                return
+            from smb3_agent.stardew_view_settings import normalize_view
+            generation, running = self._generation, self.status == 'running'
+            def permission():
+                if generation != self._generation:
+                    raise StardewAdapterError('Tool marker transition canceled')
+                if running:
+                    self.require_authority()
+            setting_driver = MacOrdinaryInputDriver(window_provider=native.detect_window,
+                isolation_guard=self.setup_manager.require_verified,authority_guard=permission)
+            result = {}
+            self._preparation_driver = setting_driver
+            try:
+                if not enabled:
+                    self._cancel.wait(.85)  # Let the reviewed can animation settle with neutral input.
+                    permission()
+                normalize_view(native,setting_driver,isolation=self.setup_manager.require_verified,
+                    authority=permission,root=evidence_root,cancel=self._cancel,result=result,
+                    tool_marker=enabled,marker_only=True)
+                tool_marker_enabled = enabled
+                cave_clock_paused = False
+            finally:
+                verified = [step for step in result.get('view_setting_steps',[])
+                            if step['action'] == 'tool_hit_verified']
+                if verified:
+                    tool_marker_enabled = verified[-1]['enabled']
+                if result.get('menu_open_observed') and not result.get('menu_closed_verified'):
+                    cave_clock_paused = True
+                setting_driver.neutralize()
+                if self._preparation_driver is setting_driver:
+                    self._preparation_driver = None
+                self._retain('tool-marker-transition',result)
+        def observe_native(*, refresh_menu=True, cave=False, marker_for_aim=False):
             if not cave:
                 cave_clock(False)
+                if not marker_for_aim:
+                    set_tool_marker(False)
             current = native.detect_window()
             if (current.process_id, current.process_started_at, current.window_id) != expected:
                 raise StardewAdapterError("configured process/window changed")
@@ -1504,6 +1595,8 @@ class StardewRuntime:
                 # It cannot click, select a tool, or restore gameplay authority.
                 generation, running = self._generation, self.status == "running"
                 def observation_permission():
+                    if self._goal_preparation and self._goal_preparation.result.get("status") == "preparing" and self._goal_preparation.cancel.is_set():
+                        raise StardewAdapterError("Preparation observation canceled.")
                     if generation != self._generation:
                         raise StardewAdapterError("observation pointer was canceled")
                     if running:
@@ -1605,6 +1698,24 @@ class StardewRuntime:
             from PIL import Image
             import time
             refreshed = None
+            from smb3_agent.stardew_selected_scene import SelectedSceneProfile
+            if backend is None and isinstance(profile,SelectedSceneProfile) and not tool_marker_enabled:
+                set_tool_marker(True)
+                refreshed = observe_native(marker_for_aim=True)
+                self._validate(refreshed,allow_player_occlusion=True)
+                if not self._task_unchanged(before,refreshed):
+                    raise StardewAdapterError('Task changed during the observed tool marker transition')
+                before = self.screen = refreshed
+                pointer = MacOrdinaryInputDriver(window_provider=native.detect_window,
+                    isolation_guard=self.setup_manager.require_verified,authority_guard=self.require_authority)
+                try:
+                    pointer.arm()
+                    pointer.expected_pointer_window = native.detect_window()
+                    pointer.send(InputCommand(InputKind.MOUSE,'move','move',0,
+                        target=command.target,purpose='observe_farm_aim'))
+                finally:
+                    pointer.neutralize()
+                current_window = native.detect_window()
             if farm_profile:
                 # Full backpack observation temporarily opens a menu. Perform
                 # it before the final aiming frame, then restore the requested
@@ -1709,22 +1820,7 @@ class StardewRuntime:
             # already verified process before looking for its on-screen window.
             # This explicit observation/Start hook never runs during agent input.
             if backend is None:
-                from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSApplicationActivateAllWindows
-                app = NSRunningApplication.runningApplicationWithProcessIdentifier_(expected[0])
-                if app is None:
-                    raise StardewAdapterError("the verified game process is unavailable")
-                app.unhide()
-                if not app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows):
-                    raise StardewAdapterError("could not show the verified game; select its window and retry")
-                import time
-                for retry in range(20):
-                    try:
-                        current = native.detect_window()
-                        break
-                    except StardewAdapterError:
-                        if retry == 19:
-                            raise
-                        time.sleep(.025)
+                current = native.activate_window()
             else:
                 current = native.detect_window(require_foreground=False)
                 if not current.foreground:
@@ -1778,17 +1874,31 @@ class StardewRuntime:
         return self.observe()
 
     def close(self) -> None:
-        self.control("stop", reason="companion closed")
+        failures = []
+        try:
+            self.control("stop", reason="companion closed")
+        except Exception:
+            failures.append("Stardew stop or outcome retention unconfirmed")
         guardian = getattr(getattr(self, "driver", None), "external_guard", None)
         if guardian is not None:
-            guardian.close()
-        import subprocess
-        # Popen handles belong only to namespaces launched by this runtime.
-        # Do not discover or terminate other game processes or personal sessions.
+            try:
+                guardian.close()
+            except Exception:
+                failures.append("Stardew independent input release unconfirmed")
+        # Continue every independent cleanup even when another owner fails.
         for launch, process in self._engineering_launches:
-            if process.poll() is None:
-                process.terminate()
-                try:
+            try:
+                if process.poll() is None:
+                    process.terminate()
                     process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    raise StardewAdapterError("Isolated game did not close; inspect its retained process record")
+            except Exception:
+                failures.append("Isolated game closure unconfirmed; inspect retained process record")
+            finally:
+                watchdog = getattr(process, "_gc_watchdog", None)
+                if watchdog is not None:
+                    try:
+                        watchdog.close()
+                    except Exception:
+                        failures.append("Isolated game watchdog closure unconfirmed")
+        if failures:
+            raise StardewAdapterError("; ".join(failures))

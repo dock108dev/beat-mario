@@ -13,7 +13,7 @@ it does not qualify wider activities or packaged delivery.
 | Gameplay decisions | companion_ai.WateringAgent, mario_strategy, stardew_recon | Model-selected finite skills, expected effects and independently observed replanning through adapter runtimes |
 | Skill validation/control | takeover, Mario Lua, stardew_companion/input/runtime | Composable finite skills under existing independent authority/release |
 | Memory | learning, run_library, custom_variants and discussion stores | Contextual retrieval and evidence that guidance changes a later decision |
-| Product/delivery | catalog, player_setup/store, app_runtime, delivery/readiness | Both-game/provider setup, app-owned assets and new beta criteria |
+| Product/delivery | catalog, player_setup/store, app_runtime, delivery/readiness | Both-game/provider setup, app-owned assets and readiness criteria |
 
 A real model decision must reach the controller and receive an independently observed effect. Do not duplicate native input owners or label an existing deterministic planner as the new AI layer.
 
@@ -91,29 +91,30 @@ Why this is authoritative: Hashes the active nonignored source including
 uncommitted files; HEAD alone is insufficient.
 Known callers: `delivery.py`, beta-readiness inspection.
 
-## Enforcement and removal decisions
+## Ordinary-session and delivery ownership
 
-- Planner and runtime now consume the same traversal table. Removed separate
-  primitive/path/stop definitions, duplicate hop-limit validation, and the
-  runtime's duplicate advertised speed list.
-- Deleted runtime `BOUNDARIES`: no caller in source, tests, scripts, or config.
-- Removed flat `action.primitive_id` and primitive-as-action-kind compatibility.
-  Current planner and runtime fixtures produce `kind: mario_traverse` with
-  `parameters.primitive_id`; no supported producer of the aliases was found.
-  Noncanonical actions now fail runtime validation. Historical artifacts were
-  excluded from deletion and remain readable as evidence, not executable plans.
-- Kept typed-plan/dictionary conversion and Mario game-name aliases: current
+`stardew_setup.py` owns default discovery, selected-save isolation and preservation checks. `stardew_preparation.py` owns bounded observed preparation; `stardew_view_settings.py` verifies actual settings transitions; `stardew_selected_scene.py` owns current visible patch/terrain/footprint recognition. `stardew_runtime.py` composes those owners with guarded resource/effect reconciliation and independent cancellation. The frozen prepared-farm path remains separate.
+
+`delivery.py`, `candidate_resources.py`, `release_resources.py` and `paths.py` bind read-only resources and writable state. Recursive packaged-path relocation is private to `release_resources.py`; each calibration profile passes its own eligibility/hash checks before relocation. `app_lifecycle.py` and `process_watchdog.py` own lifecycle/owned-child cleanup. `scripts/build_private_beta.py` and `scripts/install_private_beta.py` preserve exact packages, stable signing and installed identity. Module ownership is implementation information; [current engineering status](current-engineering-status.md) owns candidate acceptance.
+
+## Compatibility and maintenance boundaries
+
+- Planner and runtime consume the same traversal table. Canonical actions use
+  `kind: mario_traverse` and `parameters.primitive_id`; flat primitive fields and
+  primitive-as-kind aliases fail runtime validation. Historical artifacts remain
+  readable evidence, not executable plans.
+- Retain typed-plan/dictionary conversion and Mario game-name aliases: current
   planner, catalog, runtime tests, and saved-plan inspection use these boundaries.
-- Kept CLI Mednafen diagnostics and experimental adapter conformance scaffolding:
+- Retain CLI Mednafen diagnostics and experimental adapter conformance scaffolding:
   README and CLI expose these as supported diagnostic/inspection workflows;
   they do not establish live adapter qualification.
-- Kept historical scenario contracts and disabled execution declarations:
+- Retain historical scenario contracts and disabled execution declarations:
   beta inspection and retained evidence rely on versioned contracts. A false
   execution declaration describes capability; it is not proof of unreachable code.
-- Kept separate launch ownership for Mario and Stardew. They retain different
+- Retain separate launch ownership for Mario and Stardew. They retain different
   owned child handles and input cleanup obligations; unifying them requires a
   separate lifecycle review and focused failure coverage.
-- Kept environment/file preference resolution at current entry points. Before
+- Retain environment/file preference resolution at current entry points. Before
   removing alternate configuration paths, compare explicit CLI argument,
   environment, and saved-preference precedence for each supported launcher.
 - The FCEUX Lua controller still enforces its native input boundary independently.
@@ -126,7 +127,7 @@ Known callers: `delivery.py`, beta-readiness inspection.
 three removed action spellings. `tests/test_request_planning.py` exercises real
 planner outputs through runtime validation for all four supported combinations.
 `tests/test_conversation_service.py` protects ordinary plan/revision callers.
-No live game, owner save, package, or release qualification is part of this pass.
+These tests establish offline contracts, not native gameplay qualification.
 
 ## Experimental Mario coin accounting and selection
 
@@ -140,11 +141,11 @@ Why this is authoritative: Versioned cartridge-bound player action/state traces,
 Known callers: Ordinary `/mario` conversation API/UI and retained outcome history.
 
 
-## October 5 SSOT enforcement pass
+## Shared executable, inference and input boundaries
 
 Domain: FCEUX executable eligibility and resolution
 SSOT module/file: `src/smb3_agent/executable_discovery.py` (`discover_fceux`, `require_fceux`)
-Why this is authoritative: Setup and every Python FCEUX launch now use PATH-first, bounded Finder discovery. Missing discovery explicitly refuses launch rather than trying an unresolved name. Harness failures retain an execution receipt; live/Show refuse before creating session artifacts when discovery is missing.
+Why this is authoritative: Setup and every Python FCEUX launch use PATH-first, bounded Finder discovery. Missing discovery explicitly refuses launch rather than trying an unresolved name. Harness failures retain an execution receipt; live/Show refuse before creating session artifacts when discovery is missing.
 Known callers: `mario_product.first_use_state`, `LiveObservationManager.start`, `show.run_show_demonstration`, `fceux_harness.run_fceux_1_1`, default reliability/watchable preflight.
 
 Domain: Ordinary Mario/Stardew model inference and language
@@ -167,16 +168,12 @@ SSOT module/file: `src/smb3_agent/native_input.py`, `native_host.py`, `host_cont
 Why this is authoritative: Shared bounded native input/window owners implement release and selected-window guards. Stardew wrappers specialize game errors and purposes rather than duplicate input.
 Known callers: Stardew input/runtime and native Minecraft/OpenTTD providers.
 
-Removed paths: live observation's `discover_fceux() or "fceux"` fallback, bare-name Show/harness launch commands, and default PATH-only reliability resolver. No complete module was deleted. Existing shared setup discovery was retained.
+Tests: `tests/test_executable_discovery.py` intercepts all three launch paths, checks missing discovery refuses input, verifies failure receipts and default reliability preflight, and protects PATH/Finder precedence. Live-detach and Show-timeout fixtures pin synthetic discovery. Tests use disposable game bytes, never an owner game/save or real emulator.
 
-Tests: `tests/test_executable_discovery.py` intercepts all three launch paths, checks missing discovery refuses input, verifies failure receipts and default reliability preflight, and protects PATH/Finder precedence. The existing live-detach and Show-timeout fixtures now pin synthetic discovery. Tests use disposable game bytes, never an owner game/save or real emulator.
-
-Retained boundaries and follow-up decisions:
+Supported interfaces and compatibility constraints:
 
 - Mednafen diagnostic CLI, OpenTTD/Ollama reference provider and Experimental fixture adapters are explicitly exposed workflows, not alternative implementations of the ordinary Mario/Stardew model roles.
 - Deterministic controller planning and supported older activities remain used by `LanguageSession._apply` through service dispatch; removing them would delete advertised coin/flight/farm capabilities. Provider-less service construction remains a direct engineering/test interface, not an ordinary-app outage fallback. Decommissioning that interface requires a caller/fixture migration separate from this executable pass.
 - Minecraft aim/move/place/wall remain refused by `CHECKED_FEATURES` at review/start. Their unfinished native implementations and versioned contracts support pending roadmap work and retained evidence. A separate Minecraft scope decision must either qualify those families or remove their implementation, declarations and contributor tests together; false flags do not advertise working gameplay.
 - Reliability's explicit resolver injection remains for synthetic component checks; default production resolution uses the shared discovery module. Native Lua checks remain independent protocol/controller guards.
 - Namespace aliases, typed-plan conversions, game-specific input wrappers, launch cleanup owners and historical contracts retain the rationale above. None restores authority from storage.
-
-This is a source maintenance pass over identified executable-policy conflicts and current documentation. It does not claim every repository subsystem has been exhaustively deduplicated or that the resulting source has new live, package or owner acceptance.

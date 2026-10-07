@@ -1,5 +1,7 @@
 # GC3 Farm Cave entrance reconnaissance — October 4, 2026
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 ## Documentation-pass status clarification — October 4
 
 Newer retained local artifacts include an installed actual-live cave route and a manual tool-free round-trip record in `artifacts/gc3-cave/20261004-completion/manual-route-qualification.json`. That record explicitly has `ordinary_activity_verified=false`; its baseline/final show 15 dry crops, energy 270 and water 40 with manual handback, no tools/clearing/door entry/save. This is existing manual-route evidence read during the documentation pass, not new gameplay performed here.

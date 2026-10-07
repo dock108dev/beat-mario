@@ -1,4 +1,4 @@
--- B2 bounded session plan controller. Only ordinary joypad input; no state writes.
+-- Bounded session plan controller. Only ordinary joypad input; no state writes.
 -- gui.register also runs during paused redraws, so reclaim and wall-clock expiry
 -- do not depend on advancing an emulated game frame.
 local directory = assert(os.getenv("SMB3_B2_DIRECTORY"))

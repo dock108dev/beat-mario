@@ -1,5 +1,7 @@
 # Personal-pilot engineering packet — B series
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 > Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
 
 Current entry updated October 3, 2026. This packet retains the narrower B0–B9 contracts and engineering foundation. New work follows [product direction](product-direction.md), the [private-beta engineering plan](private-beta-engineering.md) and [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md): conversational Mario coaching/route learning, then Stardew activity delegation and an identified two-game beta. Minecraft develops during beta; advanced-user no-code onboarding follows implementation of the first two experiences. The historical contracts below do not establish those new requirements as implemented.

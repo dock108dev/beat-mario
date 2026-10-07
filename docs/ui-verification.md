@@ -8,6 +8,16 @@ Inspect supported screen sizes, keyboard focus, draft preservation and long
 conversation. Fixture/browser checks, native gameplay and packaged interaction
 are separate evidence classes. The records below retain exact source identities.
 
+## October 6 current-source presentation cleanup
+
+Matched synthetic comparisons and the diff from the starting working tree are retained at `artifacts/ui-clarity-20261006/review.html`. This pass preserves the installed candidate.35, frozen packages, previous evidence and owner state. The source changes have not been packaged or given native/owner acceptance.
+
+At 390×844, with permissions and sign-in ready, the first game-selection button moved from y=1,026 to y=658; desktop y moved from 705 to 585. Missing or unknown permission help stays open. Stardew's source empty-state page fell from 3,283 to 3,063px by grouping detailed support requirements; reviewed-plan Start placement is unchanged. Mario speed settings use a disclosure while requested/applied speed remains visible; adaptive results keep arrival, coaching uncertainty, input release and control return visible, with full receipts in details. These fixture measurements do not establish a usability percentage or that every action fits the first viewport.
+
+85 existing focused tests passed (two HTTP tests excluded to avoid real provider/storage initialization), plus Ruff, Python/JavaScript syntax and whitespace checks. Sixteen matched source specimens per revision at 1440×900 and 390×844, eight packaged-render specimens, and additional permission/result/error states were inspected. Form actions, input values and control hooks are unchanged; IDs are unique. Keyboard disclosures/focus, 200% text, drafts through polling, earlier history, partial/completed and zero results, stale-update warnings and reachable Stop passed. The preview initially omitted the sign-in script and returned JSON to the legacy HTML workspace poll. Both fixture responses were corrected and comparisons recaptured before closeout. HTTP failures in the actual sign-in poll now show unavailable feedback and recover on a successful response.
+
+Full canonical gate, real model/game, installed executable, screen readers, physical browsers and owner acceptance were not run. The packaged-render branch is synthetic layout evidence, not packaged-app qualification. October 5 and older images below are historical. Remaining narrow-screen plan scrolling and final-candidate native control/exit qualification need separate follow-up.
+
 ## October 5 current-source presentation cleanup
 
 Synthetic render/browser evidence is retained locally in `artifacts/ui-clarity-20261005/review.html`, with before/after source snapshots, identical fixtures, screenshots and measurements. These before images were captured at the start of this pass; older September images below remain historical. No owner data, game process, model call, installed build or frozen package was used.

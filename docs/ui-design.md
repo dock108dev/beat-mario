@@ -23,6 +23,8 @@ CSS is embedded by the page renderers to preserve the content-security policy an
 
 `player_setup_ui.py` renders `/setup`, `/minecraft` and `/help` with its own embedded styles. Minecraft setup progress appears before the setup forms and comes from `player_onboarding.py`: save profile, connect/calibrate, check the building region, then review/run the available task. Available and unfinished task families are named separately, using current runtime flags. Direct Stop, Take control and Quit remain above the workflow. Setup and camera connection alone leave building marked unavailable while its feature flag is disabled.
 
+The game chooser keeps permission/sign-in status and the inference notice visible, with permission help open when access is missing or unknown. Routine setup instructions use a named disclosure; engineering links follow game selection. Mario keeps requested/applied speed visible while its speed selector uses a disclosure. Current adaptive-play results describe the observed endpoint, coaching uncertainty and control return; full controller receipts remain in session details. Stardew setup keeps copy preservation and separate preparation/watering approval visible, with detailed supported-scene requirements beside it in a disclosure.
+
 ## Visual checks
 
 Check the affected screens at supported sizes, including keyboard focus, long content, disabled actions and error recovery. Existing review records are in [UI verification](ui-verification.md).

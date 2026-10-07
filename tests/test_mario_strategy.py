@@ -46,6 +46,15 @@ def test_wire_scope_and_canceled_native_boundary(tmp_path):
         runtime_fields(p)
 
 
+def test_reviewed_duration_reaches_native_authority_wire():
+    p = adaptive_plan()
+    p['resource_limits'] = {'maximum_seconds_per_attempt': 35}
+    assert runtime_fields(p)['strategy_seconds'] == 35
+    p['resource_limits']['maximum_seconds_per_attempt'] = True
+    with pytest.raises(ValueError, match='duration'):
+        runtime_fields(p)
+
+
 def lua_strategy(tmp_path, monkeypatch, *, expanded=False):
     directory = tmp_path / "b2"
     directory.mkdir()
@@ -469,3 +478,25 @@ def test_wait_advances_bounded_frames_with_neutral_input(tmp_path, monkeypatch):
     assert not any(bool(lua.globals().held[k]) for k in ['A','B','left','right','down','up'])
     lua.execute('for i=1,8 do frame=frame+1; M.strategy_step(held) end')
     assert lua.globals().paused and lua.globals().M.strategy_frames==8
+def test_segment_completion_requires_native_arrival_neutral_ack_and_review_pause():
+    from types import SimpleNamespace
+    from smb3_agent.mario_segment import completed_segment
+    events = [{'event':'segment_arrival_observed','frame':'100','x':'700','alive':'1','grounded':'1'}]
+    pause = SimpleNamespace(session_id='current',actor='player',buttons=(),
+        takeover_detail='player_review_pause',frame=102,x=703,air=0,lives=4,player_is_dying=0)
+    def result(samples=(pause,),**changes):
+        options = {'terminal':'completed_stop','neutral_ack':True,'neutralized':True}
+        options.update(changes)
+        return completed_segment(events,samples,100,'current',**options)
+    assert result()['requested_objective_satisfied'] is True
+    assert result(samples=())['requested_objective_satisfied'] is None
+    assert result(neutral_ack=False)['requested_objective_satisfied'] is None
+    assert result(neutralized=False)['requested_objective_satisfied'] is None
+    pause.buttons = ('right',)
+    assert result()['requested_objective_satisfied'] is None
+    pause.buttons = ()
+    pause.session_id = 'old'
+    assert result()['requested_objective_satisfied'] is None
+    pause.session_id = 'current'
+    events[0]['grounded'] = '0'
+    assert result()['requested_objective_satisfied'] is None

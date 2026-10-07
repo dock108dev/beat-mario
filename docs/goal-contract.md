@@ -1,18 +1,18 @@
 # Goal Contract
 
-## Contextual intent and gameplay goals — planned integration
+## Contextual intent and gameplay goals — implemented bounded integration
 
-This document's route/event contracts remain the historical and implemented outcome predicates. GC-A0/A2/A5 in the [engineering plan](private-beta-engineering.md) add a contextual objective contract above them: desired outcome, grounded targets, constraints/preferences, observable success, unknown prerequisites and current progress.
+This document's route/event contracts remain the historical and implemented outcome predicates. The contextual language/gameplay owners named in [SSOT](ssot.md) implement a contextual objective contract above them: desired outcome, grounded targets, constraints/preferences, observable success, unknown prerequisites and current progress.
 
 The language role preserves the requested goal even when a capability is missing. The gameplay role decomposes and pursues supported subgoals using actual skills and fresh state. Current route stops and reward/tile checks remain independent proof of effects. An inferred goal, plan explanation or distance alone cannot replace a game-owned finish or reward predicate.
 
-Engineering chooses the new schema and adapter lowering. Historical goal IDs and accepted-route invariants below retain their meaning; a new AI beta readiness contract must name its own capabilities and evidence.
+Typed language intent and adapter validation lower requests to supported finite activities. Historical goal IDs and accepted-route invariants below retain their meaning; a new AI beta readiness contract must name its own capabilities and evidence.
 
 Mario route-goal reference. These versioned route contracts define their selected diagnostic or gameplay objective. The [private-beta engineering plan](private-beta-engineering.md) owns application release scope.
 
 A goal contract is the machine-readable source of truth for a selected Mario route objective.
 The default Route Lab contract remains
-`data/goals/world_8_double_whistle.yaml`. Rank 28 adds the explicitly selected
+`data/goals/world_8_double_whistle.yaml`. A separately selected goal uses
 `data/goals/world_8_big_tanks.yaml` contract without changing that default.
 `data/goals/world_8_battleships.yaml` supplies a separately selected cumulative extension.
 
@@ -111,7 +111,7 @@ segments fail validation.
 - Only `post_probe_world_8_map_arrival` can be the final success event.
 - Planned segments are never rendered or reported as solved.
 
-## Rank 28 composed contract
+## Composed tank-route contract
 
 The Big Tanks goal declares the accepted default goal as its prefix and owns
 only the new segment:

@@ -1,4 +1,4 @@
-"""GC3 synthetic behavior checks; no real-game evidence."""
+"""Synthetic watering behavior checks; no real-game evidence."""
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 

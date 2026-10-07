@@ -1,12 +1,37 @@
 # Mario player guide
 
-## Current abilities and the private-beta target
+Start with [launch and first use](../README.md#launch-and-first-use), then choose
+Mario at `/mario`. Setup must find FCEUX and a supported local game file. Select
+its path in setup or set `SMB3_GAME_FILE`. Confirm your emulator controls before
+opening a fresh disposable session and entering World 1-1 through normal menus.
 
-The ordinary source app uses Codex to understand your wording and a separate gameplay role to choose finite maneuvers. Ask to play the early World 1-1 segment, specify preferences and an attempt limit, choose **Apply change** to review, then **Start reviewed plan**. The experimental goal is x=700, alive and grounded. The model sees paused game images and native progress, predicts effects, then chooses again; the controller owns input timing. It may stop early on unsafe state, inference failure or exhausted limits. Arrival is reported only when independently observed.
+## Play the early segment
 
-For example, ask for short 8-frame hops on clear flat ground, longer running jumps for obstacles, or intermediate landings on visible raised blocks. A high-hop-on-flat trial failed near an enemy; that preference is not qualified as reliably completing. Ask to remember a correction for future compatible segments. **Remembered Mario guidance** shows active or superseded advice. A later compatible plan retrieves it; outcomes distinguish requested advice, matching native application receipts and unknown improvement. Current facts and fresh instructions take priority. **Reset future guidance** resets future advice while retaining historical attempts. Questions grant no input.
+Ask for a finite early-segment attempt, specify preferences and limits, review
+the proposed scope, then Start. The model sees paused game images and native
+progress and chooses finite maneuvers; controllers own input timing. Supported
+completion requires an alive grounded x≥700 endpoint, independent neutral
+acknowledgment and a game-owned review pause. Each attempt allows at most 32
+decisions, 1200 skill frames and 480 seconds, further narrowed by review.
+Unsafe state, inference failure or exhausted limits can stop it early.
 
-Each segment attempt permits at most 32 decisions, 1200 skill frames and 480 seconds; the reviewed finite attempt count and retry expiry still apply. **Stop** and **Take control** release input and cancel pending inference. After cancellation, open a fresh attempt and request/review a new goal. Saved history reopens without restoring a plan or control. Codex inference is remote; the app and game controls run locally. The final native engineering set completed 3/3 supported segments, including a raised-block preference trial. Full-level adaptive completion, complete coin coverage and broad reliability remain unverified. Existing coin routes and flight/reward controllers retain their separate scopes. See [verification](gc-ai-loop-verification.md). Recording remains deferred to tentative beta v2.
+Ask to remember advice for compatible future segments. Request a fresh plan after
+storing guidance so it appears in review. Start validates compatible current
+guidance; Review does not attach newly stored advice to an already-built plan.
+Remembered guidance can be reset for future use while historical attempts remain.
+Stored advice, matching application receipts and improvement are separate results.
+
+Stop/Take control cancels pending inference and releases input. After cancellation
+or changed context, obtain fresh observation and review. Reopening restores
+history without plan or control authority. Remote Codex inference is separate
+from local game control. Full-level adaptive completion and complete coin
+coverage remain unverified. See [known limitations](known-limitations.md).
+
+## Other source activities
+
+The following controllers have separate supported entry conditions and retained
+source evidence. They do not establish support in every packaged build; check
+the build's manifest and [qualification record](current-engineering-status.md).
 
 ## Fly to the sky hidden 1UP
 
@@ -30,21 +55,16 @@ Current source observed the stairs and pipe continuation reaching the World 1-1 
 
 ## Recording limitations
 
-Player-controlled recording, demonstration playback and the attended stairs walkthrough are deferred to a later beta, tentatively beta v2. Preserve the implemented source and evidence; real demonstration gameplay remains unverified. Recording is optional future work and is not an initial-beta requirement or a gate for current development. No owner recording session is needed now.
+Player-controlled recording and demonstration playback are experimental. Real demonstration application remains unverified. Treat recording and playback as experimental source features.
 
 This guide describes the source adapter. Current source documentation does not
 establish a packaged app's abilities; use that app's versioned manifest for its
 supported features. Full coin coverage, arbitrary strategies and generalized
 learning remain unsupported.
 
-Start with [launch and first use](../README.md#launch-and-first-use), then choose Mario. The ordinary conversation workspace is at `/mario`; the Lab is for engineering.
-
-Before opening a session, the setup card must recognize a supported local game file and find FCEUX. If needed, select the local game-file path through first-use setup; the saved selection or `SMB3_GAME_FILE` supplies it on later launches. Confirm normal keyboard/controller mapping for player control. A missing file, unsupported identity or unavailable emulator must be resolved in setup; repeated launch does not bypass the check.
-
 ## Let me show you: record a route or segment
 
-The following records the implemented source workflow for later beta work. It is
-not required for the initial private beta, and no recording session is needed now.
+The following describes the experimental source workflow. It has not been qualified through ordinary native demonstration play.
 
 The current source **Let me show you** card supports alive World 1-1 route segments. Your input controls Mario throughout recording. Check your usual FCEUX keyboard/controller mapping first.
 
@@ -56,13 +76,7 @@ The current source **Let me show you** card supports alive World 1-1 route segme
 6. Watch the balanced approach and recorded sequence. The result reports whether demonstration input was applied, how many frames were followed, whether the segment end was observed, why it stopped and whether inputs were released. Observe whether Mario actually passes the earlier failure; sequence application alone does not establish improvement.
 7. **Stop**, **Take control**, or **Stop using demonstration** interrupts playback. Rename/change its lesson with **Save name and lesson**, or **Delete demonstration** to remove future availability. Previous application outcomes and raw session evidence remain.
 
-The companion follows recorded buttons frame by frame once position, motion, form, air and level/map state match. It stops at the segment end, on drift/death, or after the three-minute attempt limit. Different enemies and timing can prevent entry or success; it does not infer a general stair-climbing skill. Only World 1-1 is currently supported. Reopening restores saved demonstrations/results, never recording or permission to play. Real gameplay and the owner's demonstration experience for this source slice are still pending; these instructions require no engineer-created recording or file edits.
-
-## Deferred demonstration verification
-
-No stairs demonstration has been recorded or applied in the retained verification. When recording returns to scope in a later beta, the walkthrough is: open disposable Mario, release to player control, enter World 1-1, reach the approach to the stairs, record, demonstrate, stop, review and save **Climb the stairs**. Stop the recording while alive after the useful move. The start may need adjustment after comparing the actual companion approach; the player should not match hidden controller conditions. This is not the current engineering or owner action.
-
-Next, open a fresh attempt, review/use the saved example and explicitly Start. Observe entry, actual recorded input, stairs traversal and whether it passes the earlier failure separately. Retain a refused or failed example; diagnose the trace and entry before changing alignment or drift guards. Interrupt a separate approved attempt with Take control and confirm handback. Reopen Companion and review the saved example/result with no resumed play. Enemy timing is not synchronized; a compatible entry does not guarantee the same outcome.
+The companion follows recorded buttons frame by frame once position, motion, form, air and level/map state match. It stops at the segment end, on drift/death, or after the three-minute attempt limit. Different enemies and timing can prevent entry or success; it does not infer a general stair-climbing skill. Only World 1-1 is currently supported. Reopening restores saved demonstrations/results, never recording or permission to play. Ordinary native demonstration application remains unverified.
 
 ## Discover a World 1-1 coin route
 
@@ -87,7 +101,7 @@ This experimental practice does not complete World 1-1, find all coins or learn 
 
 ## Review and Start
 
-Choose the existing base, **Quickest**, or **100% clear**, or type a request. All initially load the same existing `world_8_finish_game` base. Quickest is an existing-base fallback, not an optimized route; full-completion coverage remains unknown. Review the actual path and stop, not just the requested objective.
+Choose the existing base, **Quickest**, or **100% clear**, or type a request. All load the same existing `world_8_finish_game` base. Quickest is an existing-base fallback, not an optimized route; full-completion coverage remains unknown. Review the actual path and stop, not just the requested objective.
 
 This fallback is a current product gap. It does not satisfy a request to find or train a 100% coin route. The revised beta must explain unknown coverage and offer actual supported exploration or a clear blocked result, rather than treating an unchanged base route as fulfillment.
 
@@ -129,35 +143,10 @@ A completed opening stop means that bounded stop completed; it does not mean the
 
 The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits.
 
-## Broader coached-play requirements
+## Provider and setup recovery
 
-The supported cases above remain current source behavior. The initial AI private
-beta must add contextual interpretation and actual gameplay decisions within a
-clearly described Mario scope:
-
-| Player intention | Required AI experience |
-| --- | --- |
-| Explore a coin route or improve a section | Reason from the visible level, mechanics and remembered attempts; choose a useful approach, observe the result and revise it. Explain the declared collection scope and unknown coverage. A completed route does not establish every coin. |
-| Coach a movement or timing decision | Resolve the relevant event from the conversation and current play, explain the adjustment and show when it actually reaches the controller. Compare observed results honestly. |
-| Pursue a supported flight reward | Understand the destination, ability and current conditions, choose an executable approach and distinguish flight, reward revelation and collection. |
-| Interrupt or change the goal | Release input promptly, preserve what happened, and discuss a revised plan. Old work must not restart after Stop. |
-
-Examples in this guide illustrate intent; they are not a required vocabulary.
-Private-beta acceptance requires varied wording and a meaningful changed gameplay
-condition without a phrase-specific or route-specific patch. Mario's fast
-controller must keep playing the current approved task safely while the slower
-reasoner is working; a late decision cannot be applied to a missed event.
-
-The companion must retain discoveries, coaching, decisions and outcomes so they
-affect compatible future attempts. Reopening restores that history without
-restoring gameplay permission. Ordinary experiments remain separate from
-historical accepted routes. Full coin-universe coverage, broader game support,
-independent training and recording remain separately labeled work. The
-[integration contract](b2-integration-contract.md) defines the AI and gameplay
-completion checks; source results alone do not establish a released package.
-
-## Integrated source setup — October 5
-
-Start at the game catalog to check Codex and macOS permissions, then open **Set up Mario and open a disposable session**. Select your supported local game file, confirm the FCEUX input mapping and open a fresh session through the existing first-use controls. Setup changes return to the Mario setup panel. FCEUX discovery checks the launch environment and the standard Homebrew/local executable locations so readiness and launch use the same installed program. No game file or emulator is bundled by these source changes.
-
-**Refresh Codex readiness** checks existing sign-in after login or connectivity recovery. Credentials remain with Codex. Remote inference receives selected game context/images; controllers, approvals and input release remain local. Reopening or switching games restores no gameplay authority. Source and exact-package evidence remain separate.
+Refresh Codex readiness after sign-in or connectivity recovery. Credentials
+remain with Codex. Selected context/images go to remote inference; controllers,
+review and input release remain local. FCEUX discovery uses PATH and supported
+Homebrew locations. No emulator or game file is bundled. Reopening or switching
+games restores no gameplay authority.

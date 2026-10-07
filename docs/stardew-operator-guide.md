@@ -1,14 +1,45 @@
 # Stardew companion guide
 
+## Ordinary farm workflow
+
+Launch from the [source quickstart](../README.md#launch-and-first-use) or your
+installed local app, then choose Stardew. Select a supported discovered default
+save, or explicitly select a save folder, and approve an isolated copy. The
+original is preserved. Choose **Prepare this copy for watering**; the app observes
+title/load/bedroom transitions, confirms view settings, selects the basic can and
+verifies visible crops, resources and reachable terrain. See the
+[app quick start](private-beta-quick-start.md#stardew-ordinary-farm).
+
+Discuss the dry crops and constraints, correct targets or exclusions, then Review
+and Start. Read confirmed crop effects, resource use, farmhouse return and neutral
+handback separately. Watering defaults to 120 seconds; an explicit limit up to
+180 seconds includes return. Stop/Take control cancels pending inference and
+movement. Wait for handback; cancellation requires a fresh request and review.
+Saved results reopen without connection, plan or input authority.
+
+Support requires the standard spring farmhouse, supported blue clothing/basic
+can, exact readable resources and 1–15 visible newly planted seeds with recognized
+clear approaches and return. Uncertain ground, resources or aim stop input.
+Arbitrary farms, mature crops, automatic refill, upgraded tools and cave delegation
+remain unsupported or unqualified. See [known limitations](known-limitations.md).
+
+## Prepared-profile source workflows
+
+The following separate engineering workflows use retained Day 2/Day 5 farms and
+calibration profiles. They require those local assets; a fresh clone does not
+include them. Manual preparation controls, named seeds and fixed routes are not
+ordinary default-save setup instructions. Their evidence belongs to the named
+source/profile, not every later build.
+
 ## Reconnaissance — native acceptance pending
 
 On the supported prepared Day 2 farm, you can request an investigation such as “Compare bare ground below the mailbox with the eastern crop margin; inspect the porch first and use that finding to decide whether another view helps.” Read the displayed allowed views, preferences, five-minute/six-decision bound and farmhouse return, then **Review scope → Start reviewed work**. The model chooses separate observations and viewpoint visits within the existing qualified corridors. A variation can ask for eastern vegetation only and skip porch inspection; the farmhouse return remains required.
 
-These new source activities have automated and actual-model simulated evidence; their ordinary native walkthrough is still pending. The setup trial refused changed window geometry before recognition was connected. Use the declared daylight/window/zoom/UI preparation below and the [reconnaissance verification record](gc-s-recon-verification.md) for exact status. This does not widen qualified native coverage.
+These new source activities have automated and actual-model simulated evidence; their ordinary native walkthrough is still pending. Use the declared daylight/window/zoom/UI preparation below and the [reconnaissance verification record](gc-s-recon-verification.md) for exact status. This does not widen qualified native coverage.
 
 Findings show captured images, locations and times. Ground, vegetation, access and unknowns remain separate; empty dirt does not prove planting suitability or planting access. No tools, farm work, purchases, cave entry or saving overnight are authorized. Asking about progress or changing the request stops current input and requires new review before further work. **Stop/Take control** remain independent, including during model inference and movement. Stopped findings can remain useful while return is incomplete. Saved results reopen as descriptive history with no connection, plan or control authority.
 
-## Current abilities and the private-beta target
+## Model and controller roles
 
 The ordinary source app now uses the installed Codex CLI for contextual language
 and a separate gameplay role for prepared Day 2 watering. The model selects
@@ -33,29 +64,15 @@ Saved AI intent and results reopen as history without control authority.
 The current gameplay skills are bounded watering, return and stop on the
 qualified Day 2 routes. Occluded targets, unsupported farms, uncertain resources,
 failed effects or provider errors can stop the attempt. Tool selection and refill
-remain manual. Both prepared Day 2 watering variations have observed return and handback. Discussion and inference pause the game clock within supported preparation; preserve daylight calibration. Capture reacquisition verifies the post-menu window identity and geometry before pointer input. A geometry refusal requires a fresh supported observation and new review. Canceled plans require a fresh request, observation, review and Start. Broader Stardew reasoning and successor
-packaging remain pending. See [verification](gc-ai-loop-verification.md).
+remain manual. Both prepared Day 2 watering variations have observed return and handback. Discussion and inference pause the game clock within supported preparation; preserve daylight calibration. Capture reacquisition verifies the post-menu window identity and geometry before pointer input. A geometry refusal requires a fresh supported observation and new review. Canceled plans require a fresh request, observation, review and Start. Broader scene coverage remains unqualified. See [verification](gc-ai-loop-verification.md).
 
 ## Farm Cave status: ordinary activity unverified
 
-You can discuss a cave destination and receive clarification and setup guidance.
-The earlier survey reached the western farm and showed the exterior but did not
-complete a round trip. Newer local route evidence records a manual tool-free
-approach and return with 15 dry crops, energy 270 and water 40 unchanged. Its
-[verification record](gc3-cave-verification.md)
-explicitly marks the ordinary activity unverified. That manual walk is not proof
-of companion delegation through request, approval, findings and return.
-
-The current implementation separates arrival, fresh findings, return and handback
-and treats off-screen crops as historical. It requires its installed route and
-current observation guards before offering travel. The route remains an
-experimental source capability; no completed ordinary-interface acceptance is
-claimed here. Those controls remain useful foundations, but the active next work
-is the shared AI decision-and-replanning loop rather than another fixed cave route
-as the beta completion criterion. The [cave verification
-record](gc3-cave-verification.md) retains the earlier partial-survey checkpoint;
-the linked newer qualification records only its manual route scope.
-Interior exploration remains later. Recording stays deferred to tentative beta v2.
+Cave discussion and route code retain arrival, fresh findings, return and
+handback as separate results. Manual route evidence is not companion delegation
+through request, approval, findings and return. A completed ordinary delegated
+round trip is unverified; interior exploration is unsupported. See the
+[cave record](gc3-cave-verification.md) for exact historical scope.
 
 ## Discuss where to plant
 
@@ -150,16 +167,8 @@ control. Recording and no-code native addition of new games are unavailable.
 
 [Shared history and shutdown](../README.md#history-recovery-and-safe-shutdown) explains switching and canceled reviews. The [Stardew integration contract](b3-integration-contract.md) describes engineering interfaces. Historical qualification and repair records are linked from the [delivery record](b8-personal-delivery.md).
 
-## Slow inference and observation recovery — October 5
+## Slow inference and observation recovery
 
 Connected Day 2 model discussion and gameplay inference pause the disposable game clock with ordinary menu input. Input is released while waiting. The next explicit observation/review/Start resumes the clock and captures a new supported scene. Stop revokes work; it may leave the menu open for the player. Closing that menu never restores work authority.
 
 If camera recognition fails, close menus and check the prepared daylight farm, zoom 75%, UI 100% and supported window geometry. At evening/night, exit this disposable copy to title without sleeping/saving and reload it. Pause the clock through the preparation survey controls during long setup inspections. A changed window or pointer outside its current bounds is a refusal, requiring a fresh explicit view; never retry an old target from saved history. The current [verification record](gc-ai-loop-verification.md) identifies the remaining native acceptance checks.
-
-## Integrated source setup — October 5
-
-The catalog shows Codex readiness, the remote inference boundary and current Screen Recording/Accessibility input checks. **Refresh Codex readiness** rechecks the installed CLI and existing sign-in without reopening the app or reading credentials. Each game has a direct setup link. When discovery is ambiguous, expand **Choose installed Stardew location** and enter the actual installation folder; runtime identity/isolation checks still apply.
-
-Fresh disposable launches create display-only startup preferences in their own configuration namespace. They do not copy owner preferences or edit saves. The native window transition still needs the visible recovery step above. Preparation clicks move the pointer before pressing, and every step binds the displayed process/start/window/bounds. A changed window requires a new View. Transition messages establish no successful restoration until a fresh supported capture is accepted.
-
-Load, choosing the farm, walking to the qualified porch position, tool selection, daylight, zoom/UI and checking/connecting recognition remain explicit steps. Missing prepared seeds or calibration registries are source-resource blockers, not automatic permission to use a personal farm. These local resources require explicit inventory and package/import support. Source setup is not a bundled-app acceptance claim.

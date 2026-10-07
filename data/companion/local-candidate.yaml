@@ -1,0 +1,23 @@
+schema: game-companion-local-candidate/v1
+required:
+  mario-world1-1-adaptive-early-segment:
+    scope: supported early segment, contextual preferences, finite attempts, remembered coaching, Stop and handback
+    packaged_native_qualification: pending
+  stardew-selected-session-watering-return:
+    scope: explicitly selected isolated save copy, observed local spring seed patch and clear routes, bounded preparation, contextual correction, exact visible resources, watering and farmhouse handback
+    source_implementation: present_native_qualification_pending
+    frozen_fixture: preserved with exact integrity checks
+    packaged_native_qualification: pending
+experimental_unavailable: [reconnaissance, recording, wider-gameplay, day5-farm-work]
+readiness:
+  construction: candidate
+  two_game_qualification: pending
+  owner_usefulness_review: pending
+  local_beta_decision: pending
+external_prerequisites:
+  - supported owner-selected SMB3 file and FCEUX
+  - existing Codex CLI sign-in
+  - inspected Stardew Mac installation and supported display/settings
+  - explicitly selected supported Stardew save folder and copying approval
+  - unchanged prepared Day 2 seed only for engineering regression
+  - macOS input and capture permissions

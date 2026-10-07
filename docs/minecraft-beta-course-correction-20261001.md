@@ -1,5 +1,7 @@
 # Minecraft private beta: user onboarding course correction
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 > Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
 
 Current planning note — October 3, 2026: this is the retained Minecraft source audit and its original scope. New sessions deliver Mario coaching and Stardew delegation first through the [active engineering plan](private-beta-engineering.md) and [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md). Preserve the findings and evidence below for later Minecraft integration.

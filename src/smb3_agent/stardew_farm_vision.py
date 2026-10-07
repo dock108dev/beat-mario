@@ -96,7 +96,8 @@ class PreparedFarmPixelProfile:
     def __init__(self, manifest_path: Path):
         self.manifest_path = Path(manifest_path)
         self.manifest_bytes = self.manifest_path.read_bytes()
-        self.config = json.loads(self.manifest_bytes)
+        from smb3_agent.candidate_resources import resolve_resource_values
+        self.config = resolve_resource_values(json.loads(self.manifest_bytes))
         if self.config.get("schema") != "prepared-farm-pixel-profile/v1":
             raise StardewAdapterError("unsupported prepared-farm calibration schema")
         self.profile_id = self.config["profile_id"]

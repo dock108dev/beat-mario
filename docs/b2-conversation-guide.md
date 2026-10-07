@@ -9,11 +9,15 @@ the model and controller roles. The [Mario guide](mario-player-guide.md) and
 
 The ordinary source app creates one Codex provider and separate contextual language sessions for Mario and Stardew. Original wording, recent conversation, prior intent, compatible descriptive history and fresh supported game context go to the language model. Its validated intent then enters existing adapter planners and control owners. Prepared Day 2 watering additionally calls a distinct gameplay role at target boundaries and feeds observed effects into its next decision. Other activities retain their existing strategy controllers. See [verification](gc-ai-loop-verification.md).
 
-Mario now also has an experimental visual early-segment model loop and compatible descriptive coaching (see verification); it retains source-qualified opening coaching, experimental coin-route selection, remembered stairs/pipe instructions, two observed World 1-1 exits and two supported sky 1UP collections. Stardew has source-qualified Day 2 selected watering, passive planting-location discussion and eastern-margin inspection/return. These successes establish the named activities and their controllers. They do not establish unrestricted conversation coverage, arbitrary farms or packaged beta delivery. Cave delegation remains unverified; source reconnaissance composition has native acceptance pending.
+Mario has a visual early-segment model loop and compatible descriptive coaching.
+Authored opening, coin-route, stairs/pipe and sky-1UP controllers retain separate
+contracts. Stardew also supports prepared-profile planting-location discussion
+and inspection. Cave delegation and native reconnaissance remain unqualified.
+Build evidence is recorded separately in [current engineering status](current-engineering-status.md).
 
 `model_gateway.LocalOllamaGateway` is real model infrastructure used by the separate profile/OpenTTD reference flow. Its proposal schema selects one available skill and screen target. It does not supply either ordinary Mario/Stardew AI role. The existing typed plans, observations, controllers, interruption and outcome ledgers are reusable foundations.
 
-Player recording/demonstration source is preserved but deferred to a later beta, tentatively beta v2. No recording is required for this implementation sequence.
+Player recording/demonstration is experimental; ordinary native application is unverified.
 
 ## Required language role
 
@@ -77,30 +81,13 @@ During slow inference, pause/release or finish only the already validated finite
 
 Reopening restores conversation summaries, useful memory and historical results. It establishes no live observation, connection, approval or gameplay authority. A resumed provider conversation cannot carry execution permission across app restarts.
 
-## Integration sequence and acceptance
-
-First connect genuine contextual interpretation to both ordinary game interfaces. Then complete one adaptive Stardew activity using existing watering/inspection skills: a real model-generated goal, a model-selected action with parameters, a verified effect and a later model decision based on the result. Include changed preferences and supported changed scene/resource/target conditions using the same implementation. This must not depend on finishing a bespoke cave manifest first.
-
-Next extend Mario decisions at useful skill boundaries while preserving its per-frame controller. Demonstrate coaching and state variation influencing actual play. Continue required game coverage, then package and verify the complete ordinary experience before private beta.
-
-Evaluation needs separate forms of evidence:
-
-| Evidence | What it establishes |
-| --- | --- |
-| Deterministic contract/race/fixture checks | Schema validation, context ownership, grounding, cancellation, authority, persistence and expected orchestration. Simulated model replies do not prove model understanding. |
-| Real-model held-out evaluation | Contextual interpretation, reference resolution, unsupported-goal understanding, structured output, decision quality and useful latency with wording/state variation withheld from implementation. |
-| Live ordinary-interface gameplay | Model-selected actions actually execute, independent outcomes affect later decisions, changes work without bespoke script edits, and interruption/handback are real. |
-| Packaged walkthrough and owner use | The delivered app discovers its backend and assets, connects, understands, plays, reports and reopens without engineering file edits. Source evidence alone does not establish this. |
-
-Cover ambiguity, exclusions, revised priorities, identical wording in different contexts, invalid provider output, service failure, canceled/stale replies, unknown observations, incompatible memory and interrupted reopening. Keep understandable explanations and evidence records; private chain-of-thought collection is unnecessary.
-
-Retain original words, supplied observations, resolved intent, chosen actions, model-call provenance, expected/actual effects, subsequent decisions, uncertainty and handback. [Learning](learning.md) owns retained knowledge and application; [Mario integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) locate current controller/runtime seams. Historical B-series contracts retain their named scope and cannot certify this new architecture.
-
-## Adaptive Mario segments in the source app — October 5
+## Adaptive Mario segments
 
 The legacy opening scope remains x≥160 with six decisions, 180 skill frames and 120 seconds. Ask to play the early segment to use the separate x≥700 grounded scope: 32 decisions, 1200 skill frames and 480 seconds. Review with **Apply change**, then Start. The model receives the exact paused NES image, world progress, scroll, velocity, grounded state, enemy proximity and prior effects. It composes hops, walking, observed landing, retreat, inspection and Stop while native controllers own frame timing and authority checks.
 
-Meaningful high/short-hop preferences alter actual choices; obstacle facts can justify longer jumps. Ask to remember a correction for compatible future segments, inspect active/superseded advice, or reset future guidance while preserving outcomes. Later native execution has matching guidance-ID/skill receipts; improvement stays unknown. The exact native trials extend beyond opening over raised terrain, but stop before the x=700 arrival. Stop/Take control cancel pending inference and retry permission. Reopening restores descriptive history only. Full-level adaptive strategy, complete coins and generalized flight remain later coverage. See [verification](gc-ai-loop-verification.md).
-
-
-Supported-segment closeout: Mario’s supported World 1-1 x≥700 segment has 3/3 native completions on the final unchanged source, with independently observed alive/grounded arrival and neutral handback for each passing run. The set includes two compatible-coaching trials and a walking-on-flat/raised-block landing preference variation. Earlier failures remain failed under their own candidate identities. Running maneuvers, a feedback-bounded run-up, native object/projectile/motion facts, neutral waiting and after-frame arrival checks address the retained blockers. This small engineering set establishes observed scope, not broad reliability. Prepared Stardew watering acceptance is preserved. See [verification](gc-ai-loop-verification.md). Wider Mario coverage, exact-package qualification and owner release remain open.
+Compatible movement preferences constrain choices; current obstacle facts can
+justify longer jumps. Remembered corrections can be inspected or reset for future
+segments while preserving historical outcomes. Matching guidance/skill receipts
+establish application; improvement stays unknown. Stop/Take control cancel
+inference and retry permission. Full-level adaptive play, complete coins and
+wider flight coverage remain unverified.

@@ -4,7 +4,7 @@
 
 - [Repository quickstart](../README.md): requirements, source launch and tests.
 - [Mario guide](mario-player-guide.md): setup, coaching, supported activities and limits.
-- [Stardew guide](stardew-operator-guide.md): prepared-copy requirements, observation, review and recovery.
+- [Stardew guide](stardew-operator-guide.md): ordinary default-save copying/preparation, observation, review and recovery.
 - [Runtime and configuration](runtime-and-configuration.md): executables, settings, local storage and process ownership.
 - [Known limitations](known-limitations.md): unavailable behavior and platform support.
 - [Error handling](error-handling.md): failed workers, partial outcomes and safe recovery.
@@ -23,7 +23,10 @@
 
 ## Planning and evidence records
 
-Current pickup: build a usable local Mac candidate with supported Mario and prepared Stardew watering, then qualify its ordinary setup/play/control/persistence loop. [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) and the [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) contain the remaining release tasks. Source reconnaissance stays experimental until native-qualified; it does not block independent packaging work.
+[Current engineering status](current-engineering-status.md) binds qualification
+claims to exact builds and retained evidence. The dated
+[documentation audit](documentation-audit-20261006.md) records an earlier review.
+The [app quick start](private-beta-quick-start.md) covers local app setup.
 
 The named engineering, handoff, review and verification files retain development
 plans and exact candidate evidence. They are records, not prerequisites for setup.

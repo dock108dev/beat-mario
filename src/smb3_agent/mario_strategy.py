@@ -78,7 +78,10 @@ class MarioStrategyAgent:
         if expanded:
             cartridge = getattr(self.service.live_manager, '_game_file_sha256', None)
             goal['coaching'], goal['incompatible_guidance_ids'] = mario_segment.compatible_guidance(goal['coaching'], cartridge)
-        deadline = time.monotonic() + (mario_segment.MAX_SECONDS if expanded else 120)
+        seconds = plan.get('resource_limits', {}).get('maximum_seconds_per_attempt', mario_segment.MAX_SECONDS if expanded else 120)
+        if type(seconds) is not int or not 1 <= seconds <= (mario_segment.MAX_SECONDS if expanded else 120):
+            raise ValueError('Invalid reviewed Mario time limit')
+        deadline = time.monotonic() + seconds
 
         def active():
             if cancel.is_set() or generation != self.service._control_generation:

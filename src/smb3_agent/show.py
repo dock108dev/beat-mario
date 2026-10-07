@@ -215,7 +215,7 @@ class CueReconciliation:
 
 
 def load_show_definition(path: Path = SHOW_DEFINITIONS_PATH) -> ShowDefinition:
-    raw = yaml.safe_load(path.read_text()) if path.is_file() else None
+    raw = yaml.load(path.read_text(), Loader=getattr(yaml, "CSafeLoader", yaml.SafeLoader)) if path.is_file() else None
     if not isinstance(raw, dict) or raw.get("schema") != "game-companion-show/v1":
         raise ShowError("Show definition requires schema game-companion-show/v1")
     definitions = raw.get("definitions")

@@ -1,42 +1,32 @@
 # Stardew integration and evidence contract
 
-Updated October 5, 2026. The initial private beta requires both **Codex-backed
-conversational intention** and **gameplay understanding, action selection and
-replanning**. One provider may serve the two roles. This document defines the
-Stardew adapter work beneath the shared [architecture](agent-architecture.md) and
-[engineering plan](private-beta-engineering.md).
+Ordinary Stardew uses contextual Codex language and a separate gameplay role for
+watering. The model selects approved targets; guarded controllers navigate,
+water and reconcile fresh effects/resources. This adapter contract complements
+[architecture](agent-architecture.md) and [module ownership](ssot.md).
 
-## Current behavior and its limits
+## Current behavior and limits
 
-| Area | Existing implementation/evidence | What remains missing |
-| --- | --- | --- |
-| Prepared-farm setup | Separate Day 2/Day 5 disposable copies, matching calibration, PID-bound image-reviewed preparation | Ordinary release setup must include its required local assets and explain compatibility without engineer file edits |
-| Watering | Real selected-patch watering, discussion, revised approval, resource reconciliation, return and Stop | General observed task choice; broader crop identification; tool/refill support where claimed |
-| Planting discussion | Live season/crop-rule discussion and calibrated location recommendations | Gameplay reasoning about unfamiliar supported observations; actual planting is a separate action capability |
-| Eastern inspection | Historical fixed-route native evidence; reusable source model-directed reconnaissance on porch/eastern views | New reconnaissance native returns, variation and control set pending; arbitrary exploration unsupported |
-| Farm Cave | Conversation/control/persistence code, western survey, newer installed manual tool-free route and baseline/final reconciliation | Manual route record explicitly marks ordinary activity unverified; no complete companion delegation claim |
-| Language | Contextual Codex interpretation in ordinary Stardew conversation with exact reviewed scope | Broader language evaluation and integrated release setup |
-| Game decisions | Accepted model-selected watering; source reconnaissance composes observations, viewpoint movement and return with fresh effects | Reconnaissance native acceptance pending; Day 5 and broader coverage remain separate |
-| Persistence/control | Saved results without restored authority and independent handback | Extend to pending inference, evolving state and model-selected activity |
+`stardew_setup.py` discovers default saves or accepts a selected folder and makes
+an approved isolated copy. Observed preparation and current-scene recognition
+support the narrow ordinary spring seed patch. Separate prepared Day 2/Day 5
+profiles retain their calibration and routine contracts. They are local inputs,
+not automatic fresh-clone setup.
 
-Read [reconnaissance verification](gc-s-recon-verification.md), [connected AI](gc-ai-loop-verification.md), [watering](gc3-watering-verification.md),
-[planting](gc3-planting-verification.md),
-[inspection](gc3-inspection-verification.md) and
-[cave](gc3-cave-verification.md) records for exact scope and source identity.
-Those real foundations do not establish the AI-player product or a released
-artifact. Another fixed corridor alone does not satisfy the next milestone.
-
-The cave verification document retains an earlier incomplete survey checkpoint.
-Newer [manual route verification](gc3-cave-verification.md)
-records approach/return, unchanged 15 dry crops, energy 270 and water 40, and
-confirmed manual handback. It explicitly sets ordinary activity verification to
-false. Preserve both evidence classes; installing a route does not establish the
-ordinary request/approval/findings/return loop.
+Planting-location discussion and eastern inspection have retained source
+results. Model-composed reconnaissance has simulated evidence but pending native
+acceptance. Manual cave approach/return evidence does not establish companion
+cave delegation. Broader farms, crops, tools and refill remain unqualified.
+Read [player procedures](stardew-operator-guide.md),
+[known limitations](known-limitations.md) and
+[exact build evidence](current-engineering-status.md) separately.
 
 ## Existing ownership to reuse
 
 - `stardew_setup.py`: source/copy identity, isolated loading, persistence and
-  the current image-reviewed preparation path.
+  copy isolation. `stardew_preparation.py` owns observed ordinary preparation;
+  `stardew_selected_scene.py` owns current patch/terrain recognition;
+  `stardew_view_settings.py` verifies settings transitions.
 - `stardew_input.py`: native pulse bounds, foreground/process/window checks
   and release.
 - `stardew_perception.py`, `stardew_farm_perception.py`,
@@ -53,7 +43,7 @@ ordinary request/approval/findings/return loop.
 - Shared Codex integration, knowledge, skill catalog and memory: extend these
   boundaries rather than creating another independent input path.
 
-The initial all-crop B3 watering contract remains historical: every initially
+The retained all-crop prepared-profile contract covers: every initially
 planted crop, including already-watered inventory entries, followed by return.
 Current selected activities preserve the complete observed initial protection
 boundary while executing only the approved selected work. Neither contract can
@@ -67,8 +57,7 @@ AI behavior or a package.
 
 ## Wider coverage requirements
 
-Start with an actual **decision-and-replanning loop** in Stardew's slower
-activities. The conversational role interprets player intent; the gameplay role
+Supported watering uses a bounded decision-and-replanning loop. The conversational role interprets player intent; the gameplay role
 uses fresh scenes, mechanics, implemented skills and history to select useful
 work. The app validates and executes that work. Do not treat conversational
 paraphrasing as a substitute for gameplay reasoning.
@@ -233,8 +222,8 @@ with a changed goal or gameplay condition. Demonstrate:
 
 Watering and planting-location discussion remain useful acceptance families.
 Cave reconnaissance may provide a spatial case when its approach is actually
-supported; a disabled cave plan or completed fixed route alone does not finish
-the AI milestone. Interior exploration, combat/mining and arbitrary farms remain
+supported; a disabled cave plan or completed fixed route alone does not qualify
+ordinary cave delegation. Interior exploration, combat/mining and arbitrary farms remain
 separate capability decisions.
 
 ## Evidence and local private-beta release

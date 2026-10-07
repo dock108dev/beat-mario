@@ -187,5 +187,5 @@ def _write_trace(trace_path: Path, command: AgentCommand, goal_result: GoalRunRe
 
 def _next_action(metrics_passed: bool) -> str:
     if metrics_passed:
-        return "Promote this command run as passing evidence or continue to the next implementation phase."
+        return "Review this command run and retain its passing evidence."
     return "Run review log on the command artifact log and repair the failed segment before expanding scope."

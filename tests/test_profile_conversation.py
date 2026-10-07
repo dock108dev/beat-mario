@@ -1,4 +1,4 @@
-"""PB2 product-service and safety boundaries; simulated hosts are labeled fixtures."""
+"""Product-service and safety boundaries; simulated hosts are labeled fixtures."""
 from dataclasses import asdict, replace
 import http.client
 import json

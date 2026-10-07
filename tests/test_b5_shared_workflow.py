@@ -99,6 +99,7 @@ def test_switch_lock_blocks_new_authority_but_not_reclaim(tmp_path, monkeypatch)
             calls.append(action)
             return {'owner': 'player'}
     server.stardew_conversation_service = Service()
+    server.stardew_conversation_service.close = lambda: None
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     def post(action, token):

@@ -12,7 +12,10 @@ from datetime import datetime, timezone
 
 from smb3_agent.game_profiles import ExecutableProfile
 
-VERSION = "0.2.0-private.2"
+VERSION = "0.3.0-candidate.35"
+if __import__("sys").__dict__.get("frozen", False):
+    from smb3_agent.paths import repository_path
+    VERSION = json.loads(repository_path("build-manifest.json").read_text())["version"]
 TEMPLATES = {
     "openttd": {
         "label": "OpenTTD · one repayment",

@@ -11,3 +11,7 @@ REPOSITORY_ROOT = (Path(sys._MEIPASS) / "resources" if getattr(sys, "frozen", Fa
 def repository_path(path: str | Path) -> Path:
     candidate = Path(path)
     return candidate if candidate.is_absolute() else REPOSITORY_ROOT / candidate
+
+
+def is_packaged() -> bool:
+    return bool(getattr(sys, "frozen", False))

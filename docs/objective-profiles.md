@@ -1,22 +1,14 @@
 # Objective profiles and live coaching
 
-## Current source and active AI objective work
+Objective profiles describe measurable goals and compatible comparisons.
+Contextual Mario/Stardew intent and state-driven decisions use supported skills;
+profiles do not grant input authority. Keep target, applied strategy, actual
+outcome and uncertainty separate. A locally fastest observation does not imply a
+global record. Full coin coverage and arbitrary strategies remain unverified.
 
-Current source has observed opening coaching, experimental coin-route memory, authored stairs/pipe instruction application with World 1-1 exits, and a supported flight/sky-1UP case. Full coin coverage, arbitrary instructions and wider reliability remain unknown. These bounded implementations are reusable skills, not the completed model-driven player.
+## Intent and measurable coverage
 
-The [engineering plan](private-beta-engineering.md) now requires contextual Codex intent and state-driven gameplay decisions, composed from supported skills and evaluated on changed objectives/conditions. Preserve separate records for target, applied strategy, actual outcome and uncertainty. A locally fastest observation never implies a global record, and coaching changes need observed effects before improvement claims.
-
-The dated requirements and original objective/profile registry below are retained references; they do not supply the active next engineering action. Recording remains deferred to tentative beta v2.
-
-Mario objective/coaching and run-library reference. The September 23 requirement below records that adapter stage; current release scope follows the [private-beta engineering plan](private-beta-engineering.md).
-
-## October 3 coached-play requirement
-
-GC2 in the active plan must add coin-route discovery across attempts/lives and user-to-agent timing/tactic coaching with acknowledged application and persistent next-attempt memory. Existing advisory Tell/coaching below remains input-free; a future approved experimental gameplay revision is a separate runtime action. The observable-progress checklist is not a coin universe. Implement observable coin/reward identity and exact coverage before any 100% claim, while retaining honest discovery progress and unknowns. See [Mario integration](b2-integration-contract.md) and [learning memory](learning.md).
-
-## Recorded September 23 adapter requirement
-
-Conversation supports route intents and custom variants. Faster/quickest/100% selections initially resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
+Conversation supports route intents and custom variants. Faster/quickest/100% selections resolve to the same existing base route, with requested intent, executable plan and measured objective kept separate. The [conversation flow](b2-conversation-guide.md) implements this fallback without adding accepted profile/route records. Playback multiplier is not route optimization; the observable-progress checklist below is not a 100% collectible profile. Existing profile/run compatibility and provenance must survive the new flow.
 
 Game Companion treats each supported level as its own measurable objective space. A profile is adapter-neutral and versioned. It declares the game and level, classification, exact start and terminal conditions, timing boundary and units, finite required and optional events, allowed and prohibited techniques, resource rules, supported facts, recovery and miss semantics, evidence, outcomes, and capability flags.
 

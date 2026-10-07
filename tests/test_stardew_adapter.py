@@ -219,3 +219,29 @@ def test_input_and_neutralization_double_failure_stays_failed_closed(tmp_path: P
     assert operator.failure is not None
     assert "send lost" in operator.failure.detail
     assert "neutral lost" in operator.failure.detail
+
+
+@pytest.mark.parametrize("foreground", [True, False])
+def test_activation_requires_observed_foreground_even_when_api_returns_false(monkeypatch, foreground):
+    import sys
+    from types import SimpleNamespace
+    from smb3_agent.stardew_adapter import MacVisibleStardewBackend
+    calls = []
+    app = SimpleNamespace(unhide=lambda: None, activateWithOptions_=lambda options: calls.append(options) or False)
+    monkeypatch.setitem(sys.modules, "AppKit", SimpleNamespace(
+        NSRunningApplication=SimpleNamespace(runningApplicationWithProcessIdentifier_=lambda pid: app),
+        NSApplicationActivateIgnoringOtherApps=1, NSApplicationActivateAllWindows=2))
+    monkeypatch.setattr("time.sleep", lambda _: None)
+    backend = MacVisibleStardewBackend(process_id=42, process_started_at="bound-start")
+    observed = SimpleNamespace(process_id=42, foreground=True)
+    def detect(**kwargs):
+        if not foreground:
+            raise StardewAdapterError("background")
+        return observed
+    monkeypatch.setattr(backend, "detect_window", detect)
+    if foreground:
+        assert backend.activate_window() is observed
+    else:
+        with pytest.raises(StardewAdapterError, match="foreground/window verification"):
+            backend.activate_window()
+    assert calls == [3]

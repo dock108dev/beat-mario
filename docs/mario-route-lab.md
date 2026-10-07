@@ -47,7 +47,7 @@ not a route destination; it appears only in the visible Warp Zone tier label.
 
 The goal switcher exposes `world_8_big_tanks` as a distinct review surface.
 That view renders the same 15-row prefix plus row 16, World 8 Big Tanks. It
-does not change the default selection, modify the Rank 27 goal, or include a
+does not change the default selection, modify the default World 8 arrival goal, or include a
 later World 8 stage. A URL may select it directly with
 `/?goal=world_8_big_tanks`.
 
@@ -101,12 +101,12 @@ structure.
 ## Primary action
 
 `Run World 8 Route` remains the only strong primary button and retains the
-default Rank 27 behavior. The goal switcher is a route/evidence review control;
+default World 8 arrival behavior. The goal switcher is a route/evidence review control;
 use the goal-specific CLI reliability command to execute Big Tanks,
 Battleships, Hand Traps, or Jet. None of these surfaces runs the World 1 king
 diagnostic.
 
-Unit tests, phase gate, HTML render check, refresh, note, lifecycle, and Codex
+Unit tests, repository gate, HTML render check, refresh, note, lifecycle, and Codex
 task actions remain secondary or quiet controls.
 
 For the selected actionable issue, the Fix Issue panel also shows its task
@@ -141,7 +141,7 @@ In the finish-game view, the final row requires eight focused evidence roles:
 accepted Super Tanks boundary, Castle entry, representative Castle gameplay,
 Bowser encounter, game-owned Bowser defeat, Princess rescue, credits, and the
 stable final screen. Route Lab remains a review surface and does not itself
-grant acceptance; Slice 5 is accepted by the passing authoritative 3/3 report
+grant acceptance; the finish-game route is qualified by the passing authoritative 3/3 report
 and its independently retained live evidence.
 
 ## Route roles and observations

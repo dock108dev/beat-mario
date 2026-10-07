@@ -32,6 +32,31 @@ def _retain_refusal(service: Any, action: str, payload: dict, reason: str, game:
         service._history_summary_cache = None
 
 
+def descriptive_messages(root: Path, prefix: str) -> list[dict]:
+    """Reopen bounded transcript text only. Disk events never restore authority."""
+    result = []
+    candidates = [p for p in root.glob(prefix+'*.jsonl') if p.is_file() and not p.is_symlink()]
+    for path in sorted(candidates, key=lambda p: p.stat().st_mtime_ns)[-2:]:
+        try:
+            if path.stat().st_size > 256_000:
+                continue
+            lines = path.read_text().splitlines()
+        except (OSError, UnicodeError):
+            continue
+        for line in lines[-60:]:
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if (not isinstance(row, dict) or row.get('role') not in {'user', 'assistant'}
+                    or not isinstance(row.get('text'), str) or len(row['text']) > 8000):
+                continue
+            result.append({'role': row['role'], 'text': row['text'],
+                'kind': str(row.get('kind', 'history'))[:64], 'at': str(row.get('at', ''))[:64],
+                'historical': True})
+    return result[-60:]
+
+
 class ConversationService:
     def __init__(self, live_manager: Any, *, artifacts_root: Path = Path("artifacts/conversation"),
                  runtime: Any = None, provider: Any = None) -> None:
@@ -60,7 +85,7 @@ class ConversationService:
         self._cancel_requested = False
         self._pending_command_id: str | None = None
         self._revisions: dict[int, dict[str, Any]] = {}
-        self._messages: list[dict[str, Any]] = []
+        self._messages: list[dict[str, Any]] = descriptive_messages(self.root, 'conversation-')
         self._requests: set[str] = set()
         self._history_signature = None
         self._history_rows_cache = []
@@ -252,6 +277,13 @@ class ConversationService:
                     improvement_observed=None,
                     guidance_explanation='A referenced remembered constraint and native skill receipts establish application; improvement is unknown.')
                 record['strategy_result']['opening_stop_observed'] = False
+                completion = mario_segment.completed_segment(events, live.samples,
+                    runtime.get('terminal_frame'), record['session_id'], terminal=terminal,
+                    neutral_ack=runtime.get('native_neutral_ack') is True,
+                    neutralized=live.input_neutralized)
+                record['strategy_result'].update({k:v for k,v in completion.items()
+                                                 if k != 'requested_objective_satisfied'})
+                record['requested_objective_satisfied'] = completion['requested_objective_satisfied']
             if terminal not in {"completed_stop", "death"} or not live.input_neutralized:
                 self._retry_scope = None
         if record.get("initial_plan", {}).get("coaching_compatibility") == COMPATIBILITY and not record["initial_plan"].get("strategy_contract"):
@@ -347,6 +379,10 @@ class ConversationService:
             return
         if record.get("coin_result"):
             self._message("assistant", mario_coins.report(record["coin_result"]), "outcome")
+            return
+        if (record.get('strategy_result', {}).get('contract') == 'smb3/world-1-1/adaptive-segment/v1'
+                and record.get('requested_objective_satisfied') is True):
+            self._message('assistant', 'The supported World 1-1 early segment was reached alive and grounded. Inputs are released and Mario is paused for your review.', 'outcome')
             return
         self._message("assistant", f"Session {terminal.replace('_', ' ')}. Actual actions and timing are retained; full completion remains unknown.", "outcome")
 
@@ -531,6 +567,7 @@ class ConversationService:
             from smb3_agent import mario_segment
             if scope['strategy_contract'] == mario_segment.CONTRACT:
                 mario_segment.expand_plan(plan)
+                plan['resource_limits']['maximum_seconds_per_attempt'] = scope.get('maximum_seconds_per_attempt', mario_segment.MAX_SECONDS)
         plan = self._bound_plan(plan)
         if time.monotonic() >= scope["deadline"]:
             self._retry_scope = None
@@ -567,6 +604,10 @@ class ConversationService:
         if plan.get("session_id") not in {None, live.session_id}:
             raise ValueError("This plan belongs to another session; select or reopen it for this session")
         result = deepcopy(plan)
+        from smb3_agent.paths import is_packaged
+        from smb3_agent.mario_segment import CONTRACT as SEGMENT_CONTRACT
+        if is_packaged() and result.get("strategy_contract") != SEGMENT_CONTRACT:
+            raise ValueError("This candidate supports the adaptive World 1-1 early segment. Wider activities and recording remain unavailable.")
         if result.get("strategy_contract") and self.strategy is None:
             raise ValueError("Adaptive opening strategy requires an available gameplay provider")
         if result.get("flight_compatibility"):
@@ -661,6 +702,9 @@ class ConversationService:
             return self.snapshot()
 
     def _dispatch(self, action: str, payload: dict[str, Any], request_id: str) -> None:
+        from smb3_agent.paths import is_packaged
+        if is_packaged() and action in {"record_start", "record_save", "demo_use"}:
+            raise ValueError("Recording and recorded playback are deferred to a later beta.")
         if action in {"start", "apply"} and (
             self._plan is None
             or payload.get("expected_plan_id") != self._plan.get("plan_id")
@@ -950,6 +994,7 @@ class ConversationService:
                                      "expires_epoch": plan["practice_expires_epoch"],
                                      "coin_discovery": bool(plan.get("coin_compatibility")),
                                      "strategy_contract": plan.get("strategy_contract"),
+                                     "maximum_seconds_per_attempt": plan.get("resource_limits", {}).get("maximum_seconds_per_attempt"),
                                      "model_intent": deepcopy(plan.get("model_intent"))}
                 self._message("assistant", f"Started adaptive Mario strategy; {maximum - 1} compatible retries remain. Native skill receipts establish parameter application." if plan.get("strategy_contract") else f"Started bounded exploration: {plan['change_summary'][0]}" if plan.get("coin_compatibility") else f"Started opening practice: {plan['jump_delay_frames']} frames of jump delay; {maximum - 1} compatible retries remain. Timing application requires a controller receipt.", "started")
             else:
@@ -1036,7 +1081,7 @@ class ConversationService:
 
     def invalidate_for_switch(self) -> bool:
         if self.ai:
-            self.ai.cancel()
+            self.ai.invalidate_context()
         """Retain the terminal result before forgetting session-bound proposals."""
         with self._lock:
             self._sync()
@@ -1084,13 +1129,22 @@ class StardewConversationService:
         self.runtime = runtime
         self.root = Path(artifacts_root)
         self.history = PlanAttemptHistory(self.root / "outcomes")
+        self.setup_selection = {}
+        selection = self.root / "setup-selection.json"
+        if selection.is_file():
+            try:
+                saved = json.loads(selection.read_text())
+                if set(saved) == {"installation"} and isinstance(saved["installation"], str) and Path(saved["installation"]).is_absolute():
+                    self.setup_selection = saved
+            except (OSError, ValueError, TypeError):
+                pass
         self.planner = Planner()
         self.conversation_id = "stardew-conversation-" + uuid4().hex
         self._history_summary_cache = None
         self._lock = threading.RLock()
         self._plan: dict[str, Any] | None = None
         self._reviewed: dict[str, Any] | None = None
-        self._messages: list[dict[str, Any]] = []
+        self._messages: list[dict[str, Any]] = descriptive_messages(self.root, 'stardew-conversation-')
         self._requests: set[str] = set()
         self._retained: set[str] = set()
         self._selected: tuple[str, ...] = ()
@@ -1141,6 +1195,9 @@ class StardewConversationService:
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             runtime = deepcopy(getattr(self.runtime, "ui_snapshot", self.runtime.snapshot)())
+            runtime["setup_selection"] = dict(self.setup_selection)
+            from smb3_agent.stardew_setup import default_save_choices
+            runtime["default_saves"] = default_save_choices()
             cave = runtime.get("cave_result")
             if cave and cave != self._cave_saved:
                 self.root.mkdir(parents=True, exist_ok=True)
@@ -1250,7 +1307,13 @@ class StardewConversationService:
                         or type(payload.get("expected_revision")) is not int
                         or payload["expected_revision"] != self._plan["revision"]):
                     raise ValueError("The plan changed. Review its current version before continuing.")
-            if action == "prepare_engineering":
+            if action == "prepare_supported_farm":
+                from smb3_agent.stardew_preparation import GoalPreparation
+                self._plan = self._reviewed = None
+                if not self.runtime._goal_preparation:
+                    self.runtime._goal_preparation = GoalPreparation(self.runtime, self.ai.provider if self.ai else None)
+                self.runtime._goal_preparation.start(self.ai.intent if self.ai else None)
+            elif action == "prepare_engineering":
                 self._plan = self._reviewed = None
                 self.runtime.prepare_engineering(payload.get("step", "view"), payload.get("expected_view"))
             elif action in {"reconnect_engineering", "show_engineering_game"}:
@@ -1263,14 +1326,39 @@ class StardewConversationService:
                 else:
                     self.runtime.show_engineering_game()
                 self._message("assistant", str(self.runtime.snapshot().get("reason")), "setup")
-            elif action == "launch_engineering":
+            elif action == "import_day2_seed":
+                from smb3_agent.candidate_resources import import_day2_seed
+                if payload.get("copy_authorized") is not True:
+                    raise ValueError("Explicit prepared seed copying approval is required.")
+                self.runtime.control("stop", reason="Prepared seed import; fresh setup required")
+                if not self.runtime.snapshot().get("handback_confirmed", True):
+                    raise ValueError("Confirm handback before importing a prepared seed.")
+                import_day2_seed(payload.get("source", ""))
+                self._plan = self._reviewed = None
+                self._message("assistant", "Prepared Day 2 seed imported. Open a fresh copy, load the farm and verify screen recognition; no authority restored.", "setup")
+            elif action in {"launch_engineering", "launch_selected_copy", "launch_default_copy"}:
+                if action == "launch_default_copy":
+                    from smb3_agent.stardew_setup import selected_default_save
+                    payload = {**payload, "source": str(selected_default_save(payload.get("save_id")))}
+                    action = "launch_selected_copy"
                 self._plan = self._reviewed = None
                 self._selected = ()
                 if self._planting:
                     self._planting["historical"] = True
-                self.runtime.setup({"action": "launch_engineering", **(
-                    {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {})})
-                self._message("assistant", "Engineering launch attempted in a fresh isolated folder. Check the setup status; this does not establish a prepared farm or grant gameplay input.", "setup")
+                installation = payload.get("installation") or self.setup_selection.get("installation")
+                self.runtime.setup({"action": action, **(
+                    {"source": payload.get("source", ""), "copy_authorized": payload.get("copy_authorized") is True}
+                    if action == "launch_selected_copy" else {}), **(
+                    {"prepared_id": payload["prepared_id"]} if payload.get("prepared_id") else {}), **({"installation": installation} if installation else {})})
+                if installation:
+                    self.setup_selection = {"installation": str(Path(installation).expanduser().absolute())}
+                    self.root.mkdir(parents=True, exist_ok=True)
+                    temporary = self.root / "setup-selection.tmp"
+                    temporary.write_text(json.dumps(self.setup_selection))
+                    temporary.replace(self.root / "setup-selection.json")
+                self._message("assistant", ("Selected save copied into a fresh isolated game. Approve preparation to check the current scene; watering requires a separate Review and Start."
+                              if action == "launch_selected_copy" else
+                              "Engineering launch attempted in a fresh isolated folder. Check the setup status; this does not establish a prepared farm or grant gameplay input."), "setup")
             elif action == "verify_engineering_session":
                 self._plan = self._reviewed = None
                 self._selected = ()
@@ -1483,7 +1571,7 @@ class StardewConversationService:
 
     def invalidate_for_switch(self) -> bool:
         if self.ai:
-            self.ai.cancel()
+            self.ai.invalidate_context()
         state = self.runtime.snapshot()
         if state.get("status") == "running" or state.get("owner") == "agent":
             return False

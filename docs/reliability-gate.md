@@ -2,8 +2,8 @@
 
 Mario route qualification reference with retained profile-specific acceptance rules. The [private-beta engineering plan](private-beta-engineering.md) owns current application delivery and focused checking.
 
-Reliability is profile-driven by goal. The default Rank 27 profile proves
-repeatable arrival at the accepted World 8 map boundary. The separate Rank 28
+Reliability is profile-driven by goal. The default World 8 arrival profile proves
+repeatable arrival at the accepted World 8 map boundary. The separate Big Tanks
 profile reuses that complete prefix, clears Big Tanks, and proves the normal
 post-clear map return. The Battleships profile adds one cumulative segment and
 stops before a Hand Trap. The Hand-Traps-and-Jet profile adds four ordered
@@ -40,7 +40,7 @@ Passing requires all of the following:
 Byte-identical SHA-256 log hashes are reported but are not required. Observable
 contract success is authoritative.
 
-The Rank 28 profile is selected explicitly:
+The Big Tanks profile is selected explicitly:
 
 ```bash
 .venv/bin/python -m smb3_agent reliability run \
@@ -107,7 +107,7 @@ cannot count toward the five authoritative runs. Capture and throttle overhead
 may change route behavior.
 
 Select the Big Tanks review profile with `--goal world_8_big_tanks`. The
-accepted Rank 28 review used `--throttle-seconds 0.0001`; it retains exactly
+accepted Big Tanks review used `--throttle-seconds 0.0001`; it retains exactly
 the five focused contact-sheet frames plus a state/tick trace and remains
 non-promotable.
 
@@ -155,7 +155,7 @@ artifacts/review/world_8_double_whistle/<timestamp>_watchable/
   watchable_report.json
 ```
 
-The equivalent Rank 28 roots are
+The equivalent Big Tanks roots are
 `artifacts/reliability/world_8_big_tanks/` and
 `artifacts/review/world_8_big_tanks/`. Authoritative Big Tanks run directories
 also contain `evidence/png/01_...` through `05_...` for the required focused
@@ -197,7 +197,7 @@ distinguish:
 - `gameplay`: an explicit bad-state, missing-state, life-loss, or gameplay
   failure marker appeared.
 
-Rank 28 refines gameplay failures into actionable wrong-map, wrong-stage,
+The Big Tanks profile refines gameplay failures into actionable wrong-map, wrong-stage,
 wrong-entry-state, death, gameplay-stall, timeout, false-clear,
 missing-post-clear, unexpected-next-stage, and ambiguous-state outcomes.
 Battleships additionally rejects false boss clear, missing gameplay or clear,
@@ -247,7 +247,7 @@ separate review root is `artifacts/review/world_8_finish_game/`. A watch remains
 Bowser clear, life loss, incomplete credits, unstable ending, corrupt focused
 evidence, and emulator or preflight failure all remain hard failures.
 
-Accepted Slice 5 evidence is recorded under
+Accepted finish-game route evidence is recorded under
 `artifacts/reliability/world_8_finish_game/20260821T013757.568299Z_reliability`
 and the separate review-only evidence under
 `artifacts/review/world_8_finish_game/20260821T014037.846779Z_watchable`.

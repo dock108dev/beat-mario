@@ -39,12 +39,17 @@ process.stdin.on('end', async () => {
   const newAction = control('BUTTON', 'Start');
   const newActionReplacement = control('BUTTON', 'Start');
   const editor = control('INPUT', '');
+  editor.name = 'game_file_path'; editor.value = '/selected/game.nes';
+  const newEditor = control('INPUT', '');
+  newEditor.name = 'game_file_path'; newEditor.value = '';
+  const listeners = {};
   let children = [old, newAction, editor];
   let next = [replacement, newActionReplacement];
   let replacements = 0;
   const workspace = {
+    addEventListener: (name, callback) => {listeners[name] = callback;},
     contains: element => children.includes(element),
-    querySelectorAll: selector => selector.startsWith('details') ? [] : children,
+    querySelectorAll: selector => selector.startsWith('details') ? [] : selector.startsWith('input[name]') ? children.filter(c => c.name) : children,
     set innerHTML(html) {
       assert.equal(html, '<replacement>');
       replacements++;
@@ -82,7 +87,14 @@ process.stdin.on('end', async () => {
   let refresh;
   vm.runInNewContext(script, {document, fetch,
     window: {setInterval: callback => {refresh = callback;}}});
+  if (scenario === 'draft_button') {
+    listeners.input({target:editor});
+    next.push(newEditor);
+    document.activeElement = newAction;
+    expected = newActionReplacement;
+  }
   await refresh();
+  if (scenario === 'draft_button') assert.equal(newEditor.value, '/selected/game.nes');
   assert.equal(replacements, expectedReplacements);
   assert.equal(document.activeElement, expected);
 });
@@ -93,7 +105,7 @@ process.stdin.on('end', async () => {
 @pytest.mark.parametrize(
     "scenario",
     ["summary", "button", "removed", "disabled", "ambiguous", "editing",
-     "focus_moved", "editing_during_fetch"],
+     "focus_moved", "editing_during_fetch", "draft_button"],
 )
 def test_workspace_refresh_preserves_only_current_unambiguous_focus(scenario: str) -> None:
     result = subprocess.run(

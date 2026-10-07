@@ -216,6 +216,31 @@ class DisposableSessionSetup:
         return self.session
 
 
+def default_save_choices(root: Path | None = None) -> list[dict]:
+    """List game-created save folders by name, without reading hidden game state.
+
+    Listing is descriptive only. Selection and copy approval never imply scene
+    support, loaded identity, review or input authority.
+    """
+    root = root or Path.home() / ".config/StardewValley/Saves"
+    if not root.is_dir() or root.is_symlink() or root.absolute() != root.resolve():
+        return []
+    choices = []
+    for farm in sorted(root.iterdir()):
+        if (farm.is_dir() and not farm.is_symlink()
+                and farm.name not in {".", ".."}
+                and all((farm / name).is_file() and not (farm / name).is_symlink()
+                        for name in (farm.name, "SaveGameInfo"))):
+            choices.append({"id": farm.name, "label": farm.name.rsplit("_", 1)[0]})
+    return choices
+
+
+def selected_default_save(identity: str) -> Path:
+    if not isinstance(identity, str) or identity not in {row["id"] for row in default_save_choices()}:
+        raise StardewAdapterError("Choose a current game-created farm from the default save location")
+    return Path.home() / ".config/StardewValley/Saves" / identity
+
+
 def discover_installations(steam_root: Path | None = None, applications: tuple[Path, ...] | None = None) -> dict:
     """Read application/Steam metadata only; never enumerate a save location."""
     steam_root = steam_root or Path.home() / "Library/Application Support/Steam"
@@ -311,7 +336,8 @@ def prepared_engineering_farms() -> list[dict]:
     return result
 
 
-def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_id: str | None = None) -> tuple[EngineeringLaunch, object]:
+def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_id: str | None = None,
+                             selected_source: Path | None = None, copy_authorized: bool = False) -> tuple[EngineeringLaunch, object]:
     """Launch only to title, with verified .NET6 XDG routing and OS primary deny rules.
 
     This does not certify a loaded save or grant input. The executable and bundled
@@ -327,6 +353,15 @@ def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_
     import shutil
 
     prepared = None
+    if selected_source is not None and (prepared_id is not None or copy_authorized is not True):
+        raise StardewAdapterError("Select one source and explicitly approve copying it before launch")
+    if selected_source is not None:
+        selected_source = selected_source.expanduser().absolute()
+        _engineering_save_metadata(selected_source)
+        from smb3_agent.stardew_adapter import _tree_identity
+        if selected_source != selected_source.resolve(strict=True):
+            raise StardewAdapterError("Selected save aliases are refused")
+        _tree_identity(selected_source)
     if prepared_id is not None:
         from smb3_agent.stardew_adapter import _tree_identity
         prepared = next((row for row in prepared_engineering_farms() if row['id'] == prepared_id), None)
@@ -386,12 +421,32 @@ def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_
         if _tree_identity(source)[0] != prepared['tree_sha256'] or _tree_identity(destination_save)[0] != prepared['tree_sha256']:
             raise StardewAdapterError("Engineering seed changed during copying; launch refused")
         (target / 'prepared-source.json').write_text(json.dumps(prepared, indent=2))
+    if selected_source is not None:
+        # Hash/copy only the selected folder. Never parse owner game state or
+        # discover sibling saves. The game gets only the isolated working copy.
+        copy = DisposableSaveManager().create(selected_source,
+            config_root / 'StardewValley/Saves' / selected_source.name)
+        (target / 'selected-source.json').write_text(json.dumps({
+            'schema': 'stardew-selected-copy/v1', 'save': asdict(copy),
+            'copy_authorized': True, 'support': 'pending_visible_scene_checks',
+            'execution_authority': False}, indent=2))
+        # Deny the explicitly selected original even when it lies outside the
+        # usual primary save roots. Verification reconstructs this exact policy.
+        profile.write_text(profile.read_text() +
+            f'(deny file-read* file-write* (subpath {json.dumps(str(selected_source))}))\n')
     log = (target / 'game.log').open('xb')
     try:
         process = subprocess.Popen(['/usr/bin/sandbox-exec', '-f', str(profile), str(executable)],
-                                   cwd=executable.parent, env=env, stdout=log, stderr=subprocess.STDOUT)
+                                   cwd=executable.parent, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     finally:
         log.close()
+    from smb3_agent.process_watchdog import ChildWatchdog
+    try:
+        process._gc_watchdog = ChildWatchdog(process)
+    except Exception:
+        process.terminate()
+        process.wait(timeout=5)
+        raise
     launch.process_id = process.pid
     # Metadata only; no input, hidden state or owner-save access.
     time.sleep(.2)
@@ -404,8 +459,14 @@ def launch_fresh_engineering(installation: Path, destination: Path, *, prepared_
 def supported_startup_preferences() -> str:
     """Declared source-Mac display settings, never owner save or auth data."""
     return ('<?xml version="1.0" encoding="utf-8"?>\n<StartupPreferences>'
-            '<windowMode>1</windowMode><fullscreenResolutionX>3024</fullscreenResolutionX>'
+            '<windowMode>0</windowMode><fullscreenResolutionX>3024</fullscreenResolutionX>'
             '<fullscreenResolutionY>1964</fullscreenResolutionY>'
+            '<clientOptions><fullscreen>false</fullscreen>'
+            '<windowedBorderlessFullscreen>true</windowedBorderlessFullscreen>'
+            '<preferredResolutionX>3024</preferredResolutionX>'
+            '<preferredResolutionY>1898</preferredResolutionY>'
+            '<uiScale>1</uiScale><zoomLevel>0.75</zoomLevel>'
+            '<pauseWhenOutOfFocus>true</pauseWhenOutOfFocus></clientOptions>'
             '</StartupPreferences>\n')
 
 
@@ -442,6 +503,11 @@ def _verify_engineering_launch_identity(launch: EngineeringLaunch, window: Windo
                  Path.home() / 'Library/Application Support/StardewValley']
     expected = '(version 1)\n(allow default)\n(deny network*)\n' + '\n'.join(
         f'(deny file-read* file-write* (subpath {json.dumps(str(path))}))' for path in protected) + '\n'
+    selected = root / 'selected-source.json'
+    if selected.is_file():
+        selected_record = json.loads(selected.read_text())
+        original = selected_record['save']['primary_real_path']
+        expected += f'(deny file-read* file-write* (subpath {json.dumps(original)}))\n'
     if profile != root / 'isolation.sb' or profile.read_text() != expected:
         raise StardewAdapterError("Engineering sandbox policy changed")
 
@@ -517,6 +583,34 @@ def retain_engineering_load_review(launch: EngineeringLaunch, window: WindowObse
                    'screenshots': {'load_menu': menu, 'loaded_game': loaded},
                    'automatic_target_perception': False, 'owner_source_access': False}, stream, indent=2)
     return path
+
+
+def verify_selected_scene(setup, launch, window, profile, screenshot, load_screenshot):
+    """Bind current pixel support to the only save in an isolated selected-copy launch."""
+    import json
+    from smb3_agent.stardew_adapter import _tree_identity
+    _verify_engineering_launch_identity(launch, window)
+    record = json.loads((Path(launch.root)/'selected-source.json').read_text())
+    if record.get('schema') != 'stardew-selected-copy/v1' or record.get('copy_authorized') is not True:
+        raise StardewAdapterError("Selected-copy authorization record is missing")
+    save = SaveIdentity(**record['save'])
+    farm = _engineering_farm(launch, Path(save.disposable_real_path).name)
+    if str(farm) != save.disposable_real_path or not setup.manager.verify_primary_unchanged(save):
+        raise StardewAdapterError("The selected original or isolated copy identity changed")
+    if _tree_identity(farm)[0] != save.disposable_tree_sha256:
+        raise StardewAdapterError("The isolated save changed before observed loading verification")
+    load = _engineering_image(launch, load_screenshot)
+    field = _engineering_image(launch, screenshot)
+    if load['mtime_ns'] >= field['mtime_ns'] or load['sha256'] == field['sha256']:
+        raise StardewAdapterError("Distinct ordered observed selection and field images are required")
+    if not profile.qualified() or profile.scene_receipt is None or profile.scene_receipt['sha256'] != field['sha256']:
+        raise StardewAdapterError("The current field has no matching observed support record")
+    receipt = Path(launch.root)/'selected-scene.json'
+    profile.retain(receipt)
+    evidence = LoadingEvidence(save.nonce, window.process_id, window.process_started_at, window.window_id,
+        (str(farm/farm.name),), tuple(item['path'] for item in _engineering_save_metadata(farm)),
+        (str(receipt), str(load_screenshot), str(screenshot), str(Path(launch.root)/'selected-source.json')), 'actual_live')
+    setup.session = SetupSession(save, 'selected_owner_copy', evidence)
 
 
 class ReconnectedEngineeringProcess:

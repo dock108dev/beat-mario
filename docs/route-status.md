@@ -1,5 +1,7 @@
 # Route Status
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 Historical Mario route-status record, last updated August 11, 2026. Its goals, ranks and results retain their original evidence boundaries. Current application release work follows the [private-beta engineering plan](private-beta-engineering.md).
 
 Last updated: 2026-08-11.

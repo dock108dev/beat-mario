@@ -205,6 +205,10 @@ def runtime_fields(plan: Any) -> dict[str, Any]:
         if not expected or (path, fields["stop_point"]) != expected[:2] or speed != 1 or not data.get("coaching_compatibility"):
             raise ValueError("Adaptive strategy requires a bounded normal-speed compatible scope")
         fields["strategy"] = expected[2]
+        seconds = data.get("resource_limits", {}).get("maximum_seconds_per_attempt", 480 if expected[2] == 2 else 120)
+        if type(seconds) is not int or not 1 <= seconds <= (480 if expected[2] == 2 else 120):
+            raise ValueError("Invalid reviewed strategy duration")
+        fields["strategy_seconds"] = seconds
     validate_runtime_fields(fields)
     return fields
 

@@ -155,7 +155,7 @@ def _resolve_targets(kind: str, clause: str, context: PlanningContext,
 
 class StardewPlanningAdapter:
     help_text = ("I can plan watering, harvesting ready crops, planting owned seeds, and clearing selected debris. "
-                 "Select observed targets and name the seed type for planting. Watering requires verified disposable setup and automatic complete-set perception. Harvest, planting and clearing await B4.")
+                 "Select observed targets and name the seed type for planting. Watering requires verified disposable setup and automatic complete-set perception. Harvest, planting and clearing require qualified farm-action observations.")
 
     def propose(self, text: str, context: PlanningContext) -> AdapterProposal:
         current = context.current_plan
@@ -378,7 +378,7 @@ class StardewPlanningAdapter:
                        if activity else "Review the ordered selected targets, owned items, dependencies, limits and farmhouse return. Each action requires fresh visible eligibility and reconciled postconditions; interruptions retain partial work and require new review."
                        if farm_live else "Review every initially planted crop and the farmhouse return point. Start requires fresh Stardew authority; focusing chat pauses game input."
                        if live and watering_only else
-                       "Live watering requires verified disposable setup and automatic complete-set perception. Harvest, planting, clearing and combined routines remain unavailable until B4.")
+                       "Live watering requires verified disposable setup and automatic complete-set perception. Harvest, planting, clearing and combined routines are unavailable through this planning path.")
         return AdapterProposal(
             normalized_intent="farm_routine", requested_objective=current.requested_objective if current else text,
             actions=tuple(actions), base_task_id=FARM_TASK_ID,

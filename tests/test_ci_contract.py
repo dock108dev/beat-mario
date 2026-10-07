@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 import tomllib
+from urllib.parse import unquote
 
 import pytest
 import yaml
@@ -229,7 +230,8 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
 
     markdown_files = (README_PATH, *sorted((REPOSITORY_ROOT / "docs").glob("*.md")))
     tracked_files = subprocess.check_output(
-        ["git", "ls-files", "-z"], cwd=REPOSITORY_ROOT, text=True
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        cwd=REPOSITORY_ROOT, text=True
     ).split("\0")
     checkout_paths = set()
     for name in filter(None, tracked_files):
@@ -241,7 +243,12 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
         for target in re.findall(r"\[[^]]+\]\(([^)#]+)", source.read_text(encoding="utf-8")):
             if "://" in target or target.startswith("/"):
                 continue
-            resolved = (source.parent / target).resolve()
+            resolved = (source.parent / unquote(target)).resolve()
+            # Historical evidence and packages remain local-only. A fresh clone
+            # intentionally lacks them; all authored links still need source files.
+            if any(resolved.is_relative_to(REPOSITORY_ROOT / directory)
+                   for directory in ("artifacts", "dist")):
+                continue
             if not resolved.exists() or resolved not in checkout_paths:
                 missing_links.append((source, target))
     assert missing_links == []

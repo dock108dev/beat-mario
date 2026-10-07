@@ -6,7 +6,7 @@
 
 The conversation and gameplay roles have separate bounded contexts. Scope/goal revision, observation/session identity and control generation bind replies; late output cannot execute. Provider sessions are descriptive, never gameplay permission. Runtime tools compose supported adapter skills instead of editing source.
 
-Source launch currently runs from the checkout; the packaged app runs from Application Support. Bundled resource paths and writable profiles, variants, histories and provider state have different roots; full package resource adoption remains incomplete. Relative planting-survey paths and ignored prepared-farm/profile/calibration registrations need explicit resource resolution/adoption, including their image dependencies. FCEUX scripts must be supplied and located as app resources. Finder launch cannot assume the developer shell's executable PATH.
+Source launch runs from the checkout. The packaged app resolves read-only resources from its bundle and keeps writable configuration, histories, provider state and game-copy artifacts in Application Support. Candidate.35 includes an explicit 196-resource inventory, FCEUX scripts and transitive calibration/images; installed resource hashes were rechecked during the [documentation audit](documentation-audit-20261006.md). Discovery supports Finder launch without the developer shell's PATH. Games, cartridges, credentials and original saves remain external. Ordinary Stardew discovers default saves, copies an approved game-created farm and prepares from observed state; frozen calibration/profile adoption remains a separate regression path.
 
 Provider unavailability, login loss, rate limits, timeouts and invalid output produce visible remedies and safe release. Both-game setup, switching and restart need current observations; cleanup failures remain observable. Normal Codex inference sends selected game context/images to OpenAI, while reports remain local until explicitly shared.
 
@@ -16,7 +16,7 @@ player setup does not require terminal commands or YAML editing. Minecraft
 Creative uses selected-window capture, app calibration and finite native skills.
 OpenTTD uses visible observations, a local Ollama proposal and one reviewed
 repayment. Mario uses FCEUX for supported live execution and
-retains a separate Mednafen diagnostic path. Stardew provides isolated prepared-copy setup and guarded live browser controls for the locally qualified Day 2/Day 5 configurations; its public CLI remains inspection-only. Experimental adapters are
+retains a separate Mednafen diagnostic path. Stardew provides ordinary default-save/selected-copy preparation and guarded watering, alongside retained prepared Day 2/Day 5 regression configurations; its public CLI remains inspection-only. Experimental adapters are
 declarative, fixture-only catalog entries. There is no database, migration,
 hosted application API, or production deployment target.
 

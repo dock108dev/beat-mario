@@ -108,7 +108,7 @@ def test_b3_observation_cannot_enable_b4_actions(tmp_path):
     result = Planner().plan("Harvest crop and return to the farmhouse entrance.", runtime.planning_context(conversation_id="conversation"))
     assert result.plan.execution_eligibility == "unavailable_live"
     runtime.review(result.plan)
-    with pytest.raises(StardewAdapterError, match="qualified B4"):
+    with pytest.raises(StardewAdapterError, match="qualified farm-action recognition"):
         runtime.start(result.plan, background=False)
     assert not commands
 

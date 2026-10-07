@@ -1,5 +1,7 @@
 # Game Companion private-beta review status
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 ## Active successor status — October 4, 2026
 
 The current source has bounded real Mario coaching/routes/flight and Stardew watering/discussion/inspection evidence. The contextual language LLM and adaptive game-playing agent are still missing from the ordinary Mario/Stardew path; no successor package demonstrates them. The active [engineering roadmap](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md) now lead with Codex integration and a useful model-driven vertical slice, then both games, setup, evaluation, packaging and local release. Recording is deferred to tentative beta v2.

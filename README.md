@@ -10,7 +10,7 @@ validate actions and verify observed effects.
 - **Mario:** bounded World 1-1 strategy, opening-jump coaching, remembered
   stairs/pipe guidance, experimental coin routes, and a supported sky 1UP activity.
   Arbitrary levels, tactics, and complete coin coverage are unsupported.
-- **Stardew:** prepared-farm watering, planting-location discussion, and supported
+- **Stardew:** ordinary default-save isolated copying, observed preparation and narrow spring-patch watering; retained source planting-location discussion and supported
   inspection/return routines. Reconnaissance is implemented but native acceptance
   is pending. Arbitrary farms and delegated cave exploration are unverified.
 - **Minecraft:** setup, calibration, and small camera requests. Movement,
@@ -33,9 +33,10 @@ See [known limitations](docs/known-limitations.md) and the
 - FCEUX and a supported local game file for Mario. Set `SMB3_GAME_FILE` or select
   the file in setup. FCEUX discovery checks PATH and standard Homebrew locations.
 - Screen recording and Accessibility permissions for supported native input.
-- Stardew live activities additionally require a disposable prepared save and
-  compatible pixel calibration. These local registrations are not included in a
-  clone; see [Stardew setup](docs/stardew-operator-guide.md#choose-the-matching-farm-and-profile).
+- Stardew ordinary watering requires a supported game-created farm, approved
+  isolated copying and current-pixel readiness. The established default farm is
+  discovered by the app; manual profile calibration belongs to retained regression
+  workflows. See [Stardew setup](docs/private-beta-quick-start.md#stardew-ordinary-farm).
 
 Linux CI exercises offline contracts and tests, not native game behavior.
 OpenTTD additionally requires local Ollama with `gemma3:4b`.

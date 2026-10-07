@@ -1,6 +1,95 @@
 # Game Companion engineering plan to local private beta
 
-Updated October 5, 2026 after the owner rejected repeated micro-adjustment milestones. The next deliverable is a usable local Mac app candidate. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) contains the active delivery checklist; [product scope](product-direction.md) and [architecture](agent-architecture.md) define behavior. Dated verification records retain their evidence scope.
+## Current engineering checkpoint — October 6 integrated native qualification
+
+**Candidate.35 / build 30035 is the installed engineering candidate. Engineering acceptance remains open.** Permission recovery and normal default-save creation are complete. Candidate.35 passed ordinary preparation, contextual middle-only watering, resource accounting, farmhouse return and neutral handback; active Stardew Stop, fresh-review refusal/recovery, owned provider-process failure/recovery and neutral game switching also passed. Mario coaching/preference completion and affected interruption/recovery/active keyboard and Dock exit checks remain open.
+
+The [current engineering status](current-engineering-status.md) owns exact identity, evidence, remaining gates and the stopped state. The [Desktop next steps](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) orders resumption. This documentation audit does not resume gameplay or grant owner/beta acceptance. Generic permission enabling and save selection are not pending owner work. Older sections below retain their dated scope and do not supply current instructions.
+
+<details>
+<summary>Retained earlier plans, candidate records and technical contracts</summary>
+
+## Owner authorization and permission diagnosis — October 6
+
+The owner reports permission setup complete and authorizes use of Stardew's default save location, creation of a save if needed, gameplay changes, saving and test copies without further save-selection or preservation approval. The owner states there are no game saves requiring protection on this machine. Do not ask for a selected save-folder path again. Existing app history, credentials and unrelated files remain outside this game-save authorization.
+
+Current inspection found no farm saves in `~/.config/StardewValley/Saves` (only Steam metadata). Create a normal game-owned save there as part of engineering setup, then exercise the ordinary session workflow. Do not present a synthetic or renamed regression save as a new ordinary-game qualification.
+
+Both enabled macOS permission entries were inspected through System Settings and Show in Finder; both resolve to candidate.13. A fresh exact candidate.13 launch in isolated app data nevertheless reports capture/input required. A permission-request refresh did not clear that refusal. The focused macOS TCC log records `Failed to match existing code requirement` for the actual candidate.13 ScreenCapture request, with an existing cdhash requirement. This is a confirmed signing/permission-record mismatch, not evidence that the owner failed to enable the app. The same focused log also records a code-requirement mismatch for PostEvent; both capture and input are affected. Diagnose and repair the identity/permission recovery, retain refusals until actual access works, and request an owner action only if the repair demonstrably requires one. Do not repeatedly ask the owner to enable already-enabled entries or bypass macOS protections.
+
+No new farm save or gameplay outcome was established in this inspection. A temporary normal Stardew launch reached the title screen but did not accept the attempted New interaction; save creation remains engineering work, not an owner prerequisite. The temporary companion instance used separate app data and did not replace the owner's app data. Both verification processes are closed before closeout.
+
+## Candidate.13 engineering closeout — October 6, 2026
+
+Delivered stable-signed version **0.3.0-candidate.13**, build **30013**. Source SHA-256 `867d4f75ef2cde923dbe61dbcef5fa66423a5293ef3d626e7ea3358fe4bbe7bb`; 364 archived source files and 119 verified packaged resources. The manifest and exact archived source bind the delivered runtime. Final closeout documentation postdates that freeze.
+
+Implemented selected-save isolated copying alongside the unchanged frozen regression path, current-pixel narrow spring seed-patch recognition and navigation, bounded observed preparation, contextual limits and truthful recovery. Initial support remains narrow and awaits native qualification.
+
+**Verified:** 1,717 canonical tests plus lint, render, credential and asset gates; strict stable signature; exact packaged smoke from /tmp; Finder-launched identity; visible saved conversation descriptions with no restored plan/session/approval; Take control during a real pending Codex child with no late reply; ordinary Quit with closed lifecycle and no cleanup failures. Actual-model correction/action evidence uses a simulated controller and does not establish native play. Original owner Application Support data was restored unchanged after closing the test app; isolated evidence is retained.
+
+**Engineering acceptance remains open.** The final Finder app still reports capture and input permission required. The enabled Screen Recording entry points to candidate.6 with a temporary signature. No selected non-fixture Stardew save has been supplied. Neither final native gameplay endpoint, new automatic preparation/resource renderer, active gameplay interruption/recovery nor keyboard/Dock Quit is accepted. No owner usefulness review or beta/release decision has begun.
+
+Required owner actions: in System Settings → Privacy & Security, replace obsolete Game Companion entries in Screen Recording (or Screen & System Audio Recording) and Accessibility with `/Users/michaelfuscoletti/Desktop/beat-mario/dist/private-beta/0.3.0-candidate.13/Game Companion.app`; enable both and quit/reopen. Supply the exact selected Stardew save folder containing its game-created save and SaveGameInfo and authorize an isolated copy. The engineer then verifies readiness and runs the integrated native set; no owner calibration walkthrough is required.
+
+Next engineering action: restore a fresh isolated test namespace, confirm exact candidate.13 identity and permissions, then run selected-copy preparation from observed title/load/bedroom through exact visible resources, contextual target correction/exclusion, finite watering and farmhouse return. Run Mario early segment and compatible coaching/preference variation through request/review/play/handback. Exercise preparation, pending-inference and active Stop, switching, focus/provider/disconnection recovery, keyboard/Dock exit and descriptive reopening. Choose a supported variation after implementation. Stop at the first unmet gate, retain evidence, repair and repeat affected checks on a newly frozen successor if runtime changes. Preserve original saves, data and unrelated processes. Keep source, actual-model/simulation, native gameplay and owner acceptance distinct.
+
+The adjacent qualification.json records evidence classes and paths. Prior candidates and failed outcomes are retained.
+
+## Selected-session integration — candidate.13 / build 30013
+
+The successor adds explicit save-folder selection and approved isolated copying; the game is denied access to both usual primary save roots and the selected original. Original/copy hashes, the single-save namespace, process/window identity and ordered observed loading are checked before connection. Frozen Day 2 integrity checks remain unchanged.
+
+The ordinary path uses observed title/load/bedroom decisions and automatic entrance positioning, selects the visibly identified basic can, then discovers the current local spring-seed targets and clear-terrain cardinal graph. It does not reuse fixture crop coordinates, obstacle positions or routes. Unknown ground blocks an approach; changed terrain, missing targets, uncertain resources and failed progress stop work. Water/energy and crop effects use the existing independent pixel reconciliation and guarded controllers. Native qualification of this new path is pending; shared feature calibration and synthetic route tests are not that qualification.
+
+Support is narrow: unchanged standard spring farmhouse, supported blue clothing, the declared visible viewport, basic can and exact numerical resources, 1–15 visible newly planted seeds in the local farmhouse patch, and recognized approaches/return. Wider farm coverage, mature crops, upgraded tools and recording remain unavailable. Preparation has a five-minute/100-step ceiling, narrowed by applicable discussed duration/constraints. Watering still requires a separate finite Review and Start.
+
+On October 6 the owner reported permission grants, but a fresh isolated Finder launch of exact candidate.9 still reported capture and input required. System Settings showed a Game Companion recording entry enabled. This discrepancy is retained; no gameplay input was attempted. Confirm both grants against the stable-signed successor before native trials. A player-selected non-fixture save path is also needed for the required ordinary-session trial. Owner usefulness review and the beta decision remain later gates.
+
+System Settings’ enabled recording entry was independently located at candidate.6, whose designated requirement is a temporary cdhash. The owner has been asked to replace it with the stable-signed successor in both privacy lists. Further repairs revalidate menu pixels and bedroom pose after slow inference, cancel pending preparation inference at the finite deadline, and retain a failed input-release state until cleanup succeeds; new setup is refused while handback is unconfirmed.
+
+The packaged reopening check found retained canceled-chat events absent from the ordinary workspace. Bounded transcript restoration now labels old messages as saved descriptions and restores no plan, target, approval or authority. The failed candidate.12 reopening record is preserved. Candidate.13 repeated the check successfully: saved descriptions were visible with no plan, session or restored authority.
+
+The integrated native set remains: selected-copy title entry/preparation, complete toolbar and exact resources, target correction/exclusion and watering accounting/return; Mario request/review/play plus coaching and a post-implementation preference variation; preparation/inference/active Stop; game switching, focus/provider/disconnection recovery; Cmd-Q/Dock Quit and historical reopening. Retain failures, repair affected paths and repeat on the exact final successor. Current independent checks and package identity are recorded in the verification record and adjacent qualification receipt.
+
+## Retained candidate.9 and earlier records
+
+
+## Candidate.9 remaining product integration
+
+Candidate.9/build 30009 adds automatic preparation for the exact supported Day 2 copy and has real pending-inference exit cleanup evidence. Stable-signature Screen Recording/Accessibility grants remain an owner action before engineer-run native trials. These observations do not close the ordinary-session requirement.
+
+The current quick start still requires the unchanged named Day 2 seed and refuses a different save. Implement and qualify explicit selection/registration of a player-owned supported session or approved isolated copy, with supported-scene checks based on current observations rather than identity with the engineering fixture. Do not remove exact integrity checks from the frozen fixture path or claim arbitrary-farm support. Define the supported scene/tool/resource conditions and refuse unsupported conditions clearly.
+
+Permissions unblock automatic-preparation, renderer/resource, both gameplay-variation and interruption/recovery trials. Continue independent session-selection, observation and product integration while permission actions are pending. After grants, the engineer owns the integrated native trials and repairs. Owner usefulness review follows the ordinary-session requirement and engineering acceptance; exact test-farm completion alone is insufficient.
+
+## Candidate.9 final independent checks
+
+The final delivered candidate is build 30009, source `549544c15e383a251e6912de069b82814893010a5cfe1532caae4bbfd840cf5b`, with 119 matching resources and a retained exact source snapshot. Canonical source/render gate: **1,699 passed**, including lint and credential/game-asset checks. Exact packaged smoke passed from `/tmp`; strict signature verification passed. All are bounded engineering evidence, not gameplay acceptance.
+
+Finder update/restart in the unchanged isolated data location preserved the imported seed and descriptive files without restoring a session or approval. Copying the test data to a different resolved location correctly withheld a seed registered in the other namespace; that diagnostic was not treated as a failed stable-location update. SIGTERM closed the real owned isolated Stardew game and left an unrelated fixture alive. A separate SIGKILL during **actual pending Codex inference** closed the owned game, provider process and their watchers; the unrelated fixture remained alive. Reopening displayed the interruption notice, mode none, input stopped and handback confirmed. Ordinary Quit finished without cleanup failures. Local feedback preview included version/build/source and allowlisted activity/preparation context, with no credentials, captures or provider logs. Original owner Application Support data was restored after test app/children closed; isolated test data remains preserved.
+
+The exact final app still reported **Screen Recording required / Accessibility input required**. Candidate.5's granted permissions belonged to a temporary signature; candidate.7 onward use the existing Apple Development certificate identity. The final required owner action is to add/enable **candidate.9** in both privacy lists, replacing an obsolete temporary-signature entry if necessary, then quit/reopen. The earlier permission question remains pending.
+
+**Engineering milestone remains open.** Final-package automatic farm preparation, exact resource/renderer acceptance, both approved gameplay endpoints and their contextual variations, active native interruption/focus-window recovery and keyboard/Dock quit still need engineer-run qualification. Restore an isolated namespace before those trials; primary data must stay preserved. No owner usefulness walkthrough or release acceptance has begun. The adjacent `qualification.json` lists each check and its class. Final documentation may postdate the archived packaged source; the manifest and `artifacts/gc-delivery/candidate9/source-snapshot.tar.gz` bind runtime identity.
+
+## Integrated successor — candidate.9, build 30009
+
+Engineering qualification is still open. The successor output is `dist/private-beta/0.3.0-candidate.9/Game Companion.app`; all prior candidates are retained. The adjacent manifest freezes the source and 119 resources. Local Apple Development signing uses the Mac's existing identity and is not notarization or release acceptance. Temporary ad-hoc signatures made rebuilt apps lose their prior macOS permission identity; candidate.7 introduced the stable certificate identity, shared by candidate.9. Permission recovery for that identity remains an owner action, not a usefulness walkthrough.
+
+Implemented in this integrated work: typed water reserves/use limits and per-attempt time/attempt limits carried from contextual language into review and controllers; correction retains applicable limits; game switching invalidates old intent; separate preserved drafts; build/activity context in inspectable local reports; an ordinary permission-request control; explicit display startup preferences; observed game activation instead of trusting the activation API boolean; approved goal-level preparation for the supported isolated Day 2 copy; independent cancellation of preparation inference; final focus/identity validation after every held pulse has released; faster safe contract parsing for Mario page responsiveness. Preparation uses fresh actual-model images for title/load/bedroom decisions and calibrated visual entrance geometry for local convergence. It verifies tool, every crop and exact resources before automatic recognition connection. Raw pulses and screen profiles are engineering diagnostics, not required ordinary setup steps. General farms remain unsupported.
+
+Evidence remains distinct:
+
+- Candidate.5 Finder native captures show the entire toolbar after explicit viewport startup preferences. Exact can/water/energy recognition and watering/return did not complete; this is promising visibility evidence, not renderer acceptance. Its intermittent focus refusal was retained and repaired in successors.
+- Actual Codex language corrections preserved energy reserve, selected/excluded crops, a one-use/four-unit water budget and a 90-second limit in simulated Stardew. Actual Codex gameplay then changed the selected crop, observed its simulated water effect and returned with simulated handback. Mario corrections changed finite attempts, jump preferences and retained a 45-second deadline. No native claim follows from these simulated checks.
+- Candidate.7 Finder checks passed prepared-source import into isolated data, fresh isolated launch, draft reload, Take control during real pending inference with no late reply/plan, and a truthful actual-model mine/recording refusal. Its `/tmp` smoke, 119-resource/source snapshot verification and packaged watchdog isolation passed; watchdog input was a synthetic owned child.
+- The candidate.7 canonical failure record is retained: a repeatable Mario-page timeout and missed focus polls under delayed scheduling. Affected source checks pass after safe-parser and post-release verification repairs. Candidate.8 carries those repairs and must receive its own final checks.
+
+Remaining engineering checks: grant/recover current stable-signature capture/input permissions and reopen; qualify goal-level prepared-copy setup from the title screen and exact visible resources; complete final-package Stardew watering/correction/return and Mario segment/coaching-or-retry, each with a supported variation chosen after implementation; verify active native interruption, focus/window recovery, restart/history without authority, keyboard/Dock quit and hard-exit cleanup on the affected game paths. Physical Mario mapping confirmation remains required if the native check cannot establish it. Do not mark two-game beta ready or invite owner usefulness acceptance before these checks pass. Recording, reconnaissance, wider levels, arbitrary farms and cave interiors remain later work.
+
+Primary data and saves are preserved. Finder trials use a recorded isolated Application Support namespace; restore the original owner data only after test app/children have quit. Test data, manifests, unsuccessful trials and source snapshots remain under `artifacts/gc-delivery/`.
+
+Updated October 5, 2026 after the owner clarified that engineering must finish before the usefulness walkthrough. Candidate construction is complete; the next deliverable is an integrated, engineering-qualified two-game local beta. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) contains the active delivery checklist; [product scope](product-direction.md) and [architecture](agent-architecture.md) define behavior. Dated verification records retain their evidence scope.
 
 ## Release target and initial scope
 
@@ -18,7 +107,7 @@ The initial local beta uses the capabilities already demonstrated in source:
 
 Both required games must work through the delivered app before the two-game beta is ready. Existing source evidence is a foundation; it does not qualify a new package or the current broken Stardew setup. Do not advertise unverified abilities to make the beta appear broader.
 
-## Repository review — October 5
+## Retained pre-delivery repository review — October 5
 
 - Actual source now has both model roles, visual Mario skills, compatible memory, watering decisions and guarded cancellation. Do not repeat provider scaffolding or demand a new game objective before delivering them.
 - GC-U added catalog model/permission status, direct Mario/Stardew setup and guarded process/window preparation. The latest retained setup reached the porch but clipped the toolbar/water bar; resource recognition refused. Reported bounds alone did not resolve it. This blocks current Stardew availability and needs a usable remedy.
@@ -37,20 +126,20 @@ These are the remaining technical requirements through local release. Work proce
 
 ### Build the reviewable app candidate — GC-U / GC-D1
 
-- [ ] Define a current versioned capability/readiness contract for the initial scope, keeping legacy B/PB records intact. Separate required beta capabilities from experimental/later work.
-- [ ] Open the app on the actual Mario/Stardew/Codex catalog/readiness flow; integrate game-owned setup, selection and saved bindings without another authority owner.
-- [ ] Preserve existing profiles, coaching and history through any schema/data migration; reopening restores no live permission.
-- [ ] Make executable selection/discovery, CLI sign-in, macOS permission status and missing-prerequisite remedies usable from a Finder launch.
+- [x] Define a current versioned capability/readiness contract for the initial scope, keeping legacy B/PB records intact. Separate required beta capabilities from experimental/later work.
+- [x] Open the app on the actual Mario/Stardew/Codex catalog/readiness flow; integrate game-owned setup, selection and saved bindings without another authority owner.
+- [x] Preserve existing profiles, coaching and history through any schema/data migration; reopening restores no live permission.
+- [x] Make executable selection/discovery, CLI sign-in, macOS permission status and missing-prerequisite remedies usable from a Finder launch.
 - [ ] Complete Mario disposable-session setup and Stardew owner-controlled prepared-copy/import/setup. Preserve primary/frozen saves and declare manual Load/porch/tool steps.
 - [ ] Resolve Stardew rendered layout/resource visibility with a reproducible ordinary remedy; retain genuine geometry, resource, focus and freshness refusals.
-- [ ] Complete the resource inventory for enabled capabilities, including transitive calibration/survey images, manifests, registries, FCEUX scripts, helpers and Python/runtime dependencies.
-- [ ] Choose explicit bundled assets and owner-imported/external prerequisites. Avoid wholesale copying of ignored data, personal saves, receipts or credentials.
-- [ ] Replace repository-relative/absolute developer paths with read-only app resources and writable Application Support registrations/history.
-- [ ] Package required OCR/helper resources, or expose a verified external prerequisite where the initial scope actually needs it.
-- [ ] Give the successor distinct version/build/output/manifest and preserve retained private.1/private.2 apps.
-- [ ] Include a matching current quick start, scoped capability list, readable recovery steps and inspectable local diagnostics/feedback.
-- [ ] Implement independent owned-process/input cleanup for Quit, provider cancellation, signal/termination and interrupted startup; surface cleanup failures.
-- [ ] Build and locally sign a self-consistent Mac candidate. Candidate construction and asset/path fixes proceed while Stardew or experimental checks remain pending.
+- [x] Complete the resource inventory for enabled capabilities, including transitive calibration/survey images, manifests, registries, FCEUX scripts, helpers and Python/runtime dependencies.
+- [x] Choose explicit bundled assets and owner-imported/external prerequisites. Avoid wholesale copying of ignored data, personal saves, receipts or credentials.
+- [x] Replace repository-relative/absolute developer paths with read-only app resources and writable Application Support registrations/history.
+- [x] Package required OCR/helper resources, or expose a verified external prerequisite where the initial scope actually needs it.
+- [x] Give the successor distinct version/build/output/manifest and preserve retained private.1/private.2 apps.
+- [x] Include a matching current quick start, scoped capability list, readable recovery steps and inspectable local diagnostics/feedback.
+- [x] Implement independent owned-process/input cleanup for Quit, provider cancellation, signal/termination and interrupted startup; surface cleanup failures.
+- [x] Build and locally sign a self-consistent Mac candidate. Candidate construction and asset/path fixes proceed while Stardew or experimental checks remain pending.
 
 **Exit:** an actual app exists with its declared resources, setup and guide, plus an explicit list of remaining qualification blockers. A package may be reviewable before it is beta-ready.
 
@@ -84,9 +173,20 @@ These are the remaining technical requirements through local release. Work proce
 
 ## Current engineering pickup
 
-Implement and build the successor local app using the checklist above. Complete packaging, resource relocation, app entry and usable setup as a single concrete delivery task. Address the Stardew layout problem as part of that experience. If it remains blocked, finish independent candidate work and report the exact two-game qualification blocker rather than ending with only another setup repair.
+Finish the usable two-game beta as one engineering milestone. Candidate.4/build 30004 is the retained package baseline; build a successor after runtime/resource changes. The engineer owns integration, repairs and native trials. Owner permission clicks and physical mapping confirmation enable testing; owner usefulness review follows engineering acceptance. A blocked native check does not block independent implementation.
 
-Reconnaissance native qualification remains valid follow-on work; keep it visibly experimental until it passes. Broader hazards, complete levels/coins and arbitrary farm support develop after the initial scoped beta.
+### Remaining engineering workstreams
+
+- [ ] Repair Stardew toolbar/resource visibility and qualify a reproducible ordinary setup remedy using current pixels. Retain real geometry, resource, focus and freshness refusals.
+- [ ] Verify and repair contextual language across paraphrases, references, exclusions, changed preferences and corrections. Carry the resulting constraints into review and gameplay; unsupported requests receive truthful guidance and discussion grants no control.
+- [ ] Verify and repair adaptive gameplay across supported variations. Fresh observations and action effects must influence model choices; compatible coaching must affect later behavior. Detect stalls, failed actions and changed state, then choose a supported alternative or stop with a useful explanation. Avoid a new complete route script for each request.
+- [ ] Complete packaged Stop, game switching, provider failure, focus/window loss, termination and fresh-review recovery. Reject stale continuation and restore configuration/history without authority.
+- [ ] Finish first use, ordinary setup, readable layouts, keyboard/drafts, actionable errors, progress/results and local feedback. Declare every remaining manual prerequisite.
+- [ ] Complete engineer-run final-package trials of both games, including a supported variation selected after implementation, meaningful affected regressions, the canonical gate and release documentation. Then hand off for owner usefulness review.
+
+Use the existing GC-A0–A6, GC-U, GC-Q and delivery contracts below to close these gaps; do not rebuild working foundations. Separate known defects, implemented behavior awaiting verification and missing capabilities in the closeout. Candidate construction and source test counts alone do not settle these workstreams.
+
+The supported Mario early segment and prepared Day 2 watering/return remain the initial coverage boundary. They must demonstrate useful contextual adaptation, rather than only replaying their previous successful case. Wider levels/farms, reconnaissance and recording remain explicit later work; recording tentatively beta v2. Retain exact identities and keep owner usefulness review/local beta acceptance separate.
 
 ## Technical contracts and broader coverage backlog
 
@@ -95,7 +195,7 @@ The GC packages below retain shared technical contracts and the broader game roa
 | Package | Deliverable | Dependencies | Current status |
 | --- | --- | --- | --- |
 | GC-A0 | Shared intent, game-state, decision and skill contracts | Current adapter/control owners | Partial: connected watering and visual Mario segment contracts implemented |
-| GC-A1 | Codex provider and app lifecycle | GC-A0 | Source implemented; packaged discovery pending |
+| GC-A1 | Codex provider and app lifecycle | GC-A0 | Source implemented; packaged readiness observed; gameplay cancellation/recovery qualification open |
 | GC-A2 | Contextual language role in ordinary interfaces | GC-A0/A1 | Connected; broader coaching/context evaluation pending |
 | GC-A3 | Reusable observation and working game state | Existing observers; GC-A0 | Partial foundations |
 | GC-A4 | Reusable executable skills and validated tool bridge | Existing controllers; GC-A0/A3 | Partial foundations |
@@ -105,7 +205,7 @@ The GC packages below retain shared technical contracts and the broader game roa
 | GC-S | Model-driven Stardew activities | GC-A2–A6 | Watering source accepted; current setup recovery blocks availability; reconnaissance experimental |
 | GC-U | Ordinary setup, conversation and shared usability | GC-A1; both adapters | Source readiness/entry/preparation implemented; integrated app walkthrough pending |
 | GC-Q | Model, gameplay, control and regression evaluation | Enabled beta scope and D2 | Source evidence retained; exact-app checks pending; broader evaluation later |
-| GC-D1 | Complete app resources, packaging and readiness contract | Declared beta scope; source foundations | Next: build candidate alongside setup recovery; inventory exists, builder incomplete |
+| GC-D1 | Complete app resources, packaging and readiness contract | Declared beta scope; source foundations | Candidate.4 constructed with explicit resources; preserve it and build a successor after runtime repairs |
 | GC-D2 | Exact-package end-to-end qualification and repairs | D1; enabled beta capabilities | Open: integrated walkthrough and repairs |
 | GC-R | Local private-beta release preparation and owner decision | D2 | Open |
 
@@ -220,7 +320,7 @@ The GC packages below retain shared technical contracts and the broader game roa
 
 ### GC-U — ordinary setup and coherent product UI
 
-Source setup includes catalog Codex readiness, permission status, direct game setup and guarded preparation. Its recorded native trial reached the porch but could not recognize the selected can because the toolbar/resource bar was clipped. Resolve that as a Stardew usability blocker during candidate delivery. Source setup is partial; the app entry, persisted bindings and packaged walkthrough still need integration. Reconnaissance remains experimental until its separate native checks pass. Build/package work proceeds concurrently with renderer recovery.
+Candidate.4 includes catalog Codex readiness, permission status, direct game setup, persisted bindings and guarded preparation. Its ordinary import and descriptive reopening were observed. The earlier native setup trial reached the porch but could not recognize the selected can because the toolbar/resource bar was clipped; the rendered-layout defect remains unresolved. Finish first-use and gameplay usability and the packaged integration/recovery checks. Reconnaissance remains experimental until its separate native checks pass. Independent engineering proceeds while native permission actions are pending.
 
 - Integrate Mario, Stardew and Codex setup in the real app catalog/profile flow; current generic setup templates focus on Minecraft/OpenTTD.
 - Detect or guide game/emulator paths, CLI availability/sign-in, macOS permissions, selected process/window/display and supported settings with readable remedies.
@@ -320,4 +420,35 @@ This is a documentation update only: no Codex-backed runtime, new game skill, pa
 
 ## October 5 source maintenance — SSOT enforcement
 
-FCEUX setup, live observation, Show, engineering harness and default reliability preflight now share `executable_discovery.py`; missing discovery refuses launch without a bare-name fallback. README, runtime/configuration and the SSOT map describe the implemented Codex roles and retained diagnostic/controller boundaries. Focused validation passed 218 synthetic component tests (208 before this pass), Ruff and syntax/whitespace checks. This source maintenance changes the candidate; prior native/package evidence keeps its original identity. Current pickup is consolidated local app delivery; renderer recovery is a component of the supported Stardew walkthrough, and reconnaissance is experimental. See [SSOT decisions](ssot.md#october-5-ssot-enforcement-pass).
+FCEUX setup, live observation, Show, engineering harness and default reliability preflight now share `executable_discovery.py`; missing discovery refuses launch without a bare-name fallback. README, runtime/configuration and the SSOT map describe the implemented Codex roles and retained diagnostic/controller boundaries. Focused validation passed 218 synthetic component tests (208 before this pass), Ruff and syntax/whitespace checks. This source maintenance changes the candidate; prior native/package evidence keeps its original identity. Current pickup is consolidated local app delivery; renderer recovery is a component of the supported Stardew walkthrough, and reconnaissance is experimental. See [SSOT decisions](ssot.md#shared-executable-inference-and-input-boundaries).
+
+
+## Local candidate delivery — October 5, 2026
+
+Reviewable candidate: `beat-mario/dist/private-beta/0.3.0-candidate.4/Game Companion.app` (engineering plan paths are relative to Desktop; repository output is `dist/private-beta/0.3.0-candidate.4/`). Adjacent `build-manifest.json`, `Quick Start.md` and `qualification.json` bind the delivered identity and checks. Build 30004 is locally ad-hoc signed. Retained private.1/private.2 apps are preserved.
+
+Construction now includes current catalog entry, setup persistence, FCEUX selection, explicit unchanged Day 2 import, 119 app/controller/calibration resources, bundled OCR and runtime dependencies, writable Application Support history, local feedback preview, native Quit/signal handling and independent input/child cleanup. Recording, reconnaissance, wider gameplay and legacy native execution are unavailable in the candidate; historical data remains inspectable.
+
+The packaged construction walkthrough found and repaired draft loss during Mario setup, a dropped Stardew installation field, unavailable first-use import launch controls, and browser-policy-blocked readiness/Quit scripts. A transient first-load native-framework initialization failure led to main-thread preinitialization and persistent sanitized runtime diagnostics. Final exact-app rechecks and the canonical gate are recorded in the adjacent qualification file and `artifacts/gc-delivery/candidate4/`; evidence classes remain distinct.
+
+Candidate.3's Finder trial verified signed-in Codex, supported Mario-file selection, actual-model advisory discussion without a plan, neutral game switching, unchanged prepared-seed import, and a fresh isolated Stardew launch. Stop/Quit confirmed handback, closed the owned game and app, and preserved configuration. It refused preparation with `macOS input-post permission is unavailable; no permission prompt was opened`. Final candidate.4 retains those mechanisms and receives its own rechecks; prior trial evidence does not become candidate.4 gameplay evidence.
+
+**Not beta-ready.** The candidate lacks macOS capture/input permissions. Mario's manual controller readiness and both packaged approved gameplay loops remain unqualified. Stardew's previously clipped toolbar/resource rendering is still unresolved: no permission-eligible porch view was available to reproduce and qualify a remedy. Bounds, relocation and calibration integrity do not establish correct current rendering. Preserve geometry/resource/freshness guards.
+
+Next engineering step: complete the workstreams above. Request necessary owner Screen Recording/Accessibility actions and Mario mapping confirmation when their checks require them, while continuing independent repairs. Qualify Stardew's layout remedy before watering, then run both packaged gameplay loops, variations, interruption, return and saved-result checks. Owner usefulness review follows engineering acceptance.
+
+Update/rollback: Quit, back up `~/Library/Application Support/Game Companion`, then open the selected retained version. Preserve profiles, coaching, imported seeds, histories and failed outcomes; every reopened game needs fresh preparation, observations, Review and Start.
+
+Final candidate.4 rechecks: Finder reopening without restored authority, ordinary supported-seed import, relocated packaged smoke, resource/source hash verification, deep strict signing, ordinary Quit, SIGTERM and packaged synthetic-worker watchdog passed. Exact-package active gameplay interruption and renderer/gameplay acceptance remain open. The final canonical result is recorded in the adjacent qualification receipt and delivery evidence.
+
+Final validation: canonical gate passed with 1,686 tests, lint, tracked credential/game-asset scan and player/Lab/Stardew render contracts. Final documentation contracts passed (22 tests). These are source/render-contract checks, not native gameplay proof.
+
+## Ordinary experience acceptance — owner correction
+
+The owner rejected exposed timed nudges, micro-adjustments and named-test-save preparation as the ordinary experience. Implement observed, goal-level preparation and a qualified player-selected supported session or explicitly approved isolated copy. The owner must not need to adopt an exact engineering save, align a character with timed pulses or choose technical calibration profiles. Raw calibration tools belong in separate engineering diagnostics. Hiding the controls while retaining the manual choreography does not satisfy this requirement. This is a release-blocking capability gap, not cosmetic cleanup. Prepared farms remain preserved regression fixtures; this requirement does not promise universal farm recognition.
+
+The ordinary flow is: open or connect to a supported game, describe the goal, review the proposed activity, approve and observe progress, then receive results or take control. The companion identifies the current screen, player and tool state, performs approved supported preparation and checks effects before continuing. Questions concern permissions, goal ambiguity, session/save choice, protected actions or concrete unsupported prerequisites.
+
+Qualify this flow from an ordinary supported entry state without developer-arranged alignment, code changes or engineering controls. If perception/navigation cannot support it, implement the missing capability before beta acceptance. Owner usefulness review follows this engineering exit. This correction supersedes any earlier allowance for exact named-farm/porch choreography as acceptable beta setup; historical candidate evidence retains its original scope.
+
+</details>

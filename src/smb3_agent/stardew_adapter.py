@@ -562,6 +562,117 @@ class MacVisibleStardewBackend:
         self.expected_process_id = process_id
         self.expected_process_started_at = process_started_at
 
+    def activate_window(self, *, cancelled=None, diagnostics=None, expected_viewport=None) -> WindowObservation:
+        """Request owned game focus, accepting only fresh observed foreground truth."""
+        if self.expected_process_id is None:
+            raise StardewAdapterError("Focus requires an identified game process")
+        import time
+        from AppKit import NSRunningApplication, NSApplicationActivateIgnoringOtherApps, NSApplicationActivateAllWindows
+        requested = False
+        window_ready_request = False
+        startup_ambiguous = startup_settled_request = False
+        stable_geometry, stable_reads = None, 0
+        ready_reads = 0
+        attempts = 300 if expected_viewport is not None else 100
+        for attempt in range(attempts):
+            if cancelled is not None and cancelled():
+                raise StardewAdapterError("Game focus preparation interrupted")
+            app = NSRunningApplication.runningApplicationWithProcessIdentifier_(self.expected_process_id)
+            if app is not None and not requested:
+                app.unhide()
+                app.activateWithOptions_(NSApplicationActivateIgnoringOtherApps | NSApplicationActivateAllWindows)
+                bundle_identity = getattr(app, 'bundleIdentifier', None)
+                if bundle_identity is not None and bundle_identity() is None:
+                    from smb3_agent.native_host import request_unbundled_activation
+                    request = request_unbundled_activation(self.expected_process_id,
+                        self.expected_process_started_at, error_type=StardewAdapterError, cancelled=cancelled)
+                    if diagnostics is not None:
+                        diagnostics.append(request)
+                requested = True
+            try:
+                observed = self.detect_window()
+                if expected_viewport is not None:
+                    current = (observed.window_id, observed.bounds, observed.process_started_at)
+                    if observed.bounds[2:] != tuple(expected_viewport):
+                        stable_geometry, stable_reads = None, 0
+                    else:
+                        stable_reads = stable_reads + 1 if current == stable_geometry else 1
+                        stable_geometry = current
+                    if stable_reads < 3:
+                        if attempt == attempts - 1:
+                            raise StardewAdapterError('Game startup did not reach a stable supported viewport; no capture or input accepted')
+                        time.sleep(.1)
+                        continue
+                return observed
+            except StardewAdapterError as exc:
+                stable_geometry, stable_reads = None, 0
+                if diagnostics is not None and (not diagnostics or diagnostics[-1].get("focus_wait_refusal") != str(exc)):
+                    diagnostics.append({"focus_wait_refusal": str(exc), "attempt": attempt})
+                startup_ambiguous |= 'observed 2' in str(exc)
+                # SDL creates the visible window after process registration.
+                # A request against its placeholder cannot bring up the later window.
+                if requested and (not window_ready_request or (startup_ambiguous and not startup_settled_request)):
+                    candidate = None
+                    try:
+                        candidate = self.detect_window(require_foreground=False)
+                    except StardewAdapterError:
+                        # A newly created SDL window may belong to another
+                        # desktop during its transition. Metadata can permit a
+                        # focus request, never capture/input acceptance.
+                        ready = self._activation_window_exists(expected_viewport=expected_viewport)
+                    else:
+                        ready = expected_viewport is None or candidate.bounds[2:] == tuple(expected_viewport)
+                    ready_reads = ready_reads+1 if ready else 0
+                    settled = (candidate is not None and startup_ambiguous and window_ready_request)
+                    if ready_reads >= (3 if expected_viewport is not None else 1) and (not window_ready_request or settled):
+                        if cancelled is not None and cancelled():
+                            raise StardewAdapterError('Game focus preparation interrupted')
+                        from smb3_agent.native_host import request_unbundled_activation
+                        request = request_unbundled_activation(self.expected_process_id,
+                            self.expected_process_started_at, error_type=StardewAdapterError, cancelled=cancelled)
+                        if diagnostics is not None:
+                            diagnostics.append(request)
+                        if window_ready_request:
+                            startup_settled_request = True
+                        window_ready_request = True
+                        ready_reads = 0
+                if attempt == attempts - 1:
+                    raise StardewAdapterError("Select the open identified Stardew window and retry; foreground/window verification failed within the bounded focus wait. No capture or input accepted.") from None
+                time.sleep(.1)
+        raise StardewAdapterError("Verified game focus unavailable")
+
+    def _activation_window_exists(self, *, expected_viewport=None) -> bool:
+        """Owned offscreen metadata is only a reason to request focus."""
+        import Quartz
+        records = Quartz.CGWindowListCopyWindowInfo(
+            Quartz.kCGWindowListOptionAll | Quartz.kCGWindowListExcludeDesktopElements,
+            Quartz.kCGNullWindowID) or ()
+        windows = [row for row in records
+                   if int(row.get(Quartz.kCGWindowOwnerPID, -1)) == self.expected_process_id
+                   and self._supported_game_layer(row, Quartz)
+                   and str(row.get(Quartz.kCGWindowName, '')).lower() == 'stardew valley'
+                   and float(row.get(Quartz.kCGWindowAlpha, 0)) > 0
+                   and int((row.get(Quartz.kCGWindowBounds) or {}).get('Height', 0)) > 100
+                   and (expected_viewport is None or tuple(int((row.get(Quartz.kCGWindowBounds) or {}).get(k,0))
+                        for k in ('Width','Height')) == tuple(expected_viewport))]
+        return len(windows) == 1
+
+    def _supported_game_layer(self, record, quartz):
+        layer = int(record.get(quartz.kCGWindowLayer, -1))
+        if layer == 0:
+            return True
+        # SDL borderless mode can use macOS's shielding layer after native
+        # activation. Accept only the bound real game and declared full view;
+        # arbitrary raised windows and titleless helpers remain ineligible.
+        shielding = getattr(quartz, 'CGShieldingWindowLevel', None)
+        bounds = record.get(quartz.kCGWindowBounds) or {}
+        return (shielding is not None and layer == shielding()
+                and self.expected_process_id is not None
+                and int(record.get(quartz.kCGWindowOwnerPID, -1)) == self.expected_process_id
+                and str(record.get(quartz.kCGWindowOwnerName, '')).lower() == 'stardew valley'
+                and str(record.get(quartz.kCGWindowName, '')).lower() == 'stardew valley'
+                and tuple(int(bounds.get(k, -1)) for k in ('X','Y','Width','Height')) == (0,33,1512,949))
+
     def detect_window(self, *, require_foreground: bool = True) -> WindowObservation:
         try:
             import Quartz
@@ -576,9 +687,14 @@ class MacVisibleStardewBackend:
                 continue
             owner = str(record.get(Quartz.kCGWindowOwnerName, ""))
             title = str(record.get(Quartz.kCGWindowName, ""))
-            layer = int(record.get(Quartz.kCGWindowLayer, -1))
             alpha = float(record.get(Quartz.kCGWindowAlpha, 0.0))
-            if "stardew valley" in f"{owner} {title}".lower() and layer == 0 and alpha > 0:
+            # SDL briefly exposes a titleless 44/64-pixel startup helpers alongside
+            # the actual game. It is not a game viewport, even when its alpha is
+            # temporarily positive. Distinct titled game windows still refuse.
+            helper_bounds = record.get(Quartz.kCGWindowBounds) or {}
+            startup_helper = not title and int(helper_bounds.get("Height", 0)) <= 64
+            if ("stardew valley" in f"{owner} {title}".lower() and self._supported_game_layer(record, Quartz)
+                    and alpha > 0 and not startup_helper):
                 candidates.append(record)
         if len(candidates) != 1:
             raise StardewAdapterError(

@@ -1,33 +1,20 @@
 # Mario planning and runtime interfaces
 
-Updated October 4, 2026. This contract distinguishes the implemented bounded
-Mario controller from the **Codex-backed conversational interpretation and
-gameplay reasoning required for the initial private beta**. The
-[engineering plan](private-beta-engineering.md) owns the complete delivery order;
-the [product direction](product-direction.md) owns the intended experience.
+Ordinary Mario conversation uses `companion_ai.LanguageSession` through the
+installed Codex CLI. `mario_strategy.MarioStrategyAgent` chooses finite maneuvers
+from paused images and native progress for the World 1-1 early segment.
+Deterministic typed planners and guarded controllers validate those choices;
+they remain separate from model interpretation and do not grant their own authority.
 
-## Current implementation and evidence
+## Implemented behavior and limits
 
-| Area | Implemented behavior | Remaining limit |
-| --- | --- | --- |
-| Conversation | Deterministic `Planner`, adapter request matching and supported coaching helpers | No Codex-backed interpretation or gameplay reasoner on the ordinary Mario decision path |
-| Opening coaching | Persisted delay adjustments, finite explicit retries, actual Lua application and urgent interruption | One authored opening event and bounded timing parameter |
-| Surface-route learning | Selection among authored high/low/balanced jump schedules, failure-derived supported stairs/pipe tactics, per-attempt coin accounting | No general route discovery; individual and full coin-universe coverage unknown |
-| Traversal | Two observed World 1-1 finishes with two coins each, plus preserved historical accepted routes | Those results do not establish novel-state play or broader reliability |
-| Flight/reward | Observed prepared Raccoon/Tanooki World 1-1 sky-1UP case, separate revelation/collection and handback | Prepared entry and one authored objective; broader flight reasoning unavailable |
-| Demonstrations | Source recording, review, storage and bounded numeric playback | Real demonstration application remains unverified; deferred to tentative beta v2 |
-| Control/history | Independent Stop/Take control, session-bound plans, outcomes and reopening without restored authority | Must remain effective while new model work is pending |
-
-See [coaching](gc1-gc2-coaching-verification.md),
-[route](gc2-route-verification.md),
-[flight](gc2-flight-verification.md) and
-[demonstration](gc2-demonstration-verification.md) records for their exact evidence.
-Historical B2 parser limitations and later repairs describe their own candidates;
-the urgent interruption gap is repaired in current source.
-
-These are real gameplay foundations. They do not complete the AI-player product.
-Adding another fixed route or another request pattern alone is not the next
-milestone.
+Contextual requests, corrections and compatible coaching enter reviewed finite
+plans. Adaptive play is limited to the early segment; full-level adaptive
+completion and complete coin coverage are unverified. Authored route, opening
+coaching, stairs/pipe and flight/reward controllers have their own entry contracts.
+Recording/playback remains experimental and native demonstration application is
+unverified. Exact source/build results belong to the
+[qualification records](current-engineering-status.md), not this interface contract.
 
 ## Existing integration owners
 
@@ -42,9 +29,9 @@ milestone.
 - `mario_coaching.py`, `mario_coins.py`, `run_library.py`, `learning.py`
   and outcome history retain descriptive guidance and evidence. Experimental
   knowledge stays separate from the historical accepted-route registry.
-- The existing model gateway demonstrates bounded inference in the separate
-  profile path. Its presence does not establish model use in Mario. Connect the
-  selected Codex CLI backend to the actual ordinary decision path.
+- `codex_provider.py`, `companion_ai.py` and `mario_strategy.py` own ordinary
+  language and strategy inference. `model_gateway.LocalOllamaGateway` serves
+  the separate OpenTTD reference flow.
 
 Keep typed plans and runtime validation as the integration boundary. A model
 response cannot execute arbitrary code, mint a capability or provide its own
@@ -147,46 +134,10 @@ Retries can share a reviewed finite scope when compatible. Death/reset requires
 fresh state and budget checks; reclaim, expiry or scope expansion requires new
 approval. Reopening restores descriptive knowledge, not live state or authority.
 
-## Initial AI gameplay acceptance
+## Qualification boundaries
 
-After the shared slow decision loop is proved in Stardew, complete Mario's faster
-version through the ordinary interface. Declare the supported level, entry
-conditions, mechanics and tasks rather than claiming unrestricted gameplay.
-
-Required evidence:
-
-- Varied held-out goals and corrections are interpreted without phrase-specific
-  patches, including contextual references and meaningful ambiguity.
-- A real Codex request and reply lead to a validated runtime action selection;
-  logs distinguish model decisions, authored fallback skills and algorithms.
-- A changed supported condition or failed approach leads to a materially changed
-  decision based on fresh observations, without a bespoke route patch.
-- A compatible later attempt uses retained evidence or coaching to change play.
-- At least one supported traversal/exploration task and one ability/reward task
-  have observed effects and honest outcomes under the declared scope.
-- Stop during inference and active play releases input, and stale replies cannot
-  revive authority. Reopening retains results without playing.
-- The same implementation handles a second meaningful supported variation,
-  demonstrating composition rather than replay of one accepted trace.
-
-Use fixtures for logic and concurrency, and real disposable-game evidence for
-perception, action application, adaptation and handback. Measure task results,
-interventions, refusals, failures and decision latency for the exact candidate.
-A large test count or a single fixed-route success cannot substitute for this.
-
-## Local private-beta delivery
-
-The release candidate must include the app-owned runtime/controller assets,
-readable setup, Codex CLI availability/authentication guidance, local game-file
-selection, capability labels and actionable connection errors. Do not bundle game
-files or credentials. The app is private and local; Codex-backed inference uses
-the selected provider and should be described accurately without implying
-on-device inference.
-
-Verify the exact local artifact from first launch through connection, goal,
-approval, model decision, play, coaching/replan, Stop and saved reopening.
-Preserve Mario/Stardew shared regressions and verify the chosen configuration
-matrix. Retained private.2/source evidence does not establish a later artifact.
-Owner usefulness review and the local beta release decision follow that actual
-artifact check. Recording, arbitrary game support, independent training and
-no-code addition of games remain later work.
+Fixtures verify logic and concurrency. Real disposable-game trials establish
+perception, action application, adaptation and native handback only for the
+identified build and tested scope. A fixed-route result or test count cannot
+establish unrestricted gameplay. See [known limitations](known-limitations.md)
+and the [engineering record](current-engineering-status.md).

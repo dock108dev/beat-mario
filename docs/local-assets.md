@@ -2,7 +2,7 @@
 
 ## Successor private-beta resource work
 
-GC-D1 in the [engineering plan](private-beta-engineering.md) must inventory required code/data/images/helpers and resolve them in the personal Mac app. Existing ignored Stardew farm/profile registrations, calibration manifests and retained samples cannot be an unexplained setup dependency. Adopt/create them through product setup or include eligible app-owned resources with a complete dependency manifest.
+Candidate.35 inventories 196 packaged resources in its immutable build manifest and resolves them from app resources. See [current status](current-engineering-status.md) for exact identity and remaining native gates. Existing ignored Stardew farm/profile registrations, calibration manifests and retained samples cannot be an unexplained setup dependency. Adopt/create them through product setup or include eligible app-owned resources with a complete dependency manifest.
 
 Separate read-only packaged data from writable user profiles/variants/history. Include the FCEUX Lua controllers and required Python/native/OCR resources or explicit tested prerequisites. Use an explicit release inventory rather than copying ignored personal art, runtime evidence and developer data along with all data/public files.
 

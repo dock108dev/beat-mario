@@ -53,6 +53,28 @@ def configured(tmp_path):
     return runtime, plan, state, commands
 
 
+@pytest.mark.parametrize("seconds", [0, 181, True, "180"])
+def test_invalid_duration_cannot_fall_back_to_longer_authority(tmp_path, seconds):
+    runtime, plan, state, commands = configured(tmp_path)
+    plan = replace(plan, resource_limits={"maximum_seconds": seconds})
+    runtime.review(plan)
+    with pytest.raises(StardewAdapterError, match="between 1 and 180"):
+        runtime.start(plan, background=False)
+    assert not commands
+    assert runtime.controller.active_attempt is None
+
+
+def test_three_minute_activity_keeps_finite_authority(tmp_path):
+    runtime, plan, state, commands = configured(tmp_path)
+    plan = replace(plan, resource_limits={"maximum_seconds": 180})
+    runtime.review(plan)
+    runtime.start(plan, background=False)
+    runtime.tick()
+    runtime.tick()
+    assert runtime.snapshot()["status"] == "completed"
+    assert len(commands) == 1
+
+
 def test_exact_review_water_resources_return_and_handback(tmp_path):
     runtime, plan, state, commands = configured(tmp_path)
     runtime.start(plan, background=False)
@@ -274,7 +296,10 @@ def test_explicit_observe_activates_bound_background_process_before_capture(tmp_
     save = runtime.controller.save
     events = []
     background = [False]
+    from smb3_agent.stardew_adapter import MacVisibleStardewBackend
     class Backend:
+        expected_process_id = 10
+        activate_window = MacVisibleStardewBackend.activate_window
         def detect_window(self, *, require_foreground=True):
             events.append(("detect", require_foreground))
             window = replace(state[0].window, foreground=not background[0])
@@ -701,11 +726,15 @@ def test_explicit_profile_connection_focuses_verified_hidden_process_before_wind
     navigator = WateringNavigator({(0, 0)}, {}, (0, 0))
     runtime.register_qualified_profile(profile, navigator, evidence_root=tmp_path)
     class App:
+        def unhide(self):
+            pass
         def activateWithOptions_(self, options):
             events.append('focus')
             return True
     class Native:
+        activate_window = stardew_adapter.MacVisibleStardewBackend.activate_window
         def __init__(self, **kwargs):
+            self.expected_process_id = kwargs['process_id']
             assert kwargs == {'process_id': 42, 'process_started_at': 'bound-start'}
         def detect_window(self, **kwargs):
             assert events == ['focus']
@@ -713,7 +742,7 @@ def test_explicit_profile_connection_focuses_verified_hidden_process_before_wind
             return SimpleNamespace(window_id='visible-game', foreground=True)
     monkeypatch.setitem(sys.modules, 'AppKit', SimpleNamespace(
         NSRunningApplication=SimpleNamespace(runningApplicationWithProcessIdentifier_=lambda pid: App()),
-        NSApplicationActivateIgnoringOtherApps=1))
+        NSApplicationActivateIgnoringOtherApps=1, NSApplicationActivateAllWindows=2))
     monkeypatch.setattr(stardew_adapter, 'MacVisibleStardewBackend', Native)
     monkeypatch.setattr(runtime, 'connect_live', lambda **kwargs: {'available': True})
     assert runtime.connect_profile('reviewed-screen')['available']
@@ -809,3 +838,15 @@ def test_window_transition_refusal_invalidates_old_frame_and_requires_fresh_view
     assert runtime.preparation_view is None
     assert 'View preparation screen' in runtime.reason
     assert len(list(tmp_path.glob('window-transition-*.json'))) == 1
+
+
+def test_internal_fresh_observation_does_not_assemble_a_status_snapshot(tmp_path, monkeypatch):
+    runtime, _, _, commands = configured(tmp_path)
+    previous = runtime.screen.observation_id
+    def unexpected_snapshot():
+        raise AssertionError('A planning refresh must consume pixels before building UI status')
+    monkeypatch.setattr(runtime, 'snapshot', unexpected_snapshot)
+    runtime.refresh_observation()
+    assert runtime.screen.observation_id != previous
+    assert runtime.planning_context().observation['validated']
+    assert not commands

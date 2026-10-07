@@ -1,5 +1,7 @@
 # B6 Mario qualification and repair handoff — September 26, 2026 UTC
 
+> Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+
 > Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
 
 Historical September 26 Mario handoff for its identified candidate. Its technical results retain that scope. Current release work follows the [private-beta engineering plan](private-beta-engineering.md) and [PM handoff](private-beta-pm-handoff.md).

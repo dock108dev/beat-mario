@@ -177,6 +177,16 @@ PLAYER_WORKSPACE_JS = r'''(() => {
   const workspace = document.getElementById("active-workspace");
   if (!workspace) return;
   let updating = false;
+  const drafts = new Map();
+  const draftKey = element => `${element.closest("form")?.getAttribute("action")}|${element.name}`;
+  const rememberDraft = event => {
+    const element = event.target;
+    if (workspace.contains(element) && element.matches("input[name]:not([type=hidden]),select[name],textarea[name]")) {
+      drafts.set(draftKey(element), {value:element.value,checked:element.checked});
+    }
+  };
+  workspace.addEventListener("input", rememberDraft);
+  workspace.addEventListener("change", rememberDraft);
   const detailKey = (details) =>
     details.dataset.testid || details.querySelector("summary")?.textContent?.trim() || "";
   const focusable = "a[href], button, input, select, textarea, summary, [tabindex]";
@@ -219,6 +229,10 @@ PLAYER_WORKSPACE_JS = r'''(() => {
         const playToolsOpen = Array.from(workspace.querySelectorAll("details"))
           .find(details => details.id === "other-play-tools")?.open;
         workspace.innerHTML = html;
+        for (const element of workspace.querySelectorAll("input[name]:not([type=hidden]),select[name],textarea[name]")) {
+          const draft = drafts.get(draftKey(element));
+          if (draft) { element.value = draft.value; if (["checkbox","radio"].includes(element.type)) element.checked = draft.checked; }
+        }
         for (const details of workspace.querySelectorAll("details")) {
           if (details.id === "other-play-tools" && playToolsOpen !== undefined) details.open = playToolsOpen;
           else if (openDetails.has(detailKey(details))) details.open = true;
@@ -256,6 +270,7 @@ PLAYER_WORKSPACE_JS = r'''(() => {
         showActionError(message || `Start failed (${response.status}).`);
         return;
       }
+      for (const element of form.querySelectorAll("input[name],select[name],textarea[name]")) drafts.delete(draftKey(element));
       await refreshWorkspace(true);
       history.replaceState(null, "", form.action.includes("objective") ? "#objective" : "#live");
     } catch (_error) {
@@ -273,6 +288,8 @@ PLAYER_WORKSPACE_JS = r'''(() => {
 POST_PATHS = frozenset(
     {
         "/api/delivery/shutdown",
+        "/candidate-feedback",
+        "/request-permissions",
         "/api/conversation",
         "/api/stardew/conversation",
         "/api/profile/conversation",
@@ -305,6 +322,7 @@ POST_PATHS = frozenset(
         "/learning-preferences-reset",
         "/learning-export",
         "/setup-game-file",
+        "/setup-emulator",
         "/setup-pick-game-file",
         "/setup-choice",
         "/setup-retry",
@@ -365,14 +383,20 @@ class _ThreadingHTTPServerV6(ThreadingHTTPServer):
     address_family = socket.AF_INET6
 
     def server_close(self) -> None:
-        _shutdown_session_managers(self)
+        failures = _shutdown_session_managers(self)
         super().server_close()
+        if failures:
+            Path("cleanup-failures.json").write_text(json.dumps({"failures": failures}, indent=2))
+            raise RuntimeError("; ".join(failures))
 
 
 class _ThreadingHTTPServer(ThreadingHTTPServer):
     def server_close(self) -> None:
-        _shutdown_session_managers(self)
+        failures = _shutdown_session_managers(self)
         super().server_close()
+        if failures:
+            Path("cleanup-failures.json").write_text(json.dumps({"failures": failures}, indent=2))
+            raise RuntimeError("; ".join(failures))
 
 
 def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
@@ -412,7 +436,11 @@ def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
             LOGGER.exception("Conversation stop failed during shutdown; continuing input cleanup")
     provider = getattr(server, "codex_provider", None)
     if provider is not None:
-        provider.close()
+        try:
+            provider.close()
+        except Exception:
+            failures.append("Codex provider cleanup unconfirmed")
+            LOGGER.exception("Codex cleanup failed; continuing independent input cleanup")
     for name, kind in (("show_manager", ShowSessionManager),
                        ("live_observation_manager", LiveObservationManager)):
         manager = getattr(server, name, None)
@@ -734,6 +762,9 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/delivery":
             self._send_json({**self.server.delivery_identity, "csrf_token": self._csrf_token()})
             return
+        if path == "/assets/candidate.js":
+            self._send_javascript(CANDIDATE_JS)
+            return
         if path == "/api/backend":
             self._send_json(dict(self.server.codex_provider.status))
             return
@@ -788,7 +819,13 @@ class _Handler(BaseHTTPRequestHandler):
                 self.server.stardew_conversation_service.snapshot(), csrf_token=self._csrf_token(),
                 selected=self._catalog_session().selected_adapter_id in {None, "stardew"}))
             return
-        if path in {"/setup", "/help", "/minecraft"}:
+        if path == "/help":
+            guide = repository_path("private-beta-quick-start.md")
+            if not guide.is_file():
+                guide = repository_path("docs/private-beta-quick-start.md")
+            self._send_html(render_candidate_help(guide.read_text(), self._csrf_token()))
+            return
+        if path in {"/setup", "/minecraft"}:
             self._send_html(render_player_setup(self.server.player_setup_service.snapshot(), csrf_token=self._csrf_token(), minecraft=path == "/minecraft"))
             return
         if path == "/api/player":
@@ -951,6 +988,13 @@ class _Handler(BaseHTTPRequestHandler):
             return
         data = self._read_form()
         self._validate_csrf(data)
+        if getattr(sys, "frozen", False):
+            if path in {"/run", "/test", "/codex-task", "/patch-action", "/show-start", "/show-takeover", "/takeover-start", "/adapter-install"}:
+                raise LabUiForbidden("This candidate enables the reviewed Mario early segment and supported Stardew seed-patch watering only. Wider and experimental execution is unavailable.")
+            if path in {"/api/profile/conversation", "/api/camera-practice"} and _single(data, "action", default="") not in {"stop", "reclaim", "pause", "focus_lost"}:
+                raise LabUiForbidden("Legacy native activities are unavailable in this candidate. Retained setup and history remain inspectable.")
+            if path == "/api/player" and _single(data, "action", default="") in {"start", "review", "connect", "calibrate", "minecraft_settings"}:
+                raise LabUiForbidden("Legacy native setup/actions are unavailable in this candidate.")
         if path == "/api/delivery/shutdown":
             if _single(data, "instance") != self.server.delivery_identity["instance"]:
                 raise LabUiError("Delivery process changed; inspect its identity again")
@@ -965,6 +1009,22 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if self.server.delivery_stopping:
             raise LabUiError("Delivery is shutting down; no new actions are accepted")
+        if path == "/request-permissions":
+            from smb3_agent.screen_host import MacSelectedWindowHost
+            MacSelectedWindowHost.request_permissions()
+            self._redirect("/")
+            return
+        if path == "/candidate-feedback":
+            from smb3_agent.delivery import activity_diagnostics
+            report = self.server.player_setup_service.store.report(text=_single(data, "text"), checks={
+                "version": self.server.delivery_identity["version"],
+                "build": self.server.delivery_identity.get("build"),
+                "source_sha256": self.server.delivery_identity["source_sha256"],
+                "activities": activity_diagnostics(self.server),
+                "automatic_telemetry": False,
+            })
+            self._send_html(render_candidate_help("Report saved locally. Review before sharing.", self._csrf_token(), report))
+            return
         if path == "/backend-refresh":
             self.server.codex_provider.refresh()
             self._redirect("/")
@@ -1324,6 +1384,11 @@ class _Handler(BaseHTTPRequestHandler):
                         evidence_status="retained",
                     )
                     self._redirect("/#live")
+                    return
+                if path == "/setup-emulator":
+                    from smb3_agent.executable_discovery import select_fceux
+                    select_fceux(_single(data, "executable"))
+                    self._redirect("/mario#setup")
                     return
                 if path == "/setup-game-file":
                     self._product_session_manager().select_game_file(
@@ -2506,6 +2571,7 @@ def _first_use_panel(view: ProductSessionView, *, csrf_token: str | None) -> str
         {error}
         <p>{_esc(game.reason)} {_esc(emulator.reason)}</p>
         <p class="meta">{_esc(setup.input_reason)}</p>
+        <details><summary>Choose FCEUX executable</summary><form method="post" action="/setup-emulator"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}"><label>FCEUX executable path<input name="executable" required autocomplete="off"></label><button type="submit">Save emulator selection</button></form></details>
         <form method="post" action="/setup-pick-game-file" data-testid="native-game-file-picker"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or '')}"><button type="submit">Choose Game File…</button></form>
         <details><summary>Enter a game file path manually</summary>
         <form method="post" action="/setup-game-file" data-testid="manual-game-file">
@@ -2753,6 +2819,17 @@ def render_combined_catalog(
     backend: dict | None = None,
     permissions: dict | None = None,
 ) -> str:
+    startup_warning = ""
+    if getattr(sys, "frozen", False) and Path("app-lifecycle.json").is_file():
+        try:
+            lifecycle = json.loads(Path("app-lifecycle.json").read_text())
+            if lifecycle.get("interrupted_previous_start"):
+                startup_warning = '<section role="alert" class="catalog-recovery"><h2>Previous session was interrupted</h2><p>Nothing has resumed. Inspect retained results and refresh each game before reviewing new work.</p>'
+                if lifecycle.get("previous_cleanup_failures"):
+                    startup_warning += '<p>Previous cleanup was unconfirmed. Inspect cleanup-failures.json and runtime.log in local app data before continuing.</p>'
+                startup_warning += '</section>'
+        except (OSError, ValueError, TypeError):
+            startup_warning = '<p role="alert">Startup recovery record could not be read. No control was restored; inspect local diagnostics.</p>'
     selected_id = session.selected_adapter_id
     selected = session.registry.entry(selected_id) if selected_id else None
     runtime = session.registry.provider(selected_id).runtime_state() if selected_id else None
@@ -2767,6 +2844,7 @@ def render_combined_catalog(
             expanded=catalog_expanded,
         )
         for entry in session.registry.entries
+        if not getattr(sys, "frozen", False) or entry.adapter_id in {"smb3", "stardew"}
     )
     workspace = (
         f'<section class="catalog-workspace" data-testid="selected-game-workspace" '
@@ -2802,18 +2880,22 @@ def render_combined_catalog(
                                for key, label in [('capture', 'Screen Recording'), ('input', 'Accessibility input')])
     backend_panel = (
         '<section class="catalog-workspace" aria-labelledby="model-heading">'
-        '<h2 id="model-heading">Setup status</h2>'
+        '<h2 id="model-heading">Game setup</h2>'
         f'<p id="backend-status" role="status">Codex: {_esc(model.get("state", "unknown").replace("_", " "))}. {_esc(model.get("message", "Status unknown"))}</p>'
         '<form method="post" action="/backend-refresh"><button type="submit">Check Codex sign-in</button></form>'
-        '<script>(() => { let pending = false; async function update() { if (pending) return; pending = true; try { const r = await fetch("/api/backend", {cache:"no-store"}); if (r.ok) { const s = await r.json(); document.getElementById("backend-status").textContent = `Codex: ${String(s.state || "unknown").replaceAll("_", " ")}. ${s.message}`; } } catch (_) { document.getElementById("backend-status").textContent = "Codex status unavailable. Reopen the local app and refresh readiness."; } finally { pending = false; } } setInterval(update,1500); update(); })();</script>'
-        '<p class="meta">Game context and images are sent to OpenAI for inference.</p><p><a href="/mario#setup">Set up Mario and open a disposable session</a> · '
+        '<details><summary>Permissions and game requirements</summary>'
+        f'<form method="post" action="/request-permissions"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or "")}"><button type="submit">Request macOS permissions</button></form>'
+        '<p>Approve the macOS requests for Game Companion. If a previous request was denied, enable Game Companion in System Settings → Privacy &amp; Security → Screen Recording and Accessibility. Quit and reopen after granting access, then check setup again.</p>'
+        '<p><a href="/mario#setup">Set up Mario and open a disposable session</a> · '
         '<a href="/stardew#stardew-setup-panel">Set up Stardew and verify a disposable farm</a></p>'
-        '<details><summary>Game requirements and inference privacy</summary>'
+        '<h3>What is sent to OpenAI</h3>'
         '<p>Companion sends the current request, selected game image, observed game facts and compatible history to OpenAI through your installed, signed-in Codex CLI. Game input and save protection run locally. Credentials stay with Codex.</p>'
-        '<p>Mario needs your supported game file, FCEUX and input mapping. Stardew needs the inspected game installation, prepared seed and matching screen calibration. These source-checkout resources are not bundled yet. Each game shows its current setup checks and remedies.</p>'
+        '<p>Mario needs your supported game file, FCEUX and input mapping. Stardew needs the inspected game installation and an explicitly selected save folder to copy in isolation. Shared feature readers are bundled; current pixels must establish supported targets, resources and clear routes. The exact frozen Day 2 seed is for engineering regression. Each game shows its current setup checks and remedies.</p>'
         '<p>macOS: allow Screen Recording for visible game capture and Accessibility for ordinary input in System Settings → Privacy &amp; Security. After changing permissions, restart the launching app if macOS requires it; reconnect, refresh the visible game and review again. No previous approval resumes.</p></details></section>'
     )
     backend_panel = backend_panel.replace('</h2>', f'</h2><p>{_esc(permission_text)}</p>', 1)
+    backend_panel = backend_panel.replace('<details>', '<details open>' if any(permission_values.get(key) is not True for key in ('capture', 'input')) else '<details>', 1)
+    backend_panel = backend_panel.replace('<form method="post" action="/backend-refresh">', '<p class="meta">Game context and images are sent to OpenAI for inference.</p><form method="post" action="/backend-refresh">', 1)
     return _page(
         title="Game Companion",
         csrf_token=csrf_token,
@@ -2822,11 +2904,12 @@ def render_combined_catalog(
           .catalog-shell{{max-width:1320px;margin:auto;padding:20px}}.catalog-header{{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px;background:var(--navy);color:#fff;border-radius:12px}}.catalog-header p{{margin:0;color:#dbeafe}}.catalog-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}}.catalog-grid.compact .catalog-card{{padding:12px}}.catalog-card,.catalog-workspace,.catalog-empty,.catalog-recovery,.catalog-preferences{{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:0 8px 22px rgba(31,41,55,.07)}}.catalog-card.selected{{border:2px solid var(--navy)}}.catalog-card h2{{font-size:20px}}.catalog-card details{{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}}.catalog-card ul{{padding-left:20px}}.catalog-capabilities{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}}.catalog-capability{{min-width:0;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:8px;padding:9px;background:var(--surface-alt)}}.catalog-capability .status-pill{{max-width:100%;white-space:normal;overflow-wrap:anywhere}}.catalog-card form button{{width:100%}}.catalog-runtime{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}}.catalog-runtime div{{border-top:1px solid var(--line);padding-top:7px}}.catalog-recovery{{border-color:#e8b3ae;background:var(--red-soft)}}.catalog-preferences{{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}}.catalog-preferences input{{width:auto}}
           @media(max-width:700px){{.catalog-shell{{padding:10px}}.catalog-header{{align-items:flex-start;flex-direction:column}}.catalog-grid{{grid-template-columns:1fr}}.catalog-runtime{{grid-template-columns:repeat(2,minmax(0,1fr))}}.catalog-workspace{{padding:10px}}}}
           @media(max-width:390px){{.catalog-capabilities,.catalog-runtime{{grid-template-columns:1fr}}.catalog-card,.catalog-empty,.catalog-recovery{{padding:12px}}}}
+          .catalog-header{{padding:12px 16px;flex-direction:row;flex-wrap:wrap;gap:12px}}.catalog-header h1{{font-size:26px;flex:1;margin:0}}.catalog-workspace h2{{font-size:18px;margin:0}}.catalog-workspace p{{margin:8px 0}}.catalog-workspace>form{{display:inline-block}}.catalog-workspace>details{{margin-top:8px}}.catalog-shell>main{{padding-top:0}}
         </style>
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
-          <header class="catalog-header"><h1>Game Companion</h1><a class="secondary-button nav-link" href="/lab">Engineering Lab</a></header>
+          <header class="catalog-header"><h1>Game Companion</h1><button id="candidate-quit" type="button">Quit</button></header>
           {recovery_panel}{backend_panel}
-          <main>{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
+          <p class="meta">Engineering preview. Game qualification and owner review are pending.</p><p id="candidate-quit-status" role="status"></p><script src="/assets/candidate.js" defer></script><main>{startup_warning}{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a href="/lab">Engineering Lab</a> · <a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
         </div>
         """,
     )
@@ -5837,3 +5920,40 @@ def _list_dicts(value: object) -> list[dict[str, object]]:
 
 def _esc(value: str) -> str:
     return html.escape(value, quote=True)
+
+
+def render_candidate_help(guide, csrf_token, report=None):
+    preview = "" if report is None else f'<h2>Local report preview</h2><p>{_esc(report["path"])}</p><pre>{_esc(json.dumps(report["report"], indent=2))}</pre>'
+    return f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Game Companion · Guide and feedback</title><style>body{{font:16px system-ui;max-width:900px;margin:auto;padding:24px;line-height:1.5}}pre{{white-space:pre-wrap;overflow-wrap:anywhere}}textarea{{width:100%;min-height:120px;font:inherit}}button{{padding:12px}}</style></head><body><a href="/">Games</a><h1>Guide and local feedback</h1><pre>{_esc(guide)}</pre><form method="post" action="/candidate-feedback"><input type="hidden" name="csrf_token" value="{_esc(csrf_token)}"><label>What happened, what you expected, and steps to repeat<textarea name="text" required maxlength="4000"></textarea></label><button type="submit">Save local report and preview</button></form><p>Nothing is uploaded. Review the report before manually sharing it.</p>{preview}</body></html>'''
+
+
+CANDIDATE_JS = r'''(() => {
+  const quit = document.getElementById("candidate-quit");
+  let pending = false;
+  async function updateBackend() {
+    if (pending) return;
+    pending = true;
+    try {
+      const r = await fetch("/api/backend", {cache:"no-store"});
+      if (!r.ok) throw new Error("Codex status request failed");
+      if (r.ok) {
+        const s = await r.json();
+        document.getElementById("backend-status").textContent = `Codex: ${String(s.state || "unknown").replaceAll("_", " ")}. ${s.message}`;
+      }
+    } catch(e) {
+      document.getElementById("backend-status").textContent = "Codex status unavailable. Reopen the local app and refresh readiness.";
+    } finally { pending = false; }
+  }
+  setInterval(updateBackend,1500);
+  updateBackend();
+  if (!quit) return;
+  quit.onclick = async () => {
+    const status = document.getElementById("candidate-quit-status");
+    status.textContent = "Releasing input and closing owned workers…";
+    try {
+      const d = await (await fetch("/api/delivery")).json();
+      const r = await (await fetch("/api/delivery/shutdown", {method:"POST", body:new URLSearchParams({csrf_token:d.csrf_token,instance:d.instance})})).json();
+      status.textContent = r.cleanup_confirmed ? "Quit complete. Input and owned workers released." : (r.failures || ["Cleanup unconfirmed"]).join("; ");
+    } catch(e) { status.textContent = "Quit could not be confirmed. Inspect local cleanup diagnostics."; }
+  };
+})();'''

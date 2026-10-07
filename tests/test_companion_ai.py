@@ -16,7 +16,8 @@ from test_stardew_runtime import configured
 def intent(ids=("crop",), **changes):
     return {"interaction": "activity", "objective": "Water selected crops", "message": "Water these dry crops and return",
             "canonical_command": "water", "target_ids": list(ids), "excluded_ids": [],
-            "constraints": ["rightmost first"], "minimum_energy": 1, **changes}
+            "constraints": ["rightmost first"], "minimum_energy": 1, "minimum_water": 0,
+            "maximum_water_uses": 32, "maximum_seconds": 0, "maximum_attempts": 0, **changes}
 
 
 class Provider:
@@ -341,5 +342,92 @@ def test_switch_invalidates_late_language_reply_and_old_farm_targets(tmp_path):
     assert not service.ai._worker.is_alive()
     after = service.snapshot()
     assert after['plan'] is None and after['selected_target_ids'] == []
+    assert after['ai']['intent'] is None
     assert runtime.current_plan is None and runtime.screen is None
     assert not commands
+
+
+def test_numeric_water_limits_and_short_duration_reach_controller(tmp_path):
+    from datetime import datetime, timezone
+    from smb3_agent.request_planning import ConversationPlan
+    runtime, plan, state, commands = two_crops(tmp_path)
+    provider = Provider([intent(('right',), excluded_ids=['crop'], minimum_water=4,
+                                maximum_water_uses=1, maximum_seconds=35),
+                         decision('water_target', 'right'), decision('return_home')])
+    service = StardewConversationService(runtime=runtime, artifacts_root=tmp_path/'limits', provider=provider)
+    service.dispatch('message', {'text': 'Just the lower one, leave four water units and stop in 35 seconds'})
+    result = settled(service)
+    plan = ConversationPlan.from_dict(result['plan'])
+    assert plan.resource_limits['minimum_water'] == 4
+    assert plan.resource_limits['maximum_water_uses'] == 1
+    assert plan.resource_limits['maximum_seconds'] == 35
+    runtime.review(plan)
+    runtime.start(plan, background=False)
+    expires = datetime.fromisoformat(runtime.controller.authorization.expires_at)
+    assert 33 < (expires-datetime.now(timezone.utc)).total_seconds() <= 35
+    runtime.tick()
+    runtime.tick()
+    assert runtime.status == 'completed'
+    assert [c.reviewed_crop_id for c in commands] == ['right']
+    assert state[0].tool.watering_can_units == 4
+    assert next(c for c in state[0].crops if c.crop_id == 'crop').watered is False
+    service.close()
+
+
+@pytest.mark.parametrize('limits', [{'minimum_water': 4}, {'maximum_water_uses': 1}])
+def test_over_budget_selection_is_clarified_and_start_refuses(tmp_path, limits):
+    from smb3_agent.request_planning import ConversationPlan
+    runtime, plan, state, commands = two_crops(tmp_path)
+    provider = Provider([intent(('crop', 'right'), **limits)])
+    service = StardewConversationService(runtime=runtime, artifacts_root=tmp_path/'limits', provider=provider)
+    service.dispatch('message', {'text': 'Water both within my water limit'})
+    proposal = ConversationPlan.from_dict(settled(service)['plan'])
+    assert proposal.ambiguities
+    runtime.review(proposal)
+    with pytest.raises(ValueError, match='unambiguous'):
+        runtime.start(proposal, background=False)
+    assert not commands
+    service.close()
+
+
+def test_language_refresh_starts_after_initial_response_is_assembled(tmp_path, monkeypatch):
+    runtime, _, _, commands = configured(tmp_path)
+    provider = Provider([intent()])
+    service = StardewConversationService(runtime=runtime, artifacts_root=tmp_path/"chat", provider=provider)
+    response_started, response_finished = threading.Event(), threading.Event()
+    snapshot = service.snapshot
+    refresh = runtime.refresh_observation
+    def response():
+        if threading.current_thread().name != "companion-language" and not response_finished.is_set():
+            response_started.set()
+            assert not provider.calls
+            value = snapshot()
+            response_finished.set()
+            return value
+        return snapshot()
+    def fresh():
+        assert response_started.is_set() and response_finished.is_set()
+        refresh()
+    monkeypatch.setattr(service, "snapshot", response)
+    monkeypatch.setattr(runtime, "refresh_observation", fresh)
+    service.dispatch("message", {"text": "Water the observed crop"})
+    result = settled(service)
+    assert result["plan"] is not None
+    assert provider.calls[0][1]["context"]["observation"]["validated"]
+    assert not commands
+
+
+def test_language_consumes_fresh_frame_before_clock_pause_transition(tmp_path):
+    from datetime import datetime, timedelta, timezone
+    runtime, _, _, commands = configured(tmp_path)
+    provider = Provider([intent()])
+    service = StardewConversationService(runtime=runtime, artifacts_root=tmp_path/"chat", provider=provider)
+    def pause(paused):
+        assert paused
+        runtime.screen = replace(runtime.screen, observed_at=(datetime.now(timezone.utc)-timedelta(seconds=3)).isoformat())
+    runtime._inference_clock = pause
+    service.dispatch("message", {"text": "Water the observed crop"})
+    result = settled(service)
+    assert not runtime.planning_context().observation_fresh
+    assert provider.calls[0][1]["context"]["observation_fresh"]
+    assert result["plan"] is not None and not commands

@@ -11,6 +11,7 @@ import webbrowser
 HELPERS = frozenset(
     {
         "smb3_agent.model_gateway",
+        "smb3_agent.process_watchdog",
         "smb3_agent.input_guardian",
         "smb3_agent.camera_native_input",
     }
@@ -45,7 +46,7 @@ def main():
             raise SystemExit("Unknown helper")
         module = importlib.import_module(sys.argv[2])
         args = sys.argv[3:]
-        if module.__name__.endswith("model_gateway") and args == ["--worker"]:
+        if module.__name__.endswith(("model_gateway", "process_watchdog")) and args == ["--worker"]:
             module._worker()
         elif (
             module.__name__.endswith("input_guardian")
@@ -58,11 +59,24 @@ def main():
         else:
             raise SystemExit("Invalid helper invocation")
         return
+    if "--user-data" in sys.argv:
+        index = sys.argv.index("--user-data")
+        if index + 1 >= len(sys.argv):
+            raise SystemExit("--user-data requires an explicit isolated directory")
+        os.environ["GAME_COMPANION_USER_DATA"] = sys.argv[index + 1]
     from smb3_agent.player_store import user_data_root
 
     root = user_data_root()
     root.mkdir(parents=True, exist_ok=True)
     os.chdir(root)  # installation resources stay read-only; history is separate
+    import logging
+    logging.basicConfig(filename=root / "runtime.log", level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s %(message)s", force=True)
+    # Initialize the native frameworks before browser requests can race the Cocoa loop.
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        import AppKit
+        import Quartz
+        _ = AppKit.NSApplication, Quartz.CGPreflightScreenCaptureAccess
     from smb3_agent.lab_ui import _new_lab_ui_server, _shutdown_session_managers
 
     smoke = "--smoke" in sys.argv
@@ -88,6 +102,14 @@ def main():
                 return json.load(r)
 
         try:
+            for page, expected in (("/", b"combined-companion-catalog"), ("/mario", b"mario-conversation"), ("/stardew", b"import_day2_seed"), ("/help", b"local feedback"), ("/assets/candidate.js", b"cleanup_confirmed")):
+                with urlopen(url + page, timeout=10) as response:
+                    assert expected in response.read(), page
+            from smb3_agent.candidate_resources import calibration_registration
+            calibration = calibration_registration()
+            if getattr(sys, "frozen", False):
+                from smb3_agent.stardew_farm_vision import PreparedFarmPixelProfile
+                assert calibration and PreparedFarmPixelProfile(calibration["manifest"]).qualified()
             with urlopen(url + "/setup", timeout=10) as r:
                 assert b"Save profile" in r.read()
             state = post(
@@ -113,17 +135,19 @@ def main():
                 },
             )
             assert report["report"]["version"]
-            print(
-                json.dumps(
+            smoke_result = json.dumps(
                     {
                         "smoke": "passed",
                         "native_input": False,
                         "version": state["version"],
                         "profile_reopened": True,
+                        "two_game_surfaces": True,
+                        "relocated_calibration": bool(calibration),
                         "report_exported": True,
                     }
                 )
-            )
+            (root / "packaged-smoke.json").write_text(smoke_result + "\n")
+            print(smoke_result)
         finally:
             failures = _shutdown_session_managers(server)
             server.shutdown()
@@ -150,18 +174,36 @@ def main():
                 "Another app/build uses port 8765. Stop it through its own app before opening this build."
             )
         if "--no-browser" not in sys.argv:
-            webbrowser.open("http://127.0.0.1:8765/setup")
+            webbrowser.open("http://127.0.0.1:8765/")
         return
     except URLError:
         pass
     server = _new_lab_ui_server("127.0.0.1", 8765)
     # A visible Quit action uses the existing verified shutdown endpoint.
     if "--no-browser" not in sys.argv:
-        webbrowser.open("http://127.0.0.1:8765/setup")
+        webbrowser.open("http://127.0.0.1:8765/")
+    from smb3_agent.app_lifecycle import record_lifecycle
+    record_lifecycle("running")
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        from smb3_agent.app_lifecycle import run_native
+        run_native(server)
+        return
+    import signal
+    previous = {}
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        previous[sig] = signal.signal(sig, lambda signum, frame: threading.Thread(target=server.shutdown, daemon=True).start())
     try:
         server.serve_forever()
     finally:
-        server.server_close()
+        try:
+            server.server_close()
+            record_lifecycle("closed")
+        except Exception as exc:
+            record_lifecycle("cleanup_failed", (str(exc),))
+            raise
+        finally:
+            for sig, handler in previous.items():
+                signal.signal(sig, handler)
 
 
 if __name__ == "__main__":

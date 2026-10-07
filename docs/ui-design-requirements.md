@@ -1,12 +1,12 @@
 # Game Companion UI design requirements
 
-## Model-driven private-beta UI requirements
+## Model-driven interaction requirements
 
 Integrate provider availability/sign-in remedies and both game setup paths without pushing diagnostics into ordinary conversation. Show the understood objective, scope, current activity and observed result. Pending inference, clarification, paused discussion, changed approval and provider/game errors need distinct readable states.
 
 Keep Stop/Take control visible and responsive while the model is thinking. Preserve typed drafts and reject stale updates after switching or revising the goal. A model rationale cannot be displayed as completed gameplay. Historical images/results stay marked historical. Check real model/game and packaged interaction with the actual supported game and exact packaged artifact, alongside existing visual/accessibility checks.
 
-The [private-beta engineering plan](private-beta-engineering.md) defines the current user workflow. Apply these requirements to setup, conversation, task review, direct controls and reopening; record candidate-specific visual evidence in [UI verification](ui-verification.md).
+The [product scope](product-direction.md) defines the user workflow. Apply these requirements to setup, conversation, task review, direct controls and reopening; record candidate-specific visual evidence in [UI verification](ui-verification.md).
 
 ## Task first
 
@@ -14,7 +14,7 @@ Put the useful result and next action before setup inventories or technical deta
 
 For initial-beta Mario, make watched play, current goal/attempt, coach messages, applied/next-attempt changes and immediate control understandable. For Stardew, show the next-few-minutes plan, explicit approval, observed progress and conversation/check-in recovery. Reopening coaching/history restores no input authority. Bounded versions exist in source; the contextual AI experience and exact-app usability qualification remain unverified outside the bounded source cases.
 
-For later Minecraft first use, show the current setup step, its concrete next action and available tasks. Build readiness must follow the actual task-family flags and fresh session state. Place prerequisites and practice-area guidance beside the controls that need them, and preserve typed drafts and editable protection intent during routine refresh.
+For Minecraft first use, show the current setup step, its concrete next action and available tasks. Build readiness must follow the actual task-family flags and fresh session state. Place prerequisites and practice-area guidance beside the controls that need them, and preserve typed drafts and editable protection intent during routine refresh.
 
 ## Direction
 

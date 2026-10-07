@@ -132,6 +132,16 @@ class MacSelectedWindowHost:
         return {"capture": bool(q.CGPreflightScreenCaptureAccess()),
                 "input": bool(q.CGPreflightPostEventAccess())}
 
+    @staticmethod
+    def request_permissions():
+        """Open the OS-owned requests only after the player's explicit setup action."""
+        import Quartz as q
+        if not q.CGPreflightScreenCaptureAccess():
+            q.CGRequestScreenCaptureAccess()
+        if not q.CGPreflightPostEventAccess():
+            q.CGRequestPostEventAccess()
+        return MacSelectedWindowHost.permissions()
+
     def observe(self, root: Path, *, execution=False) -> Frame:
         foreground = execution or not self.background_observation
         window = self.detect_window(require_foreground=foreground)

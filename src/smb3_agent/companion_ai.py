@@ -27,6 +27,10 @@ INTENT_SCHEMA = closed_schema({
     "target_ids": IDS, "excluded_ids": IDS,
     "constraints": {"type": "array", "items": STRING, "maxItems": 12},
     "minimum_energy": {"type": "integer", "minimum": 1, "maximum": 270},
+    "minimum_water": {"type": "integer", "minimum": 0, "maximum": 40},
+    "maximum_water_uses": {"type": "integer", "minimum": 0, "maximum": 32},
+    "maximum_seconds": {"type": "integer", "minimum": 0, "maximum": 600},
+    "maximum_attempts": {"type": "integer", "minimum": 0, "maximum": 5},
 })
 DECISION_SCHEMA = closed_schema({
     "skill": {"type": "string", "enum": ["water_target", "return_home", "stop"]},
@@ -40,8 +44,15 @@ LANGUAGE_RULES = (
     "Stardew first AI activity is watering an explicitly resolved subset of observed dry crops then returning home. "
     "Choose target_ids from supplied observations; ambiguous references or unknown species require clarification. "
     "Never identify unknown crop species from typical farm layouts. Account for water and known energy cost/reserve. "
+    "Respect scene_scope: selected-session support covers the observed local seed patch only. Never claim whole-farm coverage or map an unobserved target into it. Explain wider-farm requests and offer the observed targets. "
     "Use the supplied energy_cost_upper_bound per crop when discussing resources; do not guess totals. "
-    "Use minimum_energy=1 unless the player specifies a larger reserve. constraints describe priorities, exclusions and "
+    "Use minimum_energy=1 and minimum_water=0 unless the player specifies larger reserves. "
+    "maximum_water_uses=32 means no smaller player limit; zero means no watering permitted. "
+    "Resolve water reserves, maximum uses, duration in seconds and finite attempts into the numeric fields, "
+    "not only constraints. maximum_seconds=0 and maximum_attempts=0 mean no explicit player limit. "
+    "Corrections retain applicable numeric limits from current_goal unless explicitly replaced. "
+    "If all requested targets cannot fit the limits, clarify a smaller selection; never silently drop crops. "
+    "constraints describe priorities, exclusions and "
     "preferences for the gameplay agent. Stardew canonical_command water enables adaptive watering. Existing controller activities "
     "remain available: reconnaissance for model-directed spatial investigation using the supplied reconnaissance_viewpoints catalog. "
     "Resolve target_ids and excluded_ids as catalog viewpoint IDs (home is the porch, east-up the eastern margin); "
@@ -111,6 +122,13 @@ class LanguageSession:
         if self._worker:
             self._worker.join(timeout=2)
 
+    def invalidate_context(self):
+        """A switched game cannot resolve references using its former live goal."""
+        self.cancel()
+        with self._guard:
+            self.intent = None
+            self.state = "idle"
+
     def submit(self, payload):
         s = self.service
         request_id = str(payload.get("request_id") or uuid4().hex)
@@ -144,19 +162,38 @@ class LanguageSession:
             self.state = "interpreting"
         def work():
             try:
+                if cancel.is_set() or generation != self.generation or self._closed:
+                    return
                 if self.game == "stardew" and getattr(s.runtime, "observer", None):
-                    s.runtime.observe()
+                    # Capture and validate once, without assembling a UI snapshot
+                    # before the language context consumes this fresh observation.
+                    refresh = getattr(s.runtime, 'refresh_observation', s.runtime.observe)
+                    refresh()
+                if cancel.is_set() or generation != self.generation or self._closed:
+                    return
+                # Consume the fresh world frame before the guarded Escape/menu
+                # transition pauses the disposable clock. That transition is
+                # independently checked, but its work must not age this context.
+                context = s._context()
+                context["current_plan"] = prior
                 # Slow discussion must not advance the disposable farm clock.
                 # Explicit Observe/Review/Start reacquires pixels and resumes it;
                 # cancellation leaves a neutral paused game, never restored work.
                 if self.game == "stardew" and getattr(s.runtime, "_inference_clock", None):
                     s.runtime._inference_clock(True)
-                context = s._context()
-                context["current_plan"] = prior
+                if cancel.is_set() or generation != self.generation or self._closed:
+                    return
                 images = ()
                 if self.game == "stardew" and getattr(s.runtime, "screen", None):
                     images = s.runtime.screen.screenshot_references[:1]
                 language_rules = LANGUAGE_RULES
+                from smb3_agent.paths import is_packaged
+                if is_packaged():
+                    language_rules += (
+                        " This delivered candidate supports only Mario play the early segment and Stardew water. "
+                        "Reconnaissance, coin routes, flight, recording, Day 5 and wider game actions are unavailable. "
+                        "For those requests use interaction=unsupported, canonical_command empty, and explain the coverage limit."
+                    )
                 if self.game == 'mario':
                     from smb3_agent.mario_segment import LANGUAGE_RULES as SEGMENT_LANGUAGE
                     language_rules = language_rules.replace('Broader strategy is unavailable.', '') + SEGMENT_LANGUAGE
@@ -200,8 +237,12 @@ class LanguageSession:
                         # Provider raises sanitized errors; do not expose arbitrary logs.
                         s._message("assistant", str(exc) if isinstance(exc, ValueError) else "Inference failed; no input was authorized.", "error")
         self._worker = threading.Thread(target=work, daemon=True, name="companion-language")
+        # Building the initial UI response can validate persistence and assemble
+        # route/status data. Finish it before acquiring the inference frame so
+        # that concurrent response work cannot consume that frame's freshness.
+        response = s.snapshot()
         self._worker.start()
-        return s.snapshot()
+        return response
 
     def _persist(self):
         path = self.service.root/"ai-decisions.json"
@@ -228,8 +269,10 @@ class LanguageSession:
             message_index = len(s._messages)
             attempt_limit = re.search(r"\b(one|two|three|four|five|\d+)\s+(attempts?|tr(?:y|ies))\b",
                                       " ".join(intent["constraints"]), re.IGNORECASE)
-            if attempt_limit:
+            if attempt_limit and not intent["maximum_attempts"]:
                 command += " for " + attempt_limit.group(0)
+            if intent["maximum_attempts"]:
+                command += " for " + str(intent["maximum_attempts"]) + " attempts"
             s._dispatch("message", {"text": command}, uuid4().hex)
             # Keep the player's original words in the conversation; the internal
             # planner command is a validated translation, not a second user turn.
@@ -247,6 +290,8 @@ class LanguageSession:
             if expanded and s._plan:
                 from smb3_agent import mario_segment
                 mario_segment.expand_plan(s._plan)
+                s._plan["resource_limits"]["maximum_seconds_per_attempt"] = min(
+                    intent["maximum_seconds"] or mario_segment.MAX_SECONDS, mario_segment.MAX_SECONDS)
                 if interaction in {'coaching', 'correction'}:
                     mario_segment.remember(s.coaching, intent, original, getattr(s.live_manager, '_game_file_sha256', None))
             s._message("assistant", intent["message"], "interpretation")
@@ -290,20 +335,32 @@ class LanguageSession:
         # the model's target set rather than a text-selected scripted patch.
         ctx = PlanningContext.from_dict({**context, "current_plan": None, "selected_targets": [known[k] for k in ids]})
         proposal = StardewPlanningAdapter().propose("water selected crops; keep at least " + str(intent["minimum_energy"]) + " energy", ctx)
+        limits = {**proposal.resource_limits,
+                  "minimum_water": intent["minimum_water"],
+                  "maximum_water_uses": intent["maximum_water_uses"],
+                  "maximum_seconds": min(intent["maximum_seconds"] or 120, 180)}
+        ambiguities = list(proposal.ambiguities)
+        water = current.get("water")
+        if len(ids) > limits["maximum_water_uses"]:
+            ambiguities.append("The selected crops exceed your watering-use limit. Choose fewer targets or revise the limit, then review again.")
+        if water is None or water - len(ids) < limits["minimum_water"]:
+            ambiguities.append("The selected crops would cross your water reserve. Refill manually or choose fewer targets, then request again.")
         plan = ConversationPlan(plan_id="ai-"+uuid4().hex, request_id=uuid4().hex,
             original_request=original, conversation_id=s.conversation_id, game_id="stardew",
             session_id=ctx.session_id, observation_id=ctx.observation_id,
             requested_objective=intent["objective"], normalized_intent="farm_routine",
             actions=proposal.actions, base_task_id=proposal.base_task_id,
-            ambiguities=proposal.ambiguities, unsupported_parts=proposal.unsupported_parts,
-            protected_choices=proposal.protected_choices, resource_limits=proposal.resource_limits,
+            ambiguities=tuple(ambiguities), unsupported_parts=proposal.unsupported_parts,
+            protected_choices=proposal.protected_choices, resource_limits=limits,
             stop_point=proposal.stop_point, fallback_explanation=proposal.fallback_explanation,
             execution_eligibility=proposal.execution_eligibility)
         s._plan = plan.to_dict()
         s._plan["model_intent"] = deepcopy(intent)
         s.runtime.gameplay_agent = WateringAgent(self.provider, intent, self)
         s.runtime.gameplay_agent.plan_id = plan.plan_id
-        s._message("assistant", intent["message"] + " " + proposal.fallback_explanation + " " + " ".join(proposal.ambiguities), "proposal")
+        s._message("assistant", intent["message"] + " " +
+                   f"At most {limits['maximum_seconds']} seconds including return; keep {limits['minimum_water']} water units and use at most {limits['maximum_water_uses']}. " +
+                   "Review and Start are required. " + " ".join(ambiguities), "proposal")
 
 
 class WateringAgent:

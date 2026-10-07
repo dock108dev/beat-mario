@@ -124,7 +124,7 @@ def load_goal_contract(path: Path, *, _seen: frozenset[Path] = frozenset()) -> G
     if resolved_path in _seen:
         raise GoalValidationError(f"Goal prefix cycle detected at: {path}")
 
-    raw = yaml.safe_load(source_path.read_text()) or {}
+    raw = yaml.load(source_path.read_text(), Loader=getattr(yaml, "CSafeLoader", yaml.SafeLoader)) or {}
     if not isinstance(raw, dict):
         raise GoalValidationError("Goal contract must be a YAML mapping")
 

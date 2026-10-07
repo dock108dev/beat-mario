@@ -23,6 +23,28 @@ LANGUAGE_RULES = (
     'Use interaction=coaching or correction for a requested reusable tactic. Fresh requests override conflicting memory. '
     'Remembered strategy guidance is descriptive and requires fresh Review/Start. Questions about guidance grant no input.'
 )
+
+
+def completed_segment(events, samples, terminal_frame, session_id, *, terminal, neutral_ack, neutralized):
+    """Qualify only this endpoint plus its observed neutral review pause."""
+    arrived = False
+    for event in events:
+        if event.get('event') != 'segment_arrival_observed':
+            continue
+        try:
+            arrived |= (terminal == 'completed_stop' and int(event['frame']) == terminal_frame
+                        and int(event['x']) >= TARGET_X and int(event['alive']) == 1
+                        and int(event['grounded']) == 1)
+        except (KeyError, ValueError, TypeError):
+            continue
+    paused = terminal_frame is not None and any(
+        sample.session_id == session_id and sample.actor == 'player' and not sample.buttons
+        and sample.takeover_detail == 'player_review_pause'
+        and terminal_frame <= sample.frame <= terminal_frame+3
+        and sample.x >= TARGET_X and sample.air == 0
+        and sample.lives > 0 and sample.player_is_dying == 0 for sample in samples)
+    return {'segment_arrival_observed': arrived, 'review_pause_observed': bool(paused),
+            'requested_objective_satisfied': True if arrived and paused and neutral_ack and neutralized else None}
 GUIDANCE = {
     'objective': 'Reach x >= 700 in World 1-1 while alive and grounded, then release control.',
     'skills': {
@@ -53,7 +75,7 @@ def expand_plan(plan):
     parameters.update(path_choice='adaptive_segment', stop_point='world_1_1_segment_end',
                       primitive_id='world_1_1_adaptive_segment_v1')
     plan['fallback_explanation'] = 'Experimental bounded visual strategy. Full-level completion, rewards and improved reliability remain unknown.'
-    plan['change_summary'] = ['Model-directed World 1-1 segment to x >= 700, alive and grounded. The model composes jumps, walks, landing and retreat from fresh images and effects. Each attempt has 32 decisions, 1200 skill frames and 480 seconds; the displayed finite attempt budget remains.']
+    plan['change_summary'] = ['Reach the supported World 1-1 early segment boundary alive and grounded. Companion chooses short actions from fresh game views, checks their effects and adapts. The reviewed time and attempt limits apply.']
 
 
 def remember(store, intent, original, cartridge):

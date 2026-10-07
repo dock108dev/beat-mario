@@ -25,8 +25,11 @@ def render_conversation_workspace(
     state: Mapping[str, object] | None = None, *, csrf_token: str | None = None
 ) -> str:
     """Render a stable DOM shell; polling only patches noneditable status nodes."""
+    from smb3_agent.paths import is_packaged
+    candidate_css = "" if not is_packaged() else "<style>#conversation-recording-tools,#conversation-coin-tools,details.conversation-tools:not([id]),.conversation-buttons[aria-label=\"Suggested supported edits\"]{display:none!important}#conversation-flight-tools>summary,#conversation-flight-tools>p,#conversation-flight-tools>button{display:none!important}#conversation-flight-tools{border:0}</style><p>Supported candidate scope: adaptive World 1-1 early segment, finite attempts and remembered coaching. Wider goals and recording are unavailable.</p>"
     encoded = html.escape(json.dumps(dict(state or {})), quote=True)
     token = html.escape(csrf_token or "", quote=True)
+    prompt = "Play the early World 1-1 segment for one attempt; prefer shorter jumps where safe." if is_packaged() else "Let’s find a coin route to the end for three attempts."
     return f'''
   <div id="conversation-controls" class="conversation-controls" aria-label="Persistent Mario controls">
     <strong id="conversation-owner">Mario · You control the game</strong>
@@ -36,12 +39,12 @@ def render_conversation_workspace(
     <button type="button" data-conversation-action="reclaim" class="danger" data-testid="conversation-reclaim">Take control</button>
     <p id="conversation-error" class="conversation-alert" role="alert" hidden></p>
   </div>
-<section id="mario-conversation" class="conversation-workspace" data-testid="mario-conversation" data-initial-state="{encoded}" data-csrf="{token}" aria-label="Mario conversation and plan">
+{candidate_css}<section id="mario-conversation" class="conversation-workspace" data-testid="mario-conversation" data-initial-state="{encoded}" data-csrf="{token}" aria-label="Mario conversation and plan">
   <section class="session-card conversation-chat" aria-labelledby="conversation-chat-heading">
     <h2 id="conversation-chat-heading">Ask Companion</h2>
     <form data-conversation-form="message" id="conversation-message-form">
       <label for="conversation-draft">What would you like to do?</label>
-      <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="Let’s find a coin route to the end for three attempts." required aria-describedby="conversation-typing-note"></textarea>
+      <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="{prompt}" required aria-describedby="conversation-typing-note"></textarea>
       <p class="meta" id="conversation-typing-note">Mario can play while you type. Questions give advice; supported changes update future steps.</p>
       <button type="submit" class="primary-button" data-testid="conversation-send">Send</button>
       <div class="conversation-buttons" aria-label="Suggested supported edits"><button type="button" data-conversation-draft="Let’s find a coin route to the end">Find a coin route</button><button type="button" data-conversation-draft="Let’s practice the opening jump">Practice the opening jump</button><button type="button" data-conversation-draft="You’re jumping too early, wait 3 more frames">Coach the next jump</button><button type="button" data-conversation-draft="Use the base path and stop at the end of World 1-1">Base path to level exit</button></div>
@@ -53,7 +56,7 @@ def render_conversation_workspace(
     <h2 id="conversation-plan-heading">Your Mario plan</h2>
     <dl class="conversation-status">
       <div><dt>You asked for</dt><dd id="conversation-requested">Existing base route</dd></div>
-      <div><dt>Route loaded</dt><dd id="conversation-loaded">Existing route to the game ending</dd></div>
+      <div><dt>Plan</dt><dd id="conversation-loaded">Existing route to the game ending</dd></div>
     </dl>
     <p id="conversation-fallback" class="callout">Faster and 100% routes are not available. These choices load the existing route.</p>
     <p id="conversation-plan-label" class="conversation-subtitle">Review a plan to begin.</p>
@@ -61,7 +64,7 @@ def render_conversation_workspace(
     <p id="conversation-unsupported" class="callout" hidden></p>
     <form method="post" action="/observe-start" id="conversation-launch" class="conversation-launch">
       <input type="hidden" name="csrf_token" value="{token}"><input type="hidden" name="allow_takeover" value="true"><input type="hidden" name="pause_for_plan" value="true">
-      <button type="submit" data-testid="conversation-open-game">Open Mario for companion play</button>
+      <button type="submit" data-testid="conversation-open-game">Open Mario</button>
       <p id="conversation-live-reason" class="meta"></p>
       <a href="#setup">Mario setup</a>
     </form>
@@ -79,13 +82,15 @@ def render_conversation_workspace(
       <p id="conversation-ack" role="status" aria-live="polite"></p>
       <button type="button" data-conversation-action="cancel_pending" data-testid="conversation-cancel">Cancel pending change</button>
     </div>
+    <p id="conversation-speed-status" class="meta">Requested 1× · Applied rate not yet acknowledged</p>
+    <p id="conversation-performance" class="meta"></p>
+    <div class="conversation-outcome"><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
+    <details><summary>Playback speed</summary>
     <form data-conversation-form="speed" class="conversation-inline conversation-speed">
       <div><label for="conversation-speed">Playback speed</label><select id="conversation-speed" name="rate"><option value="1">1× · Normal</option><option value="turbo">Faster · Uncapped</option></select></div>
       <button type="submit">Set speed</button>
     </form>
-    <p id="conversation-speed-status" class="meta">Requested 1× · Applied rate not yet acknowledged</p>
-    <p id="conversation-performance" class="meta"></p>
-    <div class="conversation-outcome"><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
+    </details>
   </section>
 <details class="session-card conversation-tools"><summary>Route shortcuts</summary>    <form data-conversation-form="select_intent" class="conversation-inline conversation-intent-choice">
       <div><label for="conversation-intent">Route objective</label><select id="conversation-intent" name="intent"><option value="existing base route">Existing route</option><option value="faster">Faster</option><option value="fastest">Fastest</option><option value="quickest">Quickest</option><option value="100% clear">100% clear</option></select></div>
@@ -121,7 +126,7 @@ def render_conversation_workspace(
     <button type="button" data-conversation-action="demo_disable">Stop using demonstration</button>
     <p>Use proposes one attempt: balanced approach, then the recorded sequence when position, motion and form match. Review and Start authorize play. Drift stops playback; different enemy timing may prevent success. Saved demonstrations never resume gameplay on reopening.</p>
   </details>
-  <details id="conversation-flight-tools" class="session-card conversation-tools"><summary>Prepare a flight reward</summary><p>Ask “Fly to the hidden 1UP.” Prepare Raccoon or Tanooki Mario on the early runway after the first pipe, then review the observed requirements.</p><button type="button" data-conversation-action="player_play">Prepare flight form yourself</button><button type="button" data-conversation-action="demo_fresh">Open fresh attempt</button><p>After confirmed handback, open a fresh paused disposable game, prepare the form, then ask again, review and Start. No recording is needed.</p><p id="conversation-flight"></p>
+  <details id="conversation-flight-tools" {"open" if is_packaged() else ""} class="session-card conversation-tools"><summary>Prepare a flight reward</summary><p>Ask “Fly to the hidden 1UP.” Prepare Raccoon or Tanooki Mario on the early runway after the first pipe, then review the observed requirements.</p><button type="button" data-conversation-action="player_play">Prepare flight form yourself</button><button type="button" data-conversation-action="demo_fresh">Open fresh attempt</button><p>After confirmed handback, open a fresh paused disposable game, prepare the form, then ask again, review and Start. No recording is needed.</p><p id="conversation-flight"></p>
     <details><summary>Preparation controls</summary><p>Each press uses ordinary game input, releases all buttons and pauses Mario. Get the Mushroom from the right upper question block before the pipe. Stomp the red Koopa, carry its shell right and release it before the ground question block. Follow immediately to collect the Leaf. Return to the low green platform after the pipe, then ask for flight again. Stop remains available. No recording is needed.</p>
     <form data-conversation-form="preparation_press"><label>Preparation control <select name="buttons"><option value="wait">Wait / release jump</option><option value="start">Start / confirm menu</option><option value="up">Up / map north</option><option value="down">Down / map south</option><option value="left">Walk left</option><option value="right">Walk right</option><option value="jump">Jump / enter level</option><option value="jump_right">Jump right</option><option value="jump_left">Jump left</option><option value="run_right">Run right / carry shell</option><option value="run_jump_right">Run and jump right</option></select></label>
     <label>Press duration <select name="frames"><option value="15">Quarter second</option><option value="30">Half second</option><option value="60">One second</option><option value="1">One frame</option><option value="5">Brief tap</option></select></label><button type="submit">Press preparation control</button></form></details></details>
@@ -183,6 +188,9 @@ CONVERSATION_JS = r''' (() => {
   const root = document.getElementById("mario-conversation");
   if (!root) return;
   const node = name => document.getElementById(`conversation-${name}`);
+  const draftKey = "game-companion-draft:mario";
+  try { node("draft").value = localStorage.getItem(draftKey) || ""; } catch (_) {}
+  node("draft").addEventListener("input", () => { try { localStorage.setItem(draftKey, node("draft").value); } catch (_) {} });
   const text = (name, value) => { const el = node(name); const next = String(value ?? ""); if (el.textContent !== next) el.textContent = next; };
   const label = value => String(value ?? "").replace(/_/g, " ");
   const speed = value => value === "turbo" ? "Faster (uncapped)" : value == null ? "not yet acknowledged" : `${value}×`;
@@ -236,7 +244,7 @@ CONVERSATION_JS = r''' (() => {
     text("session", runtime.session_id || live.session_id || "No live session");
     text("requested", state.ai?.state === "interpreting" ? "Understanding your request…" : plan.requested_objective || "No request yet");
     const loadedVariant = (state.variants || []).find(variant => variant.variant_id === plan.variant_id);
-    text("loaded", !state.plan ? "No plan selected" : plan.path_choice === "adaptive_segment" ? "Adaptive World 1-1 early segment" : plan.flight_compatibility ? "World 1-1 sky hidden 1UP flight" : plan.coin_compatibility ? "Experimental World 1-1 coin discovery" : plan.coaching_compatibility ? "Experimental World 1-1 opening practice" : `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : ""}`);
+    text("loaded", !state.plan ? "No plan selected" : plan.path_choice === "adaptive_segment" ? "World 1-1 early segment" : plan.flight_compatibility ? "World 1-1 sky hidden 1UP flight" : plan.coin_compatibility ? "Experimental World 1-1 coin discovery" : plan.coaching_compatibility ? "Experimental World 1-1 opening practice" : `${plan.base_route_id === "world_8_finish_game" || !plan.base_route_id ? "Existing route to the game ending" : label(plan.base_route_id)}${plan.variant_id ? ` · ${loadedVariant?.name || "Custom variant"}` : ""}`);
     text("fallback", `${displayCopy(plan.fallback_explanation) || (state.plan ? "Review supported execution limits before Start." : "Describe a goal or open Mario to prepare a fresh session.")} ${state.ai?.provider?.message || ""} ${state.ai?.provider?.inference || ""}`);
     text("plan-label", plan.revision ? `Plan version ${plan.revision}` : "");
     list("actions", (plan.actions || []).map(action => ({...action, jump_delay_frames:plan.jump_delay_frames, coaching_compatibility:plan.coaching_compatibility})), action => {
@@ -252,9 +260,12 @@ CONVERSATION_JS = r''' (() => {
       if (["mario_speed", "set_speed"].includes(action.kind)) return item(`Set playback to ${speed(parameters.speed || plan.requested_speed)}.`);
       return item(label(action.kind));
     });
-    text("eligibility", !state.plan ? "Choose an objective and review the plan before starting." : !live.observation_active ? "Open Mario before starting. The game must match the plan’s starting point." : eligibilityLabel(plan.execution_eligibility));
+    text("eligibility", !state.plan ? "Ask for a task, then review the plan before starting." : !live.observation_active ? "Open Mario before starting. The game must match the plan’s starting point." : eligibilityLabel(plan.execution_eligibility));
     const issues = [...(plan.ambiguities || []), ...(plan.unsupported_parts || [])];
     text("unsupported", issues.map(printable).join(" · ")); node("unsupported").hidden = !issues.length;
+    if (plan.resource_limits?.maximum_seconds_per_attempt) {
+      text("eligibility", node("eligibility").textContent + ` At most ${plan.resource_limits.maximum_seconds_per_attempt} seconds per attempt.`);
+    }
     node("playing").hidden = !["playing", "paused", "starting"].includes(runtime.status) && !pending;
     text("current", current ? `Current: ${summarizePlan(current)}` : "No plan is running.");
     text("pending", pending ? `Pending: ${summarizePlan(pending)}` : "No pending change.");
@@ -265,10 +276,12 @@ CONVERSATION_JS = r''' (() => {
     const measured = [...(runtime.speed_intervals || [])].reverse().find(interval => interval.measured_multiplier != null);
     text("performance", [measured ? `Last completed speed interval: ${Number(measured.measured_multiplier).toFixed(2)}× measured` : "", runtime.performance_limitation || ""].filter(Boolean).join(" · "));
     text("live-reason", live.observation_active ? `Mario is already open. ${displayCopy(live.reason)}` : displayCopy(live.reason));
+    root.querySelector("[data-testid='conversation-start']").disabled = !plan.plan_id || !live.observation_active || !live.takeover_capable || issues.length > 0 || state.ai?.state === "interpreting";
+    root.querySelector("[data-testid='conversation-apply']").disabled = !plan.plan_id || issues.length > 0 || state.ai?.state === "interpreting";
     const launch = root.querySelector("[data-testid='conversation-open-game']");
     launch.disabled = Boolean(live.observation_active || busy.has("launch"));
     const messageItem = message => {
-      const li = item(""); const by = document.createElement("strong"); by.textContent = message.role === "user" ? "You" : "Companion";
+      const li = item(""); const by = document.createElement("strong"); by.textContent = (message.historical ? "Saved conversation · " : "") + (message.role === "user" ? "You" : "Companion");
       const copy = document.createElement("span");
       const planSummary = [...(plan.change_summary || []), plan.fallback_explanation].filter(Boolean).join(" ");
       copy.textContent = message.kind === "proposal" && message.text === planSummary
@@ -315,7 +328,7 @@ CONVERSATION_JS = r''' (() => {
     }
     if (outcome?.strategy_result) {
       const result = outcome.strategy_result;
-      text("outcome", `${label(outcome.status)} · ${result.skills.map(s => `${s.skill}: ${s.frames} frames, delay ${s.delay_frames}`).join(" → ") || "No skill receipt"} · ${result.segment_arrival_observed === undefined ? (result.opening_stop_observed ? "Opening stop observed" : "Opening stop not observed") : (result.segment_arrival_observed ? "Early segment arrival observed, grounded" : "Early segment arrival unconfirmed")} · ${result.requested_guidance ? `Remembered guidance ${result.guidance_application_observed ? "applied with a controller receipt" : "application unconfirmed"}; improvement unknown · ` : ""}${outcome.neutralized ? "Inputs released" : "Input release unconfirmed"} · ${outcome.controller_owner === "player" ? "Control returned to you" : "Handback unconfirmed"}`);
+      text("outcome", `${label(outcome.status)}. ${result.segment_arrival_observed === undefined ? (result.opening_stop_observed ? "Opening stop observed" : "Opening stop not observed") : (result.segment_arrival_observed ? "Early segment reached and grounded" : "Early segment arrival unconfirmed")}. ${result.requested_guidance ? `Remembered guidance ${result.guidance_application_observed ? "confirmed applied" : "application unconfirmed"}; improvement unknown. ` : ""}${outcome.neutralized ? "Inputs released" : "Input release unconfirmed"}. ${outcome.controller_owner === "player" ? "Control returned to you" : "Control return unconfirmed"}.`);
     }
     const recording = state.recording || {}, draft = recording.draft;
     text("recording", recording.active ? `Player recording: ${recording.active.status}. Companion input is disabled.` : draft ? `${draft.frame_count} recorded frames · ${draft.reason}. Review, trim if needed and save.` : "No recording in progress. Ten-minute maximum; World 1-1 only.");
@@ -444,7 +457,7 @@ CONVERSATION_JS = r''' (() => {
     const draft = node("draft"); const submitted = draft.value;
     const succeeded = await dispatch(action, payload, form);
     // Never erase text typed after the submitted request, or move focus/selection.
-    if (succeeded && action === "message" && draft.value === submitted) draft.value = "";
+    if (succeeded && action === "message" && draft.value === submitted) { draft.value = ""; try { localStorage.removeItem(draftKey); } catch (_) {} }
   });
   try { render(JSON.parse(root.dataset.initialState || "{}")); } catch (_failure) { render({}); }
   refresh();
@@ -458,6 +471,10 @@ def render_stardew_conversation_workspace(state: Mapping[str, object] | None = N
                                            *, csrf_token: str | None = None,
                                            selected: bool = True) -> str:
     """Ordinary watering workspace; editable nodes remain stable across polling."""
+    from smb3_agent.paths import is_packaged
+    scope = "Select a save to copy, then let Companion check its visible spring-seed patch, resources and return route. Wider farm work remains unavailable." if is_packaged() else "Use the prepared Day 2 or Day 5 farm. Other farms and targets are not qualified."
+    setup_scope = "<strong>Pilot / B3Test · Day 2:</strong> water a reviewed subset of the 15 initial crops, then return." if is_packaged() else "<strong>Pilot / B3Test · Day 2:</strong> water all 15 initial crops. <strong>Pilot / B4Test · Day 5:</strong> harvest and replant the left parsnip, water it, clear the selected small stone, then return. These are separate prepared farms."
+    examples = "<details><summary>Examples and game focus</summary><p>Ask to water observed dry crops. Correct the target selection or reserve before Review and Start. Wider farm activities and reconnaissance remain unavailable. Questions grant no input.</p></details>" if is_packaged() else '<details><summary>Examples and game focus</summary><p>Ask “Water the dry crops” or “Where should we plant corn?” For another view, ask “Inspect the eastern crop margin” and review the walk before Start.</p><p>For the Farm Cave, ask “Explore a cave”, then choose “Farm Cave”. Only a verified exterior visit and return can run; entry and interior exploration need a further supported plan.</p><p><strong>Day 5 example:</strong> Harvest farm--1-3, then plant parsnip seeds on farm--1-3, then water them and clear farm-0-5 and return to the farmhouse entrance.</p><p>Refresh farm view and planting-location discussion focus and capture the game. Location discussion uses no gameplay input. Other questions and control requests do not focus it.</p></details>'
     encoded = html.escape(json.dumps(dict(state or {})), quote=True)
     token = html.escape(csrf_token or "", quote=True)
     selection = '' if selected else f'''<section role="status" class="card" style="padding:16px">
@@ -467,10 +484,17 @@ def render_stardew_conversation_workspace(state: Mapping[str, object] | None = N
 <p>Switching releases the previous adapter and requires a fresh observation.</p></section>'''
     prepared_options = ''.join(f'<option value="{html.escape(row["id"], quote=True)}">{html.escape(row["label"])}</option>'
                                for row in (state or {}).get("runtime", {}).get("prepared_farms", []))
+    installation = html.escape((state or {}).get("runtime", {}).get("setup_selection", {}).get("installation", ""), quote=True)
     prepared = (f'<form data-action="launch_engineering"><label>Prepared test farm<select name="prepared_id">{prepared_options}</select></label>'
-                '<details><summary>Choose installed Stardew location</summary><label>Stardew installation folder<input name="installation" placeholder="Leave blank to discover the installed game"></label><p>Select the actual installation containing Contents/MacOS. The inspected executable and runtime must match; no save folders are searched.</p></details>'
-                '<button type="submit" class="primary-button">Open fresh farm copy</button><p>The original farm stays unchanged. Choose Load in the game, then verify this new session. Opening does not permit gameplay.</p></form>' if prepared_options else '')
+                f'<details><summary>Choose installed Stardew location</summary><label>Stardew installation folder<input name="installation" value="{installation}" placeholder="Leave blank to discover the installed game"></label><p>Select the actual installation containing Contents/MacOS. The inspected executable and runtime must match; no save folders are searched.</p></details>'
+                '<button type="submit" class="primary-button">Open fresh farm copy</button><p>The original farm stays unchanged. Approve preparation after opening; watering requires a separate plan and Start.</p></form>' if prepared_options else '')
     setup_open = '' if (state or {}).get('runtime', {}).get('observation') else ' open'
+    default_options = ''.join(f'<option value="{html.escape(row["id"], quote=True)}">{html.escape(row["label"])}</option>'
+                              for row in (state or {}).get('runtime', {}).get('default_saves', []))
+    default_form = (f'<form data-action="launch_default_copy"><label>Farm<select name="save_id">{default_options}</select></label>'
+                    '<label><input type="checkbox" name="copy_authorized" required> Open a test copy of this farm; keep the original</label>'
+                    '<button type="submit" class="primary-button">Open farm copy</button></form>' if default_options else
+                    '<p>No game-created farm is saved yet in the default location. Create and save a farm in Stardew, then refresh this page.</p>')
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Stardew · Game Companion</title>
 <style>{CONVERSATION_CSS}
@@ -478,7 +502,7 @@ body{{margin:0;background:#f5f8f4;color:#203626;font:16px/1.5 system-ui}}main{{m
 {GLASS_CSS}
 body{{color:var(--text)}}main{{padding:16px}}h1{{font-size:26px;margin:8px 0}}.companion-top p{{margin:8px 0 0}}.card{{background:var(--surface);border-color:white;border-radius:22px}}button{{color:var(--text);border-color:var(--line-strong)}}a{{color:#075ac0}}button.primary-button{{color:white}}button.danger{{background:#ac2944;color:white}}button:disabled{{opacity:1;background:#edf1f7;color:#54647b;border-color:#bccde5}}.stardew-setup{{margin-top:12px;padding:16px;scroll-margin-top:150px}}.stardew-setup summary{{cursor:pointer;min-height:44px;box-sizing:border-box;padding:10px 0;font-weight:650}}.stardew-setup form{{margin:12px 0}}.stardew-setup select,.stardew-setup input:not([type=checkbox]){{max-width:100%;width:100%;box-sizing:border-box;font:inherit}}.stardew-view-tools{{margin-bottom:12px;align-items:center}}#stardew-targets{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}}#stardew-targets label{{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:400;margin:0}}#stardew-ledger{{font:inherit;line-height:1.5}}#stardew-issues:empty{{display:none}}.stardew-history{{margin-top:16px}}.conversation-controls strong{{overflow-wrap:anywhere}}.stardew-setup p{{overflow-wrap:anywhere}}
 </style></head><body><main>
-<header class="companion-top"><a href="/">Choose a game</a><h1>Stardew Valley</h1><p>Use the prepared Day 2 or Day 5 farm. Other farms and targets are not qualified.</p></header>
+<header class="companion-top"><a href="/">Choose a game</a><h1>Stardew Valley</h1><p>{scope}</p></header>
 {selection}
 <div id="stardew-workspace" data-initial-state="{encoded}" data-csrf="{token}">
 <div class="conversation-controls" aria-label="Persistent Stardew controls"><strong id="stardew-owner">You control the game</strong>
@@ -487,7 +511,7 @@ body{{color:var(--text)}}main{{padding:16px}}h1{{font-size:26px;margin:8px 0}}.c
 <p id="stardew-status" role="status"></p><div class="conversation-buttons stardew-view-tools"><button data-action="observe">Refresh farm view</button><a href="#stardew-setup-panel">Farm setup</a></div>
 <section class="conversation-workspace" aria-label="Stardew conversation and plan">
 <div class="conversation-chat card"><h2>Ask Companion</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Where should we plant corn? Or: please water the dry crop patch" required></textarea><button type="submit" class="primary-button">Send request</button></form><p class="meta">Work and planting-location requests bring Stardew to the front. Questions give advice; only Start permits work.</p>
-<details><summary>Examples and game focus</summary><p>Ask “Water the dry crops” or “Where should we plant corn?” For another view, ask “Inspect the eastern crop margin” and review the walk before Start.</p><p>For the Farm Cave, ask “Explore a cave”, then choose “Farm Cave”. Only a verified exterior visit and return can run; entry and interior exploration need a further supported plan.</p><p><strong>Day 5 example:</strong> Harvest farm--1-3, then plant parsnip seeds on farm--1-3, then water them and clear farm-0-5 and return to the farmhouse entrance.</p><p>Refresh farm view and planting-location discussion focus and capture the game. Location discussion uses no gameplay input. Other questions and control requests do not focus it.</p></details>
+{examples}
 <ul id="stardew-messages" class="conversation-transcript" aria-live="polite"></ul><details id="stardew-earlier" hidden><summary>Earlier messages</summary><ul id="stardew-older-messages" class="conversation-transcript"></ul></details></div>
 <div class="conversation-plan card"><section id="stardew-plan-review"><h2>Your farm plan</h2><p id="stardew-observation"></p>
 <p id="stardew-plan">Request a task to prepare a proposal.</p><ol id="stardew-actions"></ol><p id="stardew-limits"></p><p id="stardew-issues"></p>
@@ -498,22 +522,22 @@ body{{color:var(--text)}}main{{padding:16px}}h1{{font-size:26px;margin:8px 0}}.c
 <section id="stardew-cave-panel" class="conversation-outcome" aria-label="Cave entrance reconnaissance" hidden><h3>Farm Cave findings</h3><p id="stardew-cave-coverage"></p><p id="stardew-cave-result"></p><div id="stardew-cave-image"></div><p>If the return stopped, ask “Return home” and review a new plan. Saved findings never resume play.</p></section>
 <h3>Choose targets</h3><form data-action="select_targets"><div id="stardew-targets"></div><button type="submit">Use selected targets</button></form><details class="stardew-history"><summary>Saved results</summary><p>Inspect past work and recovery advice. Reopening never permits play.</p><ol id="stardew-history" class="conversation-history"></ol></details>
 <details><summary>Session and evidence details</summary><pre id="stardew-details"></pre></details></div>
-</section><details id="stardew-setup-panel" class="session-card stardew-setup"{setup_open}><summary>Farm setup and screen recognition</summary><p><strong>Pilot / B3Test · Day 2:</strong> water all 15 initial crops. <strong>Pilot / B4Test · Day 5:</strong> harvest and replant the left parsnip, water it, clear the selected small stone, then return. These are separate prepared farms.</p><h3>Open or reconnect a disposable farm</h3><p>Close the previous test game. Open a fresh copy below, load the named farm, exit to the porch and select the watering can.</p>
-{prepared}
-<div class="conversation-buttons"><button data-action="reconnect_engineering">Reconnect open disposable game</button><button data-action="show_engineering_game">Show game window</button></div><p>In the game: choose Load → Pilot/B3Test, walk left from the bed to the door, walk down onto the porch, then click the watering can in toolbar slot 3. These preparation steps are player controlled. Back here, check the farm session and connect screen recognition. Reconnect never restores a plan or permission.</p>
-<details><summary>Prepare through Companion when native attachment is unavailable</summary><p>View the disposable game screen first. Use Load only on the title screen; choose Pilot only on the load list. In the bedroom walk left toward the door, then down to the porch. Each walk button permits 0.8 seconds and releases input. Repeat only after checking the new screen. Select the can on the farm. Pause clock between survey steps keeps daylight steady while you review images. End that pause with Toggle game menu before checking the session.</p><div id="stardew-preparation-view"></div><div class="conversation-buttons"><button data-preparation="view">View preparation screen</button><button data-preparation="window">Restore supported window</button><button data-preparation="load">Choose Load</button><button data-preparation="choose">Choose Pilot farm</button><button data-preparation="left">Walk left for 0.8 seconds</button><button data-preparation="down">Walk down for 0.8 seconds</button><button data-preparation="right">Walk right for 0.8 seconds</button><button data-preparation="up">Walk up for 0.8 seconds</button><button data-preparation="up_short">Nudge up for 0.1 seconds</button><button data-preparation="left_short">Nudge left for 0.1 seconds</button><button data-preparation="right_short">Nudge right for 0.1 seconds</button><button data-preparation="down_short">Nudge down for 0.1 seconds</button><button data-preparation="up_fine">Nudge up for 0.05 seconds</button><button data-preparation="up_micro">Adjust up for 0.015 seconds</button><button data-preparation="down_micro">Adjust down for 0.015 seconds</button><button data-preparation="left_micro">Adjust left for 0.015 seconds</button><button data-preparation="right_micro">Adjust right for 0.015 seconds</button><button data-preparation="survey_pause">Pause clock between survey steps</button><button data-preparation="can">Select watering can</button><button data-preparation="menu">Toggle game menu</button></div></details><details><summary>Advanced: empty engineering session</summary><button data-action="launch_engineering">Open isolated engineering game</button><p>An empty session is not a qualified prepared farm.</p></details>
+</section><details id="stardew-setup-panel" class="session-card stardew-setup"{setup_open}><summary>Choose a farm session</summary><h3>Your saved farms</h3>{default_form}<details><summary>Choose a save outside the default location</summary><h3>Open an isolated copy of your selected save</h3><form data-action="launch_selected_copy"><label>Selected save folder<input name="source" required autocomplete="off"></label><label><input type="checkbox" name="copy_authorized" required> Copy this selected save and preserve the original</label><label>Installed Stardew application<input name="installation" value="{installation}" placeholder="Leave blank to discover the installed game"></label><button type="submit" class="primary-button">Open selected farm copy</button></form></details><p>The copy may change; your original farm is preserved. Only supported spring seed patches can be watered. Preparation and watering need separate approval.</p><details><summary>Supported farms and watering limits</summary><p>Companion checks the current screen: an unchanged standard farmhouse, supported blue clothing, 1–15 visible spring seeds, a basic watering can, exact resources and clear paths there and back. Unknown or blocked paths stop work. Other crops, seasons, upgraded tools and wider farms are not supported.</p></details><details><summary>Engineering regression: frozen prepared farms</summary><p>{setup_scope}</p><h3>Import the prepared Day 2 seed</h3><form data-action="import_day2_seed"><label>Exact prepared seed directory<input name="source" required autocomplete="off"></label><label><input type="checkbox" name="copy_authorized" required> Copy this selected prepared seed into local app data</label><button type="submit">Import Day 2 seed</button></form><p>Only the unchanged supported Day 2 seed is accepted. Primary saves are never searched. Calibration resources are bundled with the candidate.</p><h3>Open or reconnect a disposable farm</h3><p>Close the previous disposable game, open a fresh copy, then approve preparation below.</p>
+{prepared}</details>
+<div class="conversation-buttons"><button data-action="reconnect_engineering">Reconnect open disposable game</button><button data-action="show_engineering_game">Show game window</button></div><p>After reconnecting, prepare the copy and review a fresh plan.</p>
+<div class="conversation-buttons"><button id="stardew-prepare" data-action="prepare_supported_farm">Prepare this copy for watering</button></div><p>This approves opening the selected copy, leaving the bedroom and selecting the can, for at most five minutes and 100 observed steps (a shorter discussed limit applies). Companion checks the visible effects and releases every input. Watering still needs a separate plan and Start. Stop and Take control also cancel preparation.</p><p id="stardew-goal-preparation-status"></p><details><summary>Engineering diagnostics: raw preparation controls</summary><p>These controls are retained for frozen-fixture diagnostics only. Selected-save preparation runs through the approved preparation button above.</p><div id="stardew-preparation-view"></div><div class="conversation-buttons"><button data-preparation="view">View preparation screen</button><button data-preparation="window">Restore supported window</button><button data-preparation="load">Choose Load</button><button data-preparation="choose">Choose Pilot farm</button><button data-preparation="left">Walk left for 0.8 seconds</button><button data-preparation="down">Walk down for 0.8 seconds</button><button data-preparation="right">Walk right for 0.8 seconds</button><button data-preparation="up">Walk up for 0.8 seconds</button><button data-preparation="up_short">Nudge up for 0.1 seconds</button><button data-preparation="left_short">Nudge left for 0.1 seconds</button><button data-preparation="right_short">Nudge right for 0.1 seconds</button><button data-preparation="down_short">Nudge down for 0.1 seconds</button><button data-preparation="up_fine">Nudge up for 0.05 seconds</button><button data-preparation="up_micro">Adjust up for 0.015 seconds</button><button data-preparation="down_micro">Adjust down for 0.015 seconds</button><button data-preparation="left_micro">Adjust left for 0.015 seconds</button><button data-preparation="right_micro">Adjust right for 0.015 seconds</button><button data-preparation="survey_pause">Pause clock between survey steps</button><button data-preparation="can">Select watering can</button><button data-preparation="menu">Toggle game menu</button></div></details><details><summary>Advanced: empty engineering session</summary><button data-action="launch_engineering">Open isolated engineering game</button><p>An empty session is not a qualified prepared farm.</p></details>
 <details><summary>Advanced: copy a selected existing save</summary><p>No save is discovered automatically. Choose the exact source and a new destination. Copying alone does not verify where the game loads or saves.</p>
 <form data-action="setup" class="setup-fields"><label>Source kind<select name="setup_source_kind"><option value="engineering_source">Dedicated engineering save</option><option value="owner_copy">Selected owner save</option></select></label><label>Selected source directory<input name="source" required autocomplete="off"></label>
 <label>New disposable destination<input name="destination" required autocomplete="off"></label>
 <label><input type="checkbox" name="copy_authorized" required> I authorize copying this selected source to this destination.</label>
 <button type="submit">Create disposable copy</button></form></details>
 <p id="stardew-setup"></p>
-<h3>Verify the farm session</h3><p>After loading the farm, check that this game uses the separate copy. This checks the saved setup evidence; it does not prepare a farm or play the game.</p>
+<details><summary>Engineering diagnostics: verification and screen profiles</summary><h3>Verify the farm session</h3><p>After loading the farm, check that this game uses the separate copy. This checks the saved setup evidence; it does not prepare a farm or play the game.</p>
 <button data-action="verify_engineering_session">Check isolated farm session</button>
 <ol id="stardew-setup-steps" aria-label="Setup evidence checklist"></ol>
 <h3>Connect screen recognition</h3><p id="stardew-profile-status">No verified screen profile is available. Complete farm setup before connecting.</p>
 <form data-action="connect_profile"><label for="stardew-profile">Qualified profile for this session</label><select id="stardew-profile" name="profile_id"><option value="">No qualified profile available</option></select><button id="stardew-connect" type="submit" disabled>Connect qualified screen profile</button></form>
-<details><summary>Reset to a fresh disposable attempt</summary><form data-action="reset"><label>New destination<input name="destination" required autocomplete="off"></label><button type="submit">Create fresh attempt</button></form></details>
+</details><details><summary>Reset to a fresh disposable attempt</summary><form data-action="reset"><label>New destination<input name="destination" required autocomplete="off"></label><button type="submit">Create fresh attempt</button></form></details>
 <details><summary>Required game and display settings</summary><p>Qualified settings: Standard Farm, daylight, zoom 75%, UI 100%, locked toolbar, hit marker and default WASD; capture 1512×949 at (0,33) on a 3024×1964 display. Other configurations require separate qualification.</p></details></details></div></main><script src="/assets/stardew-conversation.js" defer></script></body></html>'''
 
 
@@ -523,6 +547,9 @@ STARDEW_CONVERSATION_JS = r'''
 ''' + HISTORY_JS + r'''
   const root = document.getElementById("stardew-workspace"); if (!root) return;
   const node = id => document.getElementById(`stardew-${id}`);
+  const draftKey = "game-companion-draft:stardew";
+  try { node("draft").value = localStorage.getItem(draftKey) || ""; } catch (_) {}
+  node("draft").addEventListener("input", () => { try { localStorage.setItem(draftKey, node("draft").value); } catch (_) {} });
   const text = (id, value) => { const target = node(id); const copy = value ?? ""; if (target.textContent !== String(copy)) target.textContent = copy; };
   const api = "/api/stardew/conversation";
   let state = {}, generation = 0, polling = false, errorSource = "", targetsSignature = "", messagesSignature = "", profilesSignature = "", setupStepsSignature = "", historySignature = "";
@@ -558,6 +585,7 @@ STARDEW_CONVERSATION_JS = r'''
     node("profile").disabled = !profiles.length;
     text("profile-status", profiles.length ? "Choose this farm’s verified profile. Connecting checks the game and its setup evidence." : "No verified screen profile is available. Complete farm setup before connecting.");
     text("observation", observation.observation_id ? `Last observed: ${(observation.crops || []).filter(item => item.planted).length} crops · Energy ${observation.energy ?? "unknown"}/${observation.energy_maximum ?? "unknown"} · Water ${observation.tool?.watering_can_units ?? "unknown"}/${observation.tool?.watering_can_capacity ?? "unknown"}. ${planningObservation.validated ? "Fresh view." : "Refresh required before new planning; Start always rechecks the game."}` : "Refresh the farm view after setup. Targets and resources are unknown.");
+    text("goal-preparation-status", run.goal_preparation ? `${run.goal_preparation.status.replaceAll("_", " ")}: ${run.goal_preparation.reason}` : "Approve preparation when the fresh isolated copy is open.");
     const preparation = run.preparation_view;
     if (node("preparation-view").dataset.identity !== (preparation?.id || "none")) {
       node("preparation-view").dataset.identity = preparation?.id || "none";
@@ -642,15 +670,16 @@ STARDEW_CONVERSATION_JS = r'''
     const actions = (plan?.actions || []).map(action => action.parameters?.destination === "farm-cave" ? `${action.parameters.return_only ? "Return from the Farm Cave exterior" : "Visit the Farm Cave exterior and capture fresh findings"}; follow the verified path to the farmhouse. Pause the clock between observations. No entry or tools.` : `${({water:"Water",harvest:"Harvest",plant:"Plant",clear_debris:"Clear debris"}[action.kind] || action.kind.replaceAll("_", " "))}: ${(action.target_ids || []).map(id => targets.find(t => t.id === id)?.label || id).join(", ") || action.parameters?.scope || "targets unresolved"}${action.parameters?.seed_type ? ` · ${action.parameters.seed_count} owned ${action.parameters.seed_type} seeds` : ""}${action.preconditions?.includes("harvested_plot_observed_empty_not_regrowing") ? " · requires confirmed empty plots after harvest" : ""}${action.parameters?.recompute_after_planting ? " · includes newly planted crops" : ""}`);
     if (node("actions").textContent !== actions.join("")) node("actions").replaceChildren(...actions.map(copy => { const item = document.createElement("li"); item.textContent = copy; return item; }));
     const reviewed = run.reviewed_observation;
-    text("limits", plan ? `${reviewed ? `Reviewed ${(reviewed.crops || []).filter(c => c.planted).length} protected crops${plan.normalized_intent === "inspect_cave" ? "; off-screen conditions remain historical until observed again" : ""}; energy ${reviewed.energy}/${reviewed.energy_maximum}; water ${reviewed.tool?.watering_can_units}/${reviewed.tool?.watering_can_capacity}. ` : ""}Return: ${plan.stop_point === "farmhouse_entrance" ? "farmhouse entrance" : "not confirmed"}. ${plan.resource_limits?.minimum_energy != null ? `Keep at least ${plan.resource_limits.minimum_energy} energy. ` : ""}Stop if resources are insufficient or uncertain. One Start lasts at most ${plan.resource_limits?.maximum_seconds || 600} seconds. No purchases.` : "");
+    text("limits", plan ? `${reviewed ? `Reviewed ${(reviewed.crops || []).filter(c => c.planted).length} protected crops${plan.normalized_intent === "inspect_cave" ? "; off-screen conditions remain historical until observed again" : ""}; energy ${reviewed.energy}/${reviewed.energy_maximum}; water ${reviewed.tool?.watering_can_units}/${reviewed.tool?.watering_can_capacity}. ` : ""}Return: ${plan.stop_point === "farmhouse_entrance" ? "farmhouse entrance" : "not confirmed"}. ${plan.resource_limits?.minimum_energy != null ? `Keep at least ${plan.resource_limits.minimum_energy} energy. ` : ""}${plan.resource_limits?.minimum_water != null ? `Keep at least ${plan.resource_limits.minimum_water} water units; use at most ${plan.resource_limits.maximum_water_uses}. ` : ""}Stop if resources are insufficient or uncertain. One Start lasts at most ${plan.resource_limits?.maximum_seconds || 600} seconds. No purchases.` : "");
     text("issues", [...(plan?.ambiguities || []), ...(plan?.unsupported_parts || []), plan?.fallback_explanation || ""].join(" "));
     node("review").disabled = plan?.execution_eligibility !== "requires_runtime_validation";
     node("start").disabled = !state.reviewed;
+    node("prepare").disabled = !run.engineering_launches?.some(launch => launch.returncode == null) || run.goal_preparation?.status === "preparing";
     text("review-status", state.reviewed ? "Plan reviewed. Start checks the game again before permitting this work. Switching away pauses play; refresh and review to continue." : "Review the plan before Start. Switching away pauses play; refresh and review again to continue.");
     const messageSignature = JSON.stringify(state.messages || []);
     if (messageSignature !== messagesSignature) {
       messagesSignature = messageSignature;
-      const messageItem = message => { const li = document.createElement("li"); li.dataset.role = message.role; li.textContent = `${message.role === "user" ? "You" : "Companion"}: ${message.text}`; return li; };
+      const messageItem = message => { const li = document.createElement("li"); li.dataset.role = message.role; li.textContent = `${message.historical ? "Saved conversation · " : ""}${message.role === "user" ? "You" : "Companion"}: ${message.text}`; return li; };
       node("messages").replaceChildren(...(state.messages || []).slice(-2).map(messageItem));
       node("older-messages").replaceChildren(...(state.messages || []).slice(0, -2).map(messageItem));
       node("earlier").hidden = (state.messages || []).length <= 2;
@@ -694,10 +723,12 @@ STARDEW_CONVERSATION_JS = r'''
   root.addEventListener("submit", async event => {
     const form = event.target; if (!(form instanceof HTMLFormElement)) return; event.preventDefault();
     const data = new FormData(form), payload = Object.fromEntries(data), action = form.dataset.action;
-    if (action === "setup") payload.copy_authorized = data.has("copy_authorized");
+    if (["setup", "import_day2_seed", "launch_selected_copy", "launch_default_copy"].includes(action)) payload.copy_authorized = data.has("copy_authorized");
     if (action === "select_targets") payload.target_ids = data.getAll("target_ids");
     const draft = node("draft"), submitted = draft.value;
-    if (await dispatch(action,payload) && action === "message" && draft.value === submitted) draft.value = "";
+    const succeeded = await dispatch(action,payload);
+    if (succeeded && action === "import_day2_seed") window.location.reload();
+    if (succeeded && action === "message" && draft.value === submitted) { draft.value = ""; try { localStorage.removeItem(draftKey); } catch (_) {} }
   });
   // Native foreground checks remain authoritative; this is an additional prompt handback.
   root.addEventListener("focusin", event => { if (event.target === node("draft") && ((state.runtime?.owner || state.runtime?.input_owner) === "agent" || busy.has("start") || busy.has("message"))) dispatch("focus_lost"); });

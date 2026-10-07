@@ -1,32 +1,26 @@
 # Product scope
 
-Game Companion provides conversational, bounded game assistance on a local Mac.
-Language interpretation and gameplay choice are separate model roles. Guarded
-controllers execute only implemented skills within reviewed scope; fresh
-observations determine effects. Selected context and images are sent through the
-installed Codex CLI for inference.
+Game Companion provides local observed setup, contextual game discussion, finite
+reviewed play, independent Stop/Take control and descriptive history. Language
+and gameplay decisions use Codex; guarded controllers validate scope, execute
+supported skills and check observed effects.
 
-Mario supports declared World 1-1 activities and coaching. Stardew supports
-prepared watering, planting discussion and inspection. Reconnaissance is
-implemented with native acceptance pending. Minecraft calibration/camera and
-OpenTTD's narrow local-Ollama repayment flow remain separate capabilities.
-Arbitrary gameplay, universal language-to-button execution, autonomous practice,
-and complete coin discovery are unsupported. Recording source is retained but
-is not a qualified ordinary workflow.
+The ordinary flow is: open a supported game, describe the goal, review the
+proposed activity, Start, observe progress, then receive results or take control.
+Stardew setup uses a game-created supported save and explicitly approved isolated
+copy. Observed preparation determines the current screen, player, tool, targets
+and reachable terrain. Prepared farms and raw calibration controls serve separate
+engineering regression workflows.
 
-The interaction is request → contextual interpretation → reviewed plan → bounded
-skill → independent observation → further decision or stop → descriptive result.
-Preferences and coaching may affect a compatible later decision; stored history
-cannot restore execution permission. Stop/Take control is independent of inference.
+Supported ordinary gameplay is the narrow spring seed patch and Mario World 1-1
+early segment. Confirmed effects, resource use, return and neutral handback are
+separate outcomes. Saved coaching alone proves neither application nor improvement.
+Full-level adaptive Mario, complete coin coverage, arbitrary farms, refill and
+cave delegation remain unqualified. Recording is implemented experimental source
+work with no verified ordinary demonstration application.
 
-The source launch is supported for development. Existing packaged review builds
-have their own manifests and capabilities. A fully qualified two-game package,
-broader scene coverage and general farm adoption remain incomplete. See
-[known limitations](known-limitations.md), [architecture](agent-architecture.md),
-and the [player guides](README.md#run-and-use) for implemented behavior.
-
-## Initial local beta delivery — October 5
-
-The next product outcome is one usable Mac app with ordinary setup, actual Codex-backed conversation/play, immediate control and persistent results. Initial enabled gameplay is the supported Mario adaptive early segment and prepared Day 2 model-directed watering. Package and verify those existing capabilities before broadening the game roadmap.
-
-Current rendering/setup failures still block Stardew availability and must be resolved in the delivered flow. Reconnaissance is source-implemented but remains experimental/unavailable until native-qualified; it does not block candidate construction. Full levels/coins, arbitrary farms, cave interiors and broader game coverage follow during beta. Recording stays deferred to tentative beta v2. The [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) distinguishes a reviewable app from a qualified two-game beta and the owner's release decision.
+See the [player guides](README.md#run-and-use), [architecture](agent-architecture.md)
+and [known limitations](known-limitations.md) for operational detail. Exact build
+qualification and pending owner review belong to the
+[current engineering record](current-engineering-status.md); source functionality
+does not establish release acceptance.

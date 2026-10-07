@@ -395,15 +395,19 @@ def test_input_deadline_releases_even_while_guard_is_blocked():
     assert not thread.is_alive()
 
 
-def test_short_pulse_does_not_start_guard_at_release_deadline():
+def test_short_pulse_defers_second_identity_check_until_after_release():
     q = QuartzFixture()
     calls = []
     def provider():
+        if calls:
+            assert q.events[-1] == ('hid', (1, False))
         calls.append(time.monotonic())
         return window()
     d = driver(q, provider=provider)
     d.send(InputCommand(InputKind.KEYBOARD, 's', 'press', 5))
-    assert len(calls) == 1
+    assert len(calls) == 2
+    # Full identity checks bracket the pulse; the final one starts after key-up.
+    assert calls[1] >= calls[0]
     assert q.events == [('hid', (1, True)), ('hid', (1, False))]
 
 
@@ -572,7 +576,13 @@ def test_source_startup_preferences_are_display_only_and_declare_supported_mode(
     import xml.etree.ElementTree as ET
     from smb3_agent.stardew_setup import supported_startup_preferences
     values = {item.tag: item.text for item in ET.fromstring(supported_startup_preferences())}
-    assert values == {'windowMode': '1', 'fullscreenResolutionX': '3024', 'fullscreenResolutionY': '1964'}
+    assert values.keys() == {'windowMode', 'fullscreenResolutionX', 'fullscreenResolutionY', 'clientOptions'}
+    assert values['windowMode'] == '0'
+    options = ET.fromstring(supported_startup_preferences()).find('clientOptions')
+    assert options.findtext('preferredResolutionY') == '1898'
+    assert options.findtext('windowedBorderlessFullscreen') == 'true'
+    assert options.findtext('zoomLevel') == '0.75'
+    assert options.findtext('uiScale') == '1'
 
 
 def test_stardew_capture_uses_guarded_screen_origin_not_sdl_window_image_origin(tmp_path, monkeypatch):

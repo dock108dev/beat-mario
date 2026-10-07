@@ -154,35 +154,48 @@ For live route changes, non-live validation is necessary but insufficient.
 Follow the selected goal's profile in [reliability-gate.md](reliability-gate.md)
 and keep watchable playback separate from authoritative evidence.
 
+## Local review packaging
+
+The source workflow above does not require signing or retained calibration evidence. Packaging and installation are separate, explicit commands. Inspect their options without building or updating an app:
+
+```bash
+.venv/bin/python scripts/build_private_beta.py --help
+.venv/bin/python scripts/install_private_beta.py --help
+```
+
+The builder requires a new version/output directory, numeric build number, an existing stable signing identity, local PyInstaller/macOS dependencies and eligible OCR/calibration inputs. `release_resources.py` inventories authored contracts/controllers and verifies the retained Day 2 profile at `artifacts/b3-engineering/20260925-integrated/profile-qualified-v1.json`. Optional ordinary display features use `artifacts/gc-delivery/ordinary-session/20261006-recovery/view-feature-calibration/profile.json`. These are local builder prerequisites, excluded from a fresh source checkout; synthetic resource-staging tests need neither profile. Calibration eligibility rules remain separate; only recursive path relocation is shared.
+
+The installer accepts a retained package directory, verifies the source and staged app, requires the installed app to be closed and preserves a previous installation in an archive. A staged identity mismatch refuses installation even under optimized Python. Failed final replacement restores the prior app and retains staging for inspection. The installation receipt does not establish macOS permission access. Both scripts are safe to import; execution occurs only through `main()` or the command-line entry point. Do not run build/install as ordinary source tests or to tidy a frozen candidate.
+
+Root-level `app-lifecycle.json`, `cleanup-failures.json` and `runtime.log` are ignored diagnostic output. Authored data, replay images, resource tools and the favicon remain source inputs; ignored files are not removed from disk.
+
 ## Module boundaries
 
 Keep stateful controllers and integrity transactions cohesive. These retained
 boundaries explain why line count alone is not an extraction criterion:
 
-- `scripts/fceux_1_1_agent.lua` (about 25,900 lines) is one stateful FCEUX
+- `scripts/fceux_1_1_agent.lua` is one stateful FCEUX
   callback program. Route phases share emulator memory, controller cleanup, and
   ordered events; splitting it requires a loader design and live regression.
-- `src/smb3_agent/lab_ui.py` (about 5,300 lines) keeps the dependency-free HTTP
+- `src/smb3_agent/lab_ui.py` keeps the dependency-free HTTP
   handler, player/Lab rendering, actions, and embedded styles in one local-app
-  boundary. The duplicate shadowed status style was removed; extracting assets
-  still needs snapshot or browser-level coverage.
+  boundary. Extracting presentation assets needs snapshot or browser-level coverage.
 - `learning.py`, `live_observation.py`, `unattended.py`,
-  `stardew_companion.py`, and `stardew_adapter.py` (about 960–1,770 lines each)
+  `stardew_companion.py`, and `stardew_adapter.py`
   each implement a stateful lifecycle with its persistence or authority checks.
   Their internal operations are tightly coupled to their fail-closed state.
-- `route_patch.py` (about 1,670 lines) is one reviewed mutation and integrity
+- `route_patch.py` is one reviewed mutation and integrity
   transaction. Partial extraction would widen a security-sensitive boundary.
-- `fceux_harness.py` and `reliability.py` (about 1,250–1,440 lines) share, within
+- `fceux_harness.py` and `reliability.py` share, within
   each module, one log/event or acceptance-report contract. A future split
   should introduce a typed schema boundary first.
-- `lab.py` (about 1,220 lines) owns one on-disk attempt, note, issue, review, and
+- `lab.py` owns one on-disk attempt, note, issue, review, and
   proposal schema.
-- `cli.py` (about 1,480 lines) keeps parser registration and dispatch together.
+- `cli.py` keeps parser registration and dispatch together.
   Separating command registration is reasonable only with a focused CLI API
   compatibility test across every command group.
 - `experimental_adapters.py`, `mario_product.py`, `objective_profiles.py`,
-  `show.py`, `scenarios.py`, and `companion_catalog.py` (about 560–800 lines
-  each) each remain a single bounded contract or lifecycle. Their size is
+  `show.py`, `scenarios.py`, and `companion_catalog.py` each remain a single bounded contract or lifecycle. Their size is
   moderate and extraction would currently add indirection without isolating a
   reusable subsystem.
 
@@ -194,7 +207,7 @@ and scenario matrices; splitting them would not improve test isolation.
 
 The first sensible future extractions are the Game Companion Lab presentation
 assets, a typed route-patch record layer, and CLI registration. Each needs its
-own behavior-preserving slice rather than a mechanical file split.
+own behavior-preserving change rather than a mechanical file split.
 
 ## Change boundaries
 
@@ -204,10 +217,12 @@ own behavior-preserving slice rather than a mechanical file split.
 - Preserve live evidence; tests cannot promote gameplay acceptance.
 - Update this document when entry points, required tools, or validation change.
 
-## Current local-beta delivery work
+## Build qualification
 
-The active [engineering checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) and [handoff](private-beta-pm-handoff.md) now target one reviewable Mac candidate followed by its ordinary two-game qualification. Build/setup work proceeds alongside supported Stardew renderer recovery; experimental reconnaissance does not block construction.
-
-The reviewed builder still imports private.2 VERSION, hardcodes bundle build 20002, copies the retained quick start, adds whole data/public directories and declares no explicit FCEUX script resource set. App runtime changes to Application Support and opens the historical Minecraft/OpenTTD `/setup` flow. Integrate the current game catalog/setup owners, scope-aware readiness, explicit resource/import inventory, writable data and app lifecycle. The 90-reference GC-U inventory is an input to that work, not a finished bundle. Preserve previous apps and their manifests.
-
-Validate from Finder against the app's own resources and declared external prerequisites. Source pytest or the existing offline HTTP/profile smoke does not demonstrate Mario/Stardew packaged gameplay. Check actual model/game/control, switch, recovery, persistence and Quit on the candidate; recheck only affected behaviors after repairs. Run the canonical gate after integrated engineering changes. This documentation pass itself requires documentation/link checks and performs no new model/game/package trials.
+A retained app's manifest/source archive establishes its identity. Later source
+edits do not change that runtime. Runtime/resource changes need a newly frozen
+build, affected tests, the canonical gate and affected native trials. Preserve
+previous packages and immutable evidence. Documentation-only changes require
+link, consistency and whitespace checks. Source tests and portable smoke do not
+establish native behavior or owner acceptance. See
+[known limitations](known-limitations.md#source-and-retained-builds).

@@ -135,7 +135,7 @@ def load_tell_knowledge(
 ) -> dict[str, TellKnowledgeRecord]:
     if not path.is_file():
         raise TellValidationError(f"Tell knowledge catalog not found: {path}")
-    raw = yaml.safe_load(path.read_text()) or {}
+    raw = yaml.load(path.read_text(), Loader=getattr(yaml, "CSafeLoader", yaml.SafeLoader)) or {}
     if not isinstance(raw, dict) or raw.get("schema") != "game-companion-tell/v1":
         raise TellValidationError("Tell knowledge requires schema game-companion-tell/v1")
     records_raw = raw.get("records")

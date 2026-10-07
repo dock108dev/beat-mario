@@ -143,7 +143,10 @@ class CodexProvider:
                             self._children.add(proc)
                             self._requests[proc] = {**sample, "attempt": attempt + 1,
                                                     "child_pid": proc.pid}
+                        watchdog = None
                         try:
+                            from smb3_agent.process_watchdog import ChildWatchdog
+                            watchdog = ChildWatchdog(proc)
                             while proc.poll() is None:
                                 if cancel.wait(.025) or self.closed.is_set():
                                     raise InferenceError("Inference canceled; reply discarded")
@@ -181,6 +184,8 @@ class CodexProvider:
                         finally:
                             if proc.poll() is None:
                                 self._kill(proc)
+                            if watchdog is not None:
+                                watchdog.close()
                             with self._lock:
                                 self._children.discard(proc)
                                 self._requests.pop(proc, None)

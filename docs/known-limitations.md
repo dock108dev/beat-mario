@@ -1,96 +1,78 @@
 # Known limitations
 
-Updated October 5, 2026. These describe inspected source capabilities and remaining product gaps. [Product direction](product-direction.md), the [two-role architecture](agent-architecture.md#conversation-gameplay-and-control) and the [engineering plan](private-beta-engineering.md) describe the required private beta separately. Retained source/game results and packages keep their original evidence scope.
+## Source and retained builds
 
-## Initial-beta implementation gaps
+The checkout is the development workflow. Source changes do not update an
+installed app. Retained **candidate.35 / build 30035** has packaged native evidence
+for ordinary Stardew preparation, middle-only watering, resource accounting,
+farmhouse return, neutral handback and active Stop. Mario coaching variation,
+affected interruption/recovery and active keyboard/Dock exit qualification remain
+open. See [current engineering status](current-engineering-status.md) for exact
+source/resource identity and evidence. Earlier candidates and source trials
+retain their own scope. Sustained reliability, owner usefulness review and beta
+acceptance are not established by those results.
 
-The ordinary source app implements Codex contextual language and gameplay roles for prepared watering and a bounded Mario segment. Both Stardew variants and pending gameplay-inference Stop passed native acceptance. Mario has 3/3 final-candidate native x≥700 arrivals with neutral handback; occupied-pipe failures and broad reliability remain open. See [verification](gc-ai-loop-verification.md) for exact candidates, outcomes and evidence classes. No retained package demonstrates this two-game experience.
+Local apps are not a notarized public distribution. Building requires macOS,
+a stable signing identity and retained calibration/OCR inputs excluded from a
+fresh clone. See [local packaging](development.md#local-review-packaging).
+Source setup and offline tests do not require those packaging inputs.
 
-| Area | Current source and evidence | Remaining limitation |
-| --- | --- | --- |
-| Language | Contextual Codex interpretation in both ordinary workspaces | Wider conversation quality, latency and availability evaluation |
-| Mario | Current-image/native-state decisions compose finite maneuvers beyond x=160; compatible coaching affects decisions | Final segment 3/3; occupied-pipe consistency, wider hazards, full level and complete coins remain open |
-| Stardew | Two model watering variants returned on their qualified source; pending Stop had no continuation | Current renderer clips toolbar/water pixels and blocks recognized setup. Prepared/daylight limits remain. Reconnaissance has simulated evidence only and stays experimental until native-qualified |
-| Learning | Cartridge-compatible advice, supersession, future reset and linked native receipts | No demonstrated improvement, custom training or unattended practice |
-| Cave | Manual exterior route/return foundation retained | Ordinary delegated round trip and interior exploration remain unverified |
-| Recording | Existing source preserved | Deferred to tentative beta v2 |
-| Delivery | Source Codex/game readiness and guarded preparation are implemented; initial resource inventory exists | Historical app entry/templates and private.2 builder remain; successor assets/imports, data paths, exact-package walkthrough and owner acceptance pending |
+## Gameplay coverage
 
-Normal Codex inference sends selected context and game images remotely. Credentials are reused through the installed CLI and are not retained in evidence. CLI availability does not guarantee account allowance or model quality. Stop cancels owned inference and releases input. Reopening stores descriptive history, not authority. After canceled watering work, request a new goal against a fresh observation rather than reusing the canceled proposal.
+- Mario adaptive play supports the World 1-1 early segment. Full-level adaptive
+  completion, complete coin coverage and arbitrary levels/tactics are unverified.
+  Authored routes and the prepared sky-1UP controller have separate entry and
+  evidence contracts. Recording/playback is experimental; ordinary native
+  demonstration application is unverified.
+- Stardew ordinary watering requires a recognized standard spring farmhouse,
+  supported blue clothing/view/basic can, exact readable resources, 1–15 visible
+  newly planted seeds and clear approaches/return. Mature crops, arbitrary farms,
+  upgraded tools and automatic refill are unsupported. Prepared Day 2/Day 5
+  routines require separate local saves/profiles; they do not widen ordinary
+  coverage. Reconnaissance has simulated evidence; native acceptance is pending.
+  Manual cave-route evidence does not establish companion cave delegation.
+- Minecraft enables calibration and small camera requests. Aim, movement,
+  placement and wall Start remain disabled. Retained setup covers Java 26.3
+  vanilla Creative, English/default font and the supported selected-window
+  geometry. Survival, multiplayer and unrestricted exploration are unsupported.
+- OpenTTD is a reference integration for one £10,000 repayment from a paused
+  disposable English 15.3 company with £100,000 cash and loan. General management
+  is unavailable; packaged success belongs to its retained private.1 build.
+- Experimental adapters are contributor fixtures, without native gameplay.
 
-## Retained review-package scope
+## Platform and inference
 
-- Private.2 and current source enable Minecraft calibration/small camera requests; aim/move/place/wall Start remain disabled. No packaged Minecraft wall completion is established.
-- October 1 source progress/protection/direct-control/drafting/observation/deadline fixes passed 1,327 canonical local tests on that source. They have not been rebuilt into private.2 and do not prove the corrected two-game beta.
-- Minecraft's retained support is Java 26.3 vanilla Creative, English/default font, supported controls/HUD and an 854 × 508 point selected window at native 1× or 2× capture. It needs a disposable world and exclusive input during native work. Survival, multiplayer, breaking, flying/jumping, automatic inventory changes and unrestricted exploration are unavailable.
-- The retained future building case is a 7 × 3 × 1 wall with a centered 1 × 2 doorway. Its geometry, occupancy, material, reach, protection and stop point need independent checks during later-beta Minecraft gameplay. Unknown results remain partial.
-- OpenTTD supports one £10,000 repayment from a paused disposable English 15.3 company with £100,000 cash and loan. Its packaged success belongs to private.1; general management is unavailable.
-- Retained Mac packages are Apple Silicon, locally ad-hoc signed and not notarized. Broader configurations and sustained reliability need actual beta feedback. Product review and launch/distribution approval remain separate.
+Native observation/input requires macOS, separately installed games and actual
+Screen Recording/Accessibility access. FCEUX is the supported Mario adapter;
+Mednafen is an older macOS diagnostic path without headless or non-macOS control.
+The Stardew CLI is inspection-only. Linux CI does not start games or prove
+native behavior.
 
-## Current conversation and recovery limits
+Ordinary Mario/Stardew use discoverable, signed-in Codex CLI. Selected images and
+context are sent to its model provider. CLI availability guarantees neither
+account allowance nor model quality/availability. OpenTTD uses local Ollama
+with `gemma3:4b`. Ordinary provider failure does not activate a parser fallback.
 
-See the [Mario guide](mario-player-guide.md) for declared World 1-1 paths/stops, normal/uncapped speed and authority-free variants. Resumed play permits only the verified opening stop after fresh observation/review/Start; level-exit or full-base traversal requires fresh power-on. Arbitrary mid-run full-route resume, later custom routes and fixed 2×/4× playback are unsupported. New coached gameplay entries/actions need implemented runtime contracts and observed results.
+## Authority and recovery
 
-Stardew guarded stops can leave the return unconfirmed even if selected actions finish. Neutral handback is distinct from reaching the farmhouse. The October 4 watering and eastern inspection records separately establish their named source activities, including return and saved reopening. They do not reclassify earlier failures, establish owner acceptance or qualify arbitrary farms. See [watering verification](gc3-watering-verification.md), [inspection verification](gc3-inspection-verification.md) and [review records](private-beta-review.md).
+Saved results, coaching and readiness flags restore no connection, reviewed plan
+or input permission. Cancellation consumes its attempt; continuation needs fresh
+observation and review. Confirmed actions, uncertain work, return and neutral
+handback are separate outcomes. A guarded stop can leave return incomplete.
+Active shutdown qualification remains open on the retained build; closing a
+browser alone is not verified app/server shutdown. See [recovery](error-handling.md).
 
-## Live validation requires local assets
+## Local operation
 
-Non-live tests verify contracts, parsers, reports, security controls, and
-deterministic rendering, but they cannot prove emulator startup, route timing,
-gameplay success, or the game-owned ending. That proof requires the configured
-local environment, FCEUX, and the goal-specific fresh-run gate.
+The server accepts loopback hosts only. It has no TLS, accounts, multi-user
+support, shared evidence storage, backup service or availability guarantee.
+Proxy/tunnel/LAN exposure is unsupported. Request bounds, CSRF checks, safe
+artifact serving and priority direct controls do not make it a hosted service.
 
-Ignored gameplay archives are local records and are not automatically uploaded
-or replicated. Selected images/context supplied to the current Codex provider
-are a separate inference transfer. Another checkout cannot reproduce an acceptance
-claim without compatible local assets/runtime and a fresh run.
-
-## Platform support
-
-FCEUX is the supported live Mario adapter. Minecraft and OpenTTD use their separate ordinary-window/native-input paths described above. The older Mednafen diagnostic
-adapter is macOS-only and depends on a visible desktop plus Accessibility and
-screen-capture permissions. Headless Mednafen operation and non-macOS Mednafen
-control are unsupported.
-
-The non-live CI job runs on Linux and intentionally does not install or start
-either emulator.
-
-## Stardew live-input prerequisites
-
-The browser workspace routes setup, planning and guarded controls into the Stardew runtime. The public Stardew CLI remains inspection-only. Start requires verified session isolation, a qualified real-game pixel profile, sufficient fresh observations for the specific activity and reviewed scope. Local prepared saves, profile registrations and calibration assets are ignored; cloning or launching alone does not install them. The current preparation workflow supports PID-bound image-reviewed Load/porch/tool steps, but requires the player or engineer to inspect and direct them. Day 5 supports only its selected ordinary parsnip, owned seed and small stone; arbitrary farming and automatic refill remain unsupported. See the [Stardew guide](stardew-operator-guide.md).
-
-## Route Lab is local-only
-
-Route Lab accepts only loopback bind hosts. It is not designed for LAN,
-internet, multi-user, or unattended deployment. It has request-size limits,
-CSRF protection, safe artifact serving, and serialized ordinary mutations with
-priority direct-control paths, but
-it does not provide TLS, accounts, durable sessions, backups, or an availability
-guarantee. Local artifact files remain the source of its displayed state.
-
-## No autonomous service operation
-
-There is no independent scheduler, queue, daemon, retry service, telemetry backend,
-or alerting integration. The local app and CLI run under user/operator control. The app owns bounded observation/task/watchdog threads and input/model helper or emulator child processes while
-the server is active; it is not a hosted autonomous service. Failures are written
-into local reports where the operation supports them. Users can inspect partial
-results and follow the recovery guide; unresolved defects need engineering review.
-
-A production web deployment, shared evidence store, or remote orchestration
-model would require explicit product and security design. None should be
-inferred from this local application. Repository-structure follow-ups and
-retained large-file rationale live in the [development guide](development.md).
-
-## World 1-1 surface coin discovery — October 3
-
-The ordinary conversation loop explores three bounded scheduled-jump patterns and applies compatible outcome memory to future gameplay. It reports level-counter increases, landmark yields, prior-yield shortfalls and unknown bands; counter gaps/resets/wraps prevent a trusted total. Individual coin identities and the full universe (including hidden/brick, airborne and bonus rooms) remain unverified, so no 100% claim is possible. Experimental failures and source walkthrough progress are retained in [coaching and discovery verification](gc1-gc2-coaching-verification.md). Player demonstration source is deferred; sequence following requires matching entry/motion/form and stops on drift, with unsynchronized enemy timing. The later supported sky 1UP collection has its own [flight verification](gc2-flight-verification.md). Wider strategy/learning remains required under the new AI architecture.
-
-## October 4 app-delivered route instructions
-
-Current source observed two consecutive World 1-1 finishes with two coins each after app-delivered remembered stairs/pipe instructions. This supersedes the experimental route's earlier stairs failure boundary, not the separate demonstration qualification. Instruction application, stairs landing, level exit and neutral handback have separate receipts. The vocabulary is a finite supported tactic contract; arbitrary gameplay instructions and generalized autonomous learning are unavailable. Historical route evidence and private.2 retain their original meaning. Two attempts are limited repeat evidence, not broad reliability or full coin coverage. See [route verification](gc2-route-verification.md).
-
-The supported World 1-1 sky-brick 1UP was subsequently collected twice with independent target, collection, life-credit and handback receipts. This requires prepared Raccoon/Tanooki Mario at the declared early-runway entry; acquiring those prerequisites remains player-controlled. It does not qualify arbitrary rewards, flight areas or broader strategy. See [flight verification](gc2-flight-verification.md).
-
-## Delivery priority
-
-The current [delivery checklist](private-beta-engineering.md#complete-initial-beta-delivery-checklist) builds and qualifies a personal Mac candidate with the proven bounded Mario/watering scope. Current Stardew recovery is required for usable watering; independent packaging and setup work continues while that blocker is repaired. Reconnaissance, cave travel and wider gameplay are not serial gates to candidate construction. No retained package is upgraded by these documentation changes.
+There is no independent scheduler, queue, retry service, telemetry backend or
+alerting integration. The active server owns bounded observation, activity and
+watchdog threads plus input/model/emulator child processes. Reports and ignored
+evidence remain local. Selected provider inference is a separate transfer.
+Another checkout cannot reproduce native acceptance without compatible local
+assets and a fresh run. Remote deployment or wider gameplay requires additional
+product/security design and qualification.
