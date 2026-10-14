@@ -262,7 +262,7 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
     for required in (
         "# Game Companion",
         "uv sync --locked --all-extras",
-        "PYTHON=.venv/bin/python scripts/validate_phase0.sh",
+        "[development](docs/development.md)",
         "GAME_COMPANION_EXPERIMENTAL_ROOT",
         "inspection-only",
         "http://127.0.0.1:8765/",
@@ -272,6 +272,8 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
         "`/lab`",
     ):
         assert required in readme
+    development = (REPOSITORY_ROOT / "docs/development.md").read_text(encoding="utf-8")
+    assert "PYTHON=.venv/bin/python scripts/validate_phase0.sh" in development
     assert "# Game Companion — Mario Adapter" not in readme
     assert "execution_enabled: false" in final_campaign
     assert "status: v2_14_campaign_entry_contract_ready" in final_campaign
