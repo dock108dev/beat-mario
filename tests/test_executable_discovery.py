@@ -1,8 +1,11 @@
 """Shared emulator policy using disposable files and intercepted launches only."""
 from datetime import datetime, timezone
+import http.client
 import json
 from pathlib import Path
 import subprocess
+import threading
+from urllib.parse import urlencode
 
 import pytest
 
@@ -113,3 +116,123 @@ def test_reliability_default_preflight_uses_shared_discovery(available, tmp_path
         with pytest.raises(FileNotFoundError, match="FCEUX was not found"):
             reliability._load_product_contract(**kwargs)
     assert calls == [True]
+
+
+@pytest.fixture
+def trusted_fceux(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    root = tmp_path / "trusted-bin"
+    root.mkdir()
+    binary = root / "fceux"
+    binary.write_text("synthetic executable; never launched")
+    binary.chmod(0o700)
+    monkeypatch.setattr(executable_discovery, "FCEUX_ROOTS", (root,))
+    monkeypatch.setattr(executable_discovery.shutil, "which", lambda _: None)
+    return binary
+
+
+def test_selection_registers_trusted_binary_and_discovers_it(trusted_fceux):
+    expected = str(trusted_fceux)
+    assert executable_discovery.select_fceux(expected) == expected
+    assert executable_discovery.discover_fceux() == expected
+    assert json.loads(Path("artifacts/executable-selection.json").read_text()) == {"fceux": expected}
+
+
+def test_selection_accepts_trusted_homebrew_style_symlink(trusted_fceux, tmp_path):
+    cellar = tmp_path / "Cellar" / "fceux" / "1" / "bin" / "fceux"
+    cellar.parent.mkdir(parents=True)
+    trusted_fceux.rename(cellar)
+    trusted_fceux.symlink_to(cellar)
+    assert executable_discovery.select_fceux(str(trusted_fceux)) == str(cellar)
+    assert executable_discovery.discover_fceux() == str(cellar)
+    assert executable_discovery.select_fceux(str(cellar)) == str(cellar)
+
+
+def test_selection_accepts_custom_install_only_when_discovered_on_path(trusted_fceux, tmp_path, monkeypatch):
+    custom = tmp_path / "custom-bin" / "fceux"
+    custom.parent.mkdir()
+    custom.write_text("synthetic")
+    custom.chmod(0o700)
+    monkeypatch.setattr(executable_discovery.shutil, "which", lambda _: str(custom))
+    assert executable_discovery.select_fceux(str(custom)) == str(custom)
+    assert executable_discovery.discover_fceux() == str(custom)
+
+
+@pytest.mark.parametrize("value", ["../../etc/passwd", "/etc/passwd", "fceux", "", "/tmp/fceux", "/tmp/fceux\x00"])
+def test_untrusted_selection_never_reaches_filesystem_checks(value, trusted_fceux, monkeypatch):
+    registration = Path("artifacts/executable-selection.json")
+    executable_discovery.select_fceux(str(trusted_fceux))
+    before = registration.read_bytes()
+    original = Path.resolve
+
+    def checked_resolve(path, *args, **kwargs):
+        assert path == trusted_fceux
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", checked_resolve)
+    with pytest.raises(ValueError, match="Choose FCEUX from PATH"):
+        executable_discovery.select_fceux(value)
+    assert registration.read_bytes() == before
+
+
+def test_arbitrary_executable_and_alias_cannot_be_registered(trusted_fceux, tmp_path):
+    other = tmp_path / "untrusted" / "fceux"
+    other.parent.mkdir()
+    other.write_text("synthetic")
+    other.chmod(0o700)
+    alias = tmp_path / "untrusted-link"
+    alias.symlink_to(trusted_fceux)
+    for path in (other, alias, trusted_fceux.parent / ".." / "trusted-bin" / "fceux"):
+        with pytest.raises(ValueError):
+            executable_discovery.select_fceux(str(path))
+    assert not Path("artifacts").exists()
+
+
+@pytest.mark.parametrize("payload", [{"fceux": "/tmp/fceux"}, {"fceux": "../../etc/passwd"}, {"fceux": None}, {"fceux": []}, {}])
+def test_invalid_registration_refuses_without_fallback(payload, trusted_fceux):
+    registration = Path("artifacts/executable-selection.json")
+    registration.parent.mkdir()
+    registration.write_text(json.dumps(payload))
+    assert executable_discovery.discover_fceux(which=lambda _: str(trusted_fceux)) is None
+
+
+def test_nonexecutable_or_missing_trusted_selection_is_refused(trusted_fceux):
+    trusted_fceux.chmod(0o600)
+    with pytest.raises(ValueError):
+        executable_discovery.select_fceux(str(trusted_fceux))
+    trusted_fceux.unlink()
+    with pytest.raises(ValueError):
+        executable_discovery.select_fceux(str(trusted_fceux))
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+def test_emulator_setup_form_reports_selection_result(accepted, trusted_fceux):
+    from smb3_agent.lab_ui import _new_lab_ui_server
+
+    server = _new_lab_ui_server("127.0.0.1", 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+    try:
+        connection.request(
+            "POST", "/setup-emulator",
+            body=urlencode({"csrf_token": server.csrf_token,
+                            "executable": str(trusted_fceux) if accepted else "/etc/passwd"}),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        response = connection.getresponse()
+        body = response.read().decode()
+        if accepted:
+            assert response.status == 303
+            assert response.getheader("Location") == "/mario#setup"
+            assert executable_discovery.discover_fceux() == str(trusted_fceux)
+        else:
+            assert response.status == 400
+            assert "Choose FCEUX from PATH" in body
+            assert "Traceback" not in body
+            assert not Path("artifacts/executable-selection.json").exists()
+    finally:
+        connection.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)

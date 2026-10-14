@@ -1,18 +1,38 @@
 """Bounded external executable discovery for source and Finder launches."""
+import json
 import os
 from pathlib import Path
 import shutil
 
 
-def discover_fceux(*, which=None, roots=(Path('/opt/homebrew/bin'), Path('/usr/local/bin'))) -> str | None:
-    import json
+FCEUX_ROOTS = (Path('/opt/homebrew/bin'), Path('/usr/local/bin'))
+
+
+def _selected_fceux(path: str | Path) -> str | None:
+    """Match an input to trusted discovery paths without accessing the input path."""
+    known_paths = [root / 'fceux' for root in FCEUX_ROOTS]
+    found = shutil.which('fceux')
+    if found:
+        known_paths.insert(0, Path(found))
+    for known in known_paths:
+        if not known.is_absolute():
+            continue
+        try:
+            candidate = known.resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        # Only trusted discovery paths reach filesystem checks, including symlinks.
+        if str(path) in (str(known), str(candidate)):
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return str(candidate)
+    return None
+
+
+def discover_fceux(*, which=None, roots=FCEUX_ROOTS) -> str | None:
     registration = Path("artifacts/executable-selection.json")
     if registration.is_file():
         try:
-            selected = Path(json.loads(registration.read_text())["fceux"])
-            if selected.is_absolute() and selected.is_file() and os.access(selected, os.X_OK):
-                return str(selected)
-            return None
+            return _selected_fceux(json.loads(registration.read_text())["fceux"])
         except (OSError, ValueError, KeyError, TypeError):
             return None
     found = (which or shutil.which)('fceux')
@@ -34,10 +54,11 @@ def require_fceux(*, resolver=None) -> str:
 
 
 def select_fceux(path):
-    import json
-    candidate = Path(path).expanduser().resolve(strict=True)
-    if not candidate.is_file() or not os.access(candidate, os.X_OK):
-        raise ValueError("Choose an executable FCEUX file")
+    candidate = _selected_fceux(path)
+    if candidate is None:
+        raise ValueError(
+            "Choose FCEUX from PATH, /opt/homebrew/bin/fceux, or /usr/local/bin/fceux"
+        )
     registration = Path("artifacts/executable-selection.json")
     registration.parent.mkdir(parents=True, exist_ok=True)
     temporary = registration.with_suffix(".tmp")
