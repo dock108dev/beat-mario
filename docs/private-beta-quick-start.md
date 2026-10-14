@@ -1,9 +1,8 @@
 # Local app quick start
 
-Use an explicitly built and installed local macOS app, or follow the
-[source quickstart](../README.md#launch-and-first-use). This repository does not
-provide a notarized public distribution. Retained builds have their own resource
-manifests and qualification scope; see [known limitations](known-limitations.md).
+Use your existing installed macOS app, or follow the
+[source quickstart](../README.md#launch-and-first-use). Try working supported tasks
+and send practical feedback; see [the local working approach](personal-use.md).
 
 ## Open the app
 
@@ -25,7 +24,7 @@ Support is limited to the declared standard spring farmhouse/blue clothing/basic
 
 Choose Mario, use the supported local cartridge and discovered FCEUX, and open a fresh disposable companion session. Enter World 1-1 through ordinary menus. Request the supported early segment with finite limits, Review, then Start. The endpoint is alive and grounded at x≥700 followed by neutral acknowledgment and game-owned review pause; it is not full-level completion.
 
-Saved compatible coaching can guide the next attempt. Request a fresh scope after storing new advice so that the review displays it. Matching skill receipts establish application; saved advice alone establishes no gameplay effect or improvement. Stored coaching does not establish successful native application.
+Saved compatible coaching can guide the next attempt. Request a fresh scope after storing new advice so that the review displays it. Observe whether the advice changes play; stored advice alone does not show that it helped.
 
 ## Stop, recovery and history
 

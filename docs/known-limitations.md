@@ -9,13 +9,13 @@ farmhouse return, neutral handback and active Stop. Mario coaching variation,
 affected interruption/recovery and active keyboard/Dock exit qualification remain
 open. See [current engineering status](current-engineering-status.md) for exact
 source/resource identity and evidence. Earlier candidates and source trials
-retain their own scope. Sustained reliability, owner usefulness review and beta
-acceptance are not established by those results.
+retain their own scope. Try working tasks now and improve observed problems
+without waiting for a broad reliability campaign.
 
-Local apps are not a notarized public distribution. Building requires macOS,
-a stable signing identity and retained calibration/OCR inputs excluded from a
-fresh clone. See [local packaging](development.md#local-review-packaging).
-Source setup and offline tests do not require those packaging inputs.
+Use the existing installed app or source startup. A needed local app rebuild
+requires macOS, the existing stable identity and its calibration/OCR inputs.
+See [optional local app update](development.md#local-review-packaging).
+No rebuild is required simply to try a working task.
 
 ## Gameplay coverage
 

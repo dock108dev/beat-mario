@@ -4,8 +4,9 @@ Use the source checkout for local development. The ordinary Mario and Stardew
 interfaces connect contextual language and bounded gameplay roles through Codex;
 controllers retain input authority and independent outcome verification. See
 [architecture](agent-architecture.md) and [runtime configuration](runtime-and-configuration.md).
-Native game behavior and packaged-app compatibility require separate validation
-from the offline test suite.
+Check changed native behavior in the actual game; offline tests alone cannot
+show gameplay. Use focused checks and ordinary-use feedback as described in
+[personal use](personal-use.md).
 
 ## Local environment
 
@@ -121,8 +122,7 @@ Actions dependency surfaces weekly.
 JavaScript regressions run through pytest using Node.js. CI explicitly installs
 Node 22 with an immutable `setup-node` action pin; it does not rely on the
 runner image to provide Node. No npm packages or npm cache are required.
-Locally, tests that need Node are explicitly skipped when it is unavailable. Pre-walkthrough qualification requires those cases to run,
-plus actual browser keyboard/focus verification across background refreshes.
+Locally, tests that need Node are skipped when it is unavailable. Run them when relevant to the changed browser behavior; check actual focus/keyboard behavior if that path changed.
 
 For Minecraft/player changes, affected checks include `test_player_setup_ui.py`,
 `test_player_onboarding.py`, `test_player_beta.py`, `test_minecraft_integration.py`,
@@ -156,18 +156,7 @@ and keep watchable playback separate from authoritative evidence.
 
 ## Local review packaging
 
-The source workflow above does not require signing or retained calibration evidence. Packaging and installation are separate, explicit commands. Inspect their options without building or updating an app:
-
-```bash
-.venv/bin/python scripts/build_private_beta.py --help
-.venv/bin/python scripts/install_private_beta.py --help
-```
-
-The builder requires a new version/output directory, numeric build number, an existing stable signing identity, local PyInstaller/macOS dependencies and eligible OCR/calibration inputs. `release_resources.py` inventories authored contracts/controllers and verifies the retained Day 2 profile at `artifacts/b3-engineering/20260925-integrated/profile-qualified-v1.json`. Optional ordinary display features use `artifacts/gc-delivery/ordinary-session/20261006-recovery/view-feature-calibration/profile.json`. These are local builder prerequisites, excluded from a fresh source checkout; synthetic resource-staging tests need neither profile. Calibration eligibility rules remain separate; only recursive path relocation is shared.
-
-The installer accepts a retained package directory, verifies the source and staged app, requires the installed app to be closed and preserves a previous installation in an archive. A staged identity mismatch refuses installation even under optimized Python. Failed final replacement restores the prior app and retains staging for inspection. The installation receipt does not establish macOS permission access. Both scripts are safe to import; execution occurs only through `main()` or the command-line entry point. Do not run build/install as ordinary source tests or to tidy a frozen candidate.
-
-Root-level `app-lifecycle.json`, `cleanup-failures.json` and `runtime.log` are ignored diagnostic output. Authored data, replay images, resource tools and the favicon remain source inputs; ignored files are not removed from disk.
+Use the existing installed app for ordinary tasks. If a real source change needs an app update, the existing `scripts/build_private_beta.py` builder is available. Preserve stable local identity, current permissions, game assets and private history. Check launch and the changed gameplay/control path. Repeated resource manifests, packaged-smoke campaigns and public-distribution preparation are not current prerequisites.
 
 ## Module boundaries
 

@@ -20,7 +20,6 @@ cave delegation remain unqualified. Recording is implemented experimental source
 work with no verified ordinary demonstration application.
 
 See the [player guides](README.md#run-and-use), [architecture](agent-architecture.md)
-and [known limitations](known-limitations.md) for operational detail. Exact build
-qualification and pending owner review belong to the
-[current engineering record](current-engineering-status.md); source functionality
-does not establish release acceptance.
+and [known limitations](known-limitations.md) for operational detail. Current working paths and remaining problems belong to the
+[current status](current-engineering-status.md). Get feedback during ordinary use
+and improve small useful slices under [the local working approach](personal-use.md).

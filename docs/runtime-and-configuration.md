@@ -210,16 +210,9 @@ and debug preferences after checking that the game is closed; it does not edit w
 
 ## Deployment and operations boundary
 
-There is no production service deployment, container image, package registry
-release, database bootstrap, or service-manager definition. The local
-`/api/delivery` endpoint reports server identity; `/api/delivery/shutdown`
-requires the server token and matching instance identity.
-The supported beta operating model is a local reviewed Mac app with ordinary
-browser setup and separately installed game/model prerequisites. Engineers also
-use the source checkout and CLI. Retained builds are locally ad-hoc signed, not
-notarized; broader installation and machine compatibility remain untested.
-The local UI has no TLS, user accounts, or remote-access authentication and
-must remain on loopback.
+Current operation is a local installed app or source server with separate game/model prerequisites. Keep the loopback boundary and existing instance/process ownership. Unknown port owners are not stopped. Closing a browser is not server shutdown; use the app Quit or the matching source stop command.
+
+The delivery identity/shutdown endpoints remain implementation tools. Public service deployment, package registries and broader machine qualification have no current work order. Preserve the installed identity and actual permissions if a needed app update is made. [Quick start](private-beta-quick-start.md) owns ordinary use.
 
 The app checks source identity before reusing an instance on port 8765. A different
 app/build must be quit through its own verified shutdown path; an unknown port

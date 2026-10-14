@@ -18,9 +18,9 @@ validate actions and verify observed effects.
 - **OpenTTD:** a narrow loan-repayment reference integration using local Ollama.
 - **Experimental adapters:** data-only contributor fixtures; no native gameplay.
 
-The source checkout is the development workflow. Existing review apps have their
-own versioned capabilities and manifests; current source changes do not update
-those apps. A broadly qualified two-game distribution is not available.
+Use the installed local app or the source checkout. Current source changes do not
+automatically update an installed app. Personal and small-group use follows
+[the local working approach](docs/personal-use.md).
 See [known limitations](docs/known-limitations.md) and the
 [Mario](docs/mario-player-guide.md) and [Stardew](docs/stardew-operator-guide.md) guides.
 
@@ -84,13 +84,11 @@ Quit action. Closing a browser alone is not a verified server shutdown.
 ```bash
 .venv/bin/python -m smb3_agent --help
 .venv/bin/python -m pytest -q tests/test_goals.py
-PYTHON=.venv/bin/python scripts/validate_phase0.sh
 ```
 
-Use focused tests for a bounded change. The full gate runs lint, credential and
-tracked-output checks, the offline test suite, contracts, and static UI renders.
-CI also runs dependency review and managed CodeQL. Node 22 enables JavaScript
-regressions; no npm installation is needed. Test metrics, GitHub summaries, and
+Use focused tests for the changed behavior and a short ordinary-use check.
+Broader existing checks and CI remain available for changes that justify them.
+Node 22 enables JavaScript regressions; no npm installation is needed. Test metrics, GitHub summaries, and
 retained report artifacts are described in [development](docs/development.md).
 
 Source lives in `src/smb3_agent/`, authored contracts and fixtures in `data/`,

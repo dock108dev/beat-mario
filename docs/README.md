@@ -23,8 +23,8 @@
 
 ## Planning and evidence records
 
-[Current engineering status](current-engineering-status.md) binds qualification
-claims to exact builds and retained evidence. The dated
+[Personal use](personal-use.md) defines the current working approach.
+[Current engineering status](current-engineering-status.md) lists working paths and actual remaining problems. The dated
 [documentation audit](documentation-audit-20261006.md) records an earlier review.
 The [app quick start](private-beta-quick-start.md) covers local app setup.
 
