@@ -141,7 +141,7 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
 
 ## Local executables and integrations
 
-- `executable_discovery.py` owns FCEUX resolution for setup, live observation, Show, engineering runs and default reliability preflight: PATH first, then executable files in `/opt/homebrew/bin` and `/usr/local/bin`. Launches use the resolved path and explicitly refuse a missing executable. Python supplies the tracked Lua script and configured game-file path.
+- `executable_discovery.py` owns FCEUX resolution for setup, live observation, Show, engineering runs and default reliability preflight: PATH first, then executable files in `/opt/homebrew/bin` and `/usr/local/bin`. Manual selection and saved selections must match FCEUX discovered on PATH or at those fixed locations; Homebrew symlinks and their resolved targets are supported. Other paths are refused before filesystem access to the supplied path. Custom installations must be on PATH when the app starts. Launches use the resolved path and explicitly refuse a missing executable. Python supplies the tracked Lua script and configured game-file path.
 - Git must be available for source-state evidence and route-patch worktrees.
 - Mednafen, AppleScript, Accessibility permission, screen-capture permission,
   and a visible desktop session are required only by the optional macOS

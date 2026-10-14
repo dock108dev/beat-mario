@@ -1387,7 +1387,10 @@ class _Handler(BaseHTTPRequestHandler):
                     return
                 if path == "/setup-emulator":
                     from smb3_agent.executable_discovery import select_fceux
-                    select_fceux(_single(data, "executable"))
+                    try:
+                        select_fceux(_single(data, "executable"))
+                    except ValueError as exc:
+                        raise MarioProductError(str(exc)) from exc
                     self._redirect("/mario#setup")
                     return
                 if path == "/setup-game-file":
