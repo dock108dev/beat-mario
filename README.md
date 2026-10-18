@@ -88,7 +88,7 @@ Quit action. Closing a browser alone is not a verified server shutdown.
 
 Use focused tests for the changed behavior and a short ordinary-use check.
 Broader existing checks and CI remain available for changes that justify them.
-Node 22 enables JavaScript regressions; no npm installation is needed. Test metrics, GitHub summaries, and
+Node 24 (`.nvmrc`) enables JavaScript regressions; no npm installation is needed. Test metrics, GitHub summaries, and
 retained report artifacts are described in [development](docs/development.md).
 
 Source lives in `src/smb3_agent/`, authored contracts and fixtures in `data/`,

@@ -120,7 +120,7 @@ moderate-or-higher vulnerabilities. Dependabot checks the `uv` and GitHub
 Actions dependency surfaces weekly.
 
 JavaScript regressions run through pytest using Node.js. CI explicitly installs
-Node 22 with an immutable `setup-node` action pin; it does not rely on the
+Node 24 from `.nvmrc` with an immutable `setup-node` action pin; it does not rely on the
 runner image to provide Node. No npm packages or npm cache are required.
 Locally, tests that need Node are skipped when it is unavailable. Run them when relevant to the changed browser behavior; check actual focus/keyboard behavior if that path changed.
 
