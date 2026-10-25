@@ -30,8 +30,8 @@ FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
 CAMPAIGN_ENTRY_SCHEMA_PATH = REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
 ROADMAP_PATH = REPOSITORY_ROOT / "docs/v2-roadmap.md"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
-SETUP_PYTHON_PIN = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97"
-SETUP_UV_PIN = "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884"
+SETUP_PYTHON_PIN = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
+SETUP_UV_PIN = "astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e"
 DEPENDENCY_REVIEW_PIN = (
     "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
 )
