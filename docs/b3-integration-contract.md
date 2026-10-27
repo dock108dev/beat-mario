@@ -228,6 +228,12 @@ separate capability decisions.
 
 ## Evidence and local private-beta release
 
+The evidence distinctions below remain valid. The broader release/matrix
+criteria are retained future-release requirements, not the active personal-use
+work order. [Personal use](personal-use.md) calls for affected checks and feedback
+on working paths; [current status](current-engineering-status.md) records what
+candidate.35 has actually demonstrated.
+
 | Evidence | What it establishes |
 | --- | --- |
 | Focused logic/fixtures | Goal contracts, proposals, validation, memory, concurrency and synthetic perception |

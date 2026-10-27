@@ -34,3 +34,17 @@ Check the affected screens at supported sizes, including keyboard focus, long co
 The catalog keeps sign-in and permission status, setup links and the inference transfer notice visible; full requirements/privacy use a named disclosure. Mario starts with conversation and plan review. Route shortcuts, recording, flight preparation, coin discoveries and guidance use named disclosures; newly relevant active guidance opens once and the player can close it without polling reopening it. Stop/Take control remain outside disclosures.
 
 Stardew shows the current plan, observed resources and limits before optional activity teaching. Planting, inspection and cave findings appear when present, with historical/uncertain meanings retained. Advice without an executable plan is not preceded by empty review controls. The latest two messages stay visible and all earlier messages remain accessible. Current blockers, review/Start consequences, errors, partial results and resource/return accounting remain visible. Synthetic desktop/narrow comparison and accessibility checks are recorded in [UI verification](ui-verification.md); native gameplay and exact-package acceptance remain separate.
+
+## October 26 presentation refinement
+
+Retain Starter 02 tokens and the cool glass identity with quieter header/tool surfaces.
+Conversation and plan content use 16px text, padded inputs and explicit disabled styles.
+Disclosures include padding within their 44px minimum height. Catalog setup uses a
+compact desktop action column; game-card actions align and routine requirements no
+longer use warning-colored boxes. Permission blockers and inference disclosure remain.
+
+Mario omits empty plan facts and results, retaining interpretation progress and all
+actual outcome uncertainty. Stardew target editing sits after approval status and
+before results; it remains accessible during advice-only states when targets exist.
+Empty target editors and idle results disappear without replacing editable nodes.
+See the October 26 entry in [UI verification](ui-verification.md) for synthetic evidence.

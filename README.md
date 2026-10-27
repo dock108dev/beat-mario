@@ -5,6 +5,11 @@ bounded play, watching its results, and taking control. Mario and Stardew use
 Codex CLI for contextual conversation and gameplay decisions; guarded controllers
 validate actions and verify observed effects.
 
+As of October 25, candidate.35 has retained native evidence for narrow ordinary
+Stardew watering and handback. A completed coached Mario early-segment session on
+that installed build remains next. See [current status](docs/current-engineering-status.md)
+and the [next-session plan](docs/private-beta-pm-handoff.md).
+
 ## Supported capabilities
 
 - **Mario:** bounded World 1-1 strategy, opening-jump coaching, remembered
@@ -75,7 +80,7 @@ setup and review. Confirmed work, uncertain outcomes, and return-to-start are
 reported separately. See [recovery](docs/error-handling.md).
 
 After handback, stop the foreground server with Control-C. The source
-`Launch Game Companion.command` starts a background server; use
+`Open Game Companion.command` starts a background server; use
 `Stop Game Companion.command` for that instance. Packaged apps have their own
 Quit action. Closing a browser alone is not a verified server shutdown.
 

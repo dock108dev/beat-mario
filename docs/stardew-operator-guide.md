@@ -39,10 +39,11 @@ These new source activities have automated and actual-model simulated evidence; 
 
 Findings show captured images, locations and times. Ground, vegetation, access and unknowns remain separate; empty dirt does not prove planting suitability or planting access. No tools, farm work, purchases, cave entry or saving overnight are authorized. Asking about progress or changing the request stops current input and requires new review before further work. **Stop/Take control** remain independent, including during model inference and movement. Stopped findings can remain useful while return is incomplete. Saved results reopen as descriptive history with no connection, plan or control authority.
 
-## Model and controller roles
+## Prepared-profile model and controller roles
 
-The ordinary source app now uses the installed Codex CLI for contextual language
-and a separate gameplay role for prepared Day 2 watering. The model selects
+Both ordinary selected-save and prepared Day 2 watering use the installed Codex
+CLI for contextual language and a separate gameplay role. The instructions in
+this section describe the prepared-profile workflow. The model selects
 approved crop targets; existing calibrated controllers move and water them.
 Fresh observations confirm effects before the next model decision. Inspection,
 planting discussion and Day 5 routines retain their existing controllers.
@@ -114,7 +115,7 @@ Broader scene coverage and package compatibility remain unverified.
 
 ## Currently implemented prepared-farm path
 
-Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. Support is restricted to two locally prepared Standard Farm configurations. Live setup requires prepared seeds, profile registrations and their matching calibration files. These are ignored local assets and are not bundled by cloning the source or running the launcher. Without them, the CLI can inspect declared capabilities but the browser cannot start qualified farm work.
+Use [launch and first use](../README.md#launch-and-first-use), then choose Stardew Valley. This prepared-profile path is restricted to two locally prepared Standard Farm configurations. Live setup requires prepared seeds, profile registrations and their matching calibration files. These are ignored local assets and are not bundled by cloning the source or running the launcher. Without them, the CLI can inspect declared capabilities but the browser cannot start qualified farm work.
 
 ## Choose the matching farm and profile
 
@@ -171,4 +172,4 @@ control. Recording and no-code native addition of new games are unavailable.
 
 Connected Day 2 model discussion and gameplay inference pause the disposable game clock with ordinary menu input. Input is released while waiting. The next explicit observation/review/Start resumes the clock and captures a new supported scene. Stop revokes work; it may leave the menu open for the player. Closing that menu never restores work authority.
 
-If camera recognition fails, close menus and check the prepared daylight farm, zoom 75%, UI 100% and supported window geometry. At evening/night, exit this disposable copy to title without sleeping/saving and reload it. Pause the clock through the preparation survey controls during long setup inspections. A changed window or pointer outside its current bounds is a refusal, requiring a fresh explicit view; never retry an old target from saved history. The current [verification record](gc-ai-loop-verification.md) identifies the remaining native acceptance checks.
+If camera recognition fails, close menus and check the prepared daylight farm, zoom 75%, UI 100% and supported window geometry. At evening/night, exit this disposable copy to title without sleeping/saving and reload it. Pause the clock through the preparation survey controls during long setup inspections. A changed window or pointer outside its current bounds is a refusal, requiring a fresh explicit view; never retry an old target from saved history. The [earlier source verification](gc-ai-loop-verification.md) retains that prepared-farm evaluation. Use [current status](current-engineering-status.md) for installed-app results and remaining work.

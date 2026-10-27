@@ -73,7 +73,7 @@ process.stdin.on('end', async () => {
  root.contains=() => true;
  root.querySelector=()=>nodes['conversation-open-game'];
  nodes['mario-conversation']=root;
- for(const name of ['segment-start', 'segment-end', 'recording-images', 'demo-images', 'recording', 'recording-preview', 'demonstration', 'demo-review', 'demo-preview', 'result', 'flight', 'coins', 'guidance','retry-budget','owner','session','requested','loaded','fallback','plan-label','actions','eligibility','unsupported','current','pending','boundary','ack','speed-status','performance','live-reason','open-game','messages','variant','outcome','coverage','history','details','error','draft','variant-name','intent','speed','revision','revisions','earlier','older-messages','playing','controls']) nodes['conversation-'+name]=new Element(['variant','demonstration'].includes(name)?'select':'div');
+ for(const name of ['result-panel', 'plan-facts', 'segment-start', 'segment-end', 'recording-images', 'demo-images', 'recording', 'recording-preview', 'demonstration', 'demo-review', 'demo-preview', 'result', 'flight', 'coins', 'guidance','retry-budget','owner','session','requested','loaded','fallback','plan-label','actions','eligibility','unsupported','current','pending','boundary','ack','speed-status','performance','live-reason','open-game','messages','variant','outcome','coverage','history','details','error','draft','variant-name','intent','speed','revision','revisions','earlier','older-messages','playing','controls']) nodes['conversation-'+name]=new Element(['variant','demonstration'].includes(name)?'select':'div');
  let interval;
  let serverState={plan:{plan_id:'rendered-plan-2',revision:2,requested_objective:'Quickest',base_route_id:'world_8_finish_game',fallback_explanation:'Optimized variant unavailable',actions:[]},runtime:{owner:'agent',revision:1,requested_speed:'turbo',applied_speed:'turbo'},messages:[],variants:[{variant_id:'a',name:'A'},{variant_id:'b',name:'B'}]};
  const calls=[];let postResolve;
@@ -86,7 +86,20 @@ process.stdin.on('end', async () => {
  await settle();
  const draft=nodes['conversation-draft'];draft.value='Please change my future path';draft.selectionStart=7;draft.selectionEnd=13;draft.focus();
  const original=draft;
- if(scenario==='record-root') {
+ if(scenario==='idle-results') {
+   assert.equal(nodes['conversation-result-panel'].hidden,true);
+   assert.equal(nodes['conversation-plan-facts'].hidden,false);
+   serverState={...serverState,plan:null,outcome:{status:'stopped',neutralized:false,controller_owner:'unknown'}};
+   await interval();await settle();
+   assert.equal(nodes['conversation-plan-facts'].hidden,true);
+   assert.equal(nodes['conversation-result-panel'].hidden,false);
+   assert.match(nodes['conversation-outcome'].textContent,/Handback not confirmed/);
+   assert.equal(draft.value,'Please change my future path');
+   serverState={...serverState,ai:{state:'interpreting'}};
+   await interval();await settle();
+   assert.equal(nodes['conversation-plan-facts'].hidden,false);
+   assert.match(nodes['conversation-requested'].textContent,/Understanding/);
+ } else if(scenario==='record-root') {
    handlers.click({target:{closest:selector=>selector==='[data-conversation-action]'?{dataset:{conversationAction:'record_start'}}:null}});
    await settle();postResolve();await settle();
    assert.equal(new URLSearchParams(calls.find(call=>call.options.method==='POST').options.body).get('action'),'record_start');
@@ -111,6 +124,10 @@ process.stdin.on('end', async () => {
    await interval();await settle();
    assert.equal(nodes['conversation-segment-start'].value,'0.25');
    assert.equal(draft.value,'Please change my future path');
+   serverState={...serverState,ai:{state:'interpreting'}};
+   await interval();await settle();
+   assert.equal(nodes['conversation-plan-facts'].hidden,false);
+   assert.match(nodes['conversation-requested'].textContent,/Understanding/);
  } else if(scenario==='flight-reward') {
    serverState={...serverState,plan:{...serverState.plan,flight_compatibility:'smb3/world-1-1/sky-hidden-1up/v1',change_summary:['Build P-speed and fly to the sky invisible block.'],actions:[{kind:'mario_traverse',parameters:{path_choice:'sky_hidden_1up'}}]},flight_knowledge:{attempts:2},outcome:{flight_result:{status:'partial',flight_observed:true,area_reached:true,reward_revealed:true,reward_collected:null,coin_rollover_lives:1,life_change:1}}};
    await interval();await settle();
@@ -122,6 +139,10 @@ process.stdin.on('end', async () => {
    await interval();await settle();
    assert.match(nodes['conversation-flight'].textContent,/collection confirmed/);
    assert.equal(draft.value,'Please change my future path');
+   serverState={...serverState,ai:{state:'interpreting'}};
+   await interval();await settle();
+   assert.equal(nodes['conversation-plan-facts'].hidden,false);
+   assert.match(nodes['conversation-requested'].textContent,/Understanding/);
  } else if(scenario==='timing-preview') {
    serverState={...serverState,plan:{...serverState.plan,coaching_compatibility:'smb3/world-1-1/opening-hop/v1',jump_delay_frames:0,actions:[{kind:'mario_traverse',parameters:{path_choice:'opening_hop',stop_point:'world_1_1_opening_end'}}]}};
    await interval();await settle();
@@ -175,7 +196,7 @@ process.stdin.on('end', async () => {
 
 
 @pytest.mark.skipif(NODE is None, reason="Node.js is needed for browser behavior checks")
-@pytest.mark.parametrize("scenario", ["flight-reward", "record-root", "no-uuid", "demonstration-review", "record_stop-toolbar", "demo_disable-toolbar", "timing-preview", "urgent-pending", "polling", "duplicate", "new-draft", "normal-speed", "reviewed-start", "reviewed-apply", "pending-boundary", "reclaim-toolbar", "stop-toolbar", "pause-toolbar", "resume-toolbar"])
+@pytest.mark.parametrize("scenario", ["idle-results", "flight-reward", "record-root", "no-uuid", "demonstration-review", "record_stop-toolbar", "demo_disable-toolbar", "timing-preview", "urgent-pending", "polling", "duplicate", "new-draft", "normal-speed", "reviewed-start", "reviewed-apply", "pending-boundary", "reclaim-toolbar", "stop-toolbar", "pause-toolbar", "resume-toolbar"])
 def test_shipped_conversation_polling_and_submit_behavior(scenario: str) -> None:
     result = subprocess.run(
         [str(NODE), "-e", HARNESS],

@@ -6,9 +6,11 @@
 Stardew conversation services. `companion_ai.LanguageSession` interprets original
 requests using bounded context. `WateringAgent`, `mario_strategy.MarioStrategyAgent`
 and `stardew_recon.ReconAgent` choose supported skills at finite boundaries.
-Prepared watering and the bounded Mario segment have native evidence;
-reconnaissance acceptance, wider activity coverage and package qualification
-remain open.
+Prepared watering and the bounded Mario segment have retained source-native
+evidence; candidate.35 also has ordinary isolated-save Stardew watering and
+handback evidence. Coached Mario completion on that installed build,
+reconnaissance acceptance and wider activity coverage remain open. See the
+[current source/build evidence](current-engineering-status.md).
 
 The roles keep separate context and session state. The language layer resolves
 intent, preferences, questions and clarification. The gameplay layer chooses a

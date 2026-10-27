@@ -1,13 +1,66 @@
 # Game Companion current local status
 
-Updated October 7, 2026. Scope: personal use and a handful of users. [Working approach](personal-use.md).
+Updated October 25, 2026 after a repository/documentation audit. Scope: personal
+use and a handful of users under the [working approach](personal-use.md).
 
-The existing installed candidate.35/build 30035 has demonstrated ordinary Stardew preparation, middle-only contextual watering, return/handback and active Stop. Fresh-review refusal after Stop, provider-process recovery and neutral game switching were also recorded. These results describe October 6, not a newly run session.
+**Stardew has a demonstrated narrow ordinary workflow. A completed ordinary
+Mario coached early-segment session on the installed app is still the next
+unfinished task.** No new gameplay was run during this audit.
 
-Candidate.35 Mario coached completion remains unfinished. Next: get one supported ordinary Mario session working, with usable Stop and handback; repair the first actual blocker. Broader focus/disconnect/keyboard/Dock combinations are follow-up when they affect use or changed code, not a mandatory campaign before feedback.
+## Source, installed app and verification
 
-The installed app is `/Users/michaelfuscoletti/Applications/Game Companion.app`. Current checkout has later source changes; opening the app does not apply them. Preserve stable permission identity if a needed update is built.
+| Layer | Verified status on October 25 |
+| --- | --- |
+| Repository | Audited `main` at `5f946ba65f1b505aa6d94cced80f5aafd89bdcec`; clean before this pass. This pass edits documentation and one launcher help message; gameplay behavior is unchanged. |
+| Hosted CI | [Run 40216300354](https://github.com/dock108dev/beat-mario/actions/runs/40216300354) passed on that commit: 1,758 tests passed, 35 skipped, plus lint, security/file guards, goal/catalog checks and UI render contracts. Dependency review was skipped as expected on a push. This is Linux/offline evidence. |
+| Installed app | `/Users/michaelfuscoletti/Applications/Game Companion.app`: bundle `local.gamecompanion.privatebeta`, version `0.3.0`, build `30035`, corresponding to candidate.35. |
+| Package identity | [Build manifest](../dist/private-beta/0.3.0-candidate.35/build-manifest.json): source digest `dcb3dbe177a9409f733b7aad6c30e4a7d5ee861107a0904a1276b3df890f2f2b`. All 196 manifest-listed installed resources matched on October 25. This check does not establish current permission readiness or new gameplay. |
+| Source versus app | Later source includes Stardew focus-cancellation checks, UI changes, packaging/resource maintenance and stricter FCEUX selection. The lockfile now specifies Pillow 13.0.0; candidate.35 records Pillow 12.3.0. Opening the installed app does not apply these changes. |
 
-Permissions and ordinary farm setup have already been resolved. Use current observations and supported conditions; never treat stored advice, simulated outcomes or earlier-build traces as a new successful game result. Owner feedback can begin on working tasks without formal engineering or release acceptance.
+Build/source/package checks establish different facts. Historical native results
+below belong to the October 6 candidate.35 sessions. The current checkout has
+not received a new native walkthrough in this audit. Existing permission and
+ordinary-save setup succeeded then; use the app's current readiness checks if
+anything has changed instead of repeating the obsolete candidate.13 setup.
 
-[Next session](private-beta-pm-handoff.md) · [Engineering plan](private-beta-engineering.md) · [Recorded October 6 audit](documentation-audit-20261006.md).
+## Working paths and remaining gaps
+
+| Area | Evidence-backed status | Remaining useful work |
+| --- | --- | --- |
+| Ordinary Stardew | Candidate.35 prepared an approved isolated ordinary save, accepted a correction to water only the middle crop, left both neighbors dry, used energy 270→268 and water 40→39, returned to the farmhouse and confirmed handback. | Owner feedback on this supported task; repair concrete failures. Arbitrary farms, mature crops, upgraded tools and refill remain unsupported. |
+| Stardew control/recovery | Active watering-task Stop was exercised during navigation before watering; input became neutral and handback was confirmed. Stale Start refusal, fresh review, owned-provider failure/recovery and neutral game switching have separate records. | Broader focus/disconnect/exit cases remain unverified; check the affected case when a change or actual use requires it. |
+| Ordinary Mario | The source has the bounded visual strategy and compatible saved coaching. Candidate.35 reached a reviewable coached proposal; retained helper assertions failed before Start. No completed coached native segment on this build is recorded. | Complete one supported World 1-1 early segment, verify neutral handback and exercise Stop/Take control on this path. Diagnose the first actual blocker; no current gameplay failure cause is established by the pre-Start assertions. |
+| Shutdown and reopening | Candidate.35 has descriptive-history reopening evidence. Reopening must restore no live session, review or input authority. | Active keyboard/Dock quit and the broader interruption matrix are not qualified on this build. They are follow-up checks for affected use, not a prerequisite to feedback on working tasks. |
+| Other games/activities | Minecraft source flags enable calibration/camera only; aim/move/place/wall are disabled. OpenTTD is a narrow repayment reference. Authored Mario routes, prepared Stardew routines and source flight/coaching trials have separate retained evidence. | Full-level adaptive Mario, generalized coaching improvement, native reconnaissance/cave delegation, recording and broader games remain later work. |
+| Owner feedback | The retained qualification record still has `owner_accepted: false`. | Let the owner try useful supported flows now. A formal two-game release decision is not required for personal-use feedback. |
+
+## Evidence to resume from
+
+The [candidate.35 qualification record](../dist/private-beta/0.3.0-candidate.35/qualification.json)
+indexes the historical checks and uncompleted qualification work. Its pending
+list is not the current work order; the October 7 personal-use scope superseded
+the earlier mandatory release campaign.
+
+- [Ordinary preparation](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-ordinary-ready.json).
+- [Corrected watering, resources, return and handback](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-ordinary-watering-native-acceptance.json).
+- [Active task Stop](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-active-watering-stop.json) and [old-review Start refusal](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-stopped-review-start-refusal.json).
+- [Owned-provider failure](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-owned-provider-failure.json), [fresh-question recovery](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-provider-fresh-question-recovery.json), and [neutral switch](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-neutral-switch-to-mario.json).
+- [Mario coached proposal](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-mario-walking-coaching-reviewable.json), which has no completed outcome, and [Finder reopening](../artifacts/gc-delivery/ordinary-session/20261006-recovery/candidate35-finder-reopening.json).
+
+These are retained local files, absent from a fresh clone. The declarative
+[`local-candidate.yaml`](../data/companion/local-candidate.yaml) still marks full
+packaged qualification pending; it is not a live per-session result ledger and
+does not negate the narrower successful Stardew record.
+
+## Next action
+
+Use candidate.35 to try one finite, coached Mario early-segment request in a
+fresh disposable session. Success means alive and grounded at x≥700, independent
+neutral acknowledgment and a game-owned review pause. Check Stop/Take control
+and no automatic resumption. Retain the result or exact blocker, make only a
+needed repair, and check that changed path. Build a successor only if updated
+source must run in the app; preserve stable identity, saves and history.
+
+[Desktop priorities](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) ·
+[Next session](private-beta-pm-handoff.md) · [Engineering plan](private-beta-engineering.md) ·
+[October 25 audit](documentation-audit-20261025.md).

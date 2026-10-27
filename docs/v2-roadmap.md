@@ -2,9 +2,12 @@
 
 > Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
 
-> Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.
-
-This is the retained V2 and Mario/Stardew implementation roadmap. The [private-beta engineering plan](private-beta-engineering.md) owns current release scope and the [PM handoff](private-beta-pm-handoff.md) owns the next delivery phase. New work follows the contextual Codex language/gameplay AI roadmap, then ordinary setup, evaluation, a successor two-game Mac app and local release. Minecraft becomes the third playable game during beta; advanced-user no-code onboarding follows implementation of the first two experiences. The retained V2 scope below remains historical.
+This is the retained V2 and Mario/Stardew implementation roadmap. The
+[personal-use scope](personal-use.md), [current status](current-engineering-status.md)
+and [next-session handoff](private-beta-pm-handoff.md) own current work. The next
+step is one useful coached Mario session on the installed app, while the narrow
+Stardew workflow can receive feedback. The older successor-package, two-game
+release and third-game sequence below is historical, not an active work order.
 
 ## Historical personal-beta scope — September 23, 2026
 
@@ -16,7 +19,7 @@ At this stage, B1 was complete and B2 implemented shared typed planning, the ord
 
 ## Historical V2 outcome and sequencing
 
-The sequence and V2 slice records below describe the prior implementation plan. B2–B9 ordering and added Mario/NLP/Stardew requirements belong to that historical engineering packet. Current release planning is in the private-beta engineering plan linked above.
+The sequence and V2 slice records below describe the prior implementation plan. B2–B9 ordering and added Mario/NLP/Stardew requirements belong to that historical engineering packet. Current personal-use priorities are in the engineering plan linked above.
 
 V2 turns the accepted Mario automation system into a player-facing companion,
 proves the same contract in Stardew Valley, combines both games in one catalog,

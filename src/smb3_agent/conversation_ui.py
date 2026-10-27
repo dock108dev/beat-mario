@@ -45,7 +45,7 @@ def render_conversation_workspace(
     <form data-conversation-form="message" id="conversation-message-form">
       <label for="conversation-draft">What would you like to do?</label>
       <textarea id="conversation-draft" name="text" maxlength="4000" placeholder="{prompt}" required aria-describedby="conversation-typing-note"></textarea>
-      <p class="meta" id="conversation-typing-note">Mario can play while you type. Questions give advice; supported changes update future steps.</p>
+      <p class="meta" id="conversation-typing-note">Mario can keep playing while you type. Changes apply to future steps.</p>
       <button type="submit" class="primary-button" data-testid="conversation-send">Send</button>
       <div class="conversation-buttons" aria-label="Suggested supported edits"><button type="button" data-conversation-draft="Let’s find a coin route to the end">Find a coin route</button><button type="button" data-conversation-draft="Let’s practice the opening jump">Practice the opening jump</button><button type="button" data-conversation-draft="You’re jumping too early, wait 3 more frames">Coach the next jump</button><button type="button" data-conversation-draft="Use the base path and stop at the end of World 1-1">Base path to level exit</button></div>
     </form>
@@ -54,7 +54,7 @@ def render_conversation_workspace(
   </section>
   <section class="session-card conversation-plan" aria-labelledby="conversation-plan-heading">
     <h2 id="conversation-plan-heading">Your Mario plan</h2>
-    <dl class="conversation-status">
+    <dl id="conversation-plan-facts" class="conversation-status">
       <div><dt>You asked for</dt><dd id="conversation-requested">Existing base route</dd></div>
       <div><dt>Plan</dt><dd id="conversation-loaded">Existing route to the game ending</dd></div>
     </dl>
@@ -84,7 +84,7 @@ def render_conversation_workspace(
     </div>
     <p id="conversation-speed-status" class="meta">Requested 1× · Applied rate not yet acknowledged</p>
     <p id="conversation-performance" class="meta"></p>
-    <div class="conversation-outcome"><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
+    <div id="conversation-result-panel" class="conversation-outcome" hidden><h3>Result</h3><p id="conversation-outcome">No attempt yet.</p><p id="conversation-coverage" class="meta">Full completion is not verified.</p></div>
     <details><summary>Playback speed</summary>
     <form data-conversation-form="speed" class="conversation-inline conversation-speed">
       <div><label for="conversation-speed">Playback speed</label><select id="conversation-speed" name="rate"><option value="1">1× · Normal</option><option value="turbo">Faster · Uncapped</option></select></div>
@@ -236,6 +236,7 @@ CONVERSATION_JS = r''' (() => {
     revealRelevant("flight-tools", plan.flight_compatibility || state.flight_progress);
     revealRelevant("coin-tools", plan.coin_compatibility || state.coin_progress);
     revealRelevant("guidance-tools", state.retry_scope || state.guidance?.error);
+    if (node("plan-facts")) node("plan-facts").hidden = !state.plan && state.ai?.state !== "interpreting";
     const current = state.current_plan;
     const pending = state.pending_plan;
     const runtime = state.runtime || {};
@@ -268,6 +269,7 @@ CONVERSATION_JS = r''' (() => {
     }
     node("playing").hidden = !["playing", "paused", "starting"].includes(runtime.status) && !pending;
     text("current", current ? `Current: ${summarizePlan(current)}` : "No plan is running.");
+    node("pending").hidden = !pending;
     text("pending", pending ? `Pending: ${summarizePlan(pending)}` : "No pending change.");
     text("boundary", `Change takes effect at: ${boundaryLabel(runtime.pending?.effective_boundary || pending?.effective_boundary || runtime.effective_boundary || plan.effective_boundary || "Not selected")}`); node("boundary").hidden = !pending;
     text("ack", displayCopy(state.message) || runtime.acknowledgment || (runtime.revision ? `Game confirmed plan version ${runtime.revision}.` : ""));
@@ -321,6 +323,7 @@ CONVERSATION_JS = r''' (() => {
     const coins = state.coin_knowledge || {}, coinResult = state.coin_progress || state.outcome?.coin_result;
     text("coins", `${coins.compatibility_pending ? `${coins.archived_attempts || 0} saved coin attempts; open the same cartridge to check compatibility. ` : ""}${coins.attempts || 0} remembered compatible attempts · Routes tried: ${(coins.routes_tried || []).join(", ") || "none"} · Best observed single-attempt coin count ${coins.known_opportunity_lower_bound || 0} (knowledge across attempts, not a run total). ${coinResult ? `${state.coin_progress ? "Current" : "Last"} attempt collected: ${coinResult.collected ?? "unknown"}; known missed opportunity lower bound: ${coinResult.known_missed_lower_bound ?? "unknown"}; furthest observed position ${coinResult.furthest_x ?? "unknown"}; stairs instruction ${coinResult.route_guidance ? (coinResult.guidance_application_observed ? "applied" : "application unverified") : "none"}; landing beyond stairs ${coinResult.stairs_landing_observed ? "observed" : "unverified"}; finish ${coinResult.level_finish_observed ? "observed" : "unverified"}; unvisited landmarks: ${(coinResult.unvisited_landmarks || []).join(", ") || "none"}. ` : ""}${coins.coverage || "Coverage unknown."}`);
     const outcome = state.outcome;
+    if (node("result-panel")) node("result-panel").hidden = !outcome;
     text("outcome", !outcome ? "No attempt yet." : typeof outcome === "string" ? label(outcome) : `${label(outcome.status || "Unknown result")} · ${label(outcome.actor || "unknown")} play${outcome.elapsed_game_frames != null ? ` · ${outcome.elapsed_game_frames} game frames` : ""} · Input ${outcome.neutralized ? "stopped" : "not confirmed stopped"} · ${outcome.controller_owner === "player" ? "Control returned to you" : "Handback not confirmed"}`);
     if (outcome?.coaching_result) {
       const result = outcome.coaching_result;
@@ -510,17 +513,17 @@ body{{color:var(--text)}}main{{padding:16px}}h1{{font-size:26px;margin:8px 0}}.c
 <p id="stardew-error" class="conversation-alert" role="alert" hidden></p></div>
 <p id="stardew-status" role="status"></p><div class="conversation-buttons stardew-view-tools"><button data-action="observe">Refresh farm view</button><a href="#stardew-setup-panel">Farm setup</a></div>
 <section class="conversation-workspace" aria-label="Stardew conversation and plan">
-<div class="conversation-chat card"><h2>Ask Companion</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Where should we plant corn? Or: please water the dry crop patch" required></textarea><button type="submit" class="primary-button">Send request</button></form><p class="meta">Work and planting-location requests bring Stardew to the front. Questions give advice; only Start permits work.</p>
+<div class="conversation-chat card"><h2>Ask Companion</h2><form data-action="message"><label for="stardew-draft">What would you like to do?</label><textarea id="stardew-draft" name="text" placeholder="Where should we plant corn? Or: please water the dry crop patch" required></textarea><button type="submit" class="primary-button">Send request</button></form><p class="meta">Work and planting-location requests bring Stardew to the front. Only Start permits work.</p>
 {examples}
 <ul id="stardew-messages" class="conversation-transcript" aria-live="polite"></ul><details id="stardew-earlier" hidden><summary>Earlier messages</summary><ul id="stardew-older-messages" class="conversation-transcript"></ul></details></div>
 <div class="conversation-plan card"><section id="stardew-plan-review"><h2>Your farm plan</h2><p id="stardew-observation"></p>
 <p id="stardew-plan">Request a task to prepare a proposal.</p><ol id="stardew-actions"></ol><p id="stardew-limits"></p><p id="stardew-issues"></p>
 <div class="conversation-buttons"><button data-action="apply" id="stardew-review">Review plan</button><button data-action="start" id="stardew-start" class="primary-button">Start reviewed work</button><button data-action="cancel_pending">Cancel review</button></div>
-<p id="stardew-review-status"></p><section class="conversation-outcome"><h3>Result and remaining work</h3><p id="stardew-outcome">No attempt yet.</p><pre id="stardew-ledger"></pre></section></section>
+<p id="stardew-review-status"></p></section><section id="stardew-target-editor" hidden><h3>Choose targets</h3><form data-action="select_targets"><div id="stardew-targets"></div><button type="submit">Use selected targets</button></form></section><section id="stardew-result-panel" class="conversation-outcome" hidden><h3>Result and remaining work</h3><p id="stardew-outcome">No attempt yet.</p><pre id="stardew-ledger"></pre></section>
 <section id="stardew-planting-panel" class="conversation-outcome" aria-label="Planting location discussion" hidden><h3>Planting advice</h3><p id="stardew-planting-summary"></p><div id="stardew-planting-visual"></div><ul id="stardew-planting-assessments"></ul><details><summary>Earlier location discussion</summary><ul id="stardew-planting-discussion"></ul></details><p>Location advice does not permit planting.</p></section>
 <section id="stardew-inspection-panel" class="conversation-outcome" aria-label="Farm inspection findings" hidden><h3>Farm findings</h3><p id="stardew-inspection-result"></p><div id="stardew-inspection-image"></div></section>
 <section id="stardew-cave-panel" class="conversation-outcome" aria-label="Cave entrance reconnaissance" hidden><h3>Farm Cave findings</h3><p id="stardew-cave-coverage"></p><p id="stardew-cave-result"></p><div id="stardew-cave-image"></div><p>If the return stopped, ask “Return home” and review a new plan. Saved findings never resume play.</p></section>
-<h3>Choose targets</h3><form data-action="select_targets"><div id="stardew-targets"></div><button type="submit">Use selected targets</button></form><details class="stardew-history"><summary>Saved results</summary><p>Inspect past work and recovery advice. Reopening never permits play.</p><ol id="stardew-history" class="conversation-history"></ol></details>
+<details class="stardew-history"><summary>Saved results</summary><p>Inspect past work and recovery advice. Reopening never permits play.</p><ol id="stardew-history" class="conversation-history"></ol></details>
 <details><summary>Session and evidence details</summary><pre id="stardew-details"></pre></details></div>
 </section><details id="stardew-setup-panel" class="session-card stardew-setup"{setup_open}><summary>Choose a farm session</summary><h3>Your saved farms</h3>{default_form}<details><summary>Choose a save outside the default location</summary><h3>Open an isolated copy of your selected save</h3><form data-action="launch_selected_copy"><label>Selected save folder<input name="source" required autocomplete="off"></label><label><input type="checkbox" name="copy_authorized" required> Copy this selected save and preserve the original</label><label>Installed Stardew application<input name="installation" value="{installation}" placeholder="Leave blank to discover the installed game"></label><button type="submit" class="primary-button">Open selected farm copy</button></form></details><p>The copy may change; your original farm is preserved. Only supported spring seed patches can be watered. Preparation and watering need separate approval.</p><details><summary>Supported farms and watering limits</summary><p>Companion checks the current screen: an unchanged standard farmhouse, supported blue clothing, 1–15 visible spring seeds, a basic watering can, exact resources and clear paths there and back. Unknown or blocked paths stop work. Other crops, seasons, upgraded tools and wider farms are not supported.</p></details><details><summary>Engineering regression: frozen prepared farms</summary><p>{setup_scope}</p><h3>Import the prepared Day 2 seed</h3><form data-action="import_day2_seed"><label>Exact prepared seed directory<input name="source" required autocomplete="off"></label><label><input type="checkbox" name="copy_authorized" required> Copy this selected prepared seed into local app data</label><button type="submit">Import Day 2 seed</button></form><p>Only the unchanged supported Day 2 seed is accepted. Primary saves are never searched. Calibration resources are bundled with the candidate.</p><h3>Open or reconnect a disposable farm</h3><p>Close the previous disposable game, open a fresh copy, then approve preparation below.</p>
 {prepared}</details>
@@ -686,6 +689,7 @@ STARDEW_CONVERSATION_JS = r'''
     }
     const outcome = state.outcome, ledger = run.ledger, tool = observation.tool || {};
     node("ledger").hidden = !ledger && !inspection && !cave;
+    if (node("result-panel")) node("result-panel").hidden = !outcome && !run.ledger && !inspection && !cave;
     text("outcome", outcome ? `${({completed:"Completed",stopped:"Stopped",failed:"Stopped after a problem",active:"In progress"}[outcome.status] || (outcome.status || "Partial").replaceAll("_", " "))}. ${outcome.stop_reason || run.reason || ""} ${run.neutralized === true ? "Inputs released." : "Input release is unconfirmed."} ${run.handback_confirmed ? "Control returned to you." : "Handback is unconfirmed."}` : "No attempt yet.");
     text("ledger", ledger?.contract === "selected-farm-actions/v2" ? `${(ledger.steps || []).map(step => `${step.kind.replaceAll("_", " ")} ${step.target_id}: ${step.status.replaceAll("_", " ")}`).join("\n")}\nSeeds consumed: ${ledger.seed_consumed} · Energy spent: ${ledger.energy_spent} · Water consumed: ${ledger.can_water_consumed}\nObserved inventory: ${JSON.stringify(ledger.current_inventory)}\nReturn point: ${ledger.final_position?.at_farmhouse_entrance === true ? "Reached" : "Not confirmed"}` : ledger ? `${ledger.watered_count ?? "Unknown"} confirmed watered · ${ledger.remaining_count ?? "Unknown"} remaining to reconcile\nLast reconciled energy: ${ledger.energy_current ?? "Unknown"} · Water in can: ${ledger.can_water_current ?? "Unknown"}\nTool uses: ${ledger.tool_uses ?? "Unknown"} · Refills: ${ledger.refills ?? "Unknown"}\nReturn point: ${ledger.final_position?.at_farmhouse_entrance === true ? "Reached" : "Not confirmed"}` : "Crop, energy, can-water and refill accounting remain unknown.");
     if (plan?.normalized_intent === "inspect_cave" && cave) {
@@ -695,6 +699,7 @@ STARDEW_CONVERSATION_JS = r'''
       text("outcome", `${inspection.status}. ${inspection.findings?.message || "No fresh second-view findings yet."} ${inspection.handback_confirmed ? "Input released; control returned to you." : "Handback unconfirmed."}`);
       text("ledger", "Inspection uses no tools, water, seeds or purchases. Farmhouse return: " + (inspection.return_observation?.position?.at_farmhouse_entrance ? "Observed" : "Not confirmed"));
     }
+    if (node("target-editor")) node("target-editor").hidden = !node("targets").children.length;
     const nextHistory = JSON.stringify(state.history || []);
     if (nextHistory !== historySignature) { historySignature = nextHistory; node("history").replaceChildren(...(state.history || []).map(historyItem)); }
     text("details", JSON.stringify({runtime:run,plan},null,2));

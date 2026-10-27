@@ -1,5 +1,33 @@
 # UI verification
 
+## October 26 interface review
+
+Matched current-source before/after review: `artifacts/ui-review-20261026/review.html`
+(local ignored evidence). Catalog, Mario empty/ready/pending, and Stardew
+empty/ready/update-error/partial-result states were rendered at 1440×900 and
+390×844. The installed candidate.35, historical previews, existing documentation
+edits and owner state were preserved. Preview endpoints reject all gameplay writes.
+
+Changes: quieter glass surfaces and secondary tools; 16px conversation/plan text,
+padded inputs, readable disabled controls and corrected disclosure box sizing;
+conditional idle facts/results and target editing before outcome records. No
+request, review, approval or recovery steps were added. Narrow Stardew approval
+still requires scrolling; larger readable content is intentional.
+
+93 focused tests passed (five HTTP tests excluded to avoid live service initialization),
+plus Ruff, Python syntax and whitespace checks. Browser checks passed for no page
+overflow/exceptions, 200% text, keyboard focus/disclosures, preserved drafts and
+target selection through polling, relevant guidance/manual closure, full history,
+completed/partial/zero accounting, uncertain handback, stale-update recovery and
+reachable Stop. Long names and responses were checked at 1440, 820 and 390px.
+OpenTTD's shared conversation styles were also rendered at both main widths.
+A regression covers idle-to-stopped-result visibility and interpretation progress.
+
+These are source/synthetic checks. Native game response, installed-app behavior,
+screen readers, new-user testing, owner acceptance and commercial readiness were
+not established. No install, commit, push or release was performed.
+
+
 ## Interaction checks
 
 Check provider readiness, clarification, pending decisions, observed progress,

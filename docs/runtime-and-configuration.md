@@ -2,11 +2,11 @@
 
 ## AI runtime
 
-`lab_ui.py` creates one app-owned `codex_provider.CodexProvider` and injects it into both ordinary conversation services. `companion_ai.LanguageSession` interprets original contextual requests; `WateringAgent`, `mario_strategy.MarioStrategyAgent` and `stardew_recon.ReconAgent` choose bounded skills through existing controllers. Prepared watering and the supported Mario segment have native evidence; reconnaissance native acceptance and wider/package coverage remain open. The provider uses CLI-managed authentication, structured text/image requests and owned cancellation. Provider failure is explicit; the ordinary app does not silently switch to the deterministic parser. See [architecture](agent-architecture.md) for ownership and control boundaries.
+`lab_ui.py` creates one app-owned `codex_provider.CodexProvider` and injects it into both ordinary conversation services. `companion_ai.LanguageSession` interprets original contextual requests; `WateringAgent`, `mario_strategy.MarioStrategyAgent` and `stardew_recon.ReconAgent` choose bounded skills through existing controllers. Prepared watering and the supported Mario segment have retained source-native evidence. Candidate.35 also has ordinary isolated-save Stardew watering/handback evidence; its coached Mario completion, native reconnaissance and wider coverage remain open. See [current status](current-engineering-status.md). The provider uses CLI-managed authentication, structured text/image requests and owned cancellation. Provider failure is explicit; the ordinary app does not silently switch to the deterministic parser. See [architecture](agent-architecture.md) for ownership and control boundaries.
 
 The conversation and gameplay roles have separate bounded contexts. Scope/goal revision, observation/session identity and control generation bind replies; late output cannot execute. Provider sessions are descriptive, never gameplay permission. Runtime tools compose supported adapter skills instead of editing source.
 
-Source launch runs from the checkout. The packaged app resolves read-only resources from its bundle and keeps writable configuration, histories, provider state and game-copy artifacts in Application Support. Candidate.35 includes an explicit 196-resource inventory, FCEUX scripts and transitive calibration/images; installed resource hashes were rechecked during the [documentation audit](documentation-audit-20261006.md). Discovery supports Finder launch without the developer shell's PATH. Games, cartridges, credentials and original saves remain external. Ordinary Stardew discovers default saves, copies an approved game-created farm and prepares from observed state; frozen calibration/profile adoption remains a separate regression path.
+Source launch runs from the checkout. The packaged app resolves read-only resources from its bundle and keeps writable configuration, histories, provider state and game-copy artifacts in Application Support. Candidate.35 includes an explicit 196-resource inventory, FCEUX scripts and transitive calibration/images; all 196 installed resource hashes matched again during the [October 25 audit](documentation-audit-20261025.md). Discovery supports Finder launch without the developer shell's PATH. Games, cartridges, credentials and original saves remain external. Ordinary Stardew discovers default saves, copies an approved game-created farm and prepares from observed state; frozen calibration/profile adoption remains a separate regression path.
 
 Provider unavailability, login loss, rate limits, timeouts and invalid output produce visible remedies and safe release. Both-game setup, switching and restart need current observations; cleanup failures remain observable. Normal Codex inference sends selected game context/images to OpenAI, while reports remain local until explicitly shared.
 
@@ -21,8 +21,10 @@ declarative, fixture-only catalog entries. There is no database, migration,
 hosted application API, or production deployment target.
 
 Current source and retained private.2 enable Minecraft calibration/camera only;
-the building task is unfinished. Minecraft gameplay/package acceptance remains separate from the current two-game AI work. The [review records](private-beta-review.md)
-identify retained packages and their exact evidence.
+the building task is unfinished. Minecraft gameplay/package acceptance remains separate from the current two-game AI work. The [current evidence index](current-engineering-status.md#evidence-to-resume-from)
+identifies candidate.35; [PB2](pb2-integration.md) and the
+[Minecraft course correction](minecraft-beta-course-correction-20261001.md) retain
+the older reference-package results.
 
 ## Runtime components
 
@@ -229,9 +231,10 @@ evidence directory and record its exact path when reporting acceptance.
 
 The final campaign is not a deployed job or generic CLI runner:
 `data/scenarios/final-campaign.yaml` has `execution_enabled: false`. It is a
-manual, frozen-candidate workflow with explicit owner pauses described in the
+retained historical manual, frozen-candidate workflow with explicit owner pauses described in the
 [consolidated final campaign](final-campaign-guide.md). The false setting
-prevents automatic campaign execution. `scenario candidate-manifest` writes an ignored, exact clean
+prevents automatic campaign execution. This campaign is outside the current
+[personal-use worklist](personal-use.md). `scenario candidate-manifest` writes an ignored, exact clean
 candidate-bound manifest under `artifacts/campaigns/`, and
 `scenario final-campaign-readiness --candidate-manifest ... --gate` exits
 nonzero unless implementation and campaign-entry prerequisites reconcile.

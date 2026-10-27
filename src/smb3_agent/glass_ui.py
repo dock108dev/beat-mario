@@ -9,6 +9,30 @@ h1{letter-spacing:-.8px;line-height:1.15}h2{letter-spacing:-.3px}.companion-top,
 #setup{scroll-margin-top:160px}
 /* Keep routine content compact without shrinking text or controls. */
 .companion-top,.catalog-header{padding:12px 16px}.companion-top nav{display:flex;flex-wrap:wrap;gap:8px}.companion-top h1{font-size:24px}.app-context{font-size:16px;font-weight:500;color:var(--muted)}.catalog-shell main{margin-top:16px}.catalog-card .section-title{align-items:start}.catalog-card .callout{margin:10px 0 12px}.catalog-card summary,.catalog-workspace summary,.catalog-display>summary{min-height:44px;padding:10px 0;cursor:pointer}.catalog-card details{padding-top:0;margin-top:4px}.catalog-card p,.catalog-workspace p{overflow-wrap:anywhere}.catalog-workspace{margin-bottom:16px}.catalog-workspace dd{margin-left:0}.catalog-runtime{font-size:14px}.catalog-runtime dt{text-transform:none;letter-spacing:0}.catalog-shell .meta{font-size:14px}.session-more>.companion-more-grid{padding:12px}.companion-main>.session-more{margin-top:0}.catalog-capability .status-pill{text-transform:none;letter-spacing:0}
+/* Working content carries emphasis; setup and optional tools use quieter surfaces. */
+body{background:radial-gradient(ellipse at 0 0,#e0ecfc,transparent 65%),#f1f4fa}
+.companion-top,.catalog-header{box-shadow:none;border-radius:18px}
+.catalog-setup{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;align-items:center;margin-top:16px;box-shadow:none;border:1px solid var(--line);border-radius:18px}
+.catalog-setup h2,.catalog-setup .catalog-permissions,.catalog-setup #backend-status,.catalog-setup>.meta{grid-column:1}
+.catalog-shell .catalog-setup p{margin:4px 0}.catalog-setup>form{grid-column:2;grid-row:1/5}.catalog-setup>details{grid-column:1/-1}
+.catalog-card{box-shadow:0 4px 16px #334d7908}.catalog-card .callout{background:transparent;padding:0;color:var(--text);border:0;min-height:48px}.catalog-card .section-title{gap:12px}.catalog-card .section-title h2{line-height:1.3}
+.catalog-card details{border-top:0}.catalog-card details+details{margin-top:0}.catalog-shell .catalog-card button{font-size:16px}.catalog-shell #games-heading{font-size:22px;margin:16px 0 8px}
+.conversation-workspace summary,.catalog-card summary,.catalog-setup summary{box-sizing:border-box}
+.conversation-workspace textarea{padding:12px;border:1px solid var(--line-strong);background:#fff;color:var(--text);border-radius:12px;line-height:1.5}
+.conversation-workspace textarea::placeholder{color:#59677b;opacity:1}
+.conversation-workspace textarea+button{margin-top:8px}
+.conversation-workspace .conversation-transcript li,.conversation-workspace .conversation-status dd,.conversation-workspace .conversation-plan ol{font-size:16px}
+.conversation-workspace .conversation-transcript li{border-radius:12px;background:#edf2fa}
+.conversation-workspace .conversation-transcript li[data-role=user]{background:#e4edfc}
+.conversation-workspace>.conversation-tools,.conversation-workspace>.conversation-saved,.conversation-workspace>.conversation-records{background:transparent;box-shadow:none;border:0;border-top:1px solid var(--line);border-radius:0;backdrop-filter:none;padding:0 16px}
+.conversation-workspace>.conversation-tools>summary{padding:12px 0}
+.conversation-workspace button:disabled{opacity:1;background:#edf1f7;color:#54647b;border-color:#bccde5;box-shadow:none;cursor:not-allowed}
+.conversation-workspace button:not(:disabled):not(.primary-button):not(.danger):hover,.conversation-controls button:not(:disabled):not(.danger):hover{background:#e6efff;border-color:#7799c9}
+#stardew-target-editor{padding-top:16px;border-top:1px solid var(--line)}
+#stardew-targets label{box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#f4f7fc}
+#stardew-targets label:has(input:checked){background:var(--blue-soft);border-color:var(--blue)}
+#stardew-target-editor button{margin-top:8px}
+@media(max-width:700px){.catalog-setup{display:block}.catalog-setup>form{margin:8px 0}.catalog-card .callout{min-height:0}.conversation-workspace>.conversation-tools,.conversation-workspace>.conversation-saved,.conversation-workspace>.conversation-records{padding-inline:4px}}
 @media(max-width:760px){.companion-shell,.catalog-shell,.onboarding{padding:14px}.companion-top,.catalog-header,.onboarding header{border-radius:22px;gap:14px}.catalog-header{flex-wrap:wrap}.session-card{border-radius:20px}}
 @media(prefers-reduced-transparency:reduce){.companion-top,.catalog-header,.onboarding header,.lab-top,.session-card,.catalog-card,.catalog-workspace,.step,.action-card{background:#f8faff;backdrop-filter:none;-webkit-backdrop-filter:none}}
 @supports not (backdrop-filter:blur(1px)){.session-card,.catalog-card,.companion-top,.catalog-header{background:#f8faff}}

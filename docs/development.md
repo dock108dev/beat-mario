@@ -158,6 +158,16 @@ and keep watchable playback separate from authoritative evidence.
 
 Use the existing installed app for ordinary tasks. If a real source change needs an app update, the existing `scripts/build_private_beta.py` builder is available. Preserve stable local identity, current permissions, game assets and private history. Check launch and the changed gameplay/control path. Repeated resource manifests, packaged-smoke campaigns and public-distribution preparation are not current prerequisites.
 
+The builder additionally requires PyInstaller, local Tesseract with its English
+data/license, retained Day 2 calibration evidence and the applicable ordinary
+view-setting feature files used by `release_resources.py`. PyInstaller and these
+local assets are not supplied by `uv sync --locked --all-extras`; a fresh clone
+is not a complete native packaging environment. Pass a new `--version` and
+`--build` plus the existing `--sign-identity`: defaults still identify
+candidate.35/build 30035, and the builder refuses to overwrite retained output.
+`scripts/install_private_beta.py` verifies the stable designated requirement,
+requires the installed app to be closed and archives the prior installation.
+
 ## Module boundaries
 
 Keep stateful controllers and integrity transactions cohesive. These retained
@@ -209,9 +219,13 @@ own behavior-preserving change rather than a mechanical file split.
 ## Build qualification
 
 A retained app's manifest/source archive establishes its identity. Later source
-edits do not change that runtime. Runtime/resource changes need a newly frozen
-build, affected tests, the canonical gate and affected native trials. Preserve
-previous packages and immutable evidence. Documentation-only changes require
-link, consistency and whitespace checks. Source tests and portable smoke do not
-establish native behavior or owner acceptance. See
+edits do not change that runtime. To use a runtime/resource repair in the installed
+app, create an identified successor build, run affected checks and check the
+changed native path. Use the full canonical gate when shared changes or a
+reproduced fault justify it; CI continues to run it. Under the current
+[personal-use scope](personal-use.md), a repeated full-suite/package campaign is
+not a prerequisite to feedback. Preserve prior packages and evidence.
+Documentation-only changes require link, consistency and whitespace checks.
+Source tests and portable smoke do not establish native behavior or owner
+acceptance. See
 [known limitations](known-limitations.md#source-and-retained-builds).

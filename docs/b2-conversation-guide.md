@@ -7,7 +7,7 @@ the model and controller roles. The [Mario guide](mario-player-guide.md) and
 
 ## Current implementation
 
-The ordinary source app creates one Codex provider and separate contextual language sessions for Mario and Stardew. Original wording, recent conversation, prior intent, compatible descriptive history and fresh supported game context go to the language model. Its validated intent then enters existing adapter planners and control owners. Prepared Day 2 watering additionally calls a distinct gameplay role at target boundaries and feeds observed effects into its next decision. Other activities retain their existing strategy controllers. See [verification](gc-ai-loop-verification.md).
+The ordinary source app creates one Codex provider and separate contextual language sessions for Mario and Stardew. Original wording, recent conversation, prior intent, compatible descriptive history and fresh supported game context go to the language model. Its validated intent then enters existing adapter planners and control owners. Both ordinary selected-save and prepared Day 2 watering call a distinct gameplay role at target boundaries and feed observed effects into its next decision. Other activities retain their existing strategy controllers. See [current evidence](current-engineering-status.md) and the [earlier source verification](gc-ai-loop-verification.md).
 
 Mario has a visual early-segment model loop and compatible descriptive coaching.
 Authored opening, coin-route, stairs/pipe and sky-1UP controllers retain separate
@@ -53,7 +53,12 @@ Failed movement, changed resources, an absent target or unexpected outcomes must
 
 ## Codex-backed local application integration
 
-The first backend is the owner's installed, signed-in Codex CLI, as established in the architecture document. Use it during ordinary app operation. Choose non-interactive execution or the app-server integration according to the needed persistent conversation, tool interaction and cancellation behavior. Installation/authentication discovery has already been checked; the source runtime integration is implemented; wider quality evaluation and exact packaged discovery remain pending.
+The backend is the owner's installed, signed-in Codex CLI, as established in the
+architecture document and implemented by `codex_provider.py`. Installation and
+authentication discovery, ordinary source integration and candidate.35 packaged
+Stardew inference have recorded evidence. Wider quality evaluation and the
+installed Mario coached completion remain open. Current login/provider readiness
+still needs the app's normal checks.
 
 The app stays local, while ordinary OpenAI-backed Codex inference sends selected context and images to the remote model. Keep that distinction visible in setup and diagnostics. Reuse saved CLI authentication; do not copy credentials into profiles, evidence or packages. Package launch must locate the configured executable outside an interactive terminal and show useful recovery for missing CLI, signed-out state or unavailable service.
 

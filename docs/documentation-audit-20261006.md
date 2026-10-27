@@ -1,5 +1,10 @@
 # Documentation audit — October 6, 2026
 
+> Historical audit of the October 6 checkpoint. Its five-step release worklist
+> was superseded by the October 7 personal-use scope. Use the
+> [current status](current-engineering-status.md) and
+> [October 25 reconciliation](documentation-audit-20261025.md) for current work.
+
 **Ready for engineering resumption. Engineering acceptance remains open.** This pass audited the repository README, every document in `docs/`, the contributor-fixture README, the Desktop next-steps tracker and candidate.35's adjacent guide/qualification. It did not launch an app, post game input, run inference or repeat gameplay trials.
 
 ## Findings and corrections

@@ -24,8 +24,10 @@
 ## Planning and evidence records
 
 [Personal use](personal-use.md) defines the current working approach.
-[Current engineering status](current-engineering-status.md) lists working paths and actual remaining problems. The dated
-[documentation audit](documentation-audit-20261006.md) records an earlier review.
+[Current engineering status](current-engineering-status.md) lists working paths,
+exact source/app evidence and actual remaining problems. The
+[October 25 audit](documentation-audit-20261025.md) records the latest reconciliation;
+the [October 6 audit](documentation-audit-20261006.md) retains the earlier review.
 The [app quick start](private-beta-quick-start.md) covers local app setup.
 
 The named engineering, handoff, review and verification files retain development

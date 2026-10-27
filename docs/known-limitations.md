@@ -7,8 +7,8 @@ installed app. Retained **candidate.35 / build 30035** has packaged native evide
 for ordinary Stardew preparation, middle-only watering, resource accounting,
 farmhouse return, neutral handback and active Stop. Mario coaching variation,
 affected interruption/recovery and active keyboard/Dock exit qualification remain
-open. See [current engineering status](current-engineering-status.md) for exact
-source/resource identity and evidence. Earlier candidates and source trials
+open. See [current engineering status](current-engineering-status.md) for the October 25
+source/resource identity check and links to the October 6 native evidence. Earlier candidates and source trials
 retain their own scope. Try working tasks now and improve observed problems
 without waiting for a broad reliability campaign.
 
@@ -59,7 +59,7 @@ Saved results, coaching and readiness flags restore no connection, reviewed plan
 or input permission. Cancellation consumes its attempt; continuation needs fresh
 observation and review. Confirmed actions, uncertain work, return and neutral
 handback are separate outcomes. A guarded stop can leave return incomplete.
-Active shutdown qualification remains open on the retained build; closing a
+Active keyboard/Dock shutdown qualification remains open on the retained build; closing a
 browser alone is not verified app/server shutdown. See [recovery](error-handling.md).
 
 ## Local operation

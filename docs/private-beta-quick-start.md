@@ -6,7 +6,9 @@ and send practical feedback; see [the local working approach](personal-use.md).
 
 ## Open the app
 
-Open your installed **Game Companion.app** from Finder. The Games page checks
+Open your installed **Game Companion.app** from Finder. The October 25 audit
+confirmed candidate.35/build 30035; [current status](current-engineering-status.md)
+distinguishes its recorded working paths from newer source changes. The Games page checks
 Codex CLI sign-in, separately installed games and actual capture/input readiness.
 Follow the displayed missing-prerequisite remedy. Selected game context/images
 are sent for remote inference; authentication remains CLI-managed.

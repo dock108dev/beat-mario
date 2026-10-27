@@ -2882,7 +2882,7 @@ def render_combined_catalog(
     permission_text = ', '.join(f'{label}: ' + ('ready' if permission_values.get(key) is True else 'required' if permission_values.get(key) is False else 'unknown')
                                for key, label in [('capture', 'Screen Recording'), ('input', 'Accessibility input')])
     backend_panel = (
-        '<section class="catalog-workspace" aria-labelledby="model-heading">'
+        '<section class="catalog-workspace catalog-setup" aria-labelledby="model-heading">'
         '<h2 id="model-heading">Game setup</h2>'
         f'<p id="backend-status" role="status">Codex: {_esc(model.get("state", "unknown").replace("_", " "))}. {_esc(model.get("message", "Status unknown"))}</p>'
         '<form method="post" action="/backend-refresh"><button type="submit">Check Codex sign-in</button></form>'
@@ -2896,7 +2896,7 @@ def render_combined_catalog(
         '<p>Mario needs your supported game file, FCEUX and input mapping. Stardew needs the inspected game installation and an explicitly selected save folder to copy in isolation. Shared feature readers are bundled; current pixels must establish supported targets, resources and clear routes. The exact frozen Day 2 seed is for engineering regression. Each game shows its current setup checks and remedies.</p>'
         '<p>macOS: allow Screen Recording for visible game capture and Accessibility for ordinary input in System Settings → Privacy &amp; Security. After changing permissions, restart the launching app if macOS requires it; reconnect, refresh the visible game and review again. No previous approval resumes.</p></details></section>'
     )
-    backend_panel = backend_panel.replace('</h2>', f'</h2><p>{_esc(permission_text)}</p>', 1)
+    backend_panel = backend_panel.replace('</h2>', f'</h2><p class="catalog-permissions">{_esc(permission_text)}</p>', 1)
     backend_panel = backend_panel.replace('<details>', '<details open>' if any(permission_values.get(key) is not True for key in ('capture', 'input')) else '<details>', 1)
     backend_panel = backend_panel.replace('<form method="post" action="/backend-refresh">', '<p class="meta">Game context and images are sent to OpenAI for inference.</p><form method="post" action="/backend-refresh">', 1)
     return _page(
@@ -2912,7 +2912,7 @@ def render_combined_catalog(
         <div class="catalog-shell" data-testid="combined-companion-catalog" data-selected-adapter="{_esc(selected_id or '')}">
           <header class="catalog-header"><h1>Game Companion</h1><button id="candidate-quit" type="button">Quit</button></header>
           {recovery_panel}{backend_panel}
-          <p class="meta">Engineering preview. Game qualification and owner review are pending.</p><p id="candidate-quit-status" role="status"></p><script src="/assets/candidate.js" defer></script><main>{startup_warning}{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p><a href="/lab">Engineering Lab</a> · <a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
+          <p id="candidate-quit-status" role="status"></p><script src="/assets/candidate.js" defer></script><main>{startup_warning}{workspace}<section aria-labelledby="games-heading"><h2 id="games-heading">Choose a game</h2><div class="catalog-grid{' compact' if compact_catalog else ''}">{cards}</div></section>{preference_form}<p class="meta">Engineering preview. Game qualification and owner review are pending.</p><p><a href="/lab">Engineering Lab</a> · <a class="secondary-button nav-link" href="/onboarding">Add an Experimental game</a> · <a href="/setup">Player setup & saved profiles</a> · <a href="/minecraft">Minecraft Creative workspace</a> · <a href="/help">Guide & feedback</a></p></main>
         </div>
         """,
     )
