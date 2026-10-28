@@ -1,5 +1,10 @@
 # Game Companion — dated implementation evidence
 
+## October 27 — MC-B1-03 local source and live qualification
+
+Minecraft resource goals passed ordinary-app demonstrations with real Codex CLI: eight natural Survival logs by hand, five protected-area oak logs with an available axe, concurrent questions, redirection/Stop, saved-place reopening, and bounded follow failures. Final reopened source collected one birch log and returned to persisted camp. 68 Python and 12 Node checks passed. Earlier failures and slow trials remain recorded. Tested source entered shared-checkout commit `2f0a6a9` concurrently; final docs remain local. No installed update, hosted CI verification or owner acceptance; human walkthrough deferred. [Evidence](mc-b1-03-evidence-20261027.md) · [MC-B1-04 handoff](mc-b1-04-handoff.md).
+
+
 > October 27 product reset: [Beta 1](beta-1-plan.md) is Minecraft-only, using a
 > headless bot with its own character and Codex CLI. Ordinary chat must not pause
 > play. Next is MC-B1-03 in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).

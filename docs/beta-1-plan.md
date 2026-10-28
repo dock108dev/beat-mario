@@ -22,7 +22,7 @@ These are owner decisions, not alternatives still under evaluation:
 
 This plan supersedes the narrow Mario/Stardew work order and the old Minecraft
 camera/wall campaign. Preserve prior code, saves and evidence; none is a release
-prerequisite. MC-B1-01/02 now have local source qualification; this does not establish an installed or complete Beta 1.
+prerequisite. MC-B1-01/02/03 now have local source qualification; this does not establish an installed or complete Beta 1.
 
 ## What Beta 1 must feel like
 
@@ -194,7 +194,9 @@ the owner deferred its human-client walkthrough. See the
 [implementation/handoff](mc-b1-01-headless.md) and [evidence](mc-b1-01-evidence-20261027.md).
 MC-B1-02 passed its local source and real chat/play demonstration on October 27.
 [Launch, limitations and MC-B1-03 handoff](mc-b1-02-chat-play.md).
-MC-B1-03 through MC-B1-06 remain not started. Each slice ends
+MC-B1-03 passed local source and real Survival gathering qualification on October 27.
+[Implementation](mc-b1-03-resources.md) · [evidence](mc-b1-03-evidence-20261027.md).
+MC-B1-04 is next; MC-B1-04 through MC-B1-06 remain incomplete. Each slice ends
 with a usable demonstration, a focused check and an updated tracker. Early
 owner feedback starts with the first connected slice; it does not wait for a
 formal release campaign.
@@ -227,6 +229,8 @@ product milestone, not completion of Beta 1.
 
 ### MC-B1-03 — Reliable movement and resource work
 
+Passed local source/live qualification; see [dated evidence](mc-b1-03-evidence-20261027.md).
+
 Add navigation around ordinary obstacles, remembered destinations, digging,
 pickup, inventory/tool selection and quantity tracking. Add hazard checks,
 progress detection and bounded recovery. First stabilize Creative traversal,
@@ -237,6 +241,8 @@ and quantities, including an obstructed path and a missing resource. Failures
 produce a useful question or truthful partial result, not endless retries.
 
 ### MC-B1-04 — Crafting and flexible construction
+
+Next: [exact engineering assignment](mc-b1-04-handoff.md).
 
 Add recipe prerequisites, workstations and simple structures. Let Codex choose
 and revise a plan using validated skills. Start with small shelters/walls but
@@ -317,8 +323,9 @@ exhaustive camera campaign or counting tests as product completion.
 | Session feels like a setup console | MC-B1-02/06 test the ordinary owner path and remove coordinate/calibration chores. |
 
 MC-B1-02 measured 3.560–6.192 second returned inference and 7.702–9.477 second
-first action submission, with genuine concurrent replies. MC-B1-03 must establish
-resource/recovery reliability before estimating the remaining Beta 1 delivery. A single native wall success must not be relabeled the full beta.
+first action submission, with genuine concurrent replies. MC-B1-03 now establishes bounded resource/recovery qualification; its successful
+eight/five-log requests took 50.625/26.389 seconds overall, with earlier slow and
+partial trials retained. Remaining Beta 1 delivery still requires MC-B1-04/05/06. A single native wall success must not be relabeled the full beta.
 
 ## Goal 2 — NES emulator companion
 

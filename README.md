@@ -1,5 +1,8 @@
 # Game Companion
 
+Minecraft now supports bounded conversational log gathering, available tools, protected areas and saved-place return. [MC-B1-03 use and limits](docs/mc-b1-03-resources.md) · [live evidence](docs/mc-b1-03-evidence-20261027.md). Source qualification does not mean installed delivery; crafting/building is next.
+
+
 Game Companion is becoming a chatbot that plays games: choose a game and open
 its live view beside a persistent conversation.
 
@@ -9,11 +12,11 @@ is the AI engine. Ordinary conversation must not require pausing gameplay or
 controlling the user's screen. The next product goal is an NES emulator
 companion; Stardew is out of active delivery.
 
-**[MC-B1-02 passed local source qualification](docs/mc-b1-02-evidence-20261027.md).**
-Choose Minecraft, watch CompanionBot walk or follow, ask questions during play,
-redirect it and Stop. Chat survives full app reopening without resuming work.
-The human-client walkthrough remains deferred. Full Beta 1 and installed delivery
-are incomplete. [Launch, supported requests and next handoff](docs/mc-b1-02-chat-play.md).
+**[MC-B1-03 passed local source and live qualification](docs/mc-b1-03-evidence-20261027.md).**
+Choose Minecraft, gather logs with available tools, protect areas and return to saved
+places. Ask questions during play, redirect work and Stop. Chat and places survive
+reopening without resuming goals. The human walkthrough remains deferred; installed
+delivery and full Beta 1 are incomplete. [Use and limitations](docs/mc-b1-03-resources.md).
 
 Double-click **Open Game Companion.command** for this source version, then choose
 Minecraft. The accepted retained practice world is reused. Java 21, Node 24.22.0,

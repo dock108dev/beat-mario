@@ -1,14 +1,17 @@
 # Documentation
 
-Current source session: [MC-B1-02 launch and handoff](mc-b1-02-chat-play.md) · [dated evidence](mc-b1-02-evidence-20261027.md). Next: MC-B1-03.
+Current Minecraft slice: [MC-B1-03 implementation](mc-b1-03-resources.md), [live evidence](mc-b1-03-evidence-20261027.md), and [exact MC-B1-04 handoff](mc-b1-04-handoff.md).
+
+
+Earlier conversational foundation: [MC-B1-02](mc-b1-02-chat-play.md) · [dated evidence](mc-b1-02-evidence-20261027.md). Next: MC-B1-04.
 
 Start with the [Minecraft Beta 1 plan](beta-1-plan.md) and
 [next-session handoff](private-beta-pm-handoff.md). Minecraft is the sole active
 beta: headless bot, its own character, Codex CLI and concurrent chat/play.
 NES emulator companionship is goal 2; Stardew is out of active scope.
 The [headless foundation](mc-b1-01-headless.md) has local bot qualification
-[evidence](mc-b1-01-evidence-20261027.md); human joining is deferred. MC-B1-02
-is next. The operational guides below describe existing legacy paths.
+[evidence](mc-b1-01-evidence-20261027.md); human joining is deferred. MC-B1-02/03
+now have local qualification. The operational guides below describe existing legacy paths.
 
 
 ## Run and use
