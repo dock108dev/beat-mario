@@ -8,7 +8,7 @@ identity, revisions, cancellation, inference and goal admission. Its lock and ep
 prevent late results from granting action authority after Stop or reconnect.
 
 `minecraft_planning.py` owns model schemas and pure context/movement transformations.
-It formats observations and world-scoped descriptive history for Codex CLI without
+It formats observations and world-scoped descriptive history for the configured local HTTP model without
 performing I/O or authorizing actions. `minecraft_goals.py` and
 `minecraft_construction.py` coordinate bounded work. `minecraft_bridge.py` transports
 requests to the Node worker, whose scheduler is the sole owner of game actions.

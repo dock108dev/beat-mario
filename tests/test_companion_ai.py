@@ -1,12 +1,10 @@
 """Simulated providers/games prove mechanisms, never real model or gameplay quality."""
 from dataclasses import replace
-from pathlib import Path
 import threading
-import time
 
 import pytest
 
-from smb3_agent.codex_provider import CodexProvider, InferenceError, validate_object
+from smb3_agent.inference_contract import InferenceError, validate_object
 from smb3_agent.companion_ai import DECISION_SCHEMA, INTENT_SCHEMA, WateringAgent
 from smb3_agent.conversation_service import StardewConversationService
 from smb3_agent.stardew_adapter import InputKind
@@ -182,55 +180,10 @@ def test_schema_rejects_extra_fields_and_bool_energy():
         validate_object({**decision("stop"), "execute": "shell"}, DECISION_SCHEMA)
 
 
-def test_codex_process_cancellation_reaps_owned_child(tmp_path):
-    executable = tmp_path/"codex"
-    executable.write_text('#!' + str(Path(__import__('sys').executable)) + '\nimport time,sys\nif sys.argv[1:]==["login","status"]: sys.exit(0)\ntime.sleep(30)\n')
-    executable.chmod(0o700)
-    provider = CodexProvider(executable=str(executable), timeout=2)
-    cancel = threading.Event()
-    errors = []
-    def work():
-        try:
-            provider.infer("gameplay", {}, DECISION_SCHEMA, cancel)
-        except InferenceError as exc:
-            errors.append(str(exc))
-    worker = threading.Thread(target=work)
-    worker.start()
-    deadline = time.monotonic()+2
-    while not provider._children and time.monotonic() < deadline:
-        time.sleep(.01)
-    assert provider._children
-    pending = provider.lifecycle()
-    assert len(pending) == 1 and pending[0]["child_running"] is True
-    assert pending[0]["role"] == "gameplay" and pending[0]["request_id"]
-    cancel.set()
-    worker.join(3)
-    assert errors and not worker.is_alive() and not provider._children
-    assert provider.lifecycle() == []
-    assert provider.usage[-1]["request_id"] == pending[0]["request_id"]
-    provider.close()
 
 
-def test_invalid_provider_output_retries_once_then_fails_closed(tmp_path):
-    executable = tmp_path/"codex"
-    executable.write_text('#!' + str(Path(__import__('sys').executable)) + '\nimport sys,pathlib\nif sys.argv[1:]==["login","status"]: sys.exit(0)\nout=pathlib.Path(sys.argv[sys.argv.index("--output-last-message")+1])\nout.write_text("{}")\n')
-    executable.chmod(0o700)
-    provider = CodexProvider(executable=str(executable), timeout=2, retries=1)
-    with pytest.raises(InferenceError, match="invalid structured"):
-        provider.infer("language", {}, INTENT_SCHEMA, threading.Event())
-    assert not provider._children and provider.usage[-1]["status"] == "failed_or_canceled"
-    provider.close()
 
 
-def test_provider_deadline_kills_worker_and_never_returns_output(tmp_path):
-    executable = tmp_path/"codex"
-    executable.write_text('#!' + str(Path(__import__('sys').executable)) + '\nimport time,sys\nif sys.argv[1:]==["login","status"]: sys.exit(0)\ntime.sleep(30)\n')
-    executable.chmod(0o700)
-    provider = CodexProvider(executable=str(executable), timeout=1)
-    with pytest.raises(InferenceError, match="deadline"):
-        provider.infer("gameplay", {}, DECISION_SCHEMA, threading.Event())
-    assert not provider._children
-    provider.close()
 
 
 def test_mario_model_translation_preserves_words_and_existing_plan_boundary(tmp_path):
@@ -302,27 +255,6 @@ def test_language_holds_game_clock_without_granting_work(tmp_path):
     assert runtime.controller.authorization is None
 
 
-def test_codex_readiness_refresh_after_sign_in_does_not_read_or_expose_auth(monkeypatch):
-    from types import SimpleNamespace
-    calls = []
-    signed_in = [False]
-    def run(args, **kwargs):
-        calls.append(args)
-        return SimpleNamespace(returncode=0 if signed_in[0] else 1, stdout=b'private output must not enter status')
-    monkeypatch.setattr('subprocess.run', run)
-    provider = CodexProvider(executable='/fixture/codex')
-    with provider._discovery_lock:
-        assert provider.status['state'] == 'sign_in_required'
-    signed_in[0] = True
-    provider.refresh()
-    with provider._discovery_lock:
-        assert provider.status['available'] is True
-        assert provider.status['state'] == 'ready'
-    assert calls == [['/fixture/codex', 'login', 'status']] * 2
-    assert 'private' not in str(provider.status)
-    provider.close()
-    provider.refresh()
-    assert len(calls) == 2
 
 
 def test_switch_invalidates_late_language_reply_and_old_farm_targets(tmp_path):

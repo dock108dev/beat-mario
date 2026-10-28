@@ -26,7 +26,7 @@ from smb3_agent.lab import (
     propose_variants_from_latest,
     review_latest_session,
     start_session,
-    write_codex_task_latest,
+    write_engineering_task_latest,
     write_ui_summary_latest,
 )
 from smb3_agent.lab_ui import (
@@ -504,9 +504,9 @@ def build_parser() -> argparse.ArgumentParser:
     lab_ui_summary = lab_subparsers.add_parser("ui-summary", help="Write UI-ready route map summary")
     lab_ui_summary.add_argument("target", choices=["latest"], help="Session target")
 
-    lab_codex_task = lab_subparsers.add_parser("codex-task", help="Write a Codex-ready task packet")
-    lab_codex_task.add_argument("target", choices=["latest"], help="Session target")
-    lab_codex_task.add_argument("--issue", required=True, help="Issue id to package")
+    lab_engineering_task = lab_subparsers.add_parser("engineering-task", help="Write an engineering task packet")
+    lab_engineering_task.add_argument("target", choices=["latest"], help="Session target")
+    lab_engineering_task.add_argument("--issue", required=True, help="Issue id to package")
 
     lab_patch = lab_subparsers.add_parser(
         "patch", help="Import, isolate, validate, promote, and roll back exact route patches"
@@ -1112,9 +1112,9 @@ def main() -> None:
             parser.error(str(exc))
         return
 
-    if args.command == "lab" and args.lab_command == "codex-task":
+    if args.command == "lab" and args.lab_command == "engineering-task":
         try:
-            print(write_codex_task_latest(args.issue).to_text())
+            print(write_engineering_task_latest(args.issue).to_text())
         except LabError as exc:
             parser.error(str(exc))
         return

@@ -51,9 +51,9 @@ def test_provider_cleanup_failure_does_not_skip_input_cleanup(monkeypatch):
         def shutdown(self):
             events.append('input-neutralized')
     monkeypatch.setattr(lab_ui, 'LiveObservationManager', Manager)
-    failures = lab_ui._shutdown_session_managers(SimpleNamespace(codex_provider=Provider(), live_observation_manager=Manager()))
+    failures = lab_ui._shutdown_session_managers(SimpleNamespace(ai_provider=Provider(), live_observation_manager=Manager()))
     assert events == ['input-neutralized']
-    assert failures == ['Codex provider cleanup unconfirmed']
+    assert failures == ['AI provider cleanup unconfirmed']
 
 
 def test_stardew_installation_field_reaches_runtime(tmp_path):

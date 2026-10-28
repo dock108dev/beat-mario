@@ -224,7 +224,7 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
         "docs/implementation-plan.md",
         "docs/validation-gates.md",
         "docs/world-1-lab-guide.md",
-        "data/lab/codex-task-template.yaml",
+        "data/lab/engineering-task-template.yaml",
         "data/lab/issue-ledger-template.yaml",
         "data/lab/note-template.yaml",
         "data/lab/session-template.yaml",

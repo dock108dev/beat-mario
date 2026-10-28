@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import base64
 import json
-import http.client
 import os
 import subprocess
 from smb3_agent.app_runtime import helper_command
+from smb3_agent.ai_provider import load_config
+from urllib.parse import urlsplit
 import sys
 import tempfile
 import threading
 import time
-import urllib.request
 from dataclasses import dataclass
 
 
@@ -42,11 +42,11 @@ class ModelLimits:
 
 
 class LocalOllamaGateway:
-    """Loopback-only, finite calls/context/output; Stop kills the request worker.
+    """Explicit local/LAN backend, finite budgets; Stop kills the request worker.
 
     Disconnecting does not prove the server stopped GPU compute. Late output is
     discarded; the runtime's control epoch independently rejects old proposals.
-    Provider transmission requires a separate consent/access implementation.
+    The selected provider must match the profile-qualified local model.
     """
 
     def __init__(self, model: str, *, limits: ModelLimits = ModelLimits()):
@@ -56,6 +56,13 @@ class LocalOllamaGateway:
                 and limits.call_seconds <= limits.task_seconds <= 600
                 and 1 <= limits.output_tokens <= 512 and 512 <= limits.context_tokens <= 8192):
             raise ModelGatewayError("Invalid model limits")
+        self.config = load_config()
+        if self.config['provider'] not in {'ollama', 'openai-compatible'}:
+            raise ModelGatewayError('Profile inference requires an explicitly configured local provider')
+        if self.config['model'] != model:
+            raise ModelGatewayError('Configured model does not match the profile-qualified backend; this activity is unavailable')
+        endpoint = urlsplit(self.config['base_url'])
+        self.origin = f'{endpoint.scheme}://{endpoint.netloc}'
         self.model, self.limits = model, limits
         self.calls = 0
         self.started = time.monotonic()
@@ -66,21 +73,23 @@ class LocalOllamaGateway:
         self._lock = threading.Lock()
 
     def describe(self):
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open("http://127.0.0.1:11434/api/tags", timeout=2) as response:
-            tags = json.loads(response.read(131072))
+        from smb3_agent.http_inference import metadata
+        try:
+            tags = metadata(self.config, '/api/tags')
+        except ValueError as exc:
+            raise ModelGatewayError('Configured model metadata unavailable') from exc
         matches = [m for m in tags.get("models", []) if m.get("name") == self.model]
-        if len(matches) != 1 or not matches[0].get("digest"):
+        if len(matches) != 1 or not matches[0].get("digest") or matches[0].get("remote_host") or matches[0].get("remote_model"):
             raise ModelGatewayError("Selected local model not installed")
-        request = urllib.request.Request("http://127.0.0.1:11434/api/show",
-            data=json.dumps({"model": self.model}).encode(), headers={"Content-Type": "application/json"})
-        with opener.open(request, timeout=2) as response:
-            model = json.loads(response.read(131072))
+        try:
+            model = metadata(self.config, '/api/show', {'model': self.model})
+        except ValueError as exc:
+            raise ModelGatewayError('Vision verification unavailable for this profile backend') from exc
         if "vision" not in model.get("capabilities", []) or model.get("remote_host") or model.get("remote_model"):
             raise ModelGatewayError("Installed model is not a local multimodal backend")
         identity = {"model": self.model, "digest": matches[0]["digest"], "size_bytes": matches[0]["size"],
                     "details": matches[0].get("details"), "capabilities": model["capabilities"],
-                    "transport": "loopback_only_base64_selected_window_and_bounded_task_context"}
+                    "transport": "configured_local_server_selected_window_and_bounded_context", "origin": self.origin}
         if self.backend_identity is not None and identity != self.backend_identity:
             raise ModelGatewayError("Local model identity changed")
         self.backend_identity = identity
@@ -171,8 +180,12 @@ def _worker():
     body = sys.stdin.buffer.read(6_000_001)
     if len(body) > 6_000_000:
         raise ValueError("Request too large")
-    connection = http.client.HTTPConnection("127.0.0.1", 11434, timeout=120)
-    connection.request("POST", "/api/chat", body=body, headers={"Content-Type": "application/json"})
+    config = load_config()
+    if config['provider'] not in {'ollama', 'openai-compatible'} or json.loads(body).get('model') != config['model']:
+        raise ModelGatewayError('Profile/backend configuration changed')
+    from smb3_agent.http_inference import connection as connect
+    connection, _ = connect(config['base_url'], 120)
+    connection.request("POST", "/api/chat", body=body, headers={"Content-Type": "application/json", "Authorization": "Bearer " + config.get("api_key", "")})
     # The full local HTTP request has been written. This handshake lets control
     # qualification distinguish canceled preparation from pending inference.
     sys.stdout.buffer.write(b'{"request_dispatched": true}\n')

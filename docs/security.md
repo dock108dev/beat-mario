@@ -2,11 +2,17 @@
 
 ## Model inference and local authority
 
-Ordinary Mario and Stardew use `codex_provider.CodexProvider` for structured
-inference through the installed CLI. Authentication stays CLI-managed; credentials
-are not copied into game profiles, prompts or reports. Selected game images and
-relevant context may leave the machine for inference. The OpenTTD Ollama path is
-separate and uses a loopback endpoint.
+App-user inference uses [explicit provider configuration](ai-provider.md).
+Selected context and verified screenshot inputs go to the configured local/LAN
+server. Game tools
+run on the app machine. HTTP on a LAN is unencrypted; keep it on a trusted network.
+No browser model requests, cloud fallback or image generation are enabled.
+
+Local-server credentials stay in user-level
+configuration/environment and are passed to disposable request workers over stdin,
+not command arguments or public status. Client cancellation discards late replies
+and terminates the request worker; it does not prove remote GPU work stopped.
+Profile-qualified models are not silently substituted with another installed tag.
 
 Game text, screenshots, imported notes and model replies are data, not permission.
 Validated adapter dispatch checks current targets, preconditions, parameters,
@@ -19,8 +25,8 @@ Game Companion is single-operator and local. It has no user accounts, authentica
 web sessions, database or hosted service. The HTTP UI must remain on loopback.
 Raw diagnostic captures and local gameplay evidence require inspection before
 sharing; inference transfer and explicit feedback export are separate operations.
-Source controls do not qualify an older packaged app. Minecraft
-movement/placement/wall execution remains disabled.
+Source controls do not qualify an older packaged app. The separate native-camera Minecraft path
+keeps movement/placement/wall execution disabled; headless Minecraft uses its own worker.
 
 ## First use and product persistence
 
@@ -69,7 +75,7 @@ requires fresh exact-process verification and explicit authorization.
   must be local and multimodal. Structured proposals are constrained by finite
   profiles and independently read targets/values. Canceling kills the request
   worker and discards late replies; it cannot prove Ollama stopped GPU computation.
-  Ordinary Mario/Stardew use the separate Codex provider described above.
+  Ordinary Mario/Stardew use the separate AI provider described above.
   Current Minecraft typed requests do not need model inference.
 - Profiles, history, reports, settings backups and session diagnostics live outside
   installation in the user data root. Normal report export includes selected
@@ -89,7 +95,7 @@ requires fresh exact-process verification and explicit authorization.
   non-symlinked file beneath the repository so the same backend remains safe
   when reached from Route Lab.
 - Savestates, screenshots, traces, and generated session records are
-  stored local runtime data. Repository and CI guards keep them out of tracked source. The Codex provider transmits selected game captures/context for inference as disclosed above.
+  stored local runtime data. Repository and CI guards keep them out of tracked source. The AI provider transmits selected game captures/context for inference as disclosed above.
 - Emulator processes use fixed argument vectors rather than a shell. Product
   FCEUX runs receive a sanitized environment; diagnostic overrides remain
   explicit operator-only CLI inputs.

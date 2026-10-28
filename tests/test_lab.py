@@ -15,7 +15,7 @@ from smb3_agent.lab import (
     propose_variants_from_latest,
     review_latest_session,
     start_session,
-    write_codex_task_latest,
+    write_engineering_task_latest,
     write_ui_summary_latest,
 )
 
@@ -218,7 +218,7 @@ def test_issue_ledger_respects_explicit_failure_and_positive_severity(
     assert by_segment["world_1_fortress_whistle"]["priority"] == "high"
 
 
-def test_ui_summary_and_codex_task_packet(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_ui_summary_and_engineering_task_packet(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _prepare_lab(monkeypatch, tmp_path)
     start_session(
         "show me the route at 4x",
@@ -235,7 +235,7 @@ def test_ui_summary_and_codex_task_packet(monkeypatch: pytest.MonkeyPatch, tmp_p
     issues = build_issue_ledger_latest()
     proposals = propose_variants_from_latest()
     summary = write_ui_summary_latest()
-    task = write_codex_task_latest(issues.issues[0]["id"])
+    task = write_engineering_task_latest(issues.issues[0]["id"])
 
     assert proposals.proposals
     assert summary.summary["totals"]["notes"] == 1

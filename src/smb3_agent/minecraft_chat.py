@@ -9,7 +9,8 @@ import threading
 import time
 from uuid import uuid4
 
-from smb3_agent.codex_provider import CodexProvider, validate_object
+from smb3_agent.inference_contract import validate_object
+from smb3_agent.ai_provider import create_provider
 from smb3_agent.minecraft_goals import Goal, identity
 from smb3_agent.minecraft_planning import (
     schema as schema,
@@ -40,7 +41,7 @@ class MinecraftChat:
     ):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
-        self.provider = provider or CodexProvider(timeout=60, retries=0)
+        self.provider = provider or create_provider()
         self.bridge_factory, self.practice_factory = bridge_factory, practice_factory
         self.lock = threading.RLock()
         self.control = threading.Lock()
@@ -493,7 +494,7 @@ class MinecraftChat:
                     "stopping": self.stopping,
                     "stop_failed": self.stop_failed,
                     "connecting": self.connecting,
-                    "codex": self.provider.status,
+                    "ai": self.provider.status,
                     "usage": self.provider.usage[-20:],
                     "memory": self.memory_status(),
                 }
@@ -537,7 +538,7 @@ class MinecraftChat:
                 or self.connection_fault
             ):
                 raise ValueError("Connection changed; reconnect before sending")
-            # Explicit emergency shorthand only. Ordinary intent is always Codex interpreted.
+            # Explicit emergency shorthand only. Ordinary intent is interpreted by the configured provider.
             direct_stop = text.lower().strip(".! ") in {"stop", "stop now"}
             if (self.stopping or self.stop_failed) and not direct_stop:
                 self.event(
@@ -550,9 +551,11 @@ class MinecraftChat:
                     if self.stopping
                     else "Stop is unconfirmed. Your draft is retained; reconnect before sending."
                 )
+            if not direct_stop and not self.provider.status.get("available"):
+                raise ValueError(self.provider.status.get("message") or "AI setup is not ready; check setup before sending.")
             if self.busy and not direct_stop:
                 raise ValueError(
-                    "Codex is answering. Your draft is retained; send it when ready."
+                    "The AI is answering. Your draft is retained; send it when ready."
                 )
             if not direct_stop and any(
                 store.problem for store in self.memory_stores().values()

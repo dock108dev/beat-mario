@@ -2,13 +2,13 @@ schema_version: beat-mario.route-patch/v1
 patch_id: issue_world_1_1_001_patch_a
 variant_id: world_1_1_harden_hole_320_a
 source:
-  kind: codex_task
+  kind: engineering_task
   session_id: 20260706T230000Z_world_1_king
   issue_id: issue_world_1_1_001
   note_ids:
     - note_001
-  task_id: codex_issue_world_1_1_001
-  task_packet: artifacts/sessions/20260706T230000Z_world_1_king/codex_tasks/issue_world_1_1_001.yaml
+  task_id: engineering_issue_world_1_1_001
+  task_packet: artifacts/sessions/20260706T230000Z_world_1_king/engineering_tasks/issue_world_1_1_001.yaml
 parent_variant: world_1_baseline
 repository_base_commit: 0000000000000000000000000000000000000000
 allowed_files:
@@ -32,5 +32,5 @@ lifecycle:
 timestamps:
   created_at: 2026-08-10T00:00:00Z
 provenance:
-  producer: codex_task
+  producer: engineering_task
   owner_selected_issue: issue_world_1_1_001

@@ -370,9 +370,6 @@ textarea::placeholder {
 .beta-limits summary {
   font-weight:500
 }
-#sign-in[hidden] {
-  display:none
-}
 button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible {
   outline:3px solid var(--blue);
   outline-offset:3px
@@ -438,7 +435,7 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-v
   .chat>.status {
     align-items:start
   }
-  .chat #codex {
+  .chat #ai {
     max-width:60%
   }
   .message.user {
@@ -461,9 +458,9 @@ PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name=
 <style>PAGE_STYLE</style></head><body data-token="TOKEN_VALUE" data-selected="SELECTED_VALUE">
 <header><h1>Game Companion</h1><div class="selectors"><select id="game" aria-label="Game"><option value="">Choose a game</option><option value="minecraft">Minecraft</option></select><select id="world" aria-label="World"><option value="creative">Creative practice</option><option value="survival">Survival practice</option></select></div><div class="app-actions"><button id="stop">Stop</button><button id="quit">Quit app</button></div></header>
 <main><section class="world" aria-label="Minecraft session"><div class="status"><h2 id="identity">Minecraft</h2><span id="connection" class="meta">Not connected</span></div>
-<div id="setup-panel"><h2>Open your world</h2><p id="setup-status" role="status"></p><div class="setup-actions"><button id="open-world" class="primary">Open retained world</button><button id="check-setup">Check setup again</button></div><div id="setup-links" class="setup-links"><button id="sign-in">Sign in to Codex</button><a id="get-codex" href="https://developers.openai.com/codex/cli" target="_blank" rel="noopener">Get Codex CLI</a><a id="get-java" href="https://adoptium.net/temurin/releases/?version=21" target="_blank" rel="noopener">Get Java 21</a></div><details><summary>Create a new practice world</summary><p>Creates the selected Creative or peaceful Survival world only when no retained world exists.</p><label><input type="checkbox" id="eula"> I accept the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener">Minecraft EULA</a> for this new world.</label><button id="create-world">Create new practice world</button></details></div>
+<div id="setup-panel"><h2>Open your world</h2><p id="setup-status" role="status"></p><div class="setup-actions"><button id="open-world" class="primary">Open retained world</button><button id="check-setup">Check setup again</button></div><div id="setup-links" class="setup-links"><a id="get-java" href="https://adoptium.net/temurin/releases/?version=21" target="_blank" rel="noopener">Get Java 21</a></div><details><summary>Create a new practice world</summary><p>Creates the selected Creative or peaceful Survival world only when no retained world exists.</p><label><input type="checkbox" id="eula"> I accept the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener">Minecraft EULA</a> for this new world.</label><button id="create-world">Create new practice world</button></details></div>
 <div id="live-panel" hidden><div class="scene"><iframe id="view" title="Live Minecraft world" src="about:blank"></iframe></div></div><div class="toolbar" id="session-tools"><button id="toggle">Close view</button><button id="reconnect">Reconnect</button><span id="viewer-status" class="meta"></span></div>
 <div class="activity-panel" id="activity-panel"><p id="activity" role="status"></p><div id="progress" class="meta"></div><div id="goal" class="meta"></div></div>
 <details id="session-details"><summary>Session details &amp; recovery</summary><pre id="details"></pre><div id="memory-recovery"></div><a href="/legacy-games">Engineering &amp; historical games</a></details><details class="beta-limits"><summary>Practice-world limits</summary><p>Peaceful practice: resource trips and revisions may be partial, and some sites are inaccessible. Stone-tool chains, hostile survival and broader building are not verified. Recall can be incomplete.</p></details></section>
-<section class="chat" aria-label="Companion chat"><div class="status"><h2>Companion</h2><span id="codex" class="meta">Checking Codex…</span></div><div id="messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions"><div id="empty-chat"><strong>What shall we do?</strong>Open a world to explore, gather or build together.</div></div><div id="pending" class="meta" role="status"></div><div id="error" role="alert"></div><form id="compose"><label for="draft" class="meta">Message your companion</label><textarea id="draft" maxlength="2000" aria-describedby="send-status" placeholder="Gather eight oak logs and return to camp…"></textarea><div class="compose-actions"><span id="send-status" class="meta"></span><button id="send" type="submit">Send</button></div></form></section></main>
+<section class="chat" aria-label="Companion chat"><div class="status"><h2>Companion</h2><span id="ai" class="meta">Checking AI…</span></div><p id="ai-privacy" class="meta"></p><div id="messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions"><div id="empty-chat"><strong>What shall we do?</strong>Open a world to explore, gather or build together.</div></div><div id="pending" class="meta" role="status"></div><div id="error" role="alert"></div><form id="compose"><label for="draft" class="meta">Message your companion</label><textarea id="draft" maxlength="2000" aria-describedby="send-status" placeholder="Gather eight oak logs and return to camp…"></textarea><div class="compose-actions"><span id="send-status" class="meta"></span><button id="send" type="submit">Send</button></div></form></section></main>
 <script src="/assets/minecraft-chat.js" defer></script></body></html>""".replace("PAGE_STYLE", GLASS_CSS + MINECRAFT_CSS)

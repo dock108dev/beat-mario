@@ -102,7 +102,7 @@ use the goal-specific CLI reliability command to execute Big Tanks,
 Battleships, Hand Traps, or Jet. None of these surfaces runs the World 1 king
 diagnostic.
 
-Unit tests, repository gate, HTML render check, refresh, note, lifecycle, and Codex
+Unit tests, repository gate, HTML render check, refresh, note, lifecycle, and engineering
 task actions remain secondary or quiet controls.
 
 For the selected actionable issue, the Fix Issue panel also shows its task

@@ -94,7 +94,7 @@ def main(argv=None):
         },
         installed_app_path=str(Path.home() / "Applications/Game Companion.app"),
         update_policy="verified stable designated requirement; archive previous installation; retain versioned packages",
-        external_prerequisites=["Java 21 JDK", "Codex CLI and owner sign-in", "Explicit EULA acceptance for new practice worlds"],
+        external_prerequisites=["Java 21 JDK", "Configured local AI server and model", "Explicit EULA acceptance for new practice worlds"],
         native_smoke="See adjacent qualification.json for exact candidate evidence",
         signing="local development identity; not notarized",
     )

@@ -1,7 +1,7 @@
 # Minecraft companion
 
 The companion runs a headless bot with its own character in a local Java practice
-world. A live view and persistent chat share the workspace. It uses Codex CLI to
+world. A live view and persistent chat share the workspace. It uses the configured AI provider to
 interpret requests and bounded worker skills to execute them; it does not control
 your desktop keyboard or mouse.
 
@@ -9,13 +9,13 @@ your desktop keyboard or mouse.
 
 Install the source dependencies in the [quickstart](../README.md#source-launch).
 Gameplay requires Java 21, the Node version in `minecraft-worker/.nvmrc`, the locked
-worker dependencies and signed-in Codex CLI. Open the app or local source server,
+worker dependencies and an explicitly [configured AI provider](ai-provider.md). Open the app or local source server,
 choose Minecraft and a practice mode, then **Open retained world**. Wait for
 Connected and the live view. Use **Check setup again** after fixing prerequisites.
 
 On an empty profile, expand **Create a new practice world**, read the Minecraft
 EULA, accept it if you agree, and explicitly create the world. Creation does not
-replace retained or damaged worlds. Sign-in uses the Codex browser flow. No Screen
+replace retained or damaged worlds. No Screen
 Recording or Accessibility permission is required for this headless path.
 
 ## Requests and limits

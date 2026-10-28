@@ -12,7 +12,7 @@ import re
 import time
 from uuid import uuid4
 
-from smb3_agent.codex_provider import InferenceError, validate_object
+from smb3_agent.inference_contract import InferenceError, validate_object
 from smb3_agent.request_planning import ConversationPlan, PlannedAction
 from smb3_agent.stardew_adapter import InputKind, StardewAdapterError
 from smb3_agent.stardew_inspection import InspectionNavigator

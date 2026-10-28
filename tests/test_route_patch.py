@@ -238,7 +238,7 @@ def test_unreviewed_patch_cannot_prepare_or_promote(tmp_path: Path) -> None:
         promote_route_patch(patch_id, confirm_patch_id=patch_id, repo_root=repo)
 
 
-def test_reviewed_route_lab_issue_normalizes_without_codex_task_packet(tmp_path: Path) -> None:
+def test_reviewed_route_lab_issue_normalizes_without_engineering_task_packet(tmp_path: Path) -> None:
     repo, patch_path, _ = _patch_fixture(tmp_path)
     raw = yaml.safe_load(patch_path.read_text())
     raw["source"] = {
@@ -345,7 +345,7 @@ def test_import_rejects_malformed_encoding_overlaps_and_already_applied_operatio
 def test_review_rejects_file_absent_from_task_packet_allowlist(tmp_path: Path) -> None:
     repo, patch_path, _ = _patch_fixture(tmp_path)
     patch_id = import_route_patch(patch_path, repo_root=repo).patch_id
-    task_path = repo / "artifacts/sessions/fixture-session/codex_tasks/fixture-issue.yaml"
+    task_path = repo / "artifacts/sessions/fixture-session/engineering_tasks/fixture-issue.yaml"
     task = yaml.safe_load(task_path.read_text())
     task["inputs"]["relevant_files"] = ["tests/fixture.txt"]
     (repo / "tests/fixture.txt").write_text("fixture\n", encoding="utf-8")
@@ -498,7 +498,7 @@ def test_cli_and_route_lab_http_actions_share_patch_backend_and_artifacts(
     html = _route_patch_panel(
         {
             "id": "fixture-issue",
-            "task_packet": "artifacts/sessions/fixture-session/codex_tasks/fixture-issue.yaml",
+            "task_packet": "artifacts/sessions/fixture-session/engineering_tasks/fixture-issue.yaml",
             "route_patch": summary,
         },
         "fixture-location",
@@ -596,7 +596,7 @@ def _patch_fixture(
     base_commit = _git_output(repo, "rev-parse", "HEAD").strip()
 
     session_dir = repo / "artifacts/sessions/fixture-session"
-    (session_dir / "codex_tasks").mkdir(parents=True)
+    (session_dir / "engineering_tasks").mkdir(parents=True)
     (session_dir / "session.yaml").write_text(
         yaml.safe_dump({"session_id": "fixture-session"}), encoding="utf-8"
     )
@@ -618,7 +618,7 @@ def _patch_fixture(
     (session_dir / "issues.yaml").write_text(
         yaml.safe_dump({"session_id": "fixture-session", "issues": [issue]}), encoding="utf-8"
     )
-    task_rel = "artifacts/sessions/fixture-session/codex_tasks/fixture-issue.yaml"
+    task_rel = "artifacts/sessions/fixture-session/engineering_tasks/fixture-issue.yaml"
     task = {
         "task_id": "fixture-task",
         "session_id": "fixture-session",
@@ -633,7 +633,7 @@ def _patch_fixture(
         "patch_id": "fixture-patch-001",
         "variant_id": "fixture-variant-001",
         "source": {
-            "kind": "codex_task",
+            "kind": "engineering_task",
             "session_id": "fixture-session",
             "issue_id": "fixture-issue",
             "note_ids": ["fixture-note"],

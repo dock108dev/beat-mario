@@ -16,7 +16,7 @@ readiness:
   local_beta_decision: pending
 external_prerequisites:
   - supported owner-selected SMB3 file and FCEUX
-  - existing Codex CLI sign-in
+  - explicitly configured local AI server and model
   - inspected Stardew Mac installation and supported display/settings
   - explicitly selected supported Stardew save folder and copying approval
   - unchanged prepared Day 2 seed only for engineering regression

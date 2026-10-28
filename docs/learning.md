@@ -10,9 +10,9 @@ The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
 Learning and gameplay evidence are retained locally under their existing learning,
 conversation and player-history owners. The current Ollama reference path uses local
-inference. The required Codex-backed app will send selected contextual material to
-the remote model during inference; local storage does not mean inference stays on
-the Mac. Credentials and unrelated owner data must not be copied into learning
+inference. The app sends selected contextual material to
+the configured local/LAN model during inference; local storage does not mean
+inference stays on the app machine. Credentials and unrelated owner data must not be copied into learning
 records or provider context.
 
 ## Required memory for the two AI roles
@@ -55,7 +55,7 @@ Inspection/reset must show the guidance in use, its basis and scope. Reset or
 supersession affects future retrieval while preserving historical episodes.
 Conversation compaction and index rebuilding must preserve exclusions, remaining
 work, uncertainty and the original evidence references. Reopening requires fresh
-game context and approval; neither memory nor a resumed Codex thread grants input
+game context and approval; neither memory nor reopened conversation history grants input
 authority.
 
 Verification combines deterministic retrieval/compatibility/reset checks,
@@ -204,7 +204,7 @@ review, rejection, validation failure, promotion readiness, exact-diff
 promotion, rollback, supersession, corruption/recovery, preference reset,
 advice provenance, UI classification, and takeover-isolation cases. None
 of those historical cases is accepted until the retained campaign is actually
-run against its declared candidate. These contracts do not cover Codex-backed
+run against its declared candidate. These contracts do not cover AI-backed
 contextual intent or adaptive gameplay. Initial private-beta acceptance needs
 focused evidence for the new two-role architecture and the delivered app, as
 defined in the active engineering plan.

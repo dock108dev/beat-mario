@@ -2,7 +2,7 @@
 
 ## Provider and gameplay recovery
 
-The current Codex provider reports absence, sign-in failure, request limits,
+The current AI provider reports missing configuration, server/model unavailability, request limits,
 timeouts and malformed output. Owned cancellation invalidates pending work;
 runtimes reject stale observation, goal and control generations. Stop/Take
 control releases input independently of inference. Confirmed work and uncertain

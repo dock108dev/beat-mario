@@ -6,6 +6,7 @@
 - [Minecraft](minecraft.md): chat, gathering, construction, Stop and recovery.
 - [Known limitations](known-limitations.md): supported behavior and deployment limits.
 - [Mario](mario-player-guide.md) and [Stardew](stardew-operator-guide.md): older integrations.
+- [AI provider](ai-provider.md): local server configuration, capabilities and cancellation.
 - [Runtime and configuration](runtime-and-configuration.md): settings and data locations.
 - [Error handling](error-handling.md) and [security](security.md): recovery and trust boundaries.
 

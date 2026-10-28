@@ -222,7 +222,7 @@ def test_profile_rejects_invented_code_and_incompatible_backend(tmp_path):
             "load_save_verified": True, "evidence_references": ["fixture"]})
 
 
-def test_gateway_budget_prevents_backend_call(tmp_path):
+def test_gateway_budget_prevents_backend_call(tmp_path, configured_profile_provider):
     frame = Host(tmp_path).observe(tmp_path)
     gw = LocalOllamaGateway("vision:local", limits=ModelLimits(calls=1))
     gw.calls = 1
@@ -241,7 +241,7 @@ def test_gateway_rejects_cloud_and_invalid_budgets():
         LocalOllamaGateway("vision:local", limits=ModelLimits(output_tokens=100000))
 
 
-def test_gateway_timeout_kills_worker_and_records_consumed_call(tmp_path, monkeypatch):
+def test_gateway_timeout_kills_worker_and_records_consumed_call(tmp_path, monkeypatch, configured_profile_provider):
     import smb3_agent.model_gateway as module
     class Hung:
         returncode = None
@@ -372,3 +372,20 @@ def test_native_release_waits_for_os_acknowledgment_with_bounded_deadline(monkey
     assert .003 <= elapsed[0] <= .051
     if not acknowledged:
         assert receipt["held_mouse_buttons"] == [0]
+
+
+@pytest.fixture
+def configured_profile_provider(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("AI_BASE_URL", "http://127.0.0.1:9/v1")
+    monkeypatch.setenv("AI_MODEL", "vision:local")
+
+
+def test_profile_requires_selected_provider_and_exact_model(monkeypatch):
+    with pytest.raises(ModelGatewayError, match="explicitly configured"):
+        LocalOllamaGateway("vision:local")
+    monkeypatch.setenv("AI_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("AI_BASE_URL", "http://127.0.0.1:9/v1")
+    monkeypatch.setenv("AI_MODEL", "other:local")
+    with pytest.raises(ModelGatewayError, match="profile-qualified"):
+        LocalOllamaGateway("vision:local")

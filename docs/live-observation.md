@@ -4,7 +4,7 @@
 
 The observer adapts game data into fresh semantic state/image snapshots for contextual language and gameplay decisions. Supply relevant objects, player form/motion, resources, scene/target identity, current progress, confidence and observation age. Keep inferred mechanics and historical memory separate from observed facts.
 
-Current passive observation and opt-in control distinctions below remain authoritative. The model consumes evidence and proposes actions; it does not alter passive observer authority or establish completion by explanation. Extend current scene coverage through reusable semantics where needed, with uncertain/off-screen information retained honestly. Runtime model images may be sent through Codex; local trace storage and optional feedback export are separate.
+Current passive observation and opt-in control distinctions below remain authoritative. The model consumes evidence and proposes actions; it does not alter passive observer authority or establish completion by explanation. Extend current scene coverage through reusable semantics where needed, with uncertain/off-screen information retained honestly. Runtime images may be sent to the configured local/LAN model when vision support is verified; local trace storage and optional feedback export are separate.
 
 Mario coaching uses the read-only observation/control boundaries below. Observed goal, coin and action facts remain bounded by the supported scenes. Other observation boundaries are described in [architecture](agent-architecture.md).
 

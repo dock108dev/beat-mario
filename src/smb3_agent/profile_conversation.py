@@ -74,6 +74,7 @@ class ProfileConversationService:
                 self._state = name
 
     def _factory(self, selection, owned, folder):
+        gateway = LocalOllamaGateway(self.profile.backend_id, limits=ModelLimits(calls=3, call_seconds=60, task_seconds=180))
         host = MacSelectedWindowHost(selection["pid"], selection["started"], selection["window_id"],
                                     background_observation=True,
                                     ocr_regions=profile_ocr_regions(self.profile))
@@ -91,7 +92,6 @@ class ProfileConversationService:
                    "game_build": owned["game_build"], "profile_sha256": self.profile.digest,
                    "save_sha256": owned["checkpoint_sha256"], "settings_sha256": owned["settings_sha256"],
                    "evidence_references": [str(frame.path)], "before_values": values}
-        gateway = LocalOllamaGateway(self.profile.backend_id, limits=ModelLimits(calls=3, call_seconds=60, task_seconds=180))
         identity = gateway.describe()
         def driver(rt):
             import Quartz as q

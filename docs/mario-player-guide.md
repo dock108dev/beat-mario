@@ -23,7 +23,7 @@ Stored advice, matching application receipts and improvement are separate result
 
 Stop/Take control cancels pending inference and releases input. After cancellation
 or changed context, obtain fresh observation and review. Reopening restores
-history without plan or control authority. Remote Codex inference is separate
+history without plan or control authority. Configured local/LAN inference is separate
 from local game control. Full-level adaptive completion and complete coin
 coverage remain unverified. See [known limitations](known-limitations.md).
 
@@ -105,7 +105,7 @@ Choose the existing base, **Quickest**, or **100% clear**, or type a request. Al
 
 This fallback is a current product gap. It does not satisfy a request to find or train a 100% coin route. The revised beta must explain unknown coverage and offer actual supported exploration or a clear blocked result, rather than treating an unchanged base route as fulfillment.
 
-Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The current deterministic English planner needs no model account or credentials. The planned AI experience will use the selected Codex CLI setup and show its availability in first-use setup; it is not active in this current path.
+Choose **Open Mario for companion play** to open a visible FCEUX session held at the fresh boundary. **Review plan**, inspect the proposal, then **Start reviewed plan** grants permission in that session. Selecting a route, opening Mario, asking a question or reopening history never starts execution. The conversation service uses the shared configured AI provider; deterministic route tools retain their own planning and review boundaries. Screenshot requests require verified model vision support.
 
 ## Supported paths, destinations and changes
 
@@ -145,8 +145,9 @@ The older Observe/Tell/Show/Do and History surfaces remain available. Observe on
 
 ## Provider and setup recovery
 
-Refresh Codex readiness after sign-in or connectivity recovery. Credentials
-remain with Codex. Selected context/images go to remote inference; controllers,
+Check AI setup after connectivity recovery; restart after changing provider settings.
+Credentials remain in user-level configuration. Selected context and verified images
+go to the configured local/LAN server; controllers,
 review and input release remain local. FCEUX discovery uses PATH and supported
 Homebrew locations. No emulator or game file is bundled. Reopening or switching
 games restores no gameplay authority.

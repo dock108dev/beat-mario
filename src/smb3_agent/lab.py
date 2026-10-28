@@ -182,7 +182,7 @@ class UiSummaryResult:
 
 
 @dataclass(frozen=True)
-class CodexTaskResult:
+class EngineeringTaskResult:
     session_id: str
     issue_id: str
     task_path: Path
@@ -193,7 +193,7 @@ class CodexTaskResult:
             [
                 f"session_id={self.session_id}",
                 f"issue_id={self.issue_id}",
-                f"codex_task={self.task_path}",
+                f"engineering_task={self.task_path}",
                 f"route_log_excerpt={self.excerpt_path}",
             ]
         )
@@ -522,11 +522,11 @@ def write_ui_summary(
     return UiSummaryResult(session_id=str(manifest["session_id"]), summary_path=summary_path, summary=summary)
 
 
-def write_codex_task_latest(issue_id: str) -> CodexTaskResult:
-    return write_codex_task(_latest_session_dir(), issue_id)
+def write_engineering_task_latest(issue_id: str) -> EngineeringTaskResult:
+    return write_engineering_task(_latest_session_dir(), issue_id)
 
 
-def write_codex_task(session_dir: Path, issue_id: str) -> CodexTaskResult:
+def write_engineering_task(session_dir: Path, issue_id: str) -> EngineeringTaskResult:
     manifest = _load_session_manifest(session_dir)
     contract = load_goal_contract(resolve_goal_path(str(manifest["goal_id"])))
     if not (session_dir / "issues.yaml").is_file():
@@ -544,17 +544,17 @@ def write_codex_task(session_dir: Path, issue_id: str) -> CodexTaskResult:
         os.path.join(session_root, "excerpts", f"{issue_id}.log")
     )
     task_real = os.path.realpath(
-        os.path.join(session_root, "codex_tasks", f"{issue_id}.yaml")
+        os.path.join(session_root, "engineering_tasks", f"{issue_id}.yaml")
     )
     safe_prefix = session_root.rstrip(os.sep) + os.sep
     if not excerpt_real.startswith(safe_prefix) or not task_real.startswith(safe_prefix):
-        raise LabError("Codex task paths escape the selected lab session")
+        raise LabError("Engineering task paths escape the selected lab session")
     excerpt_path = Path(excerpt_real)
     excerpt_path.parent.mkdir(parents=True, exist_ok=True)
     excerpt_path.write_text(_route_log_excerpt(route_log, issue), encoding="utf-8")
     task_path = Path(task_real)
     task = {
-        "task_id": f"codex_{issue_id}",
+        "task_id": f"engineering_{issue_id}",
         "created_at": _now(),
         "session_id": manifest["session_id"],
         "issue_id": issue_id,
@@ -576,11 +576,11 @@ def write_codex_task(session_dir: Path, issue_id: str) -> CodexTaskResult:
         "expected_output": {
             "artifact": "One YAML document using schema_version beat-mario.route-patch/v1.",
             "source": {
-                "kind": "codex_task",
+                "kind": "engineering_task",
                 "session_id": manifest["session_id"],
                 "issue_id": issue_id,
                 "note_ids": [str(note["id"]) for note in notes],
-                "task_id": f"codex_{issue_id}",
+                "task_id": f"engineering_{issue_id}",
                 "task_packet": str(task_path),
             },
             "required_fields": [
@@ -608,7 +608,7 @@ def write_codex_task(session_dir: Path, issue_id: str) -> CodexTaskResult:
         },
     }
     _write_yaml(task_path, task)
-    return CodexTaskResult(
+    return EngineeringTaskResult(
         session_id=str(manifest["session_id"]),
         issue_id=issue_id,
         task_path=task_path,

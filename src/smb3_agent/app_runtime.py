@@ -11,6 +11,7 @@ import webbrowser
 HELPERS = frozenset(
     {
         "smb3_agent.model_gateway",
+        "smb3_agent.http_inference",
         "smb3_agent.process_watchdog",
         "smb3_agent.input_guardian",
         "smb3_agent.camera_native_input",

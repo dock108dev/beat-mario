@@ -804,7 +804,7 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
     assert "No screenshot captured yet" in html
     assert "Mark Resolved" in html
     assert "Needs Rerun" in html
-    assert "Create Codex Task" in html
+    assert "Create Engineering Task" in html
     assert "V2.14 readiness" in html
     assert "Implementation blockers" in html
     assert "Candidate blockers" in html
@@ -831,7 +831,7 @@ def test_route_lab_renders_route_evidence_and_teaching_workflow(
     assert "status-validation" in html
     assert html.count("Mark Resolved") == 1
     assert html.count("Needs Rerun") == 1
-    assert html.count("Create Codex Task") == 1
+    assert html.count("Create Engineering Task") == 1
     assert "issue-summary-row" in html
     assert "observation-summary-row" in html
     assert "World 1 Control Panel" not in html

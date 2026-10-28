@@ -2,7 +2,7 @@
 
 Choose Minecraft and chat beside its live view with a bot that plays as its own
 character. It can gather resources, craft supplies, build bounded wooden shelters,
-answer questions during play, and Stop. Codex CLI supplies the AI; gameplay runs
+answer questions during play, and Stop. The configured AI provider interprets requests; gameplay runs
 headlessly without taking over the desktop.
 
 Minecraft is the main supported experience. Older integrations remain available
@@ -12,7 +12,7 @@ and [known limitations](docs/known-limitations.md).
 ## Source launch
 
 Use Python 3.11+, uv, the exact Node version in `minecraft-worker/.nvmrc`, Java 21,
-and a signed-in Codex CLI. From the repository root:
+and an explicitly [configured AI provider](docs/ai-provider.md). From the repository root:
 
 ```bash
 uv sync --locked --all-extras

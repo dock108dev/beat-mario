@@ -195,10 +195,10 @@ def test_non_actions_preserve_play(tmp_path, kind):
 
 
 def test_error_duplicate_and_session_validation(tmp_path):
-    s = service(tmp_path, Provider([ValueError("Codex unavailable")]))
+    s = service(tmp_path, Provider([ValueError("AI unavailable")]))
     s.submit("Go", "r", "one")
     wait(lambda: not s.busy)
-    assert s.error == "Codex unavailable"
+    assert s.error == "AI unavailable"
     assert s.bridge.stops == 0
     with pytest.raises(ValueError, match="Duplicate"):
         s.submit("Go", "r", "one")
@@ -299,3 +299,16 @@ def test_invalid_plan_never_executes(tmp_path):
     wait(lambda: not s.busy)
     assert not s.bridge.actions
     assert s.error == "Invalid integer"
+
+
+def test_setup_refresh_rejects_message_without_consuming_draft_or_stop(tmp_path):
+    provider = Provider([])
+    provider.status = {'available': False, 'state': 'checking', 'message': 'Checking AI setup'}
+    s = service(tmp_path, provider)
+    with pytest.raises(ValueError, match='Checking AI setup'):
+        s.submit('Hello', 'draft', 'one')
+    assert 'draft' not in s.seen and not s.messages and not provider.calls
+    assert s.snapshot()['ai'] == provider.status
+    s.submit('Stop', 'stop', 'one')
+    wait(lambda: not s.stopping)
+    assert s.bridge.stops == 1

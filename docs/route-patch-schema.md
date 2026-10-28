@@ -13,7 +13,7 @@ remain review aids; they cannot validate or promote themselves.
 The tracked example is `data/lab/route-patch-template.yaml`. A patch records:
 
 - patch and variant ids;
-- source kind (`route_lab_issue` or `codex_task`), session, issue, notes, and
+- source kind (`route_lab_issue` or `engineering_task`), session, issue, notes, and
   optional task packet;
 - parent variant and full repository base commit;
 - reviewed file allowlist;

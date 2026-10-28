@@ -13,7 +13,7 @@ npm ci --prefix minecraft-worker --ignore-scripts --no-audit --no-fund
 ```
 
 The editable Python package supplies the `smb3-agent` command. Gameplay additionally
-requires Java 21 and signed-in Codex CLI. Source launch opens the Minecraft workspace;
+requires Java 21 and an explicitly [configured AI provider](ai-provider.md). Source launch opens the Minecraft workspace;
 see [usage](minecraft.md). Configuration is explicit: the app does not load `.env`.
 
 ## Repository layout

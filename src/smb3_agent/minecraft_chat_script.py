@@ -35,7 +35,6 @@ $('open-world').onclick=()=>command('connect',{
 $('create-world').onclick=()=>command('connect',{
   world:$('world').value,create:'true',accept_eula:String($('eula').checked)
 }).catch(failure);
-$('sign-in').onclick=()=>command('sign_in').catch(failure);
 $('check-setup').onclick=()=>command('check_setup').catch(failure);
 $('quit').onclick=async()=>{
   try{
@@ -103,10 +102,8 @@ async function refresh(){
     $('session-tools').hidden=!sid&&!s.connecting&&!s.error&&!s.connection_fault;
     $('toggle').disabled=!state.viewer_url;
     $('activity-panel').hidden=!sid&&!s.connecting;
-    $('sign-in').hidden=!!s.codex.available;
-    $('get-codex').hidden=!!s.codex.available;
     $('get-java').hidden=!!setup.java?.ready;
-    $('setup-links').hidden=!!s.codex.available&&!!setup.java?.ready;
+    $('setup-links').hidden=!!setup.java?.ready;
     $('setup-status').textContent=[!setup.node?.ready?setup.node?.message:null,!setup.java?.ready?setup.java?.message:null,w?.ready?'Your saved world is ready.':w?.message].filter(Boolean).join(' · ');
     $('empty-chat').hidden=s.messages.length>0;
     $('empty-chat').lastChild.textContent=state.ready?'Ask a question or give your companion a goal.':'Open a world to explore, gather or build together.';
@@ -115,11 +112,12 @@ async function refresh(){
     $('activity').textContent=s.activity;
     $('progress').textContent=s.progress||'';
     $('goal').textContent=s.goal?s.goal:'';
-    $('codex').textContent=s.codex.message;
+    $('ai').textContent=s.ai.message;
+    $('ai-privacy').textContent=s.ai.inference||'';
     $('pending').textContent=s.stopping?'Stopping · draft retained; send after confirmation':s.stop_failed?'Stop unconfirmed · reconnect before sending':s.busy?(state.active||s.goal?'Thinking · current task continues':'Thinking…'):'';
-    $('send').disabled=s.busy||s.stopping||s.stop_failed||!state.ready||s.connecting;
+    $('send').disabled=!s.ai.available||s.busy||s.stopping||s.stop_failed||!state.ready||s.connecting;
     $('reconnect').disabled=s.connecting;
-    $('send-status').textContent=s.stopping?'Wait for Stop to finish.':s.stop_failed?'Reconnect to continue.':s.connecting?'Connecting to your world…':!state.ready?'Open a world to send a message.':s.busy?'You can keep editing your draft.':'';
+    $('send-status').textContent=s.stopping?'Wait for Stop to finish.':s.stop_failed?'Reconnect to continue.':s.connecting?'Connecting to your world…':!state.ready?'Open a world to send a message.':!s.ai.available?'Check AI setup before sending.':s.busy?'You can keep editing your draft.':'';
     connectionError='';
     $('error').textContent=[...new Set([localError,s.error].filter(Boolean))].join('\n');
     if(state.viewer_url!==url){

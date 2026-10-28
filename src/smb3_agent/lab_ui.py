@@ -74,7 +74,7 @@ from smb3_agent.lab import (
     build_issue_ledger_latest,
     propose_variants_from_latest,
     start_session,
-    write_codex_task_latest,
+    write_engineering_task_latest,
 )
 from smb3_agent.live_observation import (
     ConnectionState,
@@ -315,7 +315,7 @@ POST_PATHS = frozenset(
         "/show-start",
         "/show-stop",
         "/show-takeover",
-        "/codex-task",
+        "/engineering-task",
         "/patch-action",
         "/learning-review",
         "/learning-preferences",
@@ -440,13 +440,13 @@ def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
         except Exception:
             failures.append("Mario conversation cleanup unconfirmed")
             LOGGER.exception("Conversation stop failed during shutdown; continuing input cleanup")
-    provider = getattr(server, "codex_provider", None)
+    provider = getattr(server, "ai_provider", None)
     if provider is not None:
         try:
             provider.close()
         except Exception:
-            failures.append("Codex provider cleanup unconfirmed")
-            LOGGER.exception("Codex cleanup failed; continuing independent input cleanup")
+            failures.append("AI provider cleanup unconfirmed")
+            LOGGER.exception("AI cleanup failed; continuing independent input cleanup")
     for name, kind in (("show_manager", ShowSessionManager),
                        ("live_observation_manager", LiveObservationManager)):
         manager = getattr(server, name, None)
@@ -520,17 +520,17 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     server.delivery_game_processes = OwnedGameProcesses()
     setattr(server, "live_observation_manager", LiveObservationManager(
         learning_store=learning_store, launcher=server.delivery_game_processes.launch))
-    from smb3_agent.codex_provider import CodexProvider
-    server.codex_provider = CodexProvider()
+    from smb3_agent.ai_provider import create_provider
+    server.ai_provider = create_provider()
     from smb3_agent.minecraft_chat import MinecraftChat
     from smb3_agent.minecraft_delivery import data_artifacts
-    server.minecraft_chat = MinecraftChat(data_artifacts() / "minecraft-chat", provider=server.codex_provider)
+    server.minecraft_chat = MinecraftChat(data_artifacts() / "minecraft-chat", provider=server.ai_provider)
     setattr(server, "conversation_service", ConversationService(
         getattr(server, "live_observation_manager"),
-        artifacts_root=ARTIFACT_DIR / "conversation", provider=server.codex_provider,
+        artifacts_root=ARTIFACT_DIR / "conversation", provider=server.ai_provider,
     ))
     setattr(server, "stardew_conversation_service", StardewConversationService(
-        artifacts_root=ARTIFACT_DIR / "stardew-conversation", provider=server.codex_provider))
+        artifacts_root=ARTIFACT_DIR / "stardew-conversation", provider=server.ai_provider))
     if getattr(sys, "frozen", False):
         from smb3_agent.player_store import user_data_root
         server.camera_practice_service = CameraPracticeService(root=user_data_root()/"sessions/camera", native_enabled=True)
@@ -775,7 +775,7 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_javascript(CANDIDATE_JS)
             return
         if path == "/api/backend":
-            self._send_json(dict(self.server.codex_provider.status))
+            self._send_json(dict(self.server.ai_provider.status))
             return
         if path in {"/", "/minecraft"}:
             from smb3_agent.minecraft_chat_ui import render_minecraft_chat
@@ -793,7 +793,7 @@ class _Handler(BaseHTTPRequestHandler):
                 render_combined_catalog(
                     self._catalog_session(),
                     csrf_token=self._csrf_token(),
-                    backend=dict(self.server.codex_provider.status),
+                    backend=dict(self.server.ai_provider.status),
                     permissions=_source_permissions(),
                 )
             )
@@ -1009,7 +1009,7 @@ class _Handler(BaseHTTPRequestHandler):
         data = self._read_form()
         self._validate_csrf(data)
         if getattr(sys, "frozen", False):
-            if path in {"/run", "/test", "/codex-task", "/patch-action", "/show-start", "/show-takeover", "/takeover-start", "/adapter-install"}:
+            if path in {"/run", "/test", "/engineering-task", "/patch-action", "/show-start", "/show-takeover", "/takeover-start", "/adapter-install"}:
                 raise LabUiForbidden("This candidate enables the reviewed Mario early segment and supported Stardew seed-patch watering only. Wider and experimental execution is unavailable.")
             if path in {"/api/profile/conversation", "/api/camera-practice"} and _single(data, "action", default="") not in {"stop", "reclaim", "pause", "focus_lost"}:
                 raise LabUiForbidden("Legacy native activities are unavailable in this candidate. Retained setup and history remain inspectable.")
@@ -1035,8 +1035,6 @@ class _Handler(BaseHTTPRequestHandler):
             try:
                 if action == "connect":
                     service.connect(survival=_single(data, "world", default="creative") == "survival", create=_single(data, "create", default="false") == "true", accept_eula=_single(data, "accept_eula", default="false") == "true")
-                elif action == "sign_in":
-                    self.server.codex_provider.sign_in()
                 elif action == "check_setup":
                     service.check_setup()
                 elif action == "stop":
@@ -1070,7 +1068,7 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_html(render_candidate_help("Report saved locally. Review before sharing.", self._csrf_token(), report))
             return
         if path == "/backend-refresh":
-            self.server.codex_provider.refresh()
+            self.server.ai_provider.refresh()
             self._redirect("/")
             return
         if path == "/api/player":
@@ -1669,9 +1667,9 @@ class _Handler(BaseHTTPRequestHandler):
                     )
                     self._redirect("/")
                     return
-                if path == "/codex-task":
+                if path == "/engineering-task":
                     issue_id = _issue_id_from_form(data)
-                    write_codex_task_latest(issue_id)
+                    write_engineering_task_latest(issue_id)
                     self._redirect("/")
                     return
                 result = run_patch_ui_action(data, repo_root=Path.cwd())
@@ -2922,28 +2920,28 @@ def render_combined_catalog(
         if selected_id
         else ""
     )
-    model = backend or {"state": "unavailable", "message": "Open the source app to check Codex availability."}
+    model = backend or {"state": "unavailable", "message": "Open the source app to check configured AI availability."}
     permission_values = permissions or {}
     permission_text = ', '.join(f'{label}: ' + ('ready' if permission_values.get(key) is True else 'required' if permission_values.get(key) is False else 'unknown')
                                for key, label in [('capture', 'Screen Recording'), ('input', 'Accessibility input')])
     backend_panel = (
         '<section class="catalog-workspace catalog-setup" aria-labelledby="model-heading">'
         '<h2 id="model-heading">Game setup</h2>'
-        f'<p id="backend-status" role="status">Codex: {_esc(model.get("state", "unknown").replace("_", " "))}. {_esc(model.get("message", "Status unknown"))}</p>'
-        '<form method="post" action="/backend-refresh"><button type="submit">Check Codex sign-in</button></form>'
+        f'<p id="backend-status" role="status">AI: {_esc(model.get("state", "unknown").replace("_", " "))}. {_esc(model.get("message", "Status unknown"))}</p>'
+        '<form method="post" action="/backend-refresh"><button type="submit">Check AI connection</button></form>'
         '<details><summary>Permissions and game requirements</summary>'
         f'<form method="post" action="/request-permissions"><input type="hidden" name="csrf_token" value="{_esc(csrf_token or "")}"><button type="submit">Request macOS permissions</button></form>'
         '<p>Approve the macOS requests for Game Companion. If a previous request was denied, enable Game Companion in System Settings → Privacy &amp; Security → Screen Recording and Accessibility. Quit and reopen after granting access, then check setup again.</p>'
         '<p><a href="/mario#setup">Set up Mario and open a disposable session</a> · '
         '<a href="/stardew#stardew-setup-panel">Set up Stardew and verify a disposable farm</a></p>'
-        '<h3>What is sent to OpenAI</h3>'
-        '<p>Companion sends the current request, selected game image, observed game facts and compatible history to OpenAI through your installed, signed-in Codex CLI. Game input and save protection run locally. Credentials stay with Codex.</p>'
+        '<h3>AI privacy</h3>'
+        f'<p>{_esc(model.get("inference", "AI is unavailable until explicitly configured."))}</p>'
         '<p>Mario needs your supported game file, FCEUX and input mapping. Stardew needs the inspected game installation and an explicitly selected save folder to copy in isolation. Shared feature readers are bundled; current pixels must establish supported targets, resources and clear routes. The exact frozen Day 2 seed is for engineering regression. Each game shows its current setup checks and remedies.</p>'
         '<p>macOS: allow Screen Recording for visible game capture and Accessibility for ordinary input in System Settings → Privacy &amp; Security. After changing permissions, restart the launching app if macOS requires it; reconnect, refresh the visible game and review again. No previous approval resumes.</p></details></section>'
     )
     backend_panel = backend_panel.replace('</h2>', f'</h2><p class="catalog-permissions">{_esc(permission_text)}</p>', 1)
     backend_panel = backend_panel.replace('<details>', '<details open>' if any(permission_values.get(key) is not True for key in ('capture', 'input')) else '<details>', 1)
-    backend_panel = backend_panel.replace('<form method="post" action="/backend-refresh">', '<p class="meta">Game context and images are sent to OpenAI for inference.</p><form method="post" action="/backend-refresh">', 1)
+    backend_panel = backend_panel.replace('<form method="post" action="/backend-refresh">', '<p class="meta">Selected context is sent only to your configured inference provider; game controls run locally.</p><form method="post" action="/backend-refresh">', 1)
     return _page(
         title="Game Companion",
         csrf_token=csrf_token,
@@ -4692,7 +4690,7 @@ def build_control_panel_summary(goal_id: str = ACTIVE_PRODUCT_GOAL_ID) -> dict[s
         issues = _list_dicts(_load_yaml(issues_path).get("issues", []))
         for issue in issues:
             issue["goal_id"] = contract.id
-            task_path = session_dir / "codex_tasks" / f"{issue.get('id')}.yaml"
+            task_path = session_dir / "engineering_tasks" / f"{issue.get('id')}.yaml"
             issue["task_packet"] = str(task_path) if task_path.is_file() else None
             if PATCH_ARTIFACTS_ROOT.is_dir():
                 issue["route_patch"] = patch_summary_for_issue(
@@ -5061,9 +5059,9 @@ def _issue_action_row(issue: dict[str, object], location_id: str) -> str:
         {_issue_action_button(issue_id, location_id, 'resolved', 'Mark Resolved')}
         {_issue_action_button(issue_id, location_id, 'expected_behavior', 'Not a Bug')}
         {_issue_action_button(issue_id, location_id, 'needs_rerun', 'Needs Rerun')}
-        <form method="post" action="/codex-task">
+        <form method="post" action="/engineering-task">
           <input type="hidden" name="issue_id" value="{_esc(issue_id)}">
-          <button type="submit" class="quiet small">Create Codex Task</button>
+          <button type="submit" class="quiet small">Create Engineering Task</button>
         </form>
         {_issue_action_button(issue_id, location_id, 'archive', 'Archive')}
         {_issue_action_button(issue_id, location_id, 'delete', 'Delete')}
@@ -5983,13 +5981,13 @@ CANDIDATE_JS = r'''(() => {
     pending = true;
     try {
       const r = await fetch("/api/backend", {cache:"no-store"});
-      if (!r.ok) throw new Error("Codex status request failed");
+      if (!r.ok) throw new Error("AI status request failed");
       if (r.ok) {
         const s = await r.json();
-        document.getElementById("backend-status").textContent = `Codex: ${String(s.state || "unknown").replaceAll("_", " ")}. ${s.message}`;
+        document.getElementById("backend-status").textContent = `AI: ${String(s.state || "unknown").replaceAll("_", " ")}. ${s.message}`;
       }
     } catch(e) {
-      document.getElementById("backend-status").textContent = "Codex status unavailable. Reopen the local app and refresh readiness.";
+      document.getElementById("backend-status").textContent = "AI status unavailable. Reopen the local app and refresh readiness.";
     } finally { pending = false; }
   }
   setInterval(updateBackend,1500);

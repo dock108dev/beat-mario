@@ -105,7 +105,7 @@ class GoalPreparation:
         if r.controller or not r._engineering_launches:
             raise StardewAdapterError("Open a fresh approved isolated copy before preparation.")
         if not self.provider or not self.provider.status.get("available"):
-            raise StardewAdapterError("Codex is unavailable. Check sign-in before preparing the game.")
+            raise StardewAdapterError("AI is unavailable. Check the configured provider before preparing the game.")
         r.control("stop", reason="Approved setup only; watering needs a separate review and Start.")
         if not r.snapshot()['handback_confirmed']:
             raise StardewAdapterError("Preparation refused until owned input release is confirmed")

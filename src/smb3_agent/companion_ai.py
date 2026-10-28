@@ -9,7 +9,7 @@ import threading
 import time
 from uuid import uuid4
 
-from smb3_agent.codex_provider import InferenceError, validate_object
+from smb3_agent.inference_contract import InferenceError, validate_object
 from smb3_agent.stardew_adapter import StardewAdapterError
 from smb3_agent.request_planning import ConversationPlan, PlanningContext
 from smb3_agent.stardew_planning import StardewPlanningAdapter

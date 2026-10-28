@@ -1,10 +1,8 @@
 """Read-only local resource measurements, separate from control and GPU estimates."""
-import json
 import os
 import subprocess
 import threading
 import time
-import urllib.request
 
 
 class ResourceSamples:
@@ -16,20 +14,22 @@ class ResourceSamples:
 
     def _sample(self):
         rt = self.runtime
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        from smb3_agent.http_inference import metadata
+        config = getattr(rt.gateway, 'config', None)
         while not self.stop.is_set():
             try:
                 result = subprocess.run(['ps','-axo','pid=,ppid=,%cpu=,rss=,comm='],
                     capture_output=True,text=True,timeout=.5)
                 rows = [line.split(maxsplit=4) for line in result.stdout.splitlines()]
                 included = {os.getpid(),rt.host.expected_process_id}
-                included.update(int(r[0]) for r in rows if len(r)==5 and '/ollama' in r[4])
+                # Do not attribute unrelated workstation Ollama processes to a LAN server.
                 for _ in range(4):
                     included.update(int(r[0]) for r in rows if int(r[1]) in included)
                 allocation = None
                 try:
-                    with opener.open('http://127.0.0.1:11434/api/ps',timeout=.2) as response:
-                        models = json.loads(response.read(131072)).get('models',[])
+                    if not config:
+                        raise ValueError('Configured model allocation is unavailable')
+                    models = metadata(config, '/api/ps', timeout=.2).get('models', [])
                     allocation = [{k:m.get(k) for k in ('name','size','size_vram')}
                         for m in models if m.get('name') == rt.profile.backend_id]
                 except Exception:
@@ -37,7 +37,7 @@ class ResourceSamples:
                 rt.event('resources',{'sample_monotonic':time.monotonic(),'processes':[
                     {'pid':int(r[0]),'cpu_percent':float(r[2]),'rss_kib':int(r[3])}
                     for r in rows if int(r[0]) in included], 'model_allocation':allocation,
-                    'memory_policy':'RSS is process resident memory; size_vram is provider allocation, not measured GPU utilization'})
+                    'memory_policy':'RSS covers app-machine processes; size_vram is configured-server allocation, not measured GPU utilization'})
             except Exception:
                 rt.event('resources_unavailable',{})
             self.stop.wait(1)

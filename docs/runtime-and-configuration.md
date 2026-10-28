@@ -3,7 +3,7 @@
 ## Minecraft
 
 The loopback application routes requests through `minecraft_chat.py`, bounded goal
-coordinators and `minecraft_bridge.py` to one Node worker scheduler. Codex CLI
+coordinators and `minecraft_bridge.py` to one Node worker scheduler. The configured AI provider
 supplies structured decisions; its calls do not own game input. Server state and
 worker events establish outcomes. Session/revision checks reject stale work.
 Canceling a caller's Python Future only abandons its reply: it does not stop the
@@ -44,8 +44,11 @@ older routes remain available under `/legacy-games`.
 ## Operator configuration
 
 The application does not load `.env` files and does not need a sample env file.
-Ordinary Mario/Stardew use CLI-managed Codex sign-in as described above. `codex_provider.discover_codex` checks PATH and bounded Node/Homebrew installation locations; no credential file is copied into app data. Setup can refresh readiness after sign-in. OpenTTD requires separately installed
-local Ollama with `gemma3:4b` at its fixed loopback endpoint. Headless Minecraft uses Codex CLI; no local model download is required.
+Ordinary app features use the shared [AI provider configuration](ai-provider.md).
+The user-level JSON file works from Finder and source launchers; environment values
+override individual fields. Only the configured local HTTP provider is supported; there is no automatic fallback.
+Profile activities require their qualified model to match the configured server.
+
 
 | Setting | Used by | Behavior |
 | --- | --- | --- |
@@ -100,11 +103,12 @@ arguments. Goal identifiers can be passed in place of paths to goal commands.
   and Accessibility permissions, the exact selected supported game window and
   exclusive input while a reviewed task runs. The native path uses bounded
   input/guardian workers; changing window/settings requires fresh checks.
-- OpenTTD additionally requires local Ollama/`gemma3:4b`; local model HTTP calls
-  remain on loopback. Current Minecraft requests are parsed into finite skills.
+- Profile-based OpenTTD requires its exact qualified model and verified vision on
+  the configured local/LAN server; another tag leaves the activity unavailable.
+  Headless Minecraft model proposals are validated into finite app-owned skills.
 - Packaged review builds include Python dependencies and OCR resources. Games,
   worlds, model weights and account credentials are separately owned prerequisites.
-  The source Codex provider is implemented; retained review packages keep their original manifests and do not acquire source capabilities automatically.
+  The source AI provider is implemented; retained review packages keep their original manifests and do not acquire source capabilities automatically.
 
 Python dependencies and the supported Python version are declared in
 `pyproject.toml`; the locked local resolution is in `uv.lock`. GitHub Actions

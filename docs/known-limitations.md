@@ -30,8 +30,10 @@ small camera requests; its movement, placement and wall actions are disabled.
 The desktop application targets macOS. Native capture/input integrations need
 separately installed games and OS permissions. Headless Minecraft does not need
 those permissions. Linux CI checks offline contracts, not native desktop behavior.
-Codex CLI must be discoverable and signed in; availability does not guarantee
-account allowance or successful inference. There is no automatic provider fallback.
+An AI provider must be explicitly configured; advertised availability does not
+guarantee valid inference. Screenshot-dependent actions require verified vision
+metadata. No automatic
+provider fallback is used.
 
 The HTTP server is loopback-only with no TLS, accounts or multi-user isolation.
 Do not expose it through a proxy, tunnel or LAN bind. No hosted deployment,

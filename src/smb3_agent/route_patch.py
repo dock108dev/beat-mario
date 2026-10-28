@@ -879,8 +879,8 @@ def _normalize_source(raw: Any) -> dict[str, Any]:
     if unknown:
         raise RoutePatchError(f"Unsupported source fields: {sorted(unknown)}")
     kind = raw.get("kind")
-    if kind not in {"route_lab_issue", "codex_task"}:
-        raise RoutePatchError("source.kind must be route_lab_issue or codex_task")
+    if kind not in {"route_lab_issue", "engineering_task"}:
+        raise RoutePatchError("source.kind must be route_lab_issue or engineering_task")
     session_id = _validate_id(raw.get("session_id"), "source session ID")
     issue_id = _validate_id(raw.get("issue_id"), "source issue ID")
     note_ids = raw.get("note_ids")
@@ -892,8 +892,8 @@ def _normalize_source(raw: Any) -> dict[str, Any]:
     task_packet = raw.get("task_packet")
     if task_packet is not None:
         task_packet = _validate_relative_path(task_packet)
-    if kind == "codex_task" and not task_packet:
-        raise RoutePatchError("Codex task patches require source.task_packet")
+    if kind == "engineering_task" and not task_packet:
+        raise RoutePatchError("Engineering task patches require source.task_packet")
     return {
         "kind": kind,
         "session_id": session_id,

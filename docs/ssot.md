@@ -16,7 +16,10 @@ permission, eligibility or execution policy.
 | Minecraft presentation | `minecraft_chat_ui.py`, `minecraft_chat_script.py` | Document/styles and separately served script |
 | HTTP composition | `lab_ui.py` | Loopback routes, CSRF, service composition and asset serving |
 | Desktop lifecycle | `app_runtime.py`, `delivery.py` | Entry point, owned processes and shutdown |
-| Codex inference | `codex_provider.py` | CLI discovery, inference/cancellation and structured result validation |
+| AI configuration and selection | `ai_provider.py` | Shared factory for all ordinary game conversations; explicit local settings or unavailable |
+| Local inference transport | `http_inference.py` | Model discovery, bounded HTTP requests, streaming, cancellation and usage |
+| Model result validation | `inference_contract.py` | Closed-schema validation shared by Minecraft, Mario and Stardew |
+| Engineering task packets | `lab.py` | Packet generation used by CLI/HTTP; `route_patch.py` validates reviewed proposals |
 
 `memory.json` owns named structures and current selection. `construction.json` is
 a compatibility mirror, not an independent source. Places/protections and conversation

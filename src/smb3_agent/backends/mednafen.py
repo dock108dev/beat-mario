@@ -286,7 +286,7 @@ def accessibility_help() -> str:
     return (
         "macOS Accessibility permission is not trusted for this Python process. "
         "Open System Settings -> Privacy & Security -> Accessibility, then enable "
-        "the app that launches this command, usually Codex, Terminal, or your shell app. "
+        "the app that launches this command, usually Terminal or your shell app. "
         "Quit and reopen that app after enabling it."
     )
 

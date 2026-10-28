@@ -5,7 +5,7 @@ import threading
 import time
 
 from smb3_agent.companion_ai import STRING, closed_schema
-from smb3_agent.codex_provider import validate_object
+from smb3_agent.inference_contract import validate_object
 
 CONTRACT = "smb3/world-1-1/opening-strategy/v1"
 SCHEMA = closed_schema(
@@ -223,7 +223,7 @@ class MarioStrategyAgent:
                               "no_progress" if "lack of progress" in detail else
                               "unsafe_player_state" if "Unsafe player animation" in detail else
                               "decision_refused" if isinstance(exc, ValueError) else "inference_failed")
-                    from smb3_agent.codex_provider import InferenceError
+                    from smb3_agent.inference_contract import InferenceError
                     if isinstance(exc, InferenceError):
                         reason = "inference_failed"
                     runtime.abort_strategy(reason, detail)
