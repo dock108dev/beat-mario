@@ -7,7 +7,51 @@ function regionsOf (regions = []) {
   return regions
 }
 function resources (bot) {
-  return bot.findBlocks({ matching: b => LOGS.includes(b.name), maxDistance: 32, count: 64 }).map(p => ({ name: bot.blockAt(p).name, position: p }))
+  const points = [...bot.findBlocks({ matching: b => LOGS.includes(b.name), maxDistance: 32, count: 256 }), ...bot.findBlocks({matching:b=>['stone','cobblestone'].includes(b.name),maxDistance:16,count:16})]
+  const columns = new Map()
+  for (const p of points) {
+    const key = `${p.x},${p.z}`
+    if (!columns.has(key) || columns.get(key).y > p.y) columns.set(key, p)
+  }
+  const connected = new Map(points.map(p=>[`${p.x},${p.y},${p.z}`,p]))
+  const clusters = new Map()
+  for(const start of points) {
+    if(clusters.has(`${start.x},${start.z}`))continue
+    const queue=[start], seen=new Set(), cols=[]
+    while(queue.length) {
+      const p=queue.pop(), id=`${p.x},${p.y},${p.z}`
+      if(seen.has(id))continue
+      seen.add(id);cols.push(`${p.x},${p.z}`)
+      for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++) {
+        const q=connected.get(`${p.x+x},${p.y+y},${p.z+z}`)
+        if(q&&!seen.has(`${q.x},${q.y},${q.z}`))queue.push(q)
+      }
+    }
+    const cluster=[...new Set(cols)].sort().join(';')
+    for(const col of cols)clusters.set(col,cluster)
+  }
+  const metadata = new Map()
+  for (const [key, p] of columns) {
+    // Stable across vertical blocks; changed nearby terrain permits immediate retry.
+    const states=[]
+    for(let x=-2;x<=2;x++)for(let z=-2;z<=2;z++)for(let y=-3;y<=3;y++)states.push(bot.blockAt(p.offset(x,y,z))?.stateId ?? -1)
+    const signature=require('node:crypto').createHash('sha256').update(states.join(',')).digest('hex').slice(0,16)
+    metadata.set(key,{cluster:clusters.get(key)||key,signature})
+  }
+  const shared = new Map()
+  for(const [,m] of [...metadata.entries()].sort((a,b)=>a[0].localeCompare(b[0])))shared.set(m.cluster,(shared.get(m.cluster)||'')+m.signature)
+  for(const m of metadata.values())m.signature=require('node:crypto').createHash('sha256').update(shared.get(m.cluster)).digest('hex').slice(0,16)
+  return points.map(p => ({ name: bot.blockAt(p).name, position: p, ...metadata.get(`${p.x},${p.z}`), accessible: p.y>=bot.entity.position.y-1 && p.y<=bot.entity.position.y+4 && stands(bot,p,[]).length>0 }))
+}
+function scoutSites(bot) {
+  const base=bot.entity.position.floored(), result=[]
+  for(const [x,z] of [[12,0],[-12,0],[0,12],[0,-12],[9,9],[-9,9],[9,-9],[-9,-9]])for(const y of [0,1,-1,2,-2]) {
+    const p=base.offset(x,y,z), ground=bot.blockAt(p.offset(0,-1,0)), body=bot.blockAt(p), head=bot.blockAt(p.offset(0,1,0))
+    if(ground?.boundingBox==='block' && body?.name==='air' && head?.name==='air') {
+      try {safeTarget(bot,p,[]);result.push(p);break}catch{}
+    }
+  }
+  return result
 }
 function safeTarget (bot, p, regions) {
   if (inside(p, regions)) throw Error('protected_target')
@@ -17,12 +61,19 @@ function safeTarget (bot, p, regions) {
   }
 }
 function chooseTool (bot, block) {
-  if (!LOGS.includes(block.name)) throw Error('unsupported_resource')
+  if (!MINEABLE.includes(block.name)) throw Error('unsupported_resource')
+  if (!LOGS.includes(block.name)) {
+    const tools=bot.inventory.items().filter(i=>block.canHarvest(i.type))
+    tools.sort((a,b)=>block.digTime(a.type,false,false,false)-block.digTime(b.type,false,false,false))
+    if(!tools.length) throw Error('missing_harvest_tool')
+    return tools[0]
+  }
   const options = bot.inventory.items().filter(i => i.name.endsWith('_axe'))
   options.sort((a, b) => block.digTime(a.type, false, false, false) - block.digTime(b.type, false, false, false))
   return options[0] || null
 }
-module.exports = { LOGS, inside, regionsOf, resources, safeTarget, chooseTool }
+const MINEABLE = [...LOGS, 'stone', 'cobblestone']
+module.exports = { MINEABLE, LOGS, scoutSites, inside, regionsOf, resources, safeTarget, chooseTool }
 function visibleFrom (bot, feet, target) {
   const eye = feet.offset(0, 1.62, 0), center = target.offset(.5,.5,.5)
   const distance = eye.distanceTo(center)
@@ -30,14 +81,14 @@ function visibleFrom (bot, feet, target) {
   const hit = bot.world.raycast(eye, center.minus(eye).normalize(), distance + .1)
   return !!hit && hit.position.equals(target)
 }
-function stands (bot, target, regions) {
+function stands (bot, target, regions, maxDy = 0) {
   const result = []
-  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = -3; dy <= 0; dy++) {
+  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = -4; dy <= maxDy; dy++) {
     const p = target.offset(dx,dy,dz), feet = p.offset(.5,0,.5)
     const lower = bot.blockAt(p.offset(0,-1,0)), body = bot.blockAt(p), head = bot.blockAt(p.offset(0,1,0))
     if (!lower || !body || !head || lower.boundingBox !== 'block' || body.boundingBox !== 'empty' || head.boundingBox !== 'empty' || body.liquid || head.liquid || inside(feet, regions)) continue
     try { safeTarget(bot, feet, regions) } catch { continue }
-    if (visibleFrom(bot, feet, target)) result.push(feet)
+    if (feet.distanceTo(target)<=4.5 && visibleFrom(bot, feet, target)) result.push(feet)
   }
   return result.sort((a,b)=>a.distanceTo(bot.entity.position)-b.distanceTo(bot.entity.position))
 }
@@ -61,3 +112,16 @@ function goalGuard (bot, args, worldId) {
   return null
 }
 module.exports.goalGuard = goalGuard
+
+function surfaceDestinations(bot,target,regions) {
+  const result=[]
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(let dy=-4;dy<=4;dy++) {
+    const p=target.floored().offset(dx,dy,dz),ground=bot.blockAt(p.offset(0,-1,0)),body=bot.blockAt(p),head=bot.blockAt(p.offset(0,1,0))
+    if(p.distanceTo(bot.entity.position)>31 || inside(p,regions))continue
+    if(ground?.boundingBox==='block' && body?.name==='air' && head?.name==='air') {
+      try {safeTarget(bot,p,regions);result.push(p)}catch{}
+    }
+  }
+  return result.sort((a,b)=>Math.hypot(a.x-target.x,a.z-target.z)-Math.hypot(b.x-target.x,b.z-target.z)||Math.abs(a.y-target.y)-Math.abs(b.y-target.y)).slice(0,12)
+}
+module.exports.surfaceDestinations=surfaceDestinations

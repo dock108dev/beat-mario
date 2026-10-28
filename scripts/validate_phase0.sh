@@ -17,7 +17,7 @@ echo "== bash syntax =="
 bash -n scripts/validate_phase0.sh
 
 echo "== ruff lint =="
-"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py
+"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py scripts/check_actions.py scripts/ci_npm_audit.py scripts/ci_build.py
 
 echo "== tracked generated-file guard =="
 tracked_generated="$(
@@ -59,6 +59,9 @@ echo "== tracked credential and game-asset scan =="
 echo "== ignored runtime artifact visibility =="
 git status --short --ignored
 
+export GAME_COMPANION_USER_DATA="$(mktemp -d "${TMPDIR:-/tmp}/gc-ci-profile.XXXXXX")"
+trap 'rm -rf -- "$GAME_COMPANION_USER_DATA"' EXIT
+
 echo "== tests =="
 "${python_bin}" -m pytest -q
 
@@ -79,6 +82,7 @@ player_html="${route_lab_tmp}/player.html"
 route_lab_html="${route_lab_tmp}/lab.html"
 stardew_html="${route_lab_tmp}/stardew.html"
 cleanup_route_lab() {
+  rm -rf -- "$GAME_COMPANION_USER_DATA"
   rm -f -- "${player_html}" "${route_lab_html}" "${stardew_html}"
   rmdir -- "${route_lab_tmp}"
 }

@@ -1,47 +1,9 @@
-# New-game onboarding and contributor reference
+# Experimental adapters
 
-Updated October 4, 2026. The [private-beta engineering
-plan](private-beta-engineering.md) owns active work: connect Codex-backed
-conversational interpretation and a separate gameplay reasoning role to the
-ordinary Mario/Stardew experience, prove meaningful action choice and replanning,
-then complete the exact local private-beta artifact. One Codex provider may serve
-both roles. Minecraft connection belongs in the initial beta with accurate
-capability labels; full Minecraft gameplay is later work.
-
-## Deferred advanced-user product
-
-The intended later onboarding tool helps an advanced user add another eligible
-game through guided setup without writing code. Minecraft development will
-inform this tool, using the slower conversational activity loop developed for
-Stardew. This is required future product work, not an implemented capability.
-
-Discussion and implementation of no-code teaching/onboarding follow the working
-AI Mario/Stardew experience and are not an initial-beta release gate. Recording
-and player demonstrations remain deferred to tentative beta v2; no owner
-demonstration is required for current work. Define later onboarding from actual
-observation, knowledge, skill and decision contracts rather than treating a
-declarative profile as a playable agent. Adding a game cannot imply unrestricted
-gameplay or invent missing observation, action or outcome capabilities.
-
-## Current setup and contributor capabilities
-
-Ordinary player setup configures existing implemented templates. Its profile,
-permissions/settings, selected-window connection, history and local-feedback
-owners are reusable foundations. Minecraft has app-created calibration and
-bounded camera requests. Current source shows setup progress, task availability
-and remedies; these source repairs are not in retained private.2. Aiming,
-nearby movement, additions and wall Start remain unavailable. The
-[package-status quick start](private-beta-quick-start.md) records this narrower
-path. Configuring an existing game is separate from adding a playable new one.
-
-The contributor reference below documents the existing fixture scaffold. It
-does not fulfill the deferred advanced-user product, establish playable
-generic-game support or replace Mario/Stardew gameplay delivery.
-
-Experimental adapters have a local, data-only contributor flow at `/onboarding` and under
-the Lab. It creates declarative fixture-only adapters; it does not generate
-Python, JavaScript, shell scripts, controller drivers, observation code, or
-network dependencies, and it never launches or controls a game.
+The contributor scaffold creates local data-only fixture adapters at `/onboarding`
+and in the Lab. It does not generate controller code, install network dependencies
+or launch games. Configuring an existing game is separate from adding a playable
+new adapter.
 
 ## Adding an actual game adapter
 
@@ -81,7 +43,7 @@ must not make every new supported request require an engineer patch. Minecraft
 connection can honestly show narrower available abilities; connection alone is
 not full Minecraft gameplay.
 
-Use [architecture](agent-architecture.md), [Mario integration](b2-integration-contract.md) and [Stardew integration](b3-integration-contract.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
+Use [architecture](agent-architecture.md), [usage and development](development.md) and [usage and development](development.md) to locate owners. Retain exact failed/partial attempts alongside successes; freeze source and artifact identities before making delivery claims. Owner usefulness and acceptance are a later, explicit review.
 
 ## State vocabulary
 

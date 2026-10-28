@@ -1,14 +1,10 @@
 # Session Automation and Local Product Metrics
 
-## New AI beta evaluation and diagnostic records
-
-Version the readiness/scenario/decision records for GC-A0–GC-R in the [engineering plan](private-beta-engineering.md). Historical campaigns and metric contracts below remain references; they do not certify contextual LLM understanding or adaptive play.
+## Inference and gameplay diagnostics
 
 Retain original request/resolved intent, context/evidence supplied, chosen skill/target/parameters, expected effect, actual observation, later decision/replan, uncertainty and handback. Identify actual model calls separately from simulated replies and authored behaviors. Track real latency, context/call volume and provider-reported usage where available; missing usage remains unknown. Do not collect private chain-of-thought or publish screenshots automatically.
 
 Evaluate held-out wording and supported state/goal variation, useful task completion, no-progress limits and model/controller cancellation. Owner usefulness and local release decisions remain separate from model, source, game and package evidence. Independent self-training/scheduling is not an initial-beta requirement.
-
-Engineering scenario/metrics reference. Historical V2 campaign hooks below retain their own classifications. The [private-beta engineering plan](private-beta-engineering.md) owns the current beta learning and delivery path.
 
 Scenario contracts define repeatable, adapter-neutral session scenarios and a local event and
 metrics pipeline. This implementation is not a validation result. A scenario is
@@ -16,7 +12,7 @@ not made true by being defined, planned, or technically completed.
 
 ## Planned corrected-beta events
 
-The GC-A0–GC-R roadmap requires records for interpreted goal, reviewed/approved scope, attempt/life, original coaching, resolved change, controller acknowledgment/effective boundary, route/coin discoveries, next-attempt application, Stardew activity/check-in/correction, observed outcome and confirmed release. Use existing local attempt/history owners. Metrics must distinguish saved feedback from applied behavior and an applied change from measured improvement. Version the scenario mapping for this corrected beta; historical V2/B/PB results retain their original meaning. Record real model interpretation, decisions, replanning and applicable memory separately from controller effects. Independent self-training remains later work.
+Records distinguish interpreted goals, reviewed scope, original coaching, controller acknowledgment, observed outcomes and confirmed release. Saved feedback is not applied behavior, and an applied change is not measured improvement. Provider-reported usage may be unavailable.
 
 ## Mario product events
 

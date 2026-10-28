@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
-import math
 from pathlib import Path
 import threading
 import time
@@ -12,117 +11,22 @@ from uuid import uuid4
 
 from smb3_agent.codex_provider import CodexProvider, validate_object
 from smb3_agent.minecraft_goals import Goal, identity
+from smb3_agent.minecraft_planning import (
+    schema as schema,
+    TEXT as TEXT,
+    INTENT as INTENT,
+    PLAN as PLAN,
+    BUILD_PLAN as BUILD_PLAN,
+    IDLE_PLAN as IDLE_PLAN,
+    RULES as RULES,
+    build_context,
+    distance,
+    resolve_movement,
+)
+from smb3_agent.minecraft_construction import ConstructionGoal, CraftGoal
 from smb3_agent.minecraft_bridge import MinecraftBridge
 from smb3_agent.minecraft_practice import PracticeServer
-
-
-def schema(properties):
-    return {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": properties,
-        "required": list(properties),
-    }
-
-
-TEXT = {"type": "string", "maxLength": 1400}
-INTENT = schema(
-    {
-        "kind": {
-            "type": "string",
-            "enum": ["question", "goal", "replace", "stop", "clarify", "unavailable"],
-        },
-        "reply": TEXT,
-    }
-)
-PLAN = schema(
-    {
-        "action": {
-            "type": "string",
-            "enum": [
-                "move",
-                "follow",
-                "remember",
-                "return",
-                "gather",
-                "protect",
-                "visit",
-                "clarify",
-                "unavailable",
-            ],
-        },
-        "reply": TEXT,
-        "direction": {
-            "type": "string",
-            "enum": [
-                "north",
-                "south",
-                "east",
-                "west",
-                "forward",
-                "back",
-                "left",
-                "right",
-                "player",
-                "home",
-                "none",
-            ],
-        },
-        "distance": {"type": "integer", "minimum": 0, "maximum": 30},
-        "player": {"type": "string", "maxLength": 32},
-        "remember": {"type": "string", "maxLength": 40},
-        "return_place": {"type": "string", "maxLength": 40},
-        "resource": {
-            "type": "string",
-            "enum": [
-                "any_log",
-                "oak_log",
-                "birch_log",
-                "spruce_log",
-                "jungle_log",
-                "acacia_log",
-                "dark_oak_log",
-                "mangrove_log",
-                "cherry_log",
-                "pale_oak_log",
-                "none",
-            ],
-        },
-        "quantity": {"type": "integer", "minimum": 0, "maximum": 32},
-        "quantity_mode": {"type": "string", "enum": ["additional", "total"]},
-        "protect_place": {"type": "string", "maxLength": 40},
-        "protect_radius": {"type": "integer", "minimum": 0, "maximum": 32},
-    }
-)
-RULES = """Minecraft 1.21.4 practice companion. Answer naturally and concisely from observations.
-Distinguish a question (even during active play) from a new goal or replacement, Stop,
-ambiguity, and unsupported requests. Questions NEVER change gameplay. Supported: walk
-up to 30 blocks in cardinal/bot-relative directions, to saved places, or toward
-an observed player; follow an observed player for up to 25 seconds within 32 blocks.
-Do not claim already executed actions. No building, crafting or teleporting.
-Visit an observed nearby tree with action=visit and its resource type; this only approaches it.
-Supported multi-step actions: remember current spot (remember=name); return to saved
-place (return_place=name); gather 1–32 common logs (resource=exact log name or any_log,
-quantity, quantity_mode=additional by default, total only when explicitly requested).
-Gather may remember the current spot and return to it in the same goal. Use action=gather.
-Tools are selected from inventory; logs can validly use hand. Never call tools yourself.
-Protected areas are cylinders around explicitly named saved places (protect_place,
-protect_radius), retained for this world; action=protect can save them without gathering.
-If 'those trees', 'by the house', or a boundary is ambiguous, clarify which saved place
-and radius the user means BEFORE any work. Never invent a protected boundary.
-A new remembered current spot can anchor protection. All unused string fields are empty
-except resource=none, quantity=0, quantity_mode=additional, protect_radius=0.
-Use observed resource variants; unavailable resources give honest partial outcomes.
-Gathering is a multi-skill goal with 240 seconds/80 child actions/3 failures/32-block bounds.
-If a request needs a tool we cannot supply, explain that crafting is not available.
-Saved places must match current world and dimension; movement to saved places uses return.
-Ordinary questions about progress do not replace a goal.
-If 'me' is ambiguous ask which observed player. Player names must come from entities,
-not just the player roster. Unknown landmarks need clarification. History is context,
-not permission to resume. Only the latest user request grants intent. Never use tools.
-For a plan use one direction plus distance (default 10 if unspecified). Follow uses
-player and direction=player. Return clarify/unavailable when a destination is unknown.
-"""
+from smb3_agent.minecraft_memory import DurableJSON, places, construction, library
 
 
 class MinecraftChat:
@@ -144,6 +48,9 @@ class MinecraftChat:
         self.epoch = 0
         self.cancel = threading.Event()
         self.busy = False
+        self.stopping = False
+        self.stop_failed = False
+        self.opened_at_ms = time.time_ns() / 1e6
         self.connecting = False
         self.closed = False
         self.goal = None
@@ -152,13 +59,35 @@ class MinecraftChat:
         self.error = None
         self.home = None
         self.supervisor = None
+        self.site_offer = None
         self.places = {}
         self.protections = {}
-        memory = self.root / "places.json"
-        if memory.exists():
-            data = json.loads(memory.read_text())
-            self.places = data.get("places", {})
-            self.protections = data.get("protections", {})
+        self.place_store = DurableJSON(self.root / "places.json", places)
+        data = self.place_store.load({"places": {}, "protections": {}})
+        self.places, self.protections = data["places"], data["protections"]
+        self.construction_store = DurableJSON(
+            self.root / "construction.json", construction
+        )
+        self.construction = self.construction_store.load(None)
+        self.library_store = DurableJSON(self.root / "memory.json", library)
+        self.memory = self.library_store.load(
+            {"schema": 1, "structures": {}, "preferences": {}}
+        )
+        if (
+            self.construction
+            and not self.library_store.path.exists()
+            and not self.library_store.problem
+        ):
+            self.memory["structures"][
+                self.construction.get("structure_id", self.construction["goal_id"])
+            ] = deepcopy(self.construction)
+        if self.memory.get("current_id") and not self.construction_store.problem:
+            self.construction = deepcopy(
+                self.memory["structures"][self.memory["current_id"]]
+            )
+        self.setup = {}
+        self.check_setup()
+        self.connection_fault = False
         self.messages = []
         self.seen = set()
         self.events = []
@@ -178,10 +107,69 @@ class MinecraftChat:
     def event(self, kind, **data):
         with self.lock:
             row = {"at_ms": time.time_ns() / 1e6, "kind": kind, **data}
+            if kind in {"goal_outcome", "construction_outcome", "craft_outcome"}:
+                start = next(
+                    (
+                        e
+                        for e in reversed(self.events)
+                        if e["kind"] == "goal_started"
+                        and e.get("goal_id") == data.get("goal_id")
+                    ),
+                    {},
+                )
+                row["request"] = start.get(
+                    "request", "Request not retained in current event window"
+                )
+                row["action"] = start.get("plan", {}).get("action")
+
+            if kind == "construction_outcome":
+                row["new_placement_count"] = len(row.get("new_placements", []))
+                row["removed_count"] = len(row.get("removed", []))
             self.events.append(row)
             self.events[:] = self.events[-2000:]
             with (self.root / "events.jsonl").open("a") as out:
                 out.write(json.dumps(row) + "\n")
+            if kind in {
+                "construction_outcome",
+                "craft_outcome",
+                "goal_outcome",
+            } and data.get("world"):
+                updated = deepcopy(self.memory)
+                outcomes = updated.setdefault("outcomes", [])
+                outcomes.append(
+                    {
+                        k: v
+                        for k, v in row.items()
+                        if k
+                        in {
+                            "kind",
+                            "at_ms",
+                            "world",
+                            "goal_id",
+                            "reason",
+                            "complete",
+                            "shortfall",
+                            "inventory_gains",
+                            "inventory_losses",
+                            "request",
+                            "action",
+                            "returned",
+                            "broken",
+                            "new_placement_count",
+                            "removed_count",
+                        }
+                    }
+                )
+                outcomes[:] = outcomes[-40:]
+                try:
+                    self.library_store.save(updated)
+                    self.memory = updated
+                except (OSError, ValueError) as exc:
+                    self.library_store.problem = (
+                        "Outcome memory could not be saved; event history preserved. "
+                        + str(exc)
+                    )
+                    self.error = self.library_store.problem
 
     def message(self, role, text):
         with self.lock:
@@ -209,18 +197,153 @@ class MinecraftChat:
         thread.start()
 
     def save_places(self):
-        temp = self.root / "places.tmp"
-        temp.write_text(
-            json.dumps({"places": self.places, "protections": self.protections})
-        )
-        temp.replace(self.root / "places.json")
+        self.place_store.save({"places": self.places, "protections": self.protections})
 
-    def connect(self, *, survival=False):
+    def memory_status(self):
+        return {
+            name: {"problem": store.problem, "generations": store.candidates()}
+            for name, store in self.memory_stores().items()
+        }
+
+    def memory_stores(self):
+        return {
+            "places": self.place_store,
+            "construction": self.construction_store,
+            "library": self.library_store,
+        }
+
+    def recover_memory(self, name, generation):
+        with self.control, self.lock:
+            if self.goal or self.busy or self.connecting:
+                raise ValueError(
+                    "Stop work and wait for reasoning to finish before restoring memory."
+                )
+            if name not in self.memory_stores():
+                raise ValueError("Unknown memory store")
+            value = self.memory_stores()[name].restore(generation)
+            if name == "places":
+                self.places, self.protections = value["places"], value["protections"]
+            elif name == "construction":
+                self.construction = value
+                if not self.library_store.problem:
+                    updated = deepcopy(self.memory)
+                    updated["structures"][
+                        value.get("structure_id", value["goal_id"])
+                    ] = deepcopy(value)
+                    updated["current_id"] = value.get("structure_id", value["goal_id"])
+                    self.library_store.save(updated)
+                    self.memory = updated
+            else:
+                self.memory = value
+                if value.get("current_id"):
+                    self.construction = deepcopy(
+                        value["structures"][value["current_id"]]
+                    )
+            self.event("memory_restored", store=name, generation=generation)
+            self.message(
+                "assistant",
+                "Saved memory restored; damaged state preserved. No work resumed. Ask me to inspect the site before continuing.",
+            )
+
+    def persist_construction(self, record):
+        key = record.setdefault("structure_id", record["goal_id"])
+        updated = deepcopy(self.memory)
+        updated["structures"][key] = deepcopy(record)
+        updated["current_id"] = key
+        # One canonical commit includes all records and the current selection.
+        # A crash before the compatibility mirror cannot split named/latest state.
+        self.library_store.save(updated)
+        self.memory = updated
+        self.construction_store.save(record)
+
+    def remember_resource_constraint(
+        self, world, target, reason, *, signature=None, cluster=None
+    ):
+        with self.lock:
+            updated = deepcopy(self.memory)
+            scope = json.dumps(world)
+            records = updated.setdefault("resource_constraints", {}).setdefault(
+                scope, []
+            )
+            records.append(
+                {
+                    "target": target,
+                    "reason": reason,
+                    "at_ms": time.time_ns() / 1e6,
+                    "status": "historical failure; reinspection required",
+                    "signature": signature,
+                    "cluster": cluster,
+                }
+            )
+            records[:] = records[-24:]
+            self.library_store.save(updated)
+            self.memory = updated
+
+    def remember_details(self, plan, state):
+        scope = json.dumps(identity(state))
+        name = plan.get("structure_name", "")
+        if name:
+            if not self.construction or self.construction["world"] != identity(state):
+                raise ValueError("No validated structure in this world to name.")
+            record = deepcopy(self.construction)
+            if any(
+                r.get("name") == name
+                and r["world"] == record["world"]
+                and r.get("structure_id", r["goal_id"])
+                != record.get("structure_id", record["goal_id"])
+                for r in self.memory["structures"].values()
+            ):
+                raise ValueError(
+                    "That structure name is already used. Choose another name."
+                )
+            record["name"] = name
+            self.persist_construction(record)
+            self.construction = record
+        if plan.get("preference"):
+            updated = deepcopy(self.memory)
+            values = updated["preferences"].setdefault(scope, [])
+            if plan["preference"] not in values:
+                values.append(plan["preference"])
+            self.library_store.save(updated)
+            self.memory = updated
+        return bool(name or plan.get("preference"))
+
+    def check_setup(self):
+        from smb3_agent.minecraft_delivery import setup_status
+
+        self.setup = setup_status()
+        self.provider.refresh() if hasattr(self.provider, "refresh") else None
+
+    def connect(self, *, survival=False, create=False, accept_eula=False):
         with self.lock:
             if self.closed:
                 raise ValueError("Session closed")
             if self.connecting or self.bridge:
                 return
+            if self.practice_factory is PracticeServer:
+                from smb3_agent.minecraft_delivery import (
+                    world_home,
+                    retained_world,
+                    java_runtime,
+                    node_runtime,
+                )
+
+                home = world_home(survival)
+                java_runtime()
+                node_runtime()
+                if create:
+                    if home.exists() and any(home.iterdir()):
+                        raise ValueError(
+                            "A retained world already exists. Open it or restore its backup; creation will not overwrite it."
+                        )
+                    if not accept_eula:
+                        raise ValueError(
+                            "Read and accept the Minecraft EULA before creating a new practice world."
+                        )
+                else:
+                    retained_world(home, survival=survival)
+            self.create_world = create
+            self.accept_eula = accept_eula
             self.connecting = True
             self.activity = "Opening practice world…"
         self.survival = survival
@@ -236,10 +359,13 @@ class MinecraftChat:
                     if self.survival
                     else self.practice_factory()
                 )
-                self.practice.start()
+                self.practice.start(
+                    accept_eula=True
+                ) if self.create_world and self.accept_eula else self.practice.start()
                 self.bridge = self.bridge_factory()
                 state = self.bridge.connect(world_id=self.practice.world_id)
                 with self.lock:
+                    self.connection_fault = False
                     self.state = state
                     self.home = state["position"]
                     self.activity = "Ready. Where shall we go?"
@@ -259,15 +385,44 @@ class MinecraftChat:
             self.connecting = False
 
     def _record_worker(self):
+        bridge = self.bridge
         sequence = 0
-        while not self.closed and self.bridge:
-            events = self.bridge.events_after(sequence)
+        while not self.closed and self.bridge is bridge:
+            events = bridge.events_after(sequence)
             if events:
                 with (self.root / "worker-events.jsonl").open("a") as out:
                     for event in events:
                         out.write(json.dumps(event) + "\n")
+                        if event.get("session_id") != bridge.session_id:
+                            continue
+                        if event["type"] == "state":
+                            with self.lock:
+                                self.state = event["result"]
+                        if event["type"] in {"disconnected", "safety_stopped"}:
+                            self.connection_lost(
+                                event.get("reason", "Game disconnected")
+                            )
                 sequence = events[-1]["seq"]
+            if bridge.process.poll() is not None:
+                self.connection_lost("Minecraft worker exited")
+                return
             time.sleep(0.25)
+
+    def connection_lost(self, reason):
+        with self.lock:
+            if self.connection_fault or self.connecting or self.closed:
+                return
+            self.connection_fault = True
+            self.epoch += 1
+            self.cancel.set()
+            self.goal = self.supervisor = self.active_action = None
+            self.state = {**self.state, "ready": False}
+            self.error = (
+                reason + ". Reconnect, inspect current state, and give a fresh request."
+            )
+            self.activity = "Work stopped; no automatic resumption."
+            self.event("connection_authority_revoked", reason=reason)
+            self.message("assistant", self.error)
 
     def snapshot(self):
         with self.lock:
@@ -283,16 +438,19 @@ class MinecraftChat:
                     None,
                 )
                 if latest:
-                    self.state = latest
+                    self.state = (
+                        {**latest, "ready": False} if self.connection_fault else latest
+                    )
                 if events and any(
                     e["type"] == "disconnected"
                     and e["session_id"] == self.bridge.session_id
                     for e in events
                 ):
                     self.state = {**self.state, "ready": False}
-                    self.error = (
-                        "Game disconnected. Reconnect to start a fresh session."
-                    )
+                    if not self.error:
+                        self.error = (
+                            "Game disconnected. Reconnect to start a fresh session."
+                        )
             progress = ""
             if self.goal and self.active_action and self.state.get("active"):
                 action, began = self.active_action
@@ -315,27 +473,44 @@ class MinecraftChat:
                         progress += f" · {gap:.0f} blocks from {action['player']}"
             return deepcopy(
                 {
+                    "setup": self.setup,
                     "session_id": self.bridge.session_id if self.bridge else None,
                     "state": self.state,
                     "messages": self.messages,
                     "goal": self.goal,
                     "activity": self.activity,
                     "progress": progress,
-                    "error": self.error,
+                    "error": self.error
+                    or next(
+                        (
+                            store.problem
+                            for store in self.memory_stores().values()
+                            if store.problem
+                        ),
+                        None,
+                    ),
                     "busy": self.busy,
+                    "stopping": self.stopping,
+                    "stop_failed": self.stop_failed,
                     "connecting": self.connecting,
                     "codex": self.provider.status,
                     "usage": self.provider.usage[-20:],
+                    "memory": self.memory_status(),
                 }
             )
 
     def authority(self):
-        return (self.epoch, self.bridge.session_id, self.bridge.revision)
+        return (
+            self.epoch,
+            self.bridge.session_id if self.bridge else None,
+            self.bridge.revision if self.bridge else None,
+        )
 
     def valid(self, authority, cancel):
         return (
             not self.closed
             and not cancel.is_set()
+            and not self.connection_fault
             and self.bridge
             and authority == self.authority()
         )
@@ -359,13 +534,31 @@ class MinecraftChat:
                 or not self.bridge
                 or session_id != self.bridge.session_id
                 or self.connecting
+                or self.connection_fault
             ):
                 raise ValueError("Connection changed; reconnect before sending")
             # Explicit emergency shorthand only. Ordinary intent is always Codex interpreted.
             direct_stop = text.lower().strip(".! ") in {"stop", "stop now"}
+            if (self.stopping or self.stop_failed) and not direct_stop:
+                self.event(
+                    "request_rejected",
+                    request_id=request_id,
+                    reason="stop_pending" if self.stopping else "stop_unconfirmed",
+                )
+                raise ValueError(
+                    "Stopping; your draft is retained. Send again after Stop is confirmed."
+                    if self.stopping
+                    else "Stop is unconfirmed. Your draft is retained; reconnect before sending."
+                )
             if self.busy and not direct_stop:
                 raise ValueError(
                     "Codex is answering. Your draft is retained; send it when ready."
+                )
+            if not direct_stop and any(
+                store.problem for store in self.memory_stores().values()
+            ):
+                raise ValueError(
+                    "Memory needs recovery in Session details before new requests. Stop remains available."
                 )
             self.seen.add(request_id)
             self.message("user", text)
@@ -382,34 +575,33 @@ class MinecraftChat:
         self.spawn(lambda: self._reply(text, authority, cancel))
 
     def context(self, text, state):
-        return {
-            "instructions": RULES,
-            "request": text,
-            "observations": {**state, "resources": state.get("resources", [])[:24]},
-            "active_goal": self.goal,
-            "named_places": self.places,
-            "protected_areas": self.protections,
-            "session_start": self.home,
-            "recent_conversation": [
-                {"role": m["role"], "text": m["text"][:1000]}
-                for m in self.messages[-10:]
-            ],
-            "recent_results": [
-                e
-                for e in self.events
-                if e["kind"] in {"goal_outcome", "goal_recovery", "action_result"}
-            ][-3:],
-            "goal_progress": (
-                {
-                    "blocks_broken": self.supervisor.broken,
-                    "inventory_gains": dict(self.supervisor.gained),
-                    "inventory_losses": dict(self.supervisor.lost),
-                    "actions_left": self.supervisor.remaining,
-                }
-                if self.supervisor
-                else None
-            ),
-        }
+        supervisor = self.supervisor
+        progress = (
+            None
+            if supervisor is None
+            else {
+                "blocks_broken": supervisor.broken,
+                "inventory_gains": dict(supervisor.gained),
+                "inventory_losses": dict(supervisor.lost),
+                "actions_left": supervisor.remaining,
+            }
+        )
+        return build_context(
+            text,
+            state,
+            memory=self.memory,
+            opened_at_ms=self.opened_at_ms,
+            goal=self.goal,
+            active_goal_id=supervisor.id if supervisor else None,
+            site_offer=self.site_offer,
+            construction=self.construction,
+            places=self.places,
+            protections=self.protections,
+            home=self.home,
+            messages=self.messages,
+            events=self.events,
+            goal_progress=progress,
+        )
 
     def infer(self, role, context, output, cancel, authority):
         self.event(
@@ -433,9 +625,28 @@ class MinecraftChat:
         started_at = time.monotonic()
         try:
             state = self.bridge.observe()
-            intent = self.infer(
-                "language", self.context(text, state), INTENT, cancel, authority
+            idle = not (
+                self.goal
+                or self.supervisor
+                or state.get("active")
+                or state.get("queued")
             )
+            initial_plan = None
+            if idle:
+                initial_plan = self.infer(
+                    "gameplay", self.context(text, state), IDLE_PLAN, cancel, authority
+                )
+                action = initial_plan["action"]
+                intent = {
+                    "kind": action
+                    if action in {"question", "stop", "clarify", "unavailable"}
+                    else "goal",
+                    "reply": initial_plan["reply"],
+                }
+            else:
+                intent = self.infer(
+                    "language", self.context(text, state), INTENT, cancel, authority
+                )
             with self.lock:
                 if not self.valid(authority, cancel):
                     self.event("stale_reply_discarded", authority=authority)
@@ -443,6 +654,20 @@ class MinecraftChat:
                 if intent["kind"] in {"question", "clarify", "unavailable"}:
                     reply = intent["reply"]
                     current = self.snapshot()["state"]
+                    if any(
+                        state.get(k) != current.get(k)
+                        for k in ("inventory", "held_item", "health", "food")
+                    ):
+                        reply += (
+                            "\nState changed while I was answering. Current held item: "
+                            + str(current.get("held_item") or "hand")
+                            + "; inventory: "
+                            + ", ".join(
+                                f"{i['count']} {i['name']}"
+                                for i in current.get("inventory", [])
+                            )
+                            + "."
+                        )
                     if state.get("active") and not current.get("active"):
                         reply += (
                             "\nUpdate: that activity ended while I was answering. "
@@ -458,30 +683,38 @@ class MinecraftChat:
             if intent["kind"] == "stop":
                 self.stop()
                 return
-            # Transition first. An intent response never receives fresh execution authority.
-            with self.control:
-                with self.lock:
-                    if not self.valid(authority, cancel):
-                        return
-                stopped = self.bridge.stop(session_id=authority[1])
-                with self.lock:
-                    if cancel.is_set() or self.epoch != authority[0]:
-                        return
-                    if not stopped.get("controls_cleared") or not stopped.get(
-                        "stopped_observed"
-                    ):
-                        raise ValueError(
-                            "Previous motion cessation unconfirmed; no new goal started"
-                        )
-                    self.goal = self.supervisor = None
-                    authority = self.authority()
-                    self.activity = "Planning your destination…"
+            if not idle:
+                # Transition first. An intent response never receives fresh execution authority.
+                with self.control:
+                    with self.lock:
+                        if not self.valid(authority, cancel):
+                            return
+                    stopped = self.bridge.stop(session_id=authority[1])
+                    with self.lock:
+                        if cancel.is_set() or self.epoch != authority[0]:
+                            return
+                        if not stopped.get("controls_cleared") or not stopped.get(
+                            "stopped_observed"
+                        ):
+                            raise ValueError(
+                                "Previous motion cessation unconfirmed; no new goal started"
+                            )
+                        self.goal = self.supervisor = None
+                        authority = self.authority()
+                        self.activity = "Planning your destination…"
             # Fresh inference after the revision barrier; never relabel the first proposal.
             for attempt in range(2):
-                state = self.bridge.observe()
-                plan = self.infer(
-                    "gameplay", self.context(text, state), PLAN, cancel, authority
-                )
+                if initial_plan is not None:
+                    plan, initial_plan = initial_plan, None
+                else:
+                    state = self.bridge.observe()
+                    plan = self.infer(
+                        "gameplay",
+                        self.context(text, state),
+                        BUILD_PLAN,
+                        cancel,
+                        authority,
+                    )
                 fresh = self.bridge.observe()
                 with self.control, self.lock:
                     if not self.valid(authority, cancel):
@@ -494,7 +727,19 @@ class MinecraftChat:
                         raise ValueError(
                             "World changed while planning; request did not start."
                         )
-                    if self.distance(state["position"], fresh["position"]) > 1.5:
+                    if idle and (
+                        self.goal
+                        or self.supervisor
+                        or fresh.get("active")
+                        or fresh.get("queued")
+                    ):
+                        raise ValueError(
+                            "Activity changed while planning; request a fresh goal."
+                        )
+                    if self.distance(state["position"], fresh["position"]) > 1.5 or any(
+                        state.get(k) != fresh.get(k)
+                        for k in ("inventory", "health", "food")
+                    ):
                         if attempt == 0:
                             continue
                         raise ValueError(
@@ -504,16 +749,28 @@ class MinecraftChat:
                         self.activity = "Ready"
                         self.message("assistant", plan["reply"])
                         return
+                    if plan["action"] == "remember" and self.remember_details(
+                        plan, fresh
+                    ):
+                        self.activity = "Memory saved. No construction started."
+                        self.message("assistant", self.activity)
+                        return
                     if plan["action"] in {
                         "remember",
                         "return",
                         "gather",
+                        "build",
+                        "craft",
                         "protect",
                         "visit",
                     }:
-                        supervisor = Goal(
-                            self, plan, fresh, authority, started_at=started_at
-                        )
+                        supervisor = (
+                            ConstructionGoal
+                            if plan["action"] == "build"
+                            else CraftGoal
+                            if plan["action"] == "craft"
+                            else Goal
+                        )(self, plan, fresh, authority, started_at=started_at)
                         if plan["protect_place"]:
                             name = plan["protect_place"]
                             if name == plan["remember"]:
@@ -540,11 +797,14 @@ class MinecraftChat:
                         self.message("assistant", plan["reply"])
                         self.event(
                             "goal_started",
+                            request=text,
                             goal_id=supervisor.id,
                             authority=authority,
                             plan=plan,
-                            deadline_seconds=240,
-                            actions=80,
+                            deadline_seconds=900
+                            if plan["action"] in {"build", "craft"}
+                            else 240,
+                            actions=supervisor.remaining,
                         )
                         self.spawn(supervisor.run)
                         return
@@ -598,58 +858,11 @@ class MinecraftChat:
                 if self.cancel is cancel:
                     self.busy = False
 
-    @staticmethod
-    def distance(a, b):
-        return math.sqrt(sum((a[k] - b[k]) ** 2 for k in ("x", "y", "z")))
+    # Preserve the existing coordinator API; geometry owns no session state.
+    distance = staticmethod(distance)
 
     def resolve(self, plan, state):
-        p = state["position"]
-        entities = {e["name"]: e for e in state.get("entities", [])}
-        if plan["action"] == "follow" or plan["direction"] == "player":
-            entity = entities.get(plan["player"])
-            if not entity or self.distance(p, entity["position"]) > 32:
-                raise ValueError(
-                    "That player is not observed within 32 blocks. Move closer or name a visible player."
-                )
-            if plan["action"] == "follow":
-                return {
-                    "action": "follow",
-                    "player": plan["player"],
-                    "entity_id": entity["id"],
-                    "duration_ms": 25000,
-                }
-            target = entity["position"]
-        elif plan["direction"] == "home":
-            place = self.places.get("home")
-            if place and place["world"] != identity(state):
-                raise ValueError("Home belongs to another world/dimension.")
-            target = place["position"] if place else self.home
-        else:
-            d = plan["distance"]
-            if not 1 <= d <= 30:
-                raise ValueError("Choose a walking distance between 1 and 30 blocks.")
-            yaw = state.get("yaw", 0)
-            vectors = {
-                "north": (0, -1),
-                "south": (0, 1),
-                "east": (1, 0),
-                "west": (-1, 0),
-                "forward": (-math.sin(yaw), -math.cos(yaw)),
-                "back": (math.sin(yaw), math.cos(yaw)),
-                "left": (math.cos(yaw), -math.sin(yaw)),
-                "right": (-math.cos(yaw), math.sin(yaw)),
-            }
-            if plan["direction"] not in vectors:
-                raise ValueError(
-                    "Please name a direction, home, or an observed player."
-                )
-            x, z = vectors[plan["direction"]]
-            target = {"x": p["x"] + d * x, "y": p["y"], "z": p["z"] + d * z}
-        if self.distance(p, target) > 32:
-            raise ValueError(
-                "Destination is beyond this session's 32-block movement limit."
-            )
-        return {"action": "move", "target": target}
+        return resolve_movement(plan, state, places=self.places, home=self.home)
 
     def _outcome(self, future, authority, rid):
         try:
@@ -673,32 +886,54 @@ class MinecraftChat:
 
     def stop(self):
         with self.lock:
+            if self.stopping:
+                self.event("stop_coalesced")
+                return
+            self.stopping = True
+            self.stop_failed = False
             self.epoch += 1
+            epoch, bridge = self.epoch, self.bridge
             self.cancel.set()
             self.goal = self.supervisor = None
-            self.activity = "Stopping…"
+            self.activity = (
+                "Stopping — new requests are blocked; your draft is retained."
+            )
             self.event("stop_requested")
-        self.spawn(self._stop)
+        self.spawn(lambda: self._stop(epoch, bridge))
 
-    def _stop(self):
+    def _stop(self, epoch, bridge):
         try:
             with self.control:
-                result = (
-                    self.bridge.stop() if self.bridge and self.bridge.session_id else {}
-                )
+                result = bridge.stop() if bridge and bridge.session_id else {}
                 self.event("stop_completed", result=result)
-                self.activity = (
-                    "Stopped — stationary position observed."
-                    if result.get("stopped_observed")
-                    else "No active connection; cessation unconfirmed."
-                )
+                with self.lock:
+                    if self.epoch != epoch or self.bridge is not bridge:
+                        return
+                    confirmed = result.get("controls_cleared") and result.get(
+                        "stopped_observed"
+                    )
+                    self.stopping = False
+                    self.stop_failed = not confirmed
+                    self.activity = (
+                        "Stopped — stationary position observed. You may send a new request."
+                        if confirmed
+                        else "Stop unconfirmed — reconnect before sending a new request."
+                    )
+                    if not confirmed:
+                        self.error = self.activity
         except Exception as exc:
-            self.error = "Stop unconfirmed: " + str(exc)
+            with self.lock:
+                if self.epoch == epoch and self.bridge is bridge:
+                    self.stopping = False
+                    self.stop_failed = True
+                    self.error = (
+                        "Stop unconfirmed: " + str(exc) + ". Reconnect before sending."
+                    )
 
     def reconnect(self):
         with self.lock:
             if not self.bridge:
-                self.connect()
+                self.connect(survival=getattr(self, "survival", False))
                 return
             if self.connecting:
                 return
@@ -706,16 +941,44 @@ class MinecraftChat:
             self.cancel.set()
             self.goal = self.supervisor = None
             self.connecting = True
+            self.connection_fault = True
+            self.state = {**self.state, "ready": False}
             self.activity = "Reconnecting; no work will resume…"
 
         def run():
             try:
                 with self.control:
                     if self.bridge:
-                        state = self.bridge.reconnect(
-                            expected_session_id=self.bridge.session_id
-                        )
+                        if (
+                            self.practice
+                            and self.practice.process
+                            and self.practice.process.poll() is not None
+                        ):
+                            home = self.practice.home
+                            from smb3_agent.minecraft_delivery import retained_world
+
+                            retained_world(
+                                home,
+                                expected_id=self.practice.world_id,
+                                survival=getattr(self.practice, "survival", None),
+                            )
+                            self.practice.close()
+                            self.practice.start()
+                        if (
+                            hasattr(self.bridge, "process")
+                            and self.bridge.process.poll() is not None
+                        ):
+                            self.bridge.close()
+                            self.bridge = self.bridge_factory()
+                            state = self.bridge.connect(world_id=self.practice.world_id)
+                            self.spawn(self._record_worker)
+                        else:
+                            state = self.bridge.reconnect(
+                                expected_session_id=self.bridge.session_id
+                            )
                         with self.lock:
+                            self.connection_fault = False
+                            self.stopping = self.stop_failed = False
                             self.state, self.home = state, state["position"]
                             self.activity, self.error = (
                                 "Reconnected. No work resumed.",
@@ -724,6 +987,8 @@ class MinecraftChat:
                         self.event("reconnected", session_id=self.bridge.session_id)
             except Exception as exc:
                 self.error = "Reconnect failed: " + str(exc)
+                self.activity = "Disconnected; reconnect did not complete."
+                self.event("reconnect_failed", error=str(exc))
             finally:
                 self.connecting = False
 

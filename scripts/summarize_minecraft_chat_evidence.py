@@ -1,4 +1,4 @@
-"""Read-only summary of retained MC-B1-02 events; never drives gameplay."""
+"""Read-only summary of retained events; never drives gameplay."""
 
 import json
 from pathlib import Path

@@ -3,7 +3,9 @@ const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
 const { Vec3 } = require('vec3')
 const { Scheduler } = require('./scheduler.cjs')
-const { LOGS, inside, regionsOf, resources, safeTarget, chooseTool, visibleFrom, stands, multiChanges, goalGuard } = require('./resource-skills.cjs')
+const { MINEABLE, LOGS, inside, regionsOf, resources, safeTarget, chooseTool, visibleFrom, stands, multiChanges, goalGuard } = require('./resource-skills.cjs')
+const crafting = require('./crafting.cjs')
+const construction = require('./construction.cjs')
 const { openViewer } = require('./viewer.cjs')
 // stdout is exclusively JSONL. Do not forward game/chat/authentication text.
 console.log = () => {}
@@ -27,6 +29,7 @@ function observe () {
     entities: Object.values(bot?.players ?? {}).filter(v => v.entity && v.username !== bot.username).slice(0, 16).map(v => ({ name: v.username, id: v.entity.id, position: v.entity.position })),
     players: Object.keys(bot?.players ?? {}), viewer_url: viewer?.url ?? null, viewer_clients: viewerClients,
     resources: ready && p ? resources(bot) : [],
+    scout_sites: ready && p ? require("./resource-skills.cjs").scoutSites(bot) : [],
     drops: Object.values(bot?.entities ?? {}).filter(e => e.name === 'item' && e.position.distanceTo(p) < 32).slice(0, 32).map(e => ({ id: e.id, position: e.position, item: e.getDroppedItem?.()?.name })),
     nearby_blocks: p ? [new Vec3(0, -1, 0), new Vec3(1, -1, 0), new Vec3(0, 0, 1)].map(d => bot.blockAt(p.floored().plus(d))).filter(Boolean).map(b => ({ name: b.name, position: b.position })) : []
   }
@@ -51,12 +54,41 @@ function followEntity (args) {
   if (entity.position.distanceTo(position()) > 32) throw Error('follow_distance_limit')
   return entity
 }
+const routing = require('./routes.cjs')
+const travelByGoal = new Map()
 async function run (args, signal) {
   const local = bot
   const before = observe()
   const abort = () => haltBot(local)
   signal.addEventListener('abort', abort, { once: true })
   let violation = null
+  let travelPosition=local.entity.position.clone()
+  let reserveCheck=0, samples=[], walkActive=false, routeStall=false, blockedSteps=[]
+  let planned=null
+  const used=()=>args.goal_id?(travelByGoal.get(args.goal_id)||0):0
+  const choose=(targets,exact=false)=>{planned=routing.select(local,targets,{...args,exact_target:exact},used());return new Vec3(planned.target.x,planned.target.y,planned.target.z)}
+  if(args.goal_id && !travelByGoal.has(args.goal_id)) {
+    if(travelByGoal.size>=64)travelByGoal.delete(travelByGoal.keys().next().value)
+    travelByGoal.set(args.goal_id,0)
+  }
+  const travel=()=>{
+    if(!args.goal_id)return
+    const now=local.entity.position
+    travelByGoal.set(args.goal_id,travelByGoal.get(args.goal_id)+now.distanceTo(travelPosition))
+    travelPosition=now.clone()
+    const at=Date.now()
+    samples.push({at,travel:used(),position:now.clone()});samples=samples.filter(s=>at-s.at<=3500)
+    if(walkActive && (routing.oscillating(samples) || (samples.length>1 && at-samples[0].at>=2500 && now.distanceTo(samples[0].position)<.6))) {routeStall=true;haltBot(local)}
+    if(args.return_target&&!args.returning&&at-reserveCheck>1000) {
+      reserveCheck=at
+      const back=routing.route(local,now,args.return_target,args)
+      if(!back.known)violation='return_route_unknown'
+      else if(used()+Math.ceil(back.length*1.5)+8>=(args.travel_budget||192))violation='return_reserve_required'
+    }
+    if(used()>(args.travel_budget||192))violation='goal_total_travel_limit'
+    if(violation)haltBot(local)
+  }
+  local.on('physicsTick',travel)
   const guard = setInterval(() => {
     violation = violation || goalGuard(local, args, worldId)
     if (violation) haltBot(local)
@@ -68,8 +100,31 @@ async function run (args, signal) {
     if (args.world && JSON.stringify(args.world) !== JSON.stringify([worldId, local.game.dimension, VERSION])) throw Error('stale_world')
     const regions = regionsOf(args.protected)
     const movements = local.pathfinder.movements
-    movements.exclusionAreasStep = [b => inside(b.position || b, regions) ? 100 : 0]
+    movements.exclusionAreasStep = [b => inside(b.position || b, regions) ? 100 : 0, b=>blockedSteps.some(p=>p.x===(b.position||b).x&&p.z===(b.position||b).z)?Infinity:0]
     if (before.health <= 6 || before.food <= 4) throw Error('survival_health_or_food_limit')
+    const walk=async(target,exact=false)=>{
+      for(let attempt=0;attempt<3;attempt++) {
+        signal.throwIfAborted();if(violation)throw Error(violation)
+        choose([target],exact)
+        let remainingPath=[]
+        const updated=p=>{if(p.path?.length)remainingPath=p.path.map(q=>({x:q.x,y:q.y,z:q.z}))}
+        local.on('path_update',updated)
+        walkActive=true;routeStall=false;samples=[]
+        try {
+          await local.pathfinder.goto(exact?new goals.GoalBlock(Math.floor(target.x),Math.floor(target.y),Math.floor(target.z)):new goals.GoalNear(Math.floor(target.x),Math.floor(target.y),Math.floor(target.z),1))
+          signal.throwIfAborted();if(violation)throw Error(violation)
+          return
+        }catch(error){
+          signal.throwIfAborted();if(violation)throw Error(violation)
+          const current=local.entity.position.floored()
+          const next=routing.blockedStep(remainingPath,local.entity.position)
+          if(!routeStall||!next||attempt===2)throw error
+          blockedSteps.push(next)
+          emit('route_recovery',null,{goal_id:args.goal_id,blocked:next,attempt:attempt+1,travel_used:used(),reason:'observed_stall_or_oscillation'})
+        }finally{walkActive=false;local.removeListener('path_update',updated)}
+      }
+    }
+
     if (args.action === 'follow') {
       const entity = followEntity(args)
       const origin = position()
@@ -90,22 +145,37 @@ async function run (args, signal) {
       signal.throwIfAborted()
       return { before: before.position, after: position(), observed: 'player_tracking', player: args.player, samples }
     }
+    if (args.action === 'workstation') {
+      const existing=local.findBlocks({matching:local.registry.blocksByName.crafting_table.id,maxDistance:12,count:8}).find(p=>!inside(p,regions))
+      if(existing) return {target:existing,existing:true}
+      const base=position().floored()
+      for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++) {
+        const p=base.offset(dx,0,dz),b=local.blockAt(p),lower=local.blockAt(p.offset(0,-1,0))
+        if(b?.name==='air' && lower?.boundingBox==='block' && !inside(p,regions) && !construction.collision(local,p)) { safeTarget(local,p,regions); return {target:p,existing:false} }
+      }
+      throw Error('no_safe_workstation_site')
+    }
+    if (args.action === 'inspect_site') return args.search===true ? construction.survey(local,args,regions) : construction.inspect(local,args,regions)
+    if (args.action === 'recipe') return crafting.resolve(local,args.item,args.quantity,args.wood,args.table_available === true)
+    if (args.action === 'craft') {
+      const table=args.target ? local.blockAt(targetOf(args).floored()) : null
+      if(table) {safeTarget(local,table.position,regions); if(!visibleFrom(local,position(),table.position)) throw Error('workstation_unreachable')}
+      return await crafting.craft(local,args,signal,table)
+    }
+    if (args.action === 'place') return await construction.place(local,args,signal,regions,goals)
     let target = targetOf(args)
     safeTarget(local, target, regions)
     if (args.action === 'approach') {
-      const recovery = []
-      if (!visibleFrom(local, position(), target)) {
-        let arrived = false
-        for (const stand of stands(local, target, regions).filter(p => !args.goal_origin || p.distanceTo(new Vec3(args.goal_origin.x,args.goal_origin.y,args.goal_origin.z)) <= 32).slice(0, 3)) {
-          signal.throwIfAborted()
-          try {
-            await local.pathfinder.goto(new goals.GoalBlock(stand.x, stand.y, stand.z))
-            if (visibleFrom(local, position(), target)) { arrived = true; break }
-          } catch (error) { signal.throwIfAborted(); recovery.push({stand, reason:error.message}) }
-        }
-        if (!arrived) throw Error('resource_approach_obstructed: ' + recovery.map(r=>r.reason).join('; '))
+      let options=visibleFrom(local,position(),target)&&position().distanceTo(target)<=4.5?[position().clone()]:stands(local,target,regions).filter(p=>!args.goal_origin||p.distanceTo(new Vec3(args.goal_origin.x,args.goal_origin.y,args.goal_origin.z))<=30)
+      for(let attempt=0;attempt<3;attempt++) {
+        const stand=choose(options,true)
+        if(!visibleFrom(local,position(),target)||position().distanceTo(target)>4.5)await walk(stand,true)
+        signal.throwIfAborted();if(violation)throw Error(violation)
+        if(visibleFrom(local,position(),target)&&position().distanceTo(target)<=4.5)break
+        options=options.filter(p=>!p.equals(stand))
+        if(attempt===2||!options.length)throw Error('resource_route_changed')
       }
-      return { observed: 'reachable_block', target, position: position(), recovery }
+      return {observed:'reachable_block',target,position:position(),route:planned,travel_used:used()}
     }
     if (args.action === 'pickup') {
       // Drops move while falling: resolve the observed entity again before routing.
@@ -117,30 +187,37 @@ async function run (args, signal) {
       safeTarget(local, target, regions)
     }
     if (args.action === 'move' || args.action === 'pickup') {
-      const radius = 1
-      await local.pathfinder.goto(new goals.GoalNear(target.x, target.y, target.z, radius))
+      if(args.action==='move' && args.surface_destination===true) {
+        const sites=require('./resource-skills.cjs').surfaceDestinations(local,target,regions)
+        const reachable=sites.find(p=>local.pathfinder.getPathTo(movements,new goals.GoalBlock(p.x,p.y,p.z),150).status==='success')
+        if(!reachable)throw Error('no_reachable_observed_surface_near_destination')
+        target=reachable
+      }
+      await walk(target)
       signal.throwIfAborted()
       if (position().distanceTo(target) > 1.8) throw Error('movement_not_observed')
       if (args.action === 'pickup') await delay(700)
       signal.throwIfAborted()
-      return { before: before.position, after: position(), observed: 'position', inventory: observe().inventory }
+      return { before: before.position, after: position(), observed: 'position', inventory: observe().inventory,route:planned,travel_used:used() }
     }
     if (args.action === 'equip') {
       const block = local.blockAt(target.floored())
       if (!block || block.name !== args.expected) throw Error('resource_changed')
-      const tool = chooseTool(local, block)
+      const tool = args.hand_only === true && LOGS.includes(block.name) ? null : chooseTool(local, block)
       if (tool) await local.equip(tool, 'hand')
       else await local.unequip('hand')
       signal.throwIfAborted()
       return { observed: 'equipment', tool: local.heldItem?.name || 'hand', hand_valid: true }
     }
-    if (args.action === 'dig') {
+    if (args.action === 'dig' || args.action === 'remove') {
+      if(args.action==='remove' && (args.allow_removal!==true || !crafting.SUPPORTED.includes(args.expected) || (!args.expected.endsWith('_planks') && args.expected!=='crafting_table'))) throw Error('explicit_removal_permission_required')
       const block = local.blockAt(target.floored())
       if (!block || block.name === 'air' || block.name === 'bedrock' || target.distanceTo(position()) > 4.5) throw Error('block_not_reachable')
-      if (args.expected && (block.name !== args.expected || !LOGS.includes(block.name))) throw Error('resource_changed')
+      if (args.expected && (block.name !== args.expected || !(args.action==='remove' ? crafting.SUPPORTED : MINEABLE).includes(block.name))) throw Error('resource_changed')
       if (args.expected && local.inventory.emptySlotCount() === 0 && !local.inventory.items().some(i => i.name === block.name && i.count < i.stackSize)) throw Error('inventory_full')
       if (args.expected && !visibleFrom(local, position(), target.floored())) throw Error('resource_line_of_sight_blocked')
       if (args.expected && target.y < Math.floor(position().y)) throw Error('unsafe_dig_position')
+      if (args.expected && !block.canHarvest(local.heldItem?.type ?? null)) throw Error('missing_harvest_tool')
       // Mineflayer predicts block removal locally. Require the SERVER packet too.
       let serverState = null
       const changed = packet => {
@@ -163,6 +240,7 @@ async function run (args, signal) {
     }
     throw Error('unsupported_action')
   } finally {
+    local.removeListener("physicsTick",travel)
     clearInterval(guard)
     signal.removeEventListener('abort', abort)
     haltBot(local)
@@ -204,6 +282,19 @@ async function connect (request) {
     ready = false
     scheduler?.cancel().catch(() => {})
     emit('disconnected', null, { reason: 'game_connection_ended' })
+  })
+  let safetyLatched = false
+  const safety = reason => {
+    if (bot !== local || !scheduler || safetyLatched) return
+    safetyLatched = true
+    ready = false
+    haltBot(local)
+    scheduler.cancel().catch(() => {}).finally(() => emit('safety_stopped', null, { reason }))
+  }
+  local.on('death', () => safety('Bot died; reconnect and inspect inventory before a fresh request'))
+  local.on('health', () => {
+    if (local.health <= 0) safety('Bot died; dropped inventory requires inspection')
+    else if (local.health <= 6 || local.food <= 4) safety('Low health or food; work stopped, choose how to recover')
   })
   let timer
   const connectDeadline = Date.now() + request.timeout_ms
@@ -259,11 +350,11 @@ async function handle (request) {
     }
     if (lifecycleBusy || !ready) throw Error('not_ready')
     if (request.op === 'observe' || request.op === 'capabilities') {
-      emit('completed', request, { result: request.op === 'observe' ? observe() : { actions: ['move', 'dig', 'follow', 'approach', 'equip', 'pickup'], protocol: 1, max_distance: 32, max_timeout_ms: 30000 } })
+      emit('completed', request, { result: request.op === 'observe' ? observe() : { actions: ['move', 'dig', 'follow', 'approach', 'equip', 'pickup', 'recipe', 'craft', 'inspect_site', 'place', 'workstation', 'remove'], protocol: 1, max_distance: 32, max_timeout_ms: 30000 } })
     } else if (request.op === 'execute') {
-      if (!['move', 'dig', 'follow', 'approach', 'equip', 'pickup'].includes(request.args?.action)) throw Error('unsupported_action')
+      if (!['move', 'dig', 'follow', 'approach', 'equip', 'pickup', 'recipe', 'craft', 'inspect_site', 'place', 'workstation', 'remove'].includes(request.args?.action)) throw Error('unsupported_action')
       if (request.args.action === 'follow') followEntity(request.args)
-      else targetOf(request.args)
+      else if (!['recipe','craft','inspect_site','workstation'].includes(request.args.action)) targetOf(request.args)
       if (stopBusy) throw Error('stop_in_progress')
       scheduler.submit(request)
     } else if (request.op === 'cancel') {
@@ -291,12 +382,13 @@ let input = ''
 process.stdin.setEncoding('utf8')
 process.stdin.on('data', chunk => {
   input += chunk
-  if (input.length > 65536) return shutdown()
   let end
   while ((end = input.indexOf('\n')) !== -1) {
     const line = input.slice(0, end); input = input.slice(end + 1)
+    if (Buffer.byteLength(line, 'utf8') > 65535) return shutdown()
     try { void handle(JSON.parse(line)) } catch { emit('failed', null, { error: 'invalid_json' }) }
   }
+  if (Buffer.byteLength(input, 'utf8') > 65535) return shutdown()
 })
 let shuttingDown = false
 async function shutdown () {

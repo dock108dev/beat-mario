@@ -70,7 +70,7 @@ def test_cli_writes_artifacts_and_appends_github_summary(tmp_path: Path) -> None
     summary_path = tmp_path / "github-summary"
     summary_path.write_text("Existing summary\n")
     out = tmp_path / "results"
-    subprocess.run(
+    result = subprocess.run(
         [
             sys.executable,
             str(SCRIPT),
@@ -83,10 +83,34 @@ def test_cli_writes_artifacts_and_appends_github_summary(tmp_path: Path) -> None
             "--gate-outcome",
             "skipped",
         ],
-        check=True,
+        check=False,
     )
+    assert result.returncode == 1
     assert json.loads((out / "metrics.json").read_text())["test_report"] == "missing"
     assert (
         summary_path.read_text()
         == "Existing summary\n" + (out / "summary.md").read_text()
     )
+
+
+@pytest.mark.parametrize("content", ["<testsuites/>", '<testsuite tests="0"/>', '<testsuite tests="5"><testcase/></testsuite>'])
+def test_empty_or_inconsistent_report_is_invalid(tmp_path, content):
+    report = tmp_path / "report.xml"
+    report.write_text(content)
+    _, metrics = ci_report.build_report(report, "success")
+    assert metrics["test_report"] == "invalid"
+
+
+def test_node_direct_cases(tmp_path):
+    report = tmp_path / "node.xml"
+    report.write_text('<testsuites><testcase name="pass" time="1"/><testcase name="fail"><failure/></testcase></testsuites>')
+    _, metrics = ci_report.build_report(report, "failure")
+    assert metrics["tests"] == 2
+    assert metrics["failures"] == 1
+
+
+def test_failure_cannot_be_hidden_by_zero_counter(tmp_path):
+    report = tmp_path / "report.xml"
+    report.write_text('<testsuite tests="1" failures="0"><testcase><failure/></testcase></testsuite>')
+    _, metrics = ci_report.build_report(report, "success")
+    assert metrics["test_report"] == "invalid"

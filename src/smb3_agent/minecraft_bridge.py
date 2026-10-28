@@ -5,24 +5,31 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import Future, TimeoutError as FutureTimeout
 import json
-from pathlib import Path
 import subprocess
 import threading
 from uuid import uuid4
 
 from smb3_agent.delivery import OwnedGameProcesses
 
-WORKER = Path(__file__).resolve().parents[2] / "minecraft-worker" / "worker.cjs"
+from smb3_agent.paths import repository_path
+from smb3_agent.minecraft_delivery import data_artifacts, node_runtime
+
+WORKER = repository_path("minecraft-worker/worker.cjs")
 
 
 class MinecraftBridge:
-    def __init__(self, *, node="node", worker=WORKER):
+    def __init__(self, *, node=None, worker=WORKER):
         self.owned = OwnedGameProcesses()
+        diagnostics = (
+            data_artifacts() / "minecraft-chat/worker-stderr.log"
+        )
+        diagnostics.parent.mkdir(parents=True, exist_ok=True)
+        self.stderr_log = diagnostics.open("a")
         self.process = self.owned.launch(
-            [node, str(worker)],
+            [node or node_runtime(), str(worker)],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=self.stderr_log,
             text=True,
             bufsize=1,
         )
@@ -53,6 +60,11 @@ class MinecraftBridge:
                         and event["type"] in {"completed", "failed"}
                     ):
                         _, future = self.pending.pop(event["request_id"])
+                        # Canceling a caller future is not gameplay Stop. Still
+                        # consume its reply without killing the protocol reader.
+                        if not future.set_running_or_notify_cancel():
+                            self.condition.notify_all()
+                            continue
                         if event["type"] == "failed":
                             future.set_exception(
                                 RuntimeError(event.get("error", "worker_failed"))
@@ -65,7 +77,8 @@ class MinecraftBridge:
                 self.process.terminate()
             with self.condition:
                 for _, future in self.pending.values():
-                    future.set_exception(RuntimeError("Minecraft worker exited"))
+                    if future.set_running_or_notify_cancel():
+                        future.set_exception(RuntimeError("Minecraft worker exited"))
                 self.pending.clear()
                 self.condition.notify_all()
 
@@ -95,13 +108,29 @@ class MinecraftBridge:
             "timeout_ms": timeout_ms,
             "args": args or {},
         }
+        # Rejection history is an optimization; safety constraints must never be trimmed.
+        frame = json.dumps(request, allow_nan=False, separators=(",", ":")) + "\n"
+        if (
+            len(frame.encode("utf-8")) > 65536
+            and request["args"].get("action") == "inspect_site"
+        ):
+            request["args"] = dict(request["args"])
+            hints = list(request["args"].get("rejections", []))
+            while hints and len(frame.encode("utf-8")) > 65536:
+                hints.pop(0)
+                request["args"]["rejections"] = hints
+                frame = (
+                    json.dumps(request, allow_nan=False, separators=(",", ":")) + "\n"
+                )
+        if len(frame.encode("utf-8")) > 65536:
+            raise ValueError("Worker request exceeds bounded frame; no action sent")
         future = Future()
         with self.write_lock, self.condition:
             if rid in self.pending:
                 raise ValueError("Duplicate pending request")
             self.pending[rid] = (sid, future)
             try:
-                self.process.stdin.write(json.dumps(request, allow_nan=False) + "\n")
+                self.process.stdin.write(frame)
                 self.process.stdin.flush()
             except BaseException:
                 self.pending.pop(rid, None)
@@ -182,6 +211,7 @@ class MinecraftBridge:
         self.owned.close()
         self.reader.join(timeout=2)
         self.process.stdout.close()
+        self.stderr_log.close()
 
     def __enter__(self):
         return self

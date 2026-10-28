@@ -61,6 +61,33 @@ class CodexProvider:
         threading.Thread(target=check, daemon=True, name="codex-discovery").start()
         return dict(self.status)
 
+    def sign_in(self):
+        """User-requested browser login; owned process is canceled on app quit."""
+        if self.status.get("state") == "signing_in":
+            return
+        self.executable = self.executable or discover_codex()
+        if not self.executable:
+            raise ValueError("Codex CLI is missing. Install Codex CLI, then choose Check setup again.")
+        self.status.update(available=False, state="signing_in", message="Complete Codex sign-in in your browser, then check setup again.")
+        def run():
+            try:
+                with tempfile.TemporaryFile() as output:
+                    proc = subprocess.Popen([self.executable, "login"], stdout=output, stderr=output, env=self._env(), start_new_session=True)
+                    with self._lock:
+                        self._children.add(proc)
+                    try:
+                        proc.wait(timeout=180)
+                    except subprocess.TimeoutExpired:
+                        self._kill(proc)
+                    finally:
+                        with self._lock:
+                            self._children.discard(proc)
+            except OSError:
+                self.status.update(state="unavailable", message="Could not open Codex sign-in. Check the CLI installation and try again.")
+            finally:
+                self.refresh()
+        threading.Thread(target=run, daemon=True, name="codex-sign-in").start()
+
     def _env(self):
         env = os.environ.copy()
         # Preserve existing authentication, but make node discoverable from Finder.
@@ -69,16 +96,16 @@ class CodexProvider:
 
     def _discover(self):
         if not self.executable:
-            self.status.update(state="unavailable", message="Install Codex CLI and run codex login.")
+            self.status.update(state="unavailable", message="Install Codex CLI, then choose Check setup again.")
             return
         try:
             result = subprocess.run([self.executable, "login", "status"], capture_output=True,
                                     timeout=5, env=self._env())
             self.status.update(available=result.returncode == 0,
                 state="ready" if result.returncode == 0 else "sign_in_required",
-                message="Codex signed in" if result.returncode == 0 else "Run codex login in Terminal, then reopen Companion.")
+                message="Codex signed in" if result.returncode == 0 else "Choose Sign in to Codex and finish in your browser.")
         except (OSError, subprocess.TimeoutExpired):
-            self.status.update(state="unavailable", message="Codex status check failed; verify the CLI in Terminal.")
+            self.status.update(state="unavailable", message="Codex status check failed. Check the CLI installation, then choose Check setup again.")
 
     @staticmethod
     def _kill(proc):

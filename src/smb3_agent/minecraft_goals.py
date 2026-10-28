@@ -54,7 +54,7 @@ class Goal:
         self.world = identity(state)
         self.origin = deepcopy(state["position"])
         self.deadline = (time.monotonic() if started_at is None else started_at) + 240
-        self.remaining = 80
+        self.remaining = 160
         self.failures = 0
         self.broken = 0
         self.drops = set()
@@ -62,6 +62,9 @@ class Goal:
         self.gained = Counter()
         self.lost = Counter()
         self.skipped = set()
+        self.failed_columns = set()
+        self.scouted = []
+        self.failed_clusters = set()
         self.regions = deepcopy(chat.protections.get(json.dumps(self.world), []))
         self.resource = plan["resource"]
         self.names = LOGS if self.resource == "any_log" else [self.resource]
@@ -127,6 +130,8 @@ class Goal:
                 "goal_id": self.id,
                 "world": self.world,
                 "goal_origin": self.origin,
+                "travel_budget": 192,
+                "return_target": self.destination,
             }
             rid, future = self.chat.bridge.submit(
                 "execute",
@@ -136,7 +141,7 @@ class Goal:
                 revision=self.authority[2],
             )
             self.chat.active_action = (action, time.monotonic())
-            self.chat.activity = f"{action['action'].capitalize()} · {self.count(self.gained)} collected, {self.broken} blocks broken"
+            self.chat.activity = self.progress(action)
             self.chat.event(
                 "goal_child",
                 goal_id=self.id,
@@ -145,13 +150,24 @@ class Goal:
                 remaining=self.remaining,
                 action=action,
             )
-        result = future.result(timeout=timeout / 1000 + 4)
+        try:
+            result = future.result(timeout=timeout / 1000 + 4)
+        except Exception as exc:
+            self.check()
+            self.observe()
+            self.chat.event(
+                "goal_child_failed", goal_id=self.id, request_id=rid, error=str(exc)
+            )
+            raise
         self.check()
         self.chat.event(
             "goal_child_result", goal_id=self.id, request_id=rid, result=result
         )
         self.observe()
         return result
+
+    def progress(self, action):
+        return f"{action['action'].capitalize()} · {self.count(self.gained)} collected, {self.broken} blocks broken"
 
     def place(self, name, state):
         place = self.chat.places.get(name)
@@ -174,6 +190,11 @@ class Goal:
             if self.plan["remember"]:
                 with self.chat.control, self.chat.lock:
                     self.check(state)
+                    existing = self.chat.places.get(self.plan["remember"])
+                    if existing and existing["world"] != self.world:
+                        raise ValueError(
+                            "That place name belongs to another world; choose a different name to preserve it."
+                        )
                     self.chat.places[self.plan["remember"]] = {
                         "world": self.world,
                         "position": state["position"],
@@ -194,7 +215,12 @@ class Goal:
                 candidates = [
                     b
                     for b in state.get("resources", [])
-                    if b["name"] in self.names
+                    if b["name"]
+                    in (
+                        self.names
+                        + (["stone"] if self.resource == "cobblestone" else [])
+                    )
+                    and b.get("accessible", True)
                     and not protected(b["position"], self.regions)
                 ]
                 if not candidates:
@@ -206,136 +232,23 @@ class Goal:
                 self.child({"action": "approach", "target": target["position"]})
                 reason = "Reached an observed tree without modifying it."
             elif self.plan["action"] == "gather":
-                if (
-                    self.resource not in LOGS + ["any_log"]
-                    or not 1 <= self.quantity <= 32
-                ):
-                    raise ValueError(
-                        "Choose 1–32 common logs; crafting and other materials are not available yet."
-                    )
-                self.chat.message(
-                    "assistant",
-                    f"Starting with {self.count(self.initial)} matching logs. Collecting {self.needed} additional logs ({self.plan['quantity_mode']} request).",
-                )
-                while self.count(self.last) - self.count(self.initial) < self.needed:
-                    state = self.observe()
-                    if self.broken >= self.needed + 2:
-                        raise ValueError(
-                            "Block budget exhausted without requested inventory gain"
-                        )
-                    candidates = [
-                        b
-                        for b in state.get("resources", [])
-                        if b["name"] in self.names
-                        and not protected(b["position"], self.regions)
-                        and tuple(b["position"].values()) not in self.skipped
-                        and math.floor(state["position"]["y"])
-                        <= b["position"]["y"]
-                        <= math.floor(state["position"]["y"]) + 3
-                        and self.chat.distance(state["position"], b["position"]) <= 30
-                    ]
-                    candidates.sort(
-                        key=lambda b: self.chat.distance(
-                            state["position"], b["position"]
-                        )
-                    )
-                    if not candidates:
-                        raise ValueError(
-                            "No matching unprotected reachable candidates observed within 30 blocks. Move closer to another tree or choose another resource."
-                        )
-                    block = candidates[0]
-                    target = block["position"]
-                    prior_count = self.count(self.last)
-                    self.skipped.add(tuple(target.values()))
-                    try:
-                        self.child({"action": "approach", "target": target})
-                        tool = self.child(
-                            {
-                                "action": "equip",
-                                "target": target,
-                                "expected": block["name"],
-                            }
-                        )
-                        self.chat.event("goal_tool", goal_id=self.id, result=tool)
-                        result = self.child(
-                            {
-                                "action": "dig",
-                                "target": target,
-                                "expected": block["name"],
-                            }
-                        )
-                        if result.get("observed") != "server_block_change":
-                            raise ValueError("Server did not verify the broken block")
-                        self.broken += 1
-                        # Drops may arrive a few ticks after the block update.
-                        for _ in range(10):
-                            state = self.observe()
-                            if any(
-                                d.get("item") in self.names
-                                for d in state.get("drops", [])
-                            ):
-                                break
-                            time.sleep(0.1)
-                        drops = [
-                            d
-                            for d in state.get("drops", [])
-                            if d.get("item") in self.names
-                            and not protected(d["position"], self.regions)
-                        ]
-                        for drop in sorted(
-                            drops,
-                            key=lambda d: self.chat.distance(
-                                state["position"], d["position"]
-                            ),
-                        )[:3]:
-                            self.child(
-                                {
-                                    "action": "pickup",
-                                    "target": drop["position"],
-                                    "entity_id": drop["id"],
-                                }
-                            )
-                        self.observe()
-                        if (
-                            self.count(self.last) <= prior_count
-                            and state.get("game_mode") != "creative"
-                        ):
-                            raise ValueError(
-                                "No inventory gain after digging and pickup; trying another reachable target"
-                            )
-                        if (
-                            state.get("game_mode") == "creative"
-                            and self.count(self.gained) == 0
-                        ):
-                            raise ValueError(
-                                "Creative removal produced no collected logs; use the separate Survival world."
-                            )
-                    except Exception as exc:
-                        self.check()
-                        self.failures += 1
-                        self.chat.event(
-                            "goal_recovery",
-                            goal_id=self.id,
-                            reason=str(exc),
-                            failures=self.failures,
-                            skipped=target,
-                        )
-                        if (
-                            self.failures >= 3
-                            or "Creative" in str(exc)
-                            or "inventory_full" in str(exc)
-                        ):
-                            raise
-                        self.chat.activity = (
-                            "Trying another observed target after: " + str(exc)
-                        )
+                self.gather()
                 reason = "Requested inventory gain verified."
         except Exception as exc:
             reason = str(exc)
         try:
             self.check()
             if self.destination:
-                self.child({"action": "move", "target": self.destination})
+                current = self.observe()
+                if self.chat.distance(current["position"], self.destination) > 30:
+                    # Both endpoints are in the parent area, but may be >32 apart.
+                    # Return via the observed starting position; do not widen authority.
+                    self.child(
+                        {"action": "move", "target": self.origin, "returning": True}
+                    )
+                self.child(
+                    {"action": "move", "target": self.destination, "returning": True}
+                )
                 returned = True
                 if not reason:
                     reason = "Arrived at the saved place."
@@ -344,6 +257,7 @@ class Goal:
         with self.chat.lock:
             outcome = {
                 "goal_id": self.id,
+                "world": self.world,
                 "reason": reason,
                 "broken": self.broken,
                 "drops_observed": len(self.drops),
@@ -363,8 +277,6 @@ class Goal:
                 and not self.chat.closed
             ):
                 display_reason = reason
-                if "path" in reason.lower() or "obstructed" in reason.lower():
-                    display_reason = "Route blocked or path search exhausted its limit. No obstacles were modified."
                 text = f"{display_reason} Still needed: {outcome['shortfall']}. Server-verified breaks: {self.broken}; matching drop entities observed: {len(self.drops)}; matching inventory gain: {self.count(self.gained)}; net change: {outcome['net_matching']}."
                 if self.plan["action"] != "gather":
                     text = reason
@@ -377,3 +289,219 @@ class Goal:
                 self.chat.message("assistant", text)
                 self.chat.activity = text
                 self.chat.goal = self.chat.supervisor = self.chat.active_action = None
+
+    def gather(self):
+        if (
+            self.resource not in LOGS + ["any_log", "cobblestone"]
+            or not 1 <= self.quantity <= 32
+        ):
+            raise ValueError(
+                "Choose 1–32 common logs; crafting and other materials are not available yet."
+            )
+        self.chat.message(
+            "assistant",
+            f"Starting with {self.count(self.initial)} matching logs. Collecting {self.needed} additional logs ({self.plan['quantity_mode']} request).",
+        )
+        while self.count(self.last) - self.count(self.initial) < self.needed:
+            state = self.observe()
+            if self.destination and (
+                self.remaining <= 4 or self.deadline - time.monotonic() < 35
+            ):
+                raise ValueError(
+                    "Collection budget reserved for return; request another trip for the remaining logs."
+                )
+            if self.broken >= self.needed + 2:
+                raise ValueError(
+                    "Block budget exhausted without requested inventory gain"
+                )
+            candidates = [
+                b
+                for b in state.get("resources", [])
+                if b["name"]
+                in (self.names + (["stone"] if self.resource == "cobblestone" else []))
+                and b.get("accessible", True)
+                and not protected(b["position"], self.regions)
+                and tuple(b["position"].values()) not in self.skipped
+                and (b["position"]["x"], b["position"]["z"]) not in self.failed_columns
+                and b.get("cluster") not in self.failed_clusters
+                and math.floor(state["position"]["y"])
+                <= b["position"]["y"]
+                <= math.floor(state["position"]["y"]) + 4
+                and self.chat.distance(state["position"], b["position"]) <= 30
+            ]
+            prior = self.chat.memory.get("resource_constraints", {}).get(
+                json.dumps(self.world), []
+            )
+            now_ms = time.time_ns() / 1e6
+
+            def recent_failure(block):
+                return any(
+                    (
+                        (r["target"]["x"], r["target"]["z"])
+                        == (block["position"]["x"], block["position"]["z"])
+                        or (r.get("cluster") and r["cluster"] == block.get("cluster"))
+                    )
+                    and 0 <= now_ms - r.get("at_ms", 0) < 300_000
+                    and (
+                        not r.get("signature")
+                        or r["signature"] == block.get("signature")
+                    )
+                    for r in prior
+                )
+
+            candidates = [
+                b
+                for b in candidates
+                if not recent_failure(b)
+                and self.chat.distance(self.origin, b["position"]) <= 30
+            ]
+            candidates.sort(
+                key=lambda b: self.chat.distance(state["position"], b["position"])
+            )
+            if not candidates:
+                sites = [
+                    p
+                    for p in state.get("scout_sites", [])
+                    if self.chat.distance(self.origin, p) <= 24
+                    and not protected(p, self.regions)
+                    and all(self.chat.distance(p, old) >= 8 for old in self.scouted)
+                ]
+                if sites and len(self.scouted) < 3:
+                    target = max(
+                        sites,
+                        key=lambda p: min(
+                            [self.chat.distance(p, self.origin)]
+                            + [self.chat.distance(p, old) for old in self.scouted]
+                        ),
+                    )
+                    self.scouted.append(target)
+                    self.chat.event(
+                        "resource_scout",
+                        goal_id=self.id,
+                        target=target,
+                        attempt=len(self.scouted),
+                        travel_budget=192,
+                    )
+                    try:
+                        self.child({"action": "move", "target": target})
+                    except Exception as exc:
+                        self.check()
+                        self.chat.event(
+                            "resource_scout_failed", goal_id=self.id, reason=str(exc)
+                        )
+                    continue
+                observed = [
+                    b for b in state.get("resources", []) if b["name"] in self.names
+                ]
+                outside = [
+                    b
+                    for b in observed
+                    if self.chat.distance(self.origin, b["position"]) > 30
+                ]
+                if outside:
+                    p = outside[0]["position"]
+                    reason = f"Resource observed beyond this goal's travel bounds near {p}. Ask to travel toward that area, then gather."
+                elif observed:
+                    reason = "Locally remaining resource clusters are protected, inaccessible or recently failed; unchanged failures are skipped for five minutes. Ask to search farther from a different saved place."
+                else:
+                    reason = "No matching resource observed in the bounded surveyed area; availability elsewhere is unknown. Choose another observed wood type or request travel farther."
+                raise ValueError(reason)
+            block = candidates[0]
+            target = block["position"]
+            prior_count = self.count(self.last)
+            self.skipped.add(tuple(target.values()))
+            try:
+                self.child({"action": "approach", "target": target})
+                tool = self.child(
+                    {
+                        "action": "equip",
+                        "hand_only": self.plan.get("hand_only", False),
+                        "target": target,
+                        "expected": block["name"],
+                    }
+                )
+                self.chat.event("goal_tool", goal_id=self.id, result=tool)
+                result = self.child(
+                    {
+                        "action": "dig",
+                        "target": target,
+                        "expected": block["name"],
+                    }
+                )
+                if result.get("observed") != "server_block_change":
+                    raise ValueError("Server did not verify the broken block")
+                self.broken += 1
+                # Drops may arrive a few ticks after the block update.
+                for _ in range(10):
+                    state = self.observe()
+                    if any(d.get("item") in self.names for d in state.get("drops", [])):
+                        break
+                    time.sleep(0.1)
+                drops = [
+                    d
+                    for d in state.get("drops", [])
+                    if d.get("item") in self.names
+                    and not protected(d["position"], self.regions)
+                ]
+                for drop in sorted(
+                    drops,
+                    key=lambda d: self.chat.distance(state["position"], d["position"]),
+                )[:3]:
+                    self.child(
+                        {
+                            "action": "pickup",
+                            "target": drop["position"],
+                            "entity_id": drop["id"],
+                        }
+                    )
+                self.observe()
+                if (
+                    self.count(self.last) <= prior_count
+                    and state.get("game_mode") != "creative"
+                ):
+                    raise ValueError(
+                        "No inventory gain after digging and pickup; trying another reachable target"
+                    )
+                if (
+                    state.get("game_mode") == "creative"
+                    and self.count(self.gained) == 0
+                ):
+                    raise ValueError(
+                        "Creative removal produced no collected logs; use the separate Survival world."
+                    )
+            except Exception as exc:
+                self.check()
+                if "return_reserve_required" in str(
+                    exc
+                ) or "return_route_unknown" in str(exc):
+                    raise ValueError(
+                        "Outbound collection stopped to preserve return travel; "
+                        + str(exc)
+                    ) from exc
+                self.failures += 1
+                self.failed_columns.add((target["x"], target["z"]))
+                if block.get("cluster"):
+                    self.failed_clusters.add(block["cluster"])
+                self.chat.remember_resource_constraint(
+                    self.world,
+                    target,
+                    str(exc),
+                    signature=block.get("signature"),
+                    cluster=block.get("cluster"),
+                )
+                self.chat.event(
+                    "goal_recovery",
+                    goal_id=self.id,
+                    reason=str(exc),
+                    failures=self.failures,
+                    skipped=target,
+                )
+                if (
+                    self.failures >= 3
+                    or "Creative" in str(exc)
+                    or "inventory_full" in str(exc)
+                ):
+                    raise ValueError(
+                        f"Three resource clusters failed: {exc}. No obstacles changed. Ask to search from another saved area or travel farther."
+                    ) from exc
+                self.chat.activity = "Trying another observed target after: " + str(exc)

@@ -1,121 +1,72 @@
 # Game Companion
 
-Minecraft now supports bounded conversational log gathering, available tools, protected areas and saved-place return. [MC-B1-03 use and limits](docs/mc-b1-03-resources.md) · [live evidence](docs/mc-b1-03-evidence-20261027.md). Source qualification does not mean installed delivery; crafting/building is next.
+Choose Minecraft and chat beside its live view with a bot that plays as its own
+character. It can gather resources, craft supplies, build bounded wooden shelters,
+answer questions during play, and Stop. Codex CLI supplies the AI; gameplay runs
+headlessly without taking over the desktop.
 
-
-Game Companion is becoming a chatbot that plays games: choose a game and open
-its live view beside a persistent conversation.
-
-**Active plan: [Minecraft Beta 1](docs/beta-1-plan.md).** A headless bot plays as
-its own character while you chat or join the same world independently. Codex CLI
-is the AI engine. Ordinary conversation must not require pausing gameplay or
-controlling the user's screen. The next product goal is an NES emulator
-companion; Stardew is out of active delivery.
-
-**[MC-B1-03 passed local source and live qualification](docs/mc-b1-03-evidence-20261027.md).**
-Choose Minecraft, gather logs with available tools, protect areas and return to saved
-places. Ask questions during play, redirect work and Stop. Chat and places survive
-reopening without resuming goals. The human walkthrough remains deferred; installed
-delivery and full Beta 1 are incomplete. [Use and limitations](docs/mc-b1-03-resources.md).
-
-Double-click **Open Game Companion.command** for this source version, then choose
-Minecraft. The accepted retained practice world is reused. Java 21, Node 24.22.0,
-pinned worker dependencies and signed-in Codex CLI are required. No Screen
-Recording/Accessibility permission is used by the new Minecraft path. Stop Game
-Companion.command closes its owned game processes and saves the world.
-
-## Existing legacy capabilities
-
-- **Mario:** bounded World 1-1 strategy, opening-jump coaching, remembered
-  stairs/pipe guidance, experimental coin routes, and a supported sky 1UP activity.
-  Arbitrary levels, tactics, and complete coin coverage are unsupported.
-- **Stardew:** ordinary default-save isolated copying, observed preparation and narrow spring-patch watering; retained source planting-location discussion and supported
-  inspection/return routines. Reconnaissance is implemented but native acceptance
-  is pending. Arbitrary farms and delegated cave exploration are unverified.
-  The public Stardew CLI remains inspection-only; it does not select or copy a
-  save, open a game, or send input.
-- **Minecraft:** setup, calibration, and small camera requests. Movement,
-  placement, and wall execution remain disabled.
-- **OpenTTD:** a narrow loan-repayment reference integration using local Ollama.
-- **Experimental adapters:** data-only contributor fixtures; no native gameplay.
-
-Use the installed local app or the source checkout. Current source changes do not
-automatically update an installed app. Personal and small-group use follows
-[the local working approach](docs/personal-use.md).
-See [known limitations](docs/known-limitations.md) and the
-[Mario](docs/mario-player-guide.md) and [Stardew](docs/stardew-operator-guide.md) guides.
-
-## Legacy requirements
-
-- Python 3.11 or newer and [`uv`](https://docs.astral.sh/uv/).
-- macOS for native game observation and input; separately installed games.
-- Discoverable, signed-in Codex CLI for ordinary Mario/Stardew conversation.
-  Selected game images and context are sent for remote inference.
-- FCEUX and a supported local game file for Mario. Set `SMB3_GAME_FILE` or select
-  the file in setup. FCEUX discovery checks PATH and standard Homebrew locations.
-- Screen recording and Accessibility permissions for supported native input.
-- Stardew ordinary watering requires a supported game-created farm, approved
-  isolated copying and current-pixel readiness. The established default farm is
-  discovered by the app; manual profile calibration belongs to retained regression
-  workflows. See [Stardew setup](docs/private-beta-quick-start.md#stardew-ordinary-farm).
-
-Linux CI exercises offline contracts and tests, not native game behavior.
-OpenTTD additionally requires local Ollama with `gemma3:4b`.
+Minecraft is the main supported experience. Older integrations remain available
+with narrower capabilities. See [Minecraft usage and recovery](docs/minecraft.md)
+and [known limitations](docs/known-limitations.md).
 
 ## Source launch
 
-From the repository root:
+Use Python 3.11+, uv, the exact Node version in `minecraft-worker/.nvmrc`, Java 21,
+and a signed-in Codex CLI. From the repository root:
 
 ```bash
 uv sync --locked --all-extras
+npm ci --prefix minecraft-worker --ignore-scripts --no-audit --no-fund
 .venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
 ```
 
-Open `http://127.0.0.1:8765/` and choose Minecraft. `/minecraft` opens that same
-headless workspace. Historical games remain under `/legacy-games`, with Mario at
-`/mario` and Stardew at `/stardew`; `/setup`,
-`/onboarding` and `/lab` are secondary engineering surfaces. Their older native
-controls are not part of Minecraft Beta 1. See the [current launch guide](docs/mc-b1-02-chat-play.md).
+Open `http://127.0.0.1:8765/`; `/minecraft` opens the same workspace. Follow the
+in-app setup checks to open a retained world or explicitly create a practice world.
+[usage and development](docs/minecraft.md) explains the required runtimes and limits.
+No Screen Recording or Accessibility permission is needed for headless Minecraft.
+
+Alternatively, use **Open Game Companion.command** after installing dependencies.
+Use **Stop Game Companion.command** to close that background source instance and
+save its world. For a foreground server, use Control-C after Stop; packaged apps
+have their own Quit action. Closing a browser alone does not shut down the server.
+Reopening restores conversation and memory, never gameplay authority.
 
 The server accepts loopback hosts only. It has no remote-access authentication,
-TLS, or multi-user support. Do not expose it through a proxy, tunnel, or LAN bind.
-The app does not load `.env` files. `GAME_COMPANION_EXPERIMENTAL_ROOT` overrides
-only the Experimental-adapter installation root. See
-[runtime and configuration](docs/runtime-and-configuration.md) for settings and storage.
+TLS or multi-user support; do not expose it through a proxy, tunnel or LAN bind.
+It does not load `.env` files. `GAME_COMPANION_EXPERIMENTAL_ROOT` only overrides
+Experimental-adapter storage. See [runtime and configuration](docs/runtime-and-configuration.md)
+for data paths, settings and process ownership.
 
-## Legacy history, recovery and safe shutdown
+## Retained integrations
 
-Review and Start authorize the displayed finite scope. Stop/Take control releases
-input and cancels continuation. Wait for confirmed handback before switching or
-closing a game. If release cannot be confirmed, stop the specifically identified
-game process; do not terminate unrelated processes.
+Historical games remain under `/legacy-games`, with Mario at `/mario` and Stardew
+at `/stardew`. `/setup`, `/onboarding` and `/lab` are engineering surfaces.
 
-Saved results are descriptive. Reopening never restores a connection,
-observation, reviewed plan, or input permission. New work requires fresh compatible
-setup and review. Confirmed work, uncertain outcomes, and return-to-start are
-reported separately. See [recovery](docs/error-handling.md).
+- [Mario](docs/mario-player-guide.md): bounded strategy, coaching, coin routes and
+  demonstration work; requires FCEUX, a supported local game file and native permissions.
+- [Stardew](docs/stardew-operator-guide.md): retained preparation and bounded watering;
+  its public CLI is inspection-only. Broader activity remains unverified.
+- Legacy native Minecraft setup/calibration is separate from the headless product;
+  movement, placement and wall execution remain disabled.
+- OpenTTD retains a narrow loan-repayment reference using Ollama and `gemma3:4b`.
+  Experimental adapters are data-only contributor fixtures.
 
-After handback, stop the foreground server with Control-C. The source
-`Open Game Companion.command` starts a background server; use
-`Stop Game Companion.command` for that instance. Packaged apps have their own
-Quit action. Closing a browser alone is not a verified server shutdown.
+See [known limitations](docs/known-limitations.md) for supported boundaries.
+Linux CI checks offline behavior, not native game operation.
 
 ## Development and tests
 
 ```bash
 .venv/bin/python -m smb3_agent --help
-.venv/bin/python -m pytest -q tests/test_goals.py
+.venv/bin/python -m pytest -q tests/test_minecraft_chat.py tests/test_minecraft_memory.py
+npm test --prefix minecraft-worker
 ```
 
-Use focused tests for the changed behavior and a short ordinary-use check.
-Broader existing checks and CI remain available for changes that justify them.
-Node 24 (`.nvmrc`) enables JavaScript regressions; no npm installation is needed. Test metrics, GitHub summaries, and
-retained report artifacts are described in [development](docs/development.md).
+Use focused checks for the changed behavior. See [development](docs/development.md)
+for structure and commands, and the [CI contract](docs/CI.md) for broader gates.
+Source lives in `src/smb3_agent/` and `minecraft-worker/`; authored contracts and
+fixtures in `data/`; tools in `scripts/`; tests in `tests/` and `minecraft-worker/test/`.
+Local game state, evidence, calibration registrations and build output stay ignored.
 
-Source lives in `src/smb3_agent/`, authored contracts and fixtures in `data/`,
-validation/build tools in `scripts/`, and tests in `tests/`. Local game state,
-evidence, calibration registrations, and build output remain ignored.
-
-Read [architecture](docs/agent-architecture.md),
-[module ownership](docs/ssot.md), [security](docs/security.md), and the
-[documentation index](docs/README.md) for implementation detail.
+[Architecture](docs/agent-architecture.md) · [module ownership](docs/ssot.md) ·
+[security](docs/security.md) · [documentation index](docs/README.md).

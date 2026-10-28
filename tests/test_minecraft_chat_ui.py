@@ -28,6 +28,9 @@ def test_shell_serves_script_and_protects_commands(tmp_path, monkeypatch):
         assert "frame-src http://127.0.0.1:*" in headers["Content-Security-Policy"]
         status, _, script = request("GET", "/assets/minecraft-chat.js")
         assert status == 200 and "TOKEN_VALUE" not in script
+        status, _, guide = request("GET", "/help")
+        assert status == 200 and "Minecraft companion" in guide
+        assert "MC-B1" not in guide
         status, _, state = request("GET", "/api/minecraft/chat")
         assert status == 200 and json.loads(state)["session_id"] is None
         status, _, _ = request(

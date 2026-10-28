@@ -1,4 +1,4 @@
-"""Retain and summarize the MC-B1-03 source-app event evidence, including failures."""
+"""Retain and summarize the source-app event evidence, including failures."""
 
 import json
 from pathlib import Path

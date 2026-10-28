@@ -169,6 +169,7 @@ def main():
         if (
             existing.get("schema") != "game-companion-delivery/v1"
             or existing.get("source_sha256") != own["source_sha256"]
+            or existing.get("data_root") != str(root)
         ):
             raise RuntimeError(
                 "Another app/build uses port 8765. Stop it through its own app before opening this build."

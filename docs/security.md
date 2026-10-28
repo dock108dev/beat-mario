@@ -184,83 +184,6 @@ local evidence.
 CSRF-field injection and note artifact-path extraction use bounded linear
 string scans rather than regular expressions over browser-controlled text.
 
-## Confirmed vulnerabilities
-
-| Title | Category | Affected area | Severity | Confidence | Why it matters and realistic scenario | Current-code evidence | Fix / status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Cross-site mutation and DNS-rebinding exposure | Authorization | Route Lab HTTP actions | Medium | High | A malicious web page could submit localhost forms that mutate review state or attempt a reviewed patch promotion. | The server accepted POSTs without an origin-bound secret and accepted any `Host`. | Per-process CSRF token on every POST plus loopback bind and `Host` enforcement. **Fixed.** |
-| Active artifact content | Content handling / XSS | Route Lab artifact responses | Medium | High | A generated or imported HTML/SVG artifact could execute with Route Lab's same-origin authority when an operator opened it. | Response type came from unrestricted MIME guessing for every file below the artifact root. | Extension/content-type allowlist, HTML served as plain text, SVG and unknown types refused. **Fixed.** |
-| Concurrent privileged actions | Integrity / race condition | Route Lab mutation and patch actions | Medium | High | Overlapping validation, promotion, rollback, or note writes could race against shared files and produce inconsistent state. | A threaded HTTP server dispatched every POST without shared action coordination. | Non-blocking per-server mutation lock with HTTP 409 on overlap. **Fixed.** |
-| Optimized-away authority invariants | Authorization / fail-closed behavior | Mario takeover, Show, Stardew Do, unattended Stardew | Medium | High | Running Python with optimization could remove `assert` checks that guarded controller, session, process/window identity, or fixture state. A corrupted or incomplete runtime state could then proceed past its intended refusal boundary or fail without a classified domain error. | Safety-relevant runtime invariants in these paths used `assert`. | Explicit domain checks now remain active under normal and optimized Python execution. **Fixed.** |
-| Unsafe redirect parameter construction | HTTP response integrity | Route Lab `Location` responses | Low | High | Control characters or delimiters in a selected identifier could create an ambiguous or malformed response header. | Query values were HTML-escaped rather than URL-encoded before use in `Location`. | Standards-based percent encoding. **Fixed.** |
-
-## Hardening opportunities
-
-| Title | Category | Affected area | Severity | Confidence | Why it matters and realistic scenario | Current-code evidence | Fix / status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Missing browser isolation policy | Browser security | All Route Lab responses | Low | High | Framing, MIME sniffing, caching, referrer disclosure, and browser features unnecessarily widened impact if another content defect existed. | The handler emitted no explicit browser security policy. | CSP, frame denial, no-sniff, no-store, no-referrer, cross-origin isolation, permissions policy, and noindex headers. **Fixed.** |
-| Unbounded artifact reads | Resource exhaustion | Route Lab artifact responses | Low | High | A very large ignored artifact could consume substantial memory because the server read the entire file before responding. | Artifact size was not checked before `read_bytes`. | 50 MiB response ceiling with HTTP 413. **Fixed.** |
-| Unbounded Experimental descriptor parsing | Resource exhaustion / input validation | Experimental contract, fixture, and installation-manifest reads | Low | High | A very large local descriptor reachable through an onboarding action could consume excessive memory during parsing. | The onboarding loaders read entire YAML and JSON files without byte limits. | Regular non-symlinked UTF-8 files are required; contracts/manifests are capped at 256 KiB and fixtures at 1 MiB before parsing. **Fixed.** |
-| Ambiguous POST parser input | Input validation | Route Lab form parser | Low | High | Non-form bodies reached a parser designed for one encoding, making request behavior less predictable. | The parser did not require its supported media type. | Strict `application/x-www-form-urlencoded` enforcement with HTTP 415. **Fixed.** |
-
-The historical credential scan results are recorded under Verification below.
-There is no SQL, template-expression evaluation, shell interpolation,
-session-cookie or multi-user role boundary in this application. The launcher
-uses fixed loopback URLs; browser input does not select a remote fetch target.
-
-## September 26 HTTP hardening
-
-HTTP hardening changes the current source; earlier delivery qualification does
-not automatically cover it. Retained identities and review limits are recorded
-in the [delivery record](b8-personal-delivery.md).
-
-The current surface is Python's local threaded HTTP service plus escaped HTML
-and same-origin JavaScript. GETs expose local status/evidence and the process
-CSRF bootstrap; POSTs reach operator actions, file handling and guarded game
-workers. There is no distinct admin account: the loopback server is the operator
-surface. The filesystem and inherited OS permissions remain the CLI/process
-boundary. Gameplay additionally requires adapter-owned fresh process/window,
-observation, reviewed plan and explicit authority; HTTP validation cannot replace
-those checks. No database, external callback, queue or hosted deployment exists.
-
-| Title | Category / area | Severity / confidence | Evidence and realistic scenario | Resolution / status |
-| --- | --- | --- | --- | --- |
-| Private request/error material in HTTP logs | Confirmed information disclosure; `_Handler.log_message`, request failure handlers | Low / High | The prior access logger interpolated the entire request line, while expected errors logged `self.path` plus exception text and unexpected errors used a raw traceback. Query tokens or private subprocess/error payloads could persist in logs and be disclosed when logs were shared. This is not an independently demonstrated remote auth bypass. | Recognized routes and status only; unexpected stack locations exclude messages/locals/source text; timeout pages omit command arguments. **Fixed.** |
-| Permissive authority and missing Origin validation | Hardening; HTTP browser boundary | Low / High | Host parsing extracted only a hostname (accepting malformed authority syntax and ignoring port); no explicit Origin gate existed. CSRF already blocked ordinary foreign-page mutations. | Exact Host syntax/listening port and same-origin browser POST validation supplement CSRF; token-bearing origin-less launcher calls still work. **Fixed.** |
-| Ambiguous or unexpectedly decoded forms | Hardening; form parser / scalar access | Low / High | First headers/scalar values were selected silently, percent decoding replaced invalid UTF-8, and non-ASCII token comparison raised TypeError. These cause inconsistent refusals and unnecessary 500s; no request-smuggling exploit is claimed for this non-proxied service. | Duplicate framing/scalars and Transfer-Encoding refused; strict decoding, 128-field cap and ASCII token validation. Repeated list fields remain supported. **Fixed.** |
-| Growing artifact bypasses initial size check | Hardening; artifact resource limits | Low / High | `stat` preceded an unlimited `read_bytes`; an actively growing local log could exceed the documented response cap. | Bound the actual read and refuse an over-limit result. **Fixed.** |
-
-All new checks use synthetic requests and temporary data. Existing escaping,
-CSP/no-store/no-referrer/noindex, CSRF, domain authority checks, fixed argument
-vectors, safe YAML loading, controlled artifact roots and bounded process
-cleanup are retained. HTTP restrictions apply equally in normal and optimized
-Python; no debug-mode bypass or hosted authentication stack was introduced.
-
-Prioritized follow-up for this local configuration:
-
-1. **Manual verification:** review existing logs before sharing them; historical
-   logs and older subsystem artifacts may contain private exception text. Any
-   blanket redaction/retention change must preserve useful retained evidence.
-2. **Deferred:** if untrusted local users/processes become in-scope, define OS
-   isolation and local-client authentication first. Origin/CSRF does not stop a
-   local program from requesting a token. The threaded server is not hardened
-   against hostile local socket exhaustion, nor do filesystem checks provide
-   isolation from a same-user process racing filesystem mutations.
-3. **Manual verification:** refresh dependency vulnerability evidence at the next
-   dependency/release review. The locked environment and pinned CI controls were
-   inspected; no current vulnerability-database audit was run in this pass.
-   Historical audit results below are not a current clean-dependency claim.
-
-Focused validation:
-
-```bash
-.venv/bin/python -m pytest -q tests/test_http_security.py tests/test_lab_ui.py tests/test_b8_delivery.py tests/test_security_check.py
-.venv/bin/python -m ruff check src tests scripts/security_check.py
-.venv/bin/python -m compileall -q src scripts/launch_companion.py
-.venv/bin/python scripts/security_check.py
-git diff --check
-```
-
 ## Accepted design decisions
 
 Loopback restriction is the network authorization boundary; there is no second
@@ -294,45 +217,6 @@ confidence: **high**.
 - Inspect ignored evidence retention on the operator workstation. The repo can
   keep those files out of Git but cannot prove workstation backup, encryption,
   sharing, or deletion policy. Status: **needs manual verification**.
-
-## Deferred roadmap
-
-1. Evaluate an OS sandbox and a dedicated low-privilege account for emulator
-   execution if the tool begins consuming untrusted Lua scripts or externally
-   supplied patches.
-2. Define retention and deletion policy for ignored screenshots, traces, and
-   session evidence if the workstation becomes shared or those artifacts gain
-   sensitive annotations.
-3. Expand the canonical high-confidence credential scanner only with reviewed
-   patterns or a pinned dedicated scanner; broad entropy checks need an
-   allowlist policy to avoid hiding real failures in fixture noise.
-
-## Verification
-
-Run the focused web tests and the canonical non-live gate:
-
-```bash
-.venv/bin/python -m pytest -q tests/test_lab_ui.py tests/test_route_patch.py
-PYTHON=.venv/bin/python scripts/validate_phase0.sh
-```
-
-Manual browser verification should use the exact loopback URL printed by the
-server. Confirm that normal forms work, a copied POST without its token receives
-403, an untrusted `Host` receives 403, and browser developer tools show the
-document security headers. No live FCEUX proof is required for these HTTP-only
-changes.
-
-For the 2026-08-23 hardening review, the focused security/CI-relevant suite and
-the complete non-live repository gate passed. Exact test counts are omitted
-because the suite grows; the current gate output is authoritative. The canonical
-high-confidence tracked credential/game-asset scan found zero candidates.
-Bandit found zero high-confidence medium/high issues; its single medium,
-low-confidence HTML false positive is documented above. `pip-audit` found no
-known vulnerabilities in the dependency graph exported from `uv.lock`; it
-skipped only this unpublished local package because it has no PyPI release to
-audit. Hosted pull requests now also run the immutable-pinned GitHub dependency
-review action and reject newly introduced moderate-or-higher vulnerabilities;
-weekly Dependabot updates cover both `uv` and GitHub Actions dependencies.
 
 ## Experimental adapter onboarding
 

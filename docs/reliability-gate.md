@@ -1,6 +1,6 @@
 # World 8 Reliability Gates
 
-Mario route qualification reference with retained profile-specific acceptance rules. The [private-beta engineering plan](private-beta-engineering.md) owns current application delivery and focused checking.
+Mario route qualification reference with retained profile-specific acceptance rules. The [usage and development](development.md) owns current application delivery and focused checking.
 
 Reliability is profile-driven by goal. The default World 8 arrival profile proves
 repeatable arrival at the accepted World 8 map boundary. The separate Big Tanks

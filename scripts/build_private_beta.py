@@ -20,7 +20,7 @@ from smb3_agent.release_resources import stage_resources
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default=VERSION)
-    parser.add_argument("--build", default="30035")
+    parser.add_argument("--build", default="30036")
     parser.add_argument(
         "--sign-identity",
         required=True,
@@ -53,6 +53,15 @@ def main(argv=None):
     for item in (ocr, ocr_data, ocr_license):
         if not item.is_file():
             raise SystemExit("OCR packaging prerequisite missing: " + str(item))
+    node = Path(shutil.which("node")).resolve(strict=True)
+    if subprocess.check_output([str(node), "--version"], text=True).strip() != "v24.22.0":
+        raise SystemExit("Minecraft package requires the qualified Node 24.22.0 runtime")
+    worker = resources / "minecraft-worker"
+    shutil.copytree(root / "minecraft-worker", worker, ignore=shutil.ignore_patterns("test", ".DS_Store"))
+    (resources / "runtime").mkdir()
+    shutil.copy2(node, resources / "runtime/node")
+    worker_manifest = {str(p.relative_to(resources)): hashlib.sha256(p.read_bytes()).hexdigest()
+                       for p in resources.rglob("*") if p.is_file() and (p.is_relative_to(worker) or p.parent.name == "runtime")}
     manifest = source_identity(root)
     manifest.update(
         version=version,
@@ -60,12 +69,11 @@ def main(argv=None):
         python=sys.version,
         build=args.build,
         capability_contract="game-companion-local-candidate/v1",
-        required_capabilities=[
-            "mario-world1-1-adaptive-early-segment",
-            "stardew-selected-session-watering-return",
-        ],
+        required_capabilities=["minecraft-peaceful-finite-resources-bounded-wooden-construction"],
+        minecraft_resources=worker_manifest,
+        node_version="24.22.0",
         experimental_unavailable=["reconnaissance", "recording", "wider-gameplay"],
-        qualification="reviewable candidate; packaged two-game qualification pending",
+        qualification="Minecraft installed walkthrough pending; owner acceptance open",
         resources=inventory,
         runtime_dependencies={
             name: distribution_version(name)
@@ -86,21 +94,14 @@ def main(argv=None):
         },
         installed_app_path=str(Path.home() / "Applications/Game Companion.app"),
         update_policy="verified stable designated requirement; archive previous installation; retain versioned packages",
-        external_prerequisites=[
-            "owner-selected supported Mario ROM",
-            "FCEUX",
-            "Codex CLI and existing sign-in",
-            "inspected Stardew installation",
-            "game-created default-location save copied in isolation; frozen Day 2 seed for regression only",
-            "macOS input and capture permissions",
-        ],
+        external_prerequisites=["Java 21 JDK", "Codex CLI and owner sign-in", "Explicit EULA acceptance for new practice worlds"],
         native_smoke="See adjacent qualification.json for exact candidate evidence",
         signing="local development identity; not notarized",
     )
     manifest_path = work / "build-manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     entry = work / "entry.py"
-    entry.write_text("from smb3_agent.app_runtime import main\nmain()\n")
+    entry.write_text("from smb3_agent.app_runtime import main\ntry:\n    main()\nexcept Exception as exc:\n    import AppKit\n    alert = AppKit.NSAlert.alloc().init()\n    alert.setMessageText_('Game Companion could not open')\n    alert.setInformativeText_(str(exc) + '\\nYour saved worlds are retained. Quit any other Companion instance and try again.')\n    alert.runModal()\n    raise\n")
     command = [
         sys.executable,
         "-m",
@@ -128,7 +129,7 @@ def main(argv=None):
         "--add-data",
         f"{manifest_path}:resources",
         "--add-data",
-        f"{root / 'docs/private-beta-quick-start.md'}:resources",
+        f"{root / 'docs/minecraft.md'}:resources",
         "--add-binary",
         f"{ocr}:ocr",
         "--add-data",
@@ -141,6 +142,8 @@ def main(argv=None):
     if Path("/Library/Developer/CommandLineTools").is_dir():
         build_env["DEVELOPER_DIR"] = "/Library/Developer/CommandLineTools"
     subprocess.run(command, cwd=root, env=build_env, check=True)
+    if source_identity(root)["source_sha256"] != manifest["source_sha256"]:
+        raise SystemExit("Checkout changed during packaging; retained package is not eligible for installation")
     app = output / "Game Companion.app"
     plist_path = app / "Contents/Info.plist"
     info = plistlib.loads(plist_path.read_bytes())
@@ -151,6 +154,7 @@ def main(argv=None):
         NSAppleEventsUsageDescription="Game Companion selects your declared game window.",
     )
     plist_path.write_bytes(plistlib.dumps(info))
+    subprocess.run(["/usr/bin/codesign", "--force", "--sign", args.sign_identity, "--timestamp=none", str(app / "Contents/Resources/resources/runtime/node")], env=build_env, check=True)
     subprocess.run(
         [
             "/usr/bin/codesign",
@@ -195,7 +199,7 @@ def main(argv=None):
         )
         + "\n"
     )
-    shutil.copy2(root / "docs/private-beta-quick-start.md", output / "Quick Start.md")
+    shutil.copy2(root / "docs/minecraft.md", output / "Quick Start.md")
     shutil.copy2(manifest_path, output / "build-manifest.json")
     print(app)
 

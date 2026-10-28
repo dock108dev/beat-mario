@@ -13,7 +13,7 @@ test('available faster axe wins; hand is valid for logs; other resources refused
   assert.equal(chooseTool(bot, block).name, 'iron_axe')
   bot.inventory.items = () => []
   assert.equal(chooseTool(bot, block), null)
-  assert.throws(() => chooseTool(bot, { name: 'stone' }), /unsupported_resource/)
+  assert.throws(() => chooseTool(bot, { name: 'stone' }), /missing_harvest_tool/)
 })
 test('nearby lava fails before movement', () => {
   assert.throws(() => safeTarget({ blockAt: () => ({ name: 'lava' }) }, { x: 0, y: 0, z: 0 }, []), /hazard/)
@@ -42,4 +42,34 @@ test('active goal guard catches distance, world changes and survival danger', ()
   assert.equal(goalGuard(bot,args,'one'),'stale_world')
   bot.game.dimension = 'overworld'; bot.health = 4
   assert.equal(goalGuard(bot,args,'one'),'survival_health_or_food_limit')
+})
+test('stone harvestability is distinct from breaking speed',()=>{
+ const block={name:'stone',canHarvest:type=>type===2,digTime:type=>type===1?1:1000}
+ const bot={inventory:{items:()=>[{name:'wooden_axe',type:1},{name:'wooden_pickaxe',type:2}]}}
+ assert.equal(chooseTool(bot,block).name,'wooden_pickaxe')
+ bot.inventory.items=()=>[{name:'wooden_axe',type:1}]
+ assert.throws(()=>chooseTool(bot,block),/missing_harvest_tool/)
+})
+test('low food and death are unsafe even without a parent goal', () => {
+  const { goalGuard } = require('../resource-skills.cjs'), { Vec3 } = require('vec3')
+  const bot={entity:{position:new Vec3(0,64,0)},game:{dimension:'overworld'},health:20,food:4}
+  assert.equal(goalGuard(bot,{},'one'),'survival_health_or_food_limit')
+  bot.food=20; bot.health=0
+  assert.equal(goalGuard(bot,{},'one'),'survival_health_or_food_limit')
+})
+
+test('relative travel chooses observed terrain without changing saved coordinates',()=>{
+ const {surfaceDestinations}=require('../resource-skills.cjs'), {Vec3}=require('vec3')
+ const b={entity:{position:new Vec3(0,1,0)},blockAt:p=>p.y===2?{name:'grass_block',boundingBox:'block'}:{name:'air',boundingBox:'empty'}}
+ const sites=surfaceDestinations(b,new Vec3(10,1,0),[])
+ assert(sites.length>0);assert(sites.every(p=>p.y===3))
+ assert.equal(surfaceDestinations(b,new Vec3(10,1,0),[{center:new Vec3(10,1,0),radius:3}]).length,0)
+})
+test('connected branches share stable failure identity; changed terrain changes fingerprint',()=>{
+ const {resources}=require('../resource-skills.cjs'),{Vec3}=require('vec3')
+ let points=[new Vec3(0,1,0),new Vec3(0,2,0),new Vec3(1,2,0)],changed=false
+ const b={entity:{position:new Vec3(0,20,0)},findBlocks:args=>args.maxDistance===32?points:[],blockAt:p=>({name:points.some(q=>q.equals(p))?'oak_log':'air',stateId:changed&&p.x===2?9:1})}
+ const first=resources(b);assert.equal(new Set(first.map(x=>x.cluster)).size,1)
+ points=points.reverse();assert.equal(resources(b)[0].signature,first[0].signature)
+ changed=true;assert.notEqual(resources(b)[0].signature,first[0].signature)
 })

@@ -523,7 +523,8 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
     from smb3_agent.codex_provider import CodexProvider
     server.codex_provider = CodexProvider()
     from smb3_agent.minecraft_chat import MinecraftChat
-    server.minecraft_chat = MinecraftChat(ARTIFACT_DIR / "minecraft-chat", provider=server.codex_provider)
+    from smb3_agent.minecraft_delivery import data_artifacts
+    server.minecraft_chat = MinecraftChat(data_artifacts() / "minecraft-chat", provider=server.codex_provider)
     setattr(server, "conversation_service", ConversationService(
         getattr(server, "live_observation_manager"),
         artifacts_root=ARTIFACT_DIR / "conversation", provider=server.codex_provider,
@@ -839,13 +840,13 @@ class _Handler(BaseHTTPRequestHandler):
                 selected=self._catalog_session().selected_adapter_id in {None, "stardew"}))
             return
         if path == "/help":
-            guide = repository_path("private-beta-quick-start.md")
+            guide = repository_path("minecraft.md")
             if not guide.is_file():
-                guide = repository_path("docs/private-beta-quick-start.md")
+                guide = repository_path("docs/minecraft.md")
             self._send_html(render_candidate_help(guide.read_text(), self._csrf_token()))
             return
-        if path in {"/setup", "/minecraft"}:
-            self._send_html(render_player_setup(self.server.player_setup_service.snapshot(), csrf_token=self._csrf_token(), minecraft=path == "/minecraft"))
+        if path == "/setup":
+            self._send_html(render_player_setup(self.server.player_setup_service.snapshot(), csrf_token=self._csrf_token(), minecraft=False))
             return
         if path == "/api/player":
             self._send_json(self.server.player_setup_service.snapshot())
@@ -1033,11 +1034,17 @@ class _Handler(BaseHTTPRequestHandler):
             action = _single(data, "action")
             try:
                 if action == "connect":
-                    service.connect(survival=_single(data, "world", default="creative") == "survival")
+                    service.connect(survival=_single(data, "world", default="creative") == "survival", create=_single(data, "create", default="false") == "true", accept_eula=_single(data, "accept_eula", default="false") == "true")
+                elif action == "sign_in":
+                    self.server.codex_provider.sign_in()
+                elif action == "check_setup":
+                    service.check_setup()
                 elif action == "stop":
                     service.stop()
                 elif action == "reconnect":
                     service.reconnect()
+                elif action == "recover_memory":
+                    service.recover_memory(_single(data, "store"), _single(data, "generation"))
                 elif action == "message":
                     service.submit(_single(data, "text"), _single(data, "request_id"), _single(data, "session_id"))
                 else:

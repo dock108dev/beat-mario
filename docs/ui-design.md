@@ -1,55 +1,34 @@
-# Game Companion UI design
+# Interface design
 
-> Active direction, October 27: [Minecraft Beta 1](beta-1-plan.md) uses a headless
-> bot, concurrent chat/play and Codex CLI. This document describes legacy
-> implementation or dated work; it does not override the new plan. Native screen
-> control and Mario/Stardew milestones are not Beta 1 prerequisites.
+Use the shared cool/light glass tokens in `src/smb3_agent/glass_ui.py` and the
+[design requirements](ui-design-requirements.md). Keep product language concrete,
+errors actionable and implementation diagnostics behind named disclosures.
 
-## Active model-driven interaction
+## Minecraft workspace
 
-The model-backed workspace presents provider readiness/remedies, understood goal and clarification, readable approval, current action, observed progress, pending inference and meaningful replanning. Keep direct control available in every active/pending/error state and preserve drafts during asynchronous work.
+World setup appears before an empty scene. Once connected, the live view and
+conversation occupy the main columns. Progress and viewer controls stay nearby.
+Closing the view hides its frame without stopping gameplay; explain that distinction.
 
-Show whether an adjustment applies now or later and whether its effect is observed. Distinguish historical findings from current observations and usable goals from missing capabilities. Use the existing design system and simple product language. The bounded source flows include Codex-backed language and gameplay. Wider coverage and packaged usability still need their own verification.
+Stop remains visible during inference and work. Send shows why it is unavailable.
+Drafts survive rejected requests and asynchronous updates. Only describe ongoing
+gameplay when a task is actually active. Keep local command errors and server errors
+visible together. Recovery details open once when memory needs attention; polling
+must not repeatedly reopen details the user closed.
 
-Use the [design requirements](ui-design-requirements.md) and `src/smb3_agent/glass_ui.py` when changing the interface.
-See [known limitations](known-limitations.md) for unsupported workflows.
+`minecraft_chat_ui.py` owns markup and page styles. `minecraft_chat_script.py` owns
+the independently served script. Credentials come from the escaped document dataset,
+not interpolated script text. Incremental message updates preserve edits and scroll
+position. Keep the practice-world limits accessible in a named disclosure.
 
-## Conversational gameplay interaction
+## Older workspaces
 
-The initial-beta interaction requires a current goal/attempt and conversation beside watched Mario play, readable current-versus-next-attempt coaching acknowledgment, inspectable route/life memory and persistent direct Stop/Take control. Stardew should present a short near-term activity plan, contextual approval, progress/check-ins and a safe pause/discuss/replan path. Make current abilities and setup remedies clear at the relevant action. These interactions exist in bounded source workflows; wider model-driven coverage remains open; preserve the accepted visual system and change layout only where the new interaction needs it.
+Mario presents conversation and plan review with Stop/Take control always visible.
+Requested versus applied speed and observed versus predicted outcomes are distinct.
+Stardew presents its setup blocker, observation, targets, review/Start consequences
+and resource/return accounting. Saved findings are separate from current results.
+Unsupported actions must not appear ready merely because setup succeeded.
 
-## Current layout and behavior
-
-The catalog puts game selection before capability details. Mario places plan review beside conversation and keeps Stop/Take control visible above the workspace. Saved routes, earlier messages and advanced tools use named disclosures.
-
-Keep setup blockers, pending changes, requested/applied speed and completion uncertainty visible. Legacy controls open when a live observation or Show session exists. Stardew keeps its current setup blocker and Refresh farm view above requests and review. Farm setup is a named disclosure (open initially without an observation); a direct link reaches it. Saved results are separate from the current result. Targets remain editable and full plan limits stay beside Start. Polling errors warn that the view may be outdated and clear only on successful recovery; action errors remain visible. Both ordinary workspaces use the shared glass styles in `glass_ui.py`.
-
-CSS is embedded by the page renderers to preserve the content-security policy and package portability. Related renderers include `lab_ui.py`, `conversation_ui.py` and `stardew_adapter.py` in `src/smb3_agent/`. Stop/reclaim uses red emphasis. Styling must preserve execution authorization, game drivers and persistence.
-
-`player_setup_ui.py` renders `/setup`, `/minecraft` and `/help` with its own embedded styles. Minecraft setup progress appears before the setup forms and comes from `player_onboarding.py`: save profile, connect/calibrate, check the building region, then review/run the available task. Available and unfinished task families are named separately, using current runtime flags. Direct Stop, Take control and Quit remain above the workflow. Setup and camera connection alone leave building marked unavailable while its feature flag is disabled.
-
-The game chooser keeps permission/sign-in status and the inference notice visible, with permission help open when access is missing or unknown. Routine setup instructions use a named disclosure; engineering links follow game selection. Mario keeps requested/applied speed visible while its speed selector uses a disclosure. Current adaptive-play results describe the observed endpoint, coaching uncertainty and control return; full controller receipts remain in session details. Stardew setup keeps copy preservation and separate preparation/watering approval visible, with detailed supported-scene requirements beside it in a disclosure.
-
-## Visual checks
-
-Check the affected screens at supported sizes, including keyboard focus, long content, disabled actions and error recovery. Existing review records are in [UI verification](ui-verification.md).
-
-## Workspace layout
-
-The catalog keeps sign-in and permission status, setup links and the inference transfer notice visible; full requirements/privacy use a named disclosure. Mario starts with conversation and plan review. Route shortcuts, recording, flight preparation, coin discoveries and guidance use named disclosures; newly relevant active guidance opens once and the player can close it without polling reopening it. Stop/Take control remain outside disclosures.
-
-Stardew shows the current plan, observed resources and limits before optional activity teaching. Planting, inspection and cave findings appear when present, with historical/uncertain meanings retained. Advice without an executable plan is not preceded by empty review controls. The latest two messages stay visible and all earlier messages remain accessible. Current blockers, review/Start consequences, errors, partial results and resource/return accounting remain visible. Synthetic desktop/narrow comparison and accessibility checks are recorded in [UI verification](ui-verification.md); native gameplay and exact-package acceptance remain separate.
-
-## October 26 presentation refinement
-
-Retain Starter 02 tokens and the cool glass identity with quieter header/tool surfaces.
-Conversation and plan content use 16px text, padded inputs and explicit disabled styles.
-Disclosures include padding within their 44px minimum height. Catalog setup uses a
-compact desktop action column; game-card actions align and routine requirements no
-longer use warning-colored boxes. Permission blockers and inference disclosure remain.
-
-Mario omits empty plan facts and results, retaining interpretation progress and all
-actual outcome uncertainty. Stardew target editing sits after approval status and
-before results; it remains accessible during advice-only states when targets exist.
-Empty target editors and idle results disappear without replacing editable nodes.
-See the October 26 entry in [UI verification](ui-verification.md) for synthetic evidence.
+Check changed screens at desktop and narrow sizes with keyboard navigation, long
+messages, loading, empty, disabled and error states. Styling changes must preserve
+CSRF/CSP, action authority, data persistence and game-driver behavior.

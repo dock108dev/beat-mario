@@ -1,78 +1,43 @@
 # Known limitations
 
-## Source and retained builds
+## Minecraft
 
-The checkout is the development workflow. Source changes do not update an
-installed app. Retained **candidate.35 / build 30035** has packaged native evidence
-for ordinary Stardew preparation, middle-only watering, resource accounting,
-farmhouse return, neutral handback and active Stop. Mario coaching variation,
-affected interruption/recovery and active keyboard/Dock exit qualification remain
-open. See [current engineering status](current-engineering-status.md) for the October 25
-source/resource identity check and links to the October 6 native evidence. Earlier candidates and source trials
-retain their own scope. Try working tasks now and improve observed problems
-without waiting for a broad reliability campaign.
+The headless companion operates its own character in a local Java practice world.
+It supports bounded movement/following, resource gathering, saved places and
+protection areas, crafting, wooden shelters and revisions. Terrain, resource
+availability and reserved return travel can cause partial work or refused sites.
+Memory is descriptive and scoped to a world; recall may be incomplete and saved
+structures need fresh inspection before action. See [usage](minecraft.md).
 
-Use the existing installed app or source startup. A needed local app rebuild
-requires macOS, the existing stable identity and its calibration/OCR inputs.
-See [optional local app update](development.md#local-review-packaging).
-No rebuild is required simply to try a working task.
+Bedrock, arbitrary servers, unrestricted exploration, combat/progression and
+reliable stone-tool chains are outside the supported ordinary workflow.
+The separate native-camera Minecraft integration remains limited to setup and
+small camera requests; its movement, placement and wall actions are disabled.
 
-## Gameplay coverage
+## Older integrations
 
-- Mario adaptive play supports the World 1-1 early segment. Full-level adaptive
-  completion, complete coin coverage and arbitrary levels/tactics are unverified.
-  Authored routes and the prepared sky-1UP controller have separate entry and
-  evidence contracts. Recording/playback is experimental; ordinary native
-  demonstration application is unverified.
-- Stardew ordinary watering requires a recognized standard spring farmhouse,
-  supported blue clothing/view/basic can, exact readable resources, 1–15 visible
-  newly planted seeds and clear approaches/return. Mature crops, arbitrary farms,
-  upgraded tools and automatic refill are unsupported. Prepared Day 2/Day 5
-  routines require separate local saves/profiles; they do not widen ordinary
-  coverage. Reconnaissance has simulated evidence; native acceptance is pending.
-  Manual cave-route evidence does not establish companion cave delegation.
-- Minecraft enables calibration and small camera requests. Aim, movement,
-  placement and wall Start remain disabled. Retained setup covers Java 26.3
-  vanilla Creative, English/default font and the supported selected-window
-  geometry. Survival, multiplayer and unrestricted exploration are unsupported.
-- OpenTTD is a reference integration for one £10,000 repayment from a paused
-  disposable English 15.3 company with £100,000 cash and loan. General management
-  is unavailable; packaged success belongs to its retained private.1 build.
-- Experimental adapters are contributor fixtures, without native gameplay.
+- Mario adaptive play supports a bounded World 1-1 segment, coaching and specific
+  demonstrations. Arbitrary levels/tactics and complete coin coverage are unverified.
+- Stardew watering depends on recognized views, tools, resource readings, visible
+  targets and clear return routes. Arbitrary farms, upgraded tools and automatic
+  refill are unsupported. The public CLI is inspection-only; broader reconnaissance
+  and cave delegation are not reliable ordinary workflows.
+- OpenTTD is a narrow paused-company loan-repayment reference using local Ollama.
+- Experimental adapters are declarative contributor fixtures, not native gameplay.
 
-## Platform and inference
+## Platform, inference and operation
 
-Native observation/input requires macOS, separately installed games and actual
-Screen Recording/Accessibility access. FCEUX is the supported Mario adapter;
-Mednafen is an older macOS diagnostic path without headless or non-macOS control.
-The Stardew CLI is inspection-only. Linux CI does not start games or prove
-native behavior.
+The desktop application targets macOS. Native capture/input integrations need
+separately installed games and OS permissions. Headless Minecraft does not need
+those permissions. Linux CI checks offline contracts, not native desktop behavior.
+Codex CLI must be discoverable and signed in; availability does not guarantee
+account allowance or successful inference. There is no automatic provider fallback.
 
-Ordinary Mario/Stardew use discoverable, signed-in Codex CLI. Selected images and
-context are sent to its model provider. CLI availability guarantees neither
-account allowance nor model quality/availability. OpenTTD uses local Ollama
-with `gemma3:4b`. Ordinary provider failure does not activate a parser fallback.
+The HTTP server is loopback-only with no TLS, accounts or multi-user isolation.
+Do not expose it through a proxy, tunnel or LAN bind. No hosted deployment,
+central backup service or independent job scheduler is provided.
 
-## Authority and recovery
-
-Saved results, coaching and readiness flags restore no connection, reviewed plan
-or input permission. Cancellation consumes its attempt; continuation needs fresh
-observation and review. Confirmed actions, uncertain work, return and neutral
-handback are separate outcomes. A guarded stop can leave return incomplete.
-Active keyboard/Dock shutdown qualification remains open on the retained build; closing a
-browser alone is not verified app/server shutdown. See [recovery](error-handling.md).
-
-## Local operation
-
-The server accepts loopback hosts only. It has no TLS, accounts, multi-user
-support, shared evidence storage, backup service or availability guarantee.
-Proxy/tunnel/LAN exposure is unsupported. Request bounds, CSRF checks, safe
-artifact serving and priority direct controls do not make it a hosted service.
-
-There is no independent scheduler, queue, retry service, telemetry backend or
-alerting integration. The active server owns bounded observation, activity and
-watchdog threads plus input/model/emulator child processes. Reports and ignored
-evidence remain local. Selected provider inference is a separate transfer.
-Another checkout cannot reproduce native acceptance without compatible local
-assets and a fresh run. Remote deployment or wider gameplay requires additional
-product/security design and qualification.
+Source changes do not update installed applications. Local packaging requires
+additional runtime/assets and a stable signing identity; see
+[development](development.md#local-review-packaging). Closing a browser does not
+stop the server. Stop or Quit explicitly, and verify reported cleanup failures.

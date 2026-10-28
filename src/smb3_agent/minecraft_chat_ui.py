@@ -1,6 +1,9 @@
-"""Incrementally updated product surface; polling never replaces the composer."""
+"""Minecraft document renderer; behavior is served as a separate script."""
 
 from html import escape
+
+from smb3_agent.glass_ui import GLASS_CSS
+from smb3_agent.minecraft_chat_script import CHAT_JS as CHAT_JS
 
 
 def render_minecraft_chat(token, *, selected=False):
@@ -9,47 +12,458 @@ def render_minecraft_chat(token, *, selected=False):
     )
 
 
+MINECRAFT_CSS = """
+* {
+  box-sizing:border-box
+}
+[hidden] {
+  display:none!important
+}
+body {
+  margin:0;
+  color:var(--text);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+button,select,textarea {
+  font:inherit;
+  color:var(--text);
+  background:#fff;
+  border:1px solid var(--line-strong);
+  padding:10px 14px;
+  border-radius:12px
+}
+button,select,summary {
+  min-height:44px
+}
+button {
+  cursor:pointer;
+  font-weight:600
+}
+button:hover:not(:disabled) {
+  background:var(--blue-soft);
+  border-color:var(--blue)
+}
+button:disabled {
+  background:#edf1f7;
+  color:var(--muted);
+  border-color:#c4cedd;
+  cursor:not-allowed
+}
+a {
+  color:#075ac0
+}
+h1,h2,p {
+  margin:0
+}
+h1 {
+  font-size:20px;
+  letter-spacing:-.5px
+}
+h2 {
+  font-size:18px;
+  line-height:1.4
+}
+header {
+  position:sticky;
+  top:0;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:12px 24px;
+  background:#f8fafff2;
+  border-bottom:1px solid var(--line)
+}
+.selectors {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
+.app-actions {
+  margin-left:auto;
+  display:flex;
+  gap:8px
+}
+#stop {
+  color:#a12435;
+  background:#fff0f1;
+  border-color:#d99aa3
+}
+#stop:hover {
+  background:#ffe1e5
+}
+#quit {
+  background:transparent;
+  border-color:transparent;
+  color:var(--muted)
+}
+main {
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(360px,1fr);
+  gap:24px;
+  padding:24px;
+  max-width:1720px;
+  margin:auto;
+  align-items:start
+}
+.world {
+  min-width:0
+}
+.status {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap
+}
+.world>.status {
+  margin-bottom:16px
+}
+.meta {
+  font-size:14px;
+  color:var(--muted)
+}
+#connection {
+  display:flex;
+  align-items:center;
+  gap:8px
+}
+#connection::before {
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#718096
+}
+body[data-connected=true] #connection::before {
+  background:#08725e
+}
+.scene {
+  position:relative
+}
+iframe {
+  display:block;
+  width:100%;
+  height:clamp(280px,53vh,620px);
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:#eaf0fb
+}
+.toolbar {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px
+}
+.toolbar button {
+  background:transparent
+}
+.toolbar #viewer-status {
+  margin-left:auto
+}
+.activity-panel {
+  padding:16px 0;
+  border-bottom:1px solid var(--line);
+  margin-bottom:8px
+}
+#activity {
+  font-weight:650
+}
+#progress {
+  margin-top:4px
+}
+#goal {
+  margin-top:4px
+}
+summary {
+  cursor:pointer;
+  padding:10px 0;
+  font-weight:600
+}
+details p {
+  margin:8px 0 12px
+}
+pre {
+  max-width:100%;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font-size:13px
+}
+#session-details {
+  font-size:14px
+}
+#memory-recovery label {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin:12px 0
+}
+#memory-recovery p {
+  color:#a12435
+}
+#setup-panel {
+  background:var(--surface);
+  padding:24px;
+  border:1px solid #fff;
+  border-radius:22px;
+  box-shadow:0 8px 32px #334d790b
+}
+#setup-panel h2 {
+  font-size:24px;
+  margin-bottom:12px
+}
+#setup-status {
+  margin-bottom:20px;
+  overflow-wrap:anywhere
+}
+.setup-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:16px
+}
+.primary,#send {
+  background:var(--blue);
+  color:white;
+  border-color:var(--blue)
+}
+#send:disabled,.primary:disabled {
+  background:#edf1f7;
+  color:var(--muted);
+  border-color:#c4cedd
+}
+body[data-connected=false] .chat {
+  height:auto;
+  min-height:28em
+}
+.primary:hover:not(:disabled),#send:hover:not(:disabled) {
+  background:#075ac0;
+  color:white
+}
+#setup-panel details {
+  border-top:1px solid var(--line)
+}
+.setup-links {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:8px 0 16px
+}
+#create-world {
+  display:block;
+  margin:16px 0
+}
+#eula {
+  width:18px;
+  height:18px;
+  vertical-align:middle
+}
+.chat {
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  height:calc(100dvh - 124px);
+  min-height:32em;
+  max-height:1000px;
+  border:1px solid white;
+  border-radius:22px;
+  background:var(--surface);
+  box-shadow:0 8px 32px #334d790b;
+  padding:20px
+}
+.chat>.status {
+  padding-bottom:16px;
+  border-bottom:1px solid var(--line)
+}
+#messages {
+  flex:1;
+  overflow:auto;
+  min-height:100px;
+  padding:20px 4px 0;
+  scroll-behavior:auto;
+  overflow-wrap:anywhere
+}
+.message {
+  white-space:pre-wrap;
+  line-height:1.55;
+  margin:0 0 20px;
+  padding:0 8px
+}
+.message.user {
+  background:var(--blue-soft);
+  border-radius:16px;
+  padding:12px 16px;
+  margin-left:24px
+}
+.role {
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  color:var(--muted);
+  margin-bottom:4px
+}
+#empty-chat {
+  padding:28px 8px;
+  color:var(--muted)
+}
+#empty-chat strong {
+  display:block;
+  color:var(--text);
+  font-size:18px;
+  margin-bottom:8px
+}
+form {
+  border-top:1px solid var(--line);
+  padding-top:16px;
+  margin-top:12px
+}
+form label {
+  display:block;
+  margin-bottom:8px
+}
+textarea {
+  display:block;
+  width:100%;
+  resize:vertical;
+  min-height:96px;
+  max-height:240px;
+  line-height:1.5
+}
+textarea::placeholder {
+  color:#59677b;
+  opacity:1
+}
+.compose-actions {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  justify-content:space-between;
+  margin-top:12px
+}
+#send {
+  min-width:88px;
+  flex-shrink:0;
+  margin-left:auto
+}
+#error:not(:empty) {
+  color:#912336;
+  background:#fff0f2;
+  border:1px solid #e8b3bc;
+  border-radius:12px;
+  padding:12px;
+  margin-top:12px;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere
+}
+#pending:not(:empty) {
+  padding:10px 4px 0
+}
+.beta-limits {
+  margin-top:8px;
+  color:var(--muted);
+  font-size:14px
+}
+.beta-limits summary {
+  font-weight:500
+}
+#sign-in[hidden] {
+  display:none
+}
+button:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,a:focus-visible {
+  outline:3px solid var(--blue);
+  outline-offset:3px
+}
+@media(prefers-reduced-transparency:reduce) {
+  header,.chat,#setup-panel {
+    background:#f8faff
+  }
+}
+@media(max-width:900px) {
+  header {
+    padding:12px 16px
+  }
+  main {
+    grid-template-columns:minmax(0,1fr);
+    padding:16px;
+    gap:20px
+  }
+  .chat {
+    height:650px;
+    min-height:480px
+  }
+  iframe {
+    height:38vh;
+    min-height:240px
+  }
+  .toolbar #viewer-status {
+    margin-left:0
+  }
+  #setup-panel {
+    padding:20px
+  }
+}
+@media(max-width:480px) {
+  header {
+    gap:8px
+  }
+  header h1 {
+    font-size:18px
+  }
+  .selectors {
+    order:3;
+    width:100%
+  }
+  .selectors select {
+    min-width:0;
+    flex:1;
+    width:40%;
+    padding-inline:10px
+  }
+  .app-actions {
+    gap:0
+  }
+  #quit {
+    padding-inline:8px
+  }
+  main {
+    padding:12px
+  }
+  .chat {
+    padding:16px
+  }
+  .chat>.status {
+    align-items:start
+  }
+  .chat #codex {
+    max-width:60%
+  }
+  .message.user {
+    margin-left:12px
+  }
+  .compose-actions {
+    align-items:start
+  }
+  .chat {
+    height:650px
+  }
+  #setup-panel {
+    padding:20px
+  }
+}
+"""
+
+
 PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Game Companion</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#101916;color:#eaf0ec;font:16px system-ui}header{position:sticky;top:0;z-index:2;background:#101916;height:76px;display:flex;align-items:center;gap:22px;padding:16px 26px;border-bottom:1px solid #36443c}h1{font-size:20px;margin:0}button,select,textarea{font:inherit;color:inherit;background:#263a30;border:1px solid #4e6457;border-radius:9px;padding:10px 14px}button{cursor:pointer}button:disabled{opacity:.5}#stop{margin-left:auto;background:#efaa96;color:#29140e;font-weight:700}main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);height:calc(100vh - 76px);gap:20px;padding:22px}.world{min-width:0;display:flex;flex-direction:column;min-height:0}iframe{width:100%;flex:1;min-height:200px;border:1px solid #36443c;border-radius:12px;background:#17231c}.meta{font-size:14px;color:#b6c9bc}#activity{font-weight:600;min-height:24px}.toolbar{display:flex;gap:10px;margin:12px 0}.chat{min-width:0;display:flex;min-height:0;flex-direction:column;border:1px solid #36443c;border-radius:12px;padding:18px}h2{font-size:18px;margin:0 0 14px}#messages{overflow:auto;flex:1;min-height:100px;scroll-behavior:auto}.message{white-space:pre-wrap;line-height:1.5;margin:0 0 14px;padding:12px;border-radius:10px;background:#1b2a22}.user{background:#314b3c;margin-left:30px}.role{display:block;font-size:12px;color:#b9cbbd;margin-bottom:5px}textarea{width:100%;resize:vertical;min-height:80px}form{margin-top:12px}form button{margin-top:8px;background:#c2e3b5;color:#142217}#error{color:#ffbaaa;white-space:pre-wrap}#pending{min-height:22px}.status{display:flex;justify-content:space-between;gap:12px}a{color:#b6dbaa}@media(max-width:800px){main{display:flex;flex-direction:column;height:auto}.world{height:auto}.world iframe{height:42vh;flex:none}.chat{height:70vh}header{gap:8px;padding:10px;flex-wrap:wrap;height:auto}h1{font-size:15px}header select{max-width:140px}main{padding:12px}#stop{padding:10px}}
-</style></head><body>
-<header><h1>Game Companion</h1><select id="game" aria-label="Game"><option value="">Choose a game</option><option value="minecraft">Minecraft</option></select><select id="world" aria-label="World"><option value="creative">Creative practice</option><option value="survival">Survival practice</option></select><button id="stop">Stop</button></header>
-<main><section class="world"><div class="status"><h2 id="identity">Minecraft</h2><span id="connection" class="meta">Not connected</span></div><iframe id="view" title="Live Minecraft world" src="about:blank"></iframe><div class="toolbar"><button id="toggle">Close view</button><button id="reconnect">Reconnect</button></div><div id="viewer-status" class="meta"></div><p id="activity" role="status">Choose Minecraft to connect.</p><div id="progress" class="meta"></div><div id="goal" class="meta"></div><details><summary>Session details</summary><pre id="details"></pre><a href="/legacy-games">Engineering & historical games</a></details></section>
-<section class="chat"><div class="status"><h2>Chat</h2><span id="codex" class="meta">Checking Codex…</span></div><div id="messages" aria-label="Conversation"></div><div id="pending" class="meta" role="status"></div><div id="error" role="alert"></div><form id="compose"><label for="draft" class="meta">Message your companion</label><textarea id="draft" maxlength="2000" placeholder="Walk north, follow a player, or ask about the world…"></textarea><button id="send" type="submit">Send</button></form></section></main>
-<script>
-const token='TOKEN_VALUE', $=id=>document.getElementById(id);let sid=null,url=null,shown=true,known=new Set(),sending=false,localError='';
-$('draft').value=sessionStorage.getItem('minecraft-draft')||'';
-$('draft').oninput=()=>sessionStorage.setItem('minecraft-draft',$('draft').value);
-async function command(action,extra={}){const r=await fetch('/api/minecraft/chat',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({csrf_token:token,action,session_id:sid||'',...extra})});const value=await r.json();if(!r.ok||value.error)throw Error(value.error||'Request failed');localError='';return value;}
-function failure(e){localError=e.message;$('error').textContent=e.message;}
-$('game').onchange=()=>{if($('game').value==='minecraft')command('connect',{world:$('world').value}).catch(failure);};
-$('stop').onclick=()=>{ $('activity').textContent='Stopping…';command('stop').catch(failure);};
-$('reconnect').onclick=()=>command('reconnect').catch(failure);
-$('toggle').onclick=()=>{shown=!shown;$('view').src=shown?(url||'about:blank'):'about:blank';$('toggle').textContent=shown?'Close view':'Reopen view';};
-$('compose').onsubmit=async e=>{e.preventDefault();if(sending)return;const text=$('draft').value;if(!text.trim())return;sending=true;try{await command('message',{text,request_id:crypto.randomUUID()});if($('draft').value===text){$('draft').value='';sessionStorage.removeItem('minecraft-draft');}$('error').textContent='';}catch(e){failure(e);}finally{sending=false;}};
-async function refresh(){try{const r=await fetch('/api/minecraft/chat');if(!r.ok)throw Error('Connection status unavailable; use Stop and check the app.');const s=await r.json();sid=s.session_id;$('world').disabled=!!sid||s.connecting;if(sid)$('game').value='minecraft';const state=s.state;if(state.game_mode)$('world').value=state.game_mode;
-$('connection').textContent=s.connecting?'Connecting…':state.ready?'Connected':'Disconnected';$('identity').textContent=state.character?state.character+' · '+(state.game_mode||'Practice')+' world':'Minecraft';$('activity').textContent=s.activity;$('progress').textContent=s.progress||'';$('goal').textContent=s.goal?'Goal: '+s.goal:'';
-$('codex').textContent=s.codex.message;$('pending').textContent=s.busy?'Codex is thinking · gameplay continues':'';$('send').disabled=s.busy||!state.ready||s.connecting;$('reconnect').disabled=s.connecting;
-$('error').textContent=s.error||localError;
-if(state.viewer_url!==url){url=state.viewer_url;if(shown)$('view').src=url||'about:blank';}
-$('viewer-status').textContent=!shown?'View closed · bot connection stays active':state.viewer_clients?'Live bot view':state.ready?'Viewer unavailable or loading · bot connection remains active':'';
-$('details').textContent=JSON.stringify({session:sid,version:state.game_version,position:state.position,players:state.players,revision:state.revision},null,2);
-const box=$('messages'),bottom=box.scrollHeight-box.scrollTop-box.clientHeight<50;
-for(const m of s.messages){if(known.has(m.id))continue;known.add(m.id);const div=document.createElement('div');div.className='message '+m.role;const name=document.createElement('span');name.className='role';name.textContent=m.role==='user'?'You':'Companion';div.append(name,document.createTextNode(m.text));box.append(div);}if(bottom)box.scrollTop=box.scrollHeight;
-}catch(e){failure(e);}setTimeout(refresh,400);}
-if(SELECTED_VALUE){$('game').value='minecraft';command('connect',{world:$('world').value}).catch(failure);}refresh();
-</script></body></html>"""
-
-
-CHAT_JS = (
-    PAGE.split("<script>", 1)[1]
-    .split("</script>", 1)[0]
-    .replace("const token='TOKEN_VALUE'", "const token=document.body.dataset.token")
-    .replace("if(SELECTED_VALUE)", "if(document.body.dataset.selected==='true')")
-)
-PAGE = (
-    PAGE.split("<script>", 1)[0].replace(
-        "<body>", '<body data-token="TOKEN_VALUE" data-selected="SELECTED_VALUE">'
-    )
-    + '<script src="/assets/minecraft-chat.js" defer></script></body></html>'
-)
+<style>PAGE_STYLE</style></head><body data-token="TOKEN_VALUE" data-selected="SELECTED_VALUE">
+<header><h1>Game Companion</h1><div class="selectors"><select id="game" aria-label="Game"><option value="">Choose a game</option><option value="minecraft">Minecraft</option></select><select id="world" aria-label="World"><option value="creative">Creative practice</option><option value="survival">Survival practice</option></select></div><div class="app-actions"><button id="stop">Stop</button><button id="quit">Quit app</button></div></header>
+<main><section class="world" aria-label="Minecraft session"><div class="status"><h2 id="identity">Minecraft</h2><span id="connection" class="meta">Not connected</span></div>
+<div id="setup-panel"><h2>Open your world</h2><p id="setup-status" role="status"></p><div class="setup-actions"><button id="open-world" class="primary">Open retained world</button><button id="check-setup">Check setup again</button></div><div id="setup-links" class="setup-links"><button id="sign-in">Sign in to Codex</button><a id="get-codex" href="https://developers.openai.com/codex/cli" target="_blank" rel="noopener">Get Codex CLI</a><a id="get-java" href="https://adoptium.net/temurin/releases/?version=21" target="_blank" rel="noopener">Get Java 21</a></div><details><summary>Create a new practice world</summary><p>Creates the selected Creative or peaceful Survival world only when no retained world exists.</p><label><input type="checkbox" id="eula"> I accept the <a href="https://www.minecraft.net/en-us/eula" target="_blank" rel="noopener">Minecraft EULA</a> for this new world.</label><button id="create-world">Create new practice world</button></details></div>
+<div id="live-panel" hidden><div class="scene"><iframe id="view" title="Live Minecraft world" src="about:blank"></iframe></div></div><div class="toolbar" id="session-tools"><button id="toggle">Close view</button><button id="reconnect">Reconnect</button><span id="viewer-status" class="meta"></span></div>
+<div class="activity-panel" id="activity-panel"><p id="activity" role="status"></p><div id="progress" class="meta"></div><div id="goal" class="meta"></div></div>
+<details id="session-details"><summary>Session details &amp; recovery</summary><pre id="details"></pre><div id="memory-recovery"></div><a href="/legacy-games">Engineering &amp; historical games</a></details><details class="beta-limits"><summary>Practice-world limits</summary><p>Peaceful practice: resource trips and revisions may be partial, and some sites are inaccessible. Stone-tool chains, hostile survival and broader building are not verified. Recall can be incomplete.</p></details></section>
+<section class="chat" aria-label="Companion chat"><div class="status"><h2>Companion</h2><span id="codex" class="meta">Checking Codex…</span></div><div id="messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions"><div id="empty-chat"><strong>What shall we do?</strong>Open a world to explore, gather or build together.</div></div><div id="pending" class="meta" role="status"></div><div id="error" role="alert"></div><form id="compose"><label for="draft" class="meta">Message your companion</label><textarea id="draft" maxlength="2000" aria-describedby="send-status" placeholder="Gather eight oak logs and return to camp…"></textarea><div class="compose-actions"><span id="send-status" class="meta"></span><button id="send" type="submit">Send</button></div></form></section></main>
+<script src="/assets/minecraft-chat.js" defer></script></body></html>""".replace("PAGE_STYLE", GLASS_CSS + MINECRAFT_CSS)

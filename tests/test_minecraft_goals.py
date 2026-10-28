@@ -144,7 +144,7 @@ def test_stop_at_child_completion_cannot_start_another(tmp_path):
     chat.bridge.submit = submit
     with pytest.raises(ValueError, match="canceled"):
         goal.child({"action": "move", "target": chat.home})
-    assert goal.remaining == 79
+    assert goal.remaining == 159
 
 
 def test_total_quantity_uses_existing_inventory(tmp_path):

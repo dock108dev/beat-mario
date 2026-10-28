@@ -1,12 +1,8 @@
 # Game Companion Lab — Mario
 
-Mario engineering review guide for retained route contracts and evidence. The [product direction](product-direction.md) and [private-beta engineering plan](private-beta-engineering.md) define the corrected initial-beta target: watch/coaching through ordinary conversation, with route discoveries and corrections remembered across attempts and lives. This Lab is reusable engineering infrastructure; its historical accepted route does not establish that coached-play experience.
-
-Game Companion Lab is the local evidence-first Mario route review surface. It
-is the engineering view beneath the existing player-facing companion session.
-The [conversational custom-route flow](b2-conversation-guide.md)
-belongs in the ordinary player workspace; the Lab retains source-patch and
-evidence review. It answers:
+Game Companion Lab is the engineering view for reviewing Mario route contracts,
+observations and source-patch proposals. The ordinary player interface is described
+in the [Mario guide](mario-player-guide.md). It answers:
 
 - Where is Mario in the selected route?
 - What is proved, bridged, planned, or failing?
@@ -17,7 +13,7 @@ artifact schemas remain the source of truth.
 
 ## Role in the corrected beta
 
-The ordinary interface already provides bounded goal → play → coach → revised attempt → remembered result foundations. The [Mario integration contract](b2-integration-contract.md) now requires contextual model interpretation and adaptive strategy above reusable controllers. A player should not have to inspect route-patch packets, author source changes or use the Lab to ask for a timing correction and test it next time. Local experimental routes, attempts, discoveries and coaching will remain clearly separate from the accepted route contracts/evidence listed below; [learning](learning.md) defines the planned separation. The existing exact-diff promotion workflow still governs changes to the historical accepted registry, not every local coached trial.
+The ordinary interface already provides bounded goal → play → coach → revised attempt → remembered result foundations. The [usage and development](development.md) now requires contextual model interpretation and adaptive strategy above reusable controllers. A player should not have to inspect route-patch packets, author source changes or use the Lab to ask for a timing correction and test it next time. Local experimental routes, attempts, discoveries and coaching will remain clearly separate from the accepted route contracts/evidence listed below; [learning](learning.md) defines the planned separation. The existing exact-diff promotion workflow still governs changes to the historical accepted registry, not every local coached trial.
 
 The Lab can provide the engineering evidence for actual controller application, coin accounting, attempted branches, comparisons and release. It must distinguish requested versus applied revisions and observed versus unknown goal coverage. Current goal selection and fixed accepted route proof do not demonstrate general coin-route training, hidden-1-up flight or conversational frame tuning. This section defines future integration requirements; it does not claim those displays or experiments exist yet. Independent self-training is later work.
 

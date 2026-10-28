@@ -1,6 +1,6 @@
 # Unattended Regression Operator Guide
 
-Engineering runner reference with retained V2 validation status. Current release work follows the [private-beta engineering plan](private-beta-engineering.md) and its ordinary user workflow.
+Engineering runner reference with retained V2 validation status. Current release work follows the [usage and development](development.md) and its ordinary user workflow.
 
 Game Companion provides an optional local regression runner for an
 adapter that explicitly declares unattended support. It is an engineering

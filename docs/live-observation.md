@@ -1,12 +1,12 @@
 # Live Mario observation
 
-## Working game state for the AI beta
+## Observed game state
 
-GC-A3 in the [engineering plan](private-beta-engineering.md) adapts current observers into fresh semantic state/image snapshots for contextual language and gameplay decisions. Supply relevant objects, player form/motion, resources, scene/target identity, current progress, confidence and observation age. Keep inferred mechanics and historical memory separate from observed facts.
+The observer adapts game data into fresh semantic state/image snapshots for contextual language and gameplay decisions. Supply relevant objects, player form/motion, resources, scene/target identity, current progress, confidence and observation age. Keep inferred mechanics and historical memory separate from observed facts.
 
 Current passive observation and opt-in control distinctions below remain authoritative. The model consumes evidence and proposes actions; it does not alter passive observer authority or establish completion by explanation. Extend current scene coverage through reusable semantics where needed, with uncertain/off-screen information retained honestly. Runtime model images may be sent through Codex; local trace storage and optional feedback export are separate.
 
-Mario coaching uses the read-only observation/control boundaries below. Observed goal, coin and action facts remain bounded by the supported scenes. Minecraft selected-window observations are described in [architecture](agent-architecture.md#ordinary-player-setup-and-minecraft-path).
+Mario coaching uses the read-only observation/control boundaries below. Observed goal, coin and action facts remain bounded by the supported scenes. Other observation boundaries are described in [architecture](agent-architecture.md).
 
 Valid completed observations also create an adapter-neutral learning
 attempt referencing the original run, input trace, and observation evidence.
@@ -102,6 +102,4 @@ to emit controls. World 1-1 opening entry must have known level lineage, and the
 full route requires exact fresh power-on. The controller consumes explicit
 button states for all eight NES buttons so browser typing does not supply game
 input. Unsupported fixed playback rates are rejected; normal and uncapped
-faster intervals retain actual frames and wall time. See the [conversation guide](b2-conversation-guide.md)
-and exact engineering evidence for the tested source revision. No owner acceptance is
-inferred from these technical records.
+faster intervals retain actual frames and wall time. Diagnostics describe the observed runtime. Stored results do not authorize further actions.

@@ -79,3 +79,24 @@ def test_execute_cannot_acquire_new_authority_implicitly():
     with MinecraftBridge() as bridge:
         with pytest.raises(ValueError, match="captured"):
             bridge.submit("execute", {"action": "move"})
+
+
+def test_oversized_site_hints_are_trimmed_without_killing_worker():
+    with MinecraftBridge() as bridge:
+        args = {
+            "action": "inspect_site",
+            "rejections": [{"signature": "x" * 1000} for _ in range(240)],
+            "protected": [{"center": {"x": 0, "y": 0, "z": 0}, "radius": 6}],
+        }
+        with pytest.raises(RuntimeError, match="stale_session"):
+            bridge.call("execute", args, session_id="none", revision=0)
+        assert len(args["rejections"]) == 240
+        assert bridge.process.poll() is None
+        with pytest.raises(ValueError, match="bounded frame"):
+            bridge.submit(
+                "execute",
+                {"action": "inspect_site", "protected": ["x" * 70000]},
+                session_id="none",
+                revision=0,
+            )
+        assert bridge.process.poll() is None

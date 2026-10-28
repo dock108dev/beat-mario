@@ -1,6 +1,6 @@
 # Mario player guide
 
-Start with [launch and first use](../README.md#launch-and-first-use), then choose
+Start with [launch and first use](../README.md#source-launch), then choose
 Mario at `/mario`. Setup must find FCEUX and a supported local game file. Select
 its path in setup or set `SMB3_GAME_FILE`. Confirm your emulator controls before
 opening a fresh disposable session and entering World 1-1 through normal menus.
@@ -31,7 +31,7 @@ coverage remain unverified. See [known limitations](known-limitations.md).
 
 The following controllers have separate supported entry conditions and retained
 source evidence. They do not establish support in every packaged build; check
-the build's manifest and [qualification record](current-engineering-status.md).
+the build's manifest and [supported behavior and limits](known-limitations.md).
 
 ## Fly to the sky hidden 1UP
 
@@ -43,7 +43,7 @@ Ask **“Fly to the hidden 1UP.”** Companion names the hidden 1UP inside the s
 4. Watch the separate flight, area, revelation and collection results. Collection requires the target mushroom's game-owned hit receipt. Unknown observations stay unconfirmed; an extra life from 100 coins does not prove the hidden reward.
 5. **Stop**, **Take control** or **STOP RIGHT NOW WAIT** interrupts play. Confirm handback before more input. The finished flight pauses with control returned. After release, **Open fresh attempt** opens a new disposable session; prepare again and review a fresh request before Start. Saved results can be reopened without playing.
 
-This supported case collected the intended 1UP in real source gameplay, with lives 4→5 and native neutral handback. Wider flight goals, arbitrary starting positions and packaged delivery are unverified. See [flight verification](gc2-flight-verification.md). Full coin coverage remains unknown; recording is not a qualified ordinary workflow.
+This controller supports the specific hidden-1UP case. Wider flight goals and arbitrary starting positions remain unsupported.
 
 ## Send instructions for the next attempt
 
@@ -51,7 +51,7 @@ Open Mario through the ordinary companion interface. Ask “Improve stairs trave
 
 You can teach the supported stair instruction directly: “At the stairs land on the left top before jumping across the gap.” Companion explains its interpretation, retains your words and uses the instruction in the next compatible attempt. If already playing, the correction applies next time. After confirmed handback choose **Try again with guidance** within the remaining approved budget. Each trial is capped at three minutes inside the ten-minute scope; one to five attempts can be reviewed. Reopening retains descriptive instructions/results and requires a fresh session and approval. Stop/Take control cancels future retry authority and requires confirmed input release before more play.
 
-The retained October 4 source trials observed the stairs and pipe continuation reaching the World 1-1 exit with **two coins**. Two consecutive reviewed attempts finished; collecting every coin is unverified. Urgent chat Stop during a paused pipe crossing also returned control with native confirmation. The supported next-attempt instructions are limited to this stair tactic, a failure-derived pipe continuation and the existing opening timing. The supported flight/reward case above is verified through real source gameplay; broader English tactics and wider learning remain development work. No recording or player demonstration is required. See [route verification](gc2-route-verification.md).
+Supported next-attempt instructions are limited to the stair tactic, a failure-derived pipe continuation and opening timing. Arbitrary English tactics and full coin coverage remain unsupported.
 
 ## Recording limitations
 
@@ -97,7 +97,7 @@ Results and failed routes survive reopening. Open the same recognized cartridge 
 
 **Stop** / **Take control**, or “STOP RIGHT NOW WAIT,” cancels pending work and retry permission immediately. Check the control owner and input-release result; an unconfirmed handback blocks further play. A new session, changed scope, exhausted budget or expired approval requires fresh review. Each attempt lasts at most three minutes, capped by the shared ten-minute deadline.
 
-This experimental practice does not complete World 1-1, find all coins or learn flight. The local interpreter handles supported English goal/coaching/question/control variations; unsupported feedback is clarified. Historical accepted routes remain separate. See [verification](gc1-gc2-coaching-verification.md) for exact source evidence and retained-package limits.
+This experimental practice does not complete World 1-1, find all coins or learn flight. The local interpreter handles supported English goal/coaching/question/control variations; unsupported feedback is clarified. Historical accepted routes remain separate. See [supported behavior and limits](known-limitations.md) for supported boundaries.
 
 ## Review and Start
 
@@ -139,7 +139,7 @@ Current source recognizes “STOP RIGHT NOW WAIT” and urgency/punctuation vari
 
 Expand **Save or reopen a route** to save a named variant or Reopen it. A variant stores its base/version, actions and stop; it stores no gameplay permission. Reopen proposes a plan, then checks integrity, compatibility and fresh state. Review and explicitly Start. A saved variant is not automatically accepted, fastest or reliable.
 
-A completed opening stop means that bounded stop completed; it does not mean the full base or a 100% objective completed. Death, lost process, reclaim and missed boundaries remain distinct partial/stopped results. After process loss, open a fresh session; old edits and Start identities cannot be reused, and no native handback receipt can be supplied by the dead process. See [shared history and recovery](../README.md#history-recovery-and-safe-shutdown).
+A completed opening stop means that bounded stop completed; it does not mean the full base or a 100% objective completed. Death, lost process, reclaim and missed boundaries remain distinct partial/stopped results. After process loss, open a fresh session; old edits and Start identities cannot be reused, and no native handback receipt can be supplied by the dead process. See [shared history and recovery](minecraft.md#stop-reconnect-and-recover).
 
 The older Observe/Tell/Show/Do and History surfaces remain available. Observe only is read-only; Tell advises; Show is a separate review-only demonstration, never your completion. Their availability does not broaden conversation entry or destination limits.
 

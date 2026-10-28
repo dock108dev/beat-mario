@@ -238,19 +238,3 @@ is authorized or needed.
 This hardening changes orchestration and local operations only. It does not
 change goal contracts, route inputs, gameplay observers, or the requirements
 for live FCEUX acceptance.
-
-
-## September 26 maintenance boundary
-
-Failure-handling changes alter the working source and do not inherit earlier
-live qualification. The [delivery record](b8-personal-delivery.md) retains the
-identified build and review limits. Recovery behavior must be qualified on the
-source actually used for a live run.
-
-The repository pattern review covered Python handlers/workers, frontend fetch
-fallbacks, native input/process cleanup, local persistence, optional dependencies,
-Lua guards, launch scripts and CI suppression. Existing transactional rollback,
-classified reliability failures, visible frontend retry messages, catalog
-preference recovery, optional artwork and unavailable-adapter defaults are
-retained: they either expose their degradation or cannot grant execution.
-No broad-catch removal or gameplay-policy rewrite was warranted for those paths.

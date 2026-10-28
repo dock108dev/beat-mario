@@ -8,7 +8,7 @@ The language role preserves the requested goal even when a capability is missing
 
 Typed language intent and adapter validation lower requests to supported finite activities. Historical goal IDs and accepted-route invariants below retain their meaning; a new AI beta readiness contract must name its own capabilities and evidence.
 
-Mario route-goal reference. These versioned route contracts define their selected diagnostic or gameplay objective. The [private-beta engineering plan](private-beta-engineering.md) owns application release scope.
+Mario route-goal reference. These versioned route contracts define their selected diagnostic or gameplay objective. The [usage and development](development.md) owns application release scope.
 
 A goal contract is the machine-readable source of truth for a selected Mario route objective.
 The default Route Lab contract remains

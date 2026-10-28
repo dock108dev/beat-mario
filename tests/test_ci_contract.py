@@ -28,7 +28,6 @@ RUNTIME_DOC_PATH = REPOSITORY_ROOT / "docs/runtime-and-configuration.md"
 STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
 FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
 CAMPAIGN_ENTRY_SCHEMA_PATH = REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
-ROADMAP_PATH = REPOSITORY_ROOT / "docs/v2-roadmap.md"
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
 SETUP_UV_PIN = "astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e"
@@ -52,6 +51,16 @@ LEGACY_MEDNAFEN_RESULT_MODULES = (
     REPOSITORY_ROOT / "src/smb3_agent/tasks/run_1_1_script.py",
     REPOSITORY_ROOT / "src/smb3_agent/tasks/start_game.py",
 )
+
+
+def project_markdown_files() -> tuple[Path, ...]:
+    """Local ignored working notes are not part of the distributable documentation."""
+    names = subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        cwd=REPOSITORY_ROOT, text=True,
+    ).split("\0")
+    return tuple(REPOSITORY_ROOT / name for name in sorted(set(names))
+                 if name == "README.md" or (name.startswith("docs/") and name.endswith(".md")))
 
 
 def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> None:
@@ -118,14 +127,14 @@ def test_diagnostics_upload_only_temporary_test_reports() -> None:
         for step in job["steps"]
         if step.get("uses", "").startswith("actions/upload-artifact@")
     ]
-    assert len(uploads) == 1
+    assert len(uploads) == 2
     upload = uploads[0]
     assert upload in steps and steps.index(upload) > steps.index(gate)
     assert upload["if"] == "${{ always() && !cancelled() }}"
     assert upload["with"] == {
-        "name": "ci-test-results",
-        "path": "\n".join((report_path, "${{ runner.temp }}/test-results/metrics.json", "${{ runner.temp }}/test-results/summary.md")) + "\n",
-        "if-no-files-found": "ignore",
+        "name": "ci-test-results-${{ github.run_id }}-${{ github.run_attempt }}",
+        "path": "\n".join((report_path, "${{ runner.temp }}/test-results/metrics.json", "${{ runner.temp }}/test-results/summary.md", "${{ runner.temp }}/test-results/coverage.xml", "${{ runner.temp }}/test-results/coverage.json", "${{ runner.temp }}/test-results/build.json")) + "\n",
+        "if-no-files-found": "error",
         "retention-days": 7,
         "include-hidden-files": False,
     }
@@ -140,10 +149,10 @@ def test_diagnostics_upload_only_temporary_test_reports() -> None:
 def test_dependabot_covers_locked_python_and_actions_dependencies() -> None:
     dependabot = DEPENDABOT_PATH.read_text(encoding="utf-8")
 
-    assert dependabot.count("interval: weekly") == 2
+    assert dependabot.count("interval: weekly") == 3
     assert "package-ecosystem: uv" in dependabot
     assert "package-ecosystem: github-actions" in dependabot
-    assert dependabot.count("directory: /") == 2
+    assert dependabot.count("directory: /") == 3
 
 
 def test_canonical_gate_covers_complete_rom_free_surface() -> None:
@@ -228,7 +237,7 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
     assert len(README_PATH.read_text(encoding="utf-8").splitlines()) < 180
     assert all(not (REPOSITORY_ROOT / path).exists() for path in retired_paths)
 
-    markdown_files = (README_PATH, *sorted((REPOSITORY_ROOT / "docs").glob("*.md")))
+    markdown_files = project_markdown_files()
     tracked_files = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=REPOSITORY_ROOT, text=True
@@ -257,7 +266,6 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
 def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
     final_campaign = FINAL_CAMPAIGN_PATH.read_text(encoding="utf-8")
-    roadmap = ROADMAP_PATH.read_text(encoding="utf-8")
 
     for required in (
         "# Game Companion",
@@ -278,7 +286,6 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
     assert "execution_enabled: false" in final_campaign
     assert "status: v2_14_campaign_entry_contract_ready" in final_campaign
     assert CAMPAIGN_ENTRY_SCHEMA_PATH.is_file()
-    assert "Status: **in progress" not in roadmap
 
     # Current guides must work without the maintainer's private workspace.
     current_guides = (
@@ -286,7 +293,7 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
         RUNTIME_DOC_PATH,
         STARDEW_GUIDE_PATH,
         *(REPOSITORY_ROOT / "docs" / name for name in (
-            "development.md", "agent-architecture.md", "product-direction.md",
+            "development.md", "agent-architecture.md", "minecraft.md",
             "security.md", "error-handling.md", "ssot.md", "ui-design.md",
             "ui-design-requirements.md", "mario-player-guide.md",
         )),
@@ -297,7 +304,7 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
 
 
 def test_public_documentation_omits_legacy_game_acquisition_language() -> None:
-    markdown_files = (README_PATH, *sorted((REPOSITORY_ROOT / "docs").glob("*.md")))
+    markdown_files = project_markdown_files()
     forbidden = re.compile(r"\b(?:rom|roms|snes)\b|\.nes\b", flags=re.IGNORECASE)
 
     for source in markdown_files:

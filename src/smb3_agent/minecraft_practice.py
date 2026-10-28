@@ -14,9 +14,7 @@ import urllib.request
 
 from smb3_agent.delivery import OwnedGameProcesses
 
-VERSION = "1.21.4"
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_HOME = ROOT / "artifacts" / "minecraft-b1-practice-1.21.4"
+from smb3_agent.minecraft_delivery import world_home, java_runtime, GAME_VERSION as VERSION
 
 
 def fetch_json(url):
@@ -25,11 +23,9 @@ def fetch_json(url):
 
 
 class PracticeServer:
-    def __init__(self, home=DEFAULT_HOME, port=25575, *, survival=False):
+    def __init__(self, home=None, port=25575, *, survival=False):
         self.survival = survival
-        self.home = Path(home).resolve()
-        if survival and self.home == DEFAULT_HOME.resolve():
-            self.home = DEFAULT_HOME.with_name("minecraft-b1-survival-1.21.4")
+        self.home = Path(world_home(survival) if home is None else home).resolve()
         self.port = port
         self.owned = OwnedGameProcesses()
         self.process = None
@@ -57,11 +53,12 @@ class PracticeServer:
         self.world_id = world["id"]
         eula = self.home / "eula.txt"
         if self.survival and not eula.exists():
-            accepted = DEFAULT_HOME / "eula.txt"
+            creative_home = world_home()
+            accepted = creative_home / "eula.txt"
             if accepted.exists() and "eula=true" in accepted.read_text().splitlines():
                 shutil.copy2(accepted, eula)
                 for name in ("server.jar", "server-download.json"):
-                    shutil.copy2(DEFAULT_HOME / name, self.home / name)
+                    shutil.copy2(creative_home / name, self.home / name)
         if accept_eula:
             eula.write_text(
                 "# Accepted explicitly by owner for this isolated practice server\neula=true\n"
@@ -120,10 +117,16 @@ class PracticeServer:
     def start(self, *, accept_eula=False):
         jar = self.prepare(accept_eula=accept_eula)
         with socket.socket() as probe:
-            probe.bind(("127.0.0.1", self.port))
+            # A stopped server may leave TIME_WAIT sockets; they are not a listener.
+            # SO_REUSEADDR permits that case while an active listener still conflicts.
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                probe.bind(("127.0.0.1", self.port))
+            except OSError as exc:
+                raise OSError("Minecraft’s local port is occupied. Quit the other practice server, then connect again. No other process was stopped.") from exc
         self.log = (self.home / "server.log").open("w")
         self.process = self.owned.launch(
-            ["java", "-Xms512M", "-Xmx1536M", "-jar", str(jar), "nogui"],
+            [java_runtime(), "-Xms512M", "-Xmx1536M", "-jar", str(jar), "nogui"],
             cwd=self.home,
             stdin=subprocess.PIPE,
             stdout=self.log,

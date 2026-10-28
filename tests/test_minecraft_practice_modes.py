@@ -37,3 +37,19 @@ def test_survival_persists_identity_and_natural_generation(tmp_path):
     assert "gamemode=survival" in text
     assert "level-type=minecraft:normal" in text
     assert "generator-settings" not in text
+
+
+def test_reconnect_port_probe_still_refuses_an_active_listener(tmp_path):
+    import socket
+    import pytest
+    from smb3_agent.minecraft_practice import PracticeServer
+
+    with socket.socket() as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        server = PracticeServer(tmp_path, port=listener.getsockname()[1])
+        server.prepare = lambda **kw: tmp_path / "server.jar"
+        with pytest.raises(OSError):
+            server.start()
+        assert server.process is None

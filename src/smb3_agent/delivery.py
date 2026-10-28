@@ -27,6 +27,7 @@ def delivery_identity() -> dict:
         "build": build,
         "packaged": bool(getattr(sys, "frozen", False)),
         "root": str(REPOSITORY_ROOT),
+        "data_root": str(Path.cwd()),
         "source_sha256": source["source_sha256"],
         "head": source["head"],
         "python": str(Path(sys.executable).absolute()),

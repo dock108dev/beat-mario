@@ -96,6 +96,26 @@ def service(tmp_path, provider):
 
 def plan(**kw):
     return {
+        "structure_name": "",
+        "preference": "",
+        "hand_only": False,
+        "craft_item": "none",
+        "craft_quantity": 1,
+        "structure": {
+            "width": 3,
+            "depth": 3,
+            "height": 2,
+            "material": "oak_planks",
+            "doorway": "north",
+            "windows": False,
+            "site_place": "",
+            "offset": {"x": 3, "y": 0, "z": 0},
+            "revise": False,
+            "relocate": False,
+            "remaining_only": False,
+            "allow_removal": False,
+            "flexible_site": False,
+        },
         "action": "move",
         "reply": "Walking north.",
         "direction": "north",

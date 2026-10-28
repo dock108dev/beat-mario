@@ -1,6 +1,6 @@
 # FCEUX Harness
 
-Mario backend reference for explicit route diagnostics and retained reliability work. The [private-beta engineering plan](private-beta-engineering.md) owns the integrated application release path.
+Mario backend reference for explicit route diagnostics and retained reliability work. The [usage and development](development.md) owns the integrated application release path.
 
 FCEUX is the current reliable backend for SMB3 route work. It gives the project
 direct controller input, stable state reads, route logs, and optional screenshot
@@ -62,7 +62,7 @@ post_probe_clear=true
 
 This preset is a diagnostic route, not the product goal and not a claim that
 every World 1 segment is solved by regular gameplay. It cannot prove safe World
-2 arrival or World 8. See [Route status](route-status.md).
+2 arrival or World 8. See [supported behavior and limits](known-limitations.md).
 
 ## Visual Review
 

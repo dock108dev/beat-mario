@@ -4,7 +4,7 @@ Local learning records store compatible coaching and observed outcomes for later
 attempts. Model-directed Mario play retrieves descriptive context; deterministic
 coin routes also use retained outcomes. Generalized improvement, model training
 and player demonstration qualification are unsupported. See
-[architecture](agent-architecture.md#conversation-gameplay-and-control).
+[architecture](agent-architecture.md).
 
 The learning layer turns the local run library into reviewable learning
 evidence. It does not turn a captured controller trace into an accepted route.
@@ -47,13 +47,9 @@ which decisions were model-generated versus deterministic runtime/controller wor
 Keep concise decision explanations; private chain-of-thought collection is
 unnecessary.
 
-The initial beta requires memory to influence actual later decisions. Show a
-coaching instruction or discovery changing the selected action/target/parameters
-in a compatible later attempt, and show a changed condition causing a different
-decision with the same code. Storing a note, replaying one trace or selecting among
-three fixed routes is an implemented foundation, not sufficient proof of the
-required learning behavior. No new neural-network training or unattended practice
-service is needed for this milestone.
+Memory is useful when compatible observations and stored guidance affect later
+choices. Storing a note or replaying a trace does not establish general learning.
+There is no neural-network training or unattended practice service.
 
 Inspection/reset must show the guidance in use, its basis and scope. Reset or
 supersession affects future retrieval while preserving historical episodes.
@@ -87,7 +83,7 @@ initial model-driven beta.
 
 `mario_demonstrations.py` owns saved traces, range validation, cartridge/version compatibility, trace hashes, names/lessons and visual/action review. `fceux_demonstration.lua` reads effective player inputs after each frame paired with its pre-frame state; it writes no game input or RAM. `live_observation.py` owns process-bound recorder requests and excludes native companion authority while recording. `conversation_service.py` owns explicit use/review/approval and durable application outcomes; `mario_plan_runtime.py` binds validated numeric traces to the exact cartridge/session; `fceux_b2_plan.lua` matches entry, overrides real inputs, audits them and stops on divergence or segment completion. No trace becomes historical accepted-route authority.
 
-Saved demonstrations under `artifacts/conversation/demonstrations/` are distinct from ordinary coin-route candidates and engineering promotion. Application records retain immutable content/lesson hashes and observed controller receipts. Completion of a recorded sequence does not establish improvement or level completion. Reopening restores descriptive examples/outcomes only. See [verification](gc2-demonstration-verification.md).
+Saved demonstrations under `artifacts/conversation/demonstrations/` are distinct from ordinary coin-route candidates and engineering promotion. Application records retain immutable content/lesson hashes and observed controller receipts. Completion of a recorded sequence does not establish improvement or level completion. Reopening restores descriptive examples/outcomes only. See [supported behavior and limits](known-limitations.md).
 
 ## Implemented evidence classes
 
@@ -149,9 +145,9 @@ workflow remains responsible for applying and reversing the exact repository
 diff. This is the historical accepted-solution promotion contract. It must not
 become a requirement for each ordinary player-coached experimental trial.
 
-## Ordinary experimental memory and required extension
+## Experimental gameplay memory
 
-The initial beta must let a user watch Mario, coach a relevant action and see compatible later play reflect that guidance. The narrow opening-timing loop and authored coin-route memory are implemented; contextual model interpretation and adaptive strategy remain required. Preserve original coaching and resolve its target, amount and applicability before claiming a change. Retain discoveries, branches tried, missed opportunities and coverage uncertainty across attempts/lives. Saying that a correction was saved is distinct from confirming it reached the controller or improved the outcome.
+The opening-timing loop and authored coin-route memory support narrow, compatible later attempts. Broader contextual learning is not a general capability.
 
 Add local, inspectable and resettable records for the experiment objective/route version; attempt/life and observation boundary; discovered route/coin facts with provenance; the original coaching text; resolved target, parameter/tactic revision and scope; application eligibility/effective boundary; controller acknowledgment; result and confirmed release. Preserve superseded revisions and negative results. Current user choices override older coaching, and incompatible game/route/entry/ability records may inform a discussion but cannot silently become an executable action.
 

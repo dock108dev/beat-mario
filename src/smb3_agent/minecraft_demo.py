@@ -1,4 +1,4 @@
-"""Minimal local MC-B1-01 harness, not the installed product interface."""
+"""Minimal local harness, not the installed product interface."""
 
 from __future__ import annotations
 
