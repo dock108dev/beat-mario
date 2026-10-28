@@ -32,6 +32,8 @@ Companion.command closes its owned game processes and saves the world.
 - **Stardew:** ordinary default-save isolated copying, observed preparation and narrow spring-patch watering; retained source planting-location discussion and supported
   inspection/return routines. Reconnaissance is implemented but native acceptance
   is pending. Arbitrary farms and delegated cave exploration are unverified.
+  The public Stardew CLI remains inspection-only; it does not select or copy a
+  save, open a game, or send input.
 - **Minecraft:** setup, calibration, and small camera requests. Movement,
   placement, and wall execution remain disabled.
 - **OpenTTD:** a narrow loan-repayment reference integration using local Ollama.
@@ -70,7 +72,8 @@ uv sync --locked --all-extras
 ```
 
 Open `http://127.0.0.1:8765/` and choose Minecraft. `/minecraft` opens that same
-headless workspace. Historical games remain under `/legacy-games`; `/setup`,
+headless workspace. Historical games remain under `/legacy-games`, with Mario at
+`/mario` and Stardew at `/stardew`; `/setup`,
 `/onboarding` and `/lab` are secondary engineering surfaces. Their older native
 controls are not part of Minecraft Beta 1. See the [current launch guide](docs/mc-b1-02-chat-play.md).
 

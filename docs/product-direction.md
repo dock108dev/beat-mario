@@ -20,6 +20,6 @@ one possible title. Stardew is removed from active delivery; retain prior data
 and implementation as history.
 
 The [Beta 1 plan](beta-1-plan.md) owns scope, architecture, delivery slices and
-acceptance. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md)
-owns the immediate next action. [Current status](current-engineering-status.md)
+acceptance. Its [crafting and construction slice](beta-1-plan.md#mc-b1-04--crafting-and-flexible-construction)
+is next. [Current status](current-engineering-status.md)
 retains dated evidence and does not establish completion of this new product.
