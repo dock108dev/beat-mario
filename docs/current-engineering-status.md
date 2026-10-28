@@ -1,11 +1,44 @@
-# Game Companion current local status
+# Game Companion — dated implementation evidence
+
+> October 27 product reset: [Beta 1](beta-1-plan.md) is Minecraft-only, using a
+> headless bot with its own character and Codex CLI. Ordinary chat must not pause
+> play. Next is MC-B1-03 in the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
+> The evidence below remains dated; its old priorities do not dispatch work.
+> NES emulator companionship is goal 2. Stardew is out of active scope.
+
+## October 27 — MC-B1-02 conversational source session
+
+**Passed local source qualification and real CLI/game demonstration.** Minecraft
+selection, actual viewer, persistent chat, go-to/follow, concurrent state-aware
+replies, redirection, direct Stop, pending-inference cancellation, reconnect and
+safe reopening were exercised. 51 focused Python checks and six Node checks
+passed. [Launch/implementation](mc-b1-02-chat-play.md) ·
+[Measurements and retained evidence](mc-b1-02-evidence-20261027.md).
+
+No installed update, hosted CI or owner acceptance is claimed. Human walkthrough
+remains deferred. Next: MC-B1-03 navigation/resource/inventory/tools.
+
+## October 27 — MC-B1-01 headless source foundation
+
+Local bot qualification passed: separate vanilla Java 1.21.4 world, Mineflayer
+4.39.0, pathfinder 2.4.5, patched Prismarine Viewer 1.33.0, Node 24.22.0. Real
+movement/server block updates, active/queued Stop, stale/duplicate rejection,
+viewer reconnect, TextEdit typing during play and owned cleanup are recorded.
+The owner deferred the human-client walkthrough; installed 26.3 cannot join the
+1.21.4 practice server. A second protocol identity coexisted successfully.
+
+[Implementation, protocol and launch](mc-b1-01-headless.md) ·
+[Exact live results and limitations](mc-b1-01-evidence-20261027.md).
+Source changes are uncommitted; no new package, installation, release or hosted CI
+run is claimed. Codex CLI integration belongs to MC-B1-02. Beta 1 is incomplete.
+
+## Historical October 25 audit
 
 Updated October 25, 2026 after a repository/documentation audit. Scope: personal
 use and a handful of users under the [working approach](personal-use.md).
 
-**Stardew has a demonstrated narrow ordinary workflow. A completed ordinary
-Mario coached early-segment session on the installed app is still the next
-unfinished task.** No new gameplay was run during this audit.
+**Historical October 25 result:** Stardew demonstrated a narrow ordinary
+workflow; the installed coached Mario segment was unfinished at that checkpoint. No new gameplay was run during this audit.
 
 ## Source, installed app and verification
 
@@ -52,7 +85,7 @@ These are retained local files, absent from a fresh clone. The declarative
 packaged qualification pending; it is not a live per-session result ledger and
 does not negate the narrower successful Stardew record.
 
-## Next action
+## Historical next action — October 25
 
 Use candidate.35 to try one finite, coached Mario early-segment request in a
 fresh disposable session. Success means alive and grounded at x≥700, independent

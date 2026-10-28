@@ -102,9 +102,9 @@ def test_server_routes_player_shell_and_secondary_lab() -> None:
         thread.join(timeout=5)
 
     assert catalog_response.status == 200
-    assert 'data-testid="combined-companion-catalog"' in catalog
-    assert 'data-adapter-id="smb3"' in catalog
-    assert 'data-adapter-id="stardew"' in catalog
+    assert 'aria-label="Game"' in catalog
+    assert 'value="minecraft"' in catalog
+    assert '/assets/minecraft-chat.js' in catalog
     assert player_response.status == 200
     assert 'data-testid="companion-shell"' in player
     assert "Open Game Companion Lab" in player

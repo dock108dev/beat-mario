@@ -1,25 +1,25 @@
-# Product scope
+# Product direction
 
-Game Companion provides local observed setup, contextual game discussion, finite
-reviewed play, independent Stop/Take control and descriptive history. Language
-and gameplay decisions use Codex; guarded controllers validate scope, execute
-supported skills and check observed effects.
+Updated October 27, 2026.
 
-The ordinary flow is: open a supported game, describe the goal, review the
-proposed activity, Start, observe progress, then receive results or take control.
-Stardew setup uses a game-created supported save and explicitly approved isolated
-copy. Observed preparation determines the current screen, player, tool, targets
-and reachable terrain. Prepared farms and raw calibration controls serve separate
-engineering regression workflows.
+Game Companion is a chatbot that plays games. Choose a game and open its live
+view beside a persistent conversation. Ask questions, give goals and change your
+mind while the companion plays in the background.
 
-Supported ordinary gameplay is the narrow spring seed patch and Mario World 1-1
-early segment. Confirmed effects, resource use, return and neutral handback are
-separate outcomes. Saved coaching alone proves neither application nor improvement.
-Full-level adaptive Mario, complete coin coverage, arbitrary farms, refill and
-cave delegation remain unqualified. Recording is implemented experimental source
-work with no verified ordinary demonstration application.
+Beta 1 focuses solely on Minecraft. The bot has its own character; the user may
+join the same world independently. Gameplay uses a headless game connection,
+not OS mouse/keyboard or screen control. Ordinary chat does not pause play.
+Codex CLI is the AI engine.
 
-See the [player guides](README.md#run-and-use), [architecture](agent-architecture.md)
-and [known limitations](known-limitations.md) for operational detail. Current working paths and remaining problems belong to the
-[current status](current-engineering-status.md). Get feedback during ordinary use
-and improve small useful slices under [the local working approach](personal-use.md).
+The full beta includes travel, resource gathering, basic crafting, adaptable
+building, contextual conversation, redirection, Stop and useful session memory.
+A camera integration or a single scripted wall is an intermediate proof.
+
+The second goal is an NES emulator companion across supported games. Mario is
+one possible title. Stardew is removed from active delivery; retain prior data
+and implementation as history.
+
+The [Beta 1 plan](beta-1-plan.md) owns scope, architecture, delivery slices and
+acceptance. The [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md)
+owns the immediate next action. [Current status](current-engineering-status.md)
+retains dated evidence and does not establish completion of this new product.

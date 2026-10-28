@@ -401,6 +401,12 @@ class _ThreadingHTTPServer(ThreadingHTTPServer):
 
 def _shutdown_session_managers(server: ThreadingHTTPServer) -> list[str]:
     failures = []
+    chat = getattr(server, "minecraft_chat", None)
+    if chat is not None:
+        try:
+            chat.close()
+        except Exception:
+            failures.append("Headless Minecraft cleanup unconfirmed")
     minecraft = getattr(server, "minecraft_player_session", None)
     if minecraft is not None:
         try:
@@ -516,6 +522,8 @@ def _new_lab_ui_server(host: str, port: int) -> ThreadingHTTPServer:
         learning_store=learning_store, launcher=server.delivery_game_processes.launch))
     from smb3_agent.codex_provider import CodexProvider
     server.codex_provider = CodexProvider()
+    from smb3_agent.minecraft_chat import MinecraftChat
+    server.minecraft_chat = MinecraftChat(ARTIFACT_DIR / "minecraft-chat", provider=server.codex_provider)
     setattr(server, "conversation_service", ConversationService(
         getattr(server, "live_observation_manager"),
         artifacts_root=ARTIFACT_DIR / "conversation", provider=server.codex_provider,
@@ -768,7 +776,18 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/backend":
             self._send_json(dict(self.server.codex_provider.status))
             return
-        if path == "/":
+        if path in {"/", "/minecraft"}:
+            from smb3_agent.minecraft_chat_ui import render_minecraft_chat
+            self._send_html(render_minecraft_chat(self._csrf_token(), selected=path == "/minecraft"))
+            return
+        if path == "/assets/minecraft-chat.js":
+            from smb3_agent.minecraft_chat_ui import CHAT_JS
+            self._send_javascript(CHAT_JS)
+            return
+        if path == "/api/minecraft/chat":
+            self._send_json(self.server.minecraft_chat.snapshot())
+            return
+        if path == "/legacy-games":
             self._send_html(
                 render_combined_catalog(
                     self._catalog_session(),
@@ -983,7 +1002,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _handle_post(self) -> None:
         path = urlparse(self.path).path
-        if path not in POST_PATHS:
+        if path not in POST_PATHS and path != "/api/minecraft/chat":
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         data = self._read_form()
@@ -1009,6 +1028,24 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if self.server.delivery_stopping:
             raise LabUiError("Delivery is shutting down; no new actions are accepted")
+        if path == "/api/minecraft/chat":
+            service = self.server.minecraft_chat
+            action = _single(data, "action")
+            try:
+                if action == "connect":
+                    service.connect(survival=_single(data, "world", default="creative") == "survival")
+                elif action == "stop":
+                    service.stop()
+                elif action == "reconnect":
+                    service.reconnect()
+                elif action == "message":
+                    service.submit(_single(data, "text"), _single(data, "request_id"), _single(data, "session_id"))
+                else:
+                    raise ValueError("Unknown Minecraft request")
+                self._send_json({"accepted": True})
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.CONFLICT)
+            return
         if path == "/request-permissions":
             from smb3_agent.screen_host import MacSelectedWindowHost
             MacSelectedWindowHost.request_permissions()
@@ -1698,7 +1735,8 @@ class _Handler(BaseHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'none'; base-uri 'none'; form-action 'self'; "
             "frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; "
-            "connect-src 'self'; script-src 'self'; style-src 'unsafe-inline'",
+            "connect-src 'self'; script-src 'self'; style-src 'unsafe-inline'; "
+            "frame-src http://127.0.0.1:*",
         )
         self.send_header("Cache-Control", "no-store")
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")

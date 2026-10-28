@@ -140,6 +140,7 @@ class CodexProvider:
                                 raise InferenceError("Inference canceled")
                             proc = subprocess.Popen(args, stdin=source, stdout=output, stderr=output,
                                                     env=self._env(), start_new_session=True)
+                            sample["spawn_seconds"] = round(time.monotonic() - start, 4)
                             self._children.add(proc)
                             self._requests[proc] = {**sample, "attempt": attempt + 1,
                                                     "child_pid": proc.pid}
@@ -148,6 +149,10 @@ class CodexProvider:
                             from smb3_agent.process_watchdog import ChildWatchdog
                             watchdog = ChildWatchdog(proc)
                             while proc.poll() is None:
+                                if "cli_first_event_seconds" not in sample:
+                                    first = os.pread(output.fileno(), 8192, 0)
+                                    if b'"type"' in first:
+                                        sample["cli_first_event_seconds"] = round(time.monotonic() - start, 4)
                                 if cancel.wait(.025) or self.closed.is_set():
                                     raise InferenceError("Inference canceled; reply discarded")
                                 if time.monotonic()-start >= self.timeout:

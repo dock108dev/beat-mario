@@ -1,5 +1,10 @@
 # Game Companion architecture
 
+> Active direction, October 27: [Minecraft Beta 1](beta-1-plan.md) uses a headless
+> bot, concurrent chat/play and Codex CLI. This document describes legacy
+> implementation or dated work; it does not override the new plan. Native screen
+> control and Mario/Stardew milestones are not Beta 1 prerequisites.
+
 ## Conversation, gameplay and control
 
 `lab_ui.py` creates one `codex_provider.CodexProvider` for ordinary Mario and

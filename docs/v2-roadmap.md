@@ -1,5 +1,10 @@
 # Game Companion V2 Roadmap
 
+> Active direction, October 27: [Minecraft Beta 1](beta-1-plan.md) uses a headless
+> bot, concurrent chat/play and Codex CLI. This document describes legacy
+> implementation or dated work; it does not override the new plan. Native screen
+> control and Mario/Stardew milestones are not Beta 1 prerequisites.
+
 > Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
 
 This is the retained V2 and Mario/Stardew implementation roadmap. The

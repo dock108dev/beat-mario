@@ -1,26 +1,25 @@
-# Game Companion local engineering plan
+# Game Companion engineering plan
 
-Reconciled October 25, 2026. Scope: personal use and a handful of users. [Working approach](personal-use.md).
+Updated October 27, 2026. The [Beta 1 plan](beta-1-plan.md) is the canonical
+implementation plan. It replaces the prior Mario/Stardew and native Minecraft
+camera/wall work orders.
 
-Next: use the existing app to complete one supported Mario early-segment request with remembered coaching. Check immediate Stop/Take control and neutral handback on that flow. Fix the first demonstrated problem, then repeat the affected flow.
+Deliver Minecraft first: a headless bot with its own character, a live game view
+beside chat, Codex CLI conversation and gameplay reasoning, concurrent chat/play,
+useful travel/gather/craft/build work, interruption and session memory.
 
-The endpoint is alive and grounded at x≥700, independently confirmed neutral
-input and a game-owned review pause. Store advice before requesting the fresh
-plan so it appears in review. Candidate.35's retained proposal has no completed
-outcome; pre-Start helper assertions do not diagnose a native gameplay failure.
+MC-B1-01's [headless foundation](mc-b1-01-headless.md) passed local bot checks;
+the human-client walkthrough is deferred at the owner's request. Start with
+MC-B1-02: integrate Codex CLI and the first concurrent chat/play session using
+that bridge. See [live evidence](mc-b1-01-evidence-20261027.md).
+Follow MC-B1-03 through MC-B1-06 for broader gameplay, persistence and delivery.
 
-Stardew ordinary save-copy preparation and middle-only watering/correction/return already worked on candidate.35. Keep that usable while Mario is improved. Supported scope remains the narrow spring seed patch and Mario World 1-1 early segment; wider farms, caves, full levels and recording are later features.
+Reuse provider, storage, lifecycle and shell foundations selectively. Do not make
+native capture, calibration, focused windows or old Mario/Stardew checks a
+prerequisite. Old modules and test contracts retain their historical meanings;
+new functionality needs a distinct adapter and focused live evidence.
 
-Use current pixels and ordinary game-created sessions. Preserve original saves, compatible coaching and descriptive history. Discussion alone grants no gameplay control; review/start remains explicit. Stop must cancel input/continuation, and reopening must not restore an old plan or approval.
+The second goal is an NES emulator companion. Stardew has no active work.
 
-For an input, focus or shutdown change, check that affected behavior on the actual game. Use existing replay/unit checks for reusable fixes. A comprehensive exit/fault matrix, repeated full test/build campaign and coaching benchmark are optional follow-up, not prerequisites to owner feedback.
-
-The installed app remains candidate.35/build 30035, confirmed October 25. Later
-checkout changes include focus-cancellation, FCEUX-selection, UI and dependency
-updates; none automatically updates that app. If rebuilding is necessary,
-preserve the stable local app identity and verify actual permission readiness.
-Check launch and the changed path; no public-distribution preparation is required.
-See [build prerequisites](development.md#local-review-packaging) and the
-[current evidence](current-engineering-status.md#source-installed-app-and-verification).
-
-[Current status](current-engineering-status.md) · [Quick start](private-beta-quick-start.md) · [Handoff](private-beta-pm-handoff.md).
+[Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md) ·
+[Next session](private-beta-pm-handoff.md) · [Dated status](current-engineering-status.md).

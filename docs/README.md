@@ -1,5 +1,16 @@
 # Documentation
 
+Current source session: [MC-B1-02 launch and handoff](mc-b1-02-chat-play.md) · [dated evidence](mc-b1-02-evidence-20261027.md). Next: MC-B1-03.
+
+Start with the [Minecraft Beta 1 plan](beta-1-plan.md) and
+[next-session handoff](private-beta-pm-handoff.md). Minecraft is the sole active
+beta: headless bot, its own character, Codex CLI and concurrent chat/play.
+NES emulator companionship is goal 2; Stardew is out of active scope.
+The [headless foundation](mc-b1-01-headless.md) has local bot qualification
+[evidence](mc-b1-01-evidence-20261027.md); human joining is deferred. MC-B1-02
+is next. The operational guides below describe existing legacy paths.
+
+
 ## Run and use
 
 - [Repository quickstart](../README.md): requirements, source launch and tests.
@@ -33,7 +44,7 @@ The [app quick start](private-beta-quick-start.md) covers local app setup.
 The named engineering, handoff, review and verification files retain development
 plans and exact candidate evidence. They are records, not prerequisites for setup.
 [Engineering plan](private-beta-engineering.md) and
-[handoff](private-beta-pm-handoff.md) contain editable worklists.
+[handoff](private-beta-pm-handoff.md) point to the current Beta 1 worklist.
 [Review records](private-beta-review.md), [connected gameplay verification](gc-ai-loop-verification.md),
 and [reconnaissance verification](gc-s-recon-verification.md) distinguish source,
 simulation, native-game and package results. Historical package and campaign

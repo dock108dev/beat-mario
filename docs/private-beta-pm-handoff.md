@@ -1,19 +1,23 @@
-# Game Companion next working session
+# Game Companion — next engineering session
 
-Reconciled October 25, 2026. Scope: personal use and a handful of users. [Working approach](personal-use.md).
+Updated October 27, 2026. **MC-B1-03 is next.** MC-B1-02 passed local source
+qualification and a real Codex/Minecraft conversational session.
 
-Open the existing installed Game Companion.app and a fresh supported Mario session. Request one early-segment attempt with saved walking/landing guidance, review it, and Start. Inspect the actual result and handback. Check Stop/Take control on that supported path. If it fails, retain enough context to diagnose it and repair the cause.
+Read [MC-B1-02 launch and implementation](mc-b1-02-chat-play.md), its
+[dated evidence](mc-b1-02-evidence-20261027.md), the [Beta 1 plan](beta-1-plan.md),
+and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
 
-The app is still candidate.35/build 30035. Save advice before requesting a fresh
-plan; Review alone does not attach newly stored guidance. Completion requires
-alive/grounded x≥700, neutral input and a game-owned review pause. A reviewable
-proposal or an earlier source-route success does not complete this task.
+Implement observed navigation, protected areas/hazard checks and bounded recovery,
+then resource gathering/pickup, inventory/tool selection and requested quantities.
+Keep the existing single worker scheduler, fresh authority after cancellation,
+non-pausing questions, actual Stop and persistent conversation. Demonstrate varied
+starts and quantities, an obstructed path, a missing resource and return to a
+remembered location, then a scoped Survival resource run. Do not enable automatic
+navigation digging globally or implement the full crafting/building roadmap yet.
 
-Let the owner try useful Mario and Stardew flows as they work. Gather simple
-usefulness feedback during use. Permission setup and default-save discovery
-succeeded in the retained sessions; check current readiness and repair any
-actual regression rather than reopening an obsolete setup work order.
-
-Preserve saves, history, credentials and unrelated processes. Rebuild only for needed runtime changes; repeat focused checks for those changes. The detailed completed-run records are history, not a new installation or acceptance work order.
-
-[Engineering plan](private-beta-engineering.md) · [Current status](current-engineering-status.md).
+Preserve the accepted 1.21.4 practice world, viewer corrections, uncommitted
+foundation and dated evidence. The human walkthrough is explicitly deferred;
+FollowProbe was a protocol character, not a human client. Source delivery is
+separate from the unchanged installed app, hosted CI and owner acceptance.
+Minecraft is the only active beta. No Mario/Stardew work is scheduled; NES emulator
+companionship is the second product goal.

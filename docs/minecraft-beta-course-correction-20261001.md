@@ -1,5 +1,10 @@
 # Minecraft private beta: user onboarding course correction
 
+> Active direction, October 27: [Minecraft Beta 1](beta-1-plan.md) uses a headless
+> bot, concurrent chat/play and Codex CLI. This document describes legacy
+> implementation or dated work; it does not override the new plan. Native screen
+> control and Mario/Stardew milestones are not Beta 1 prerequisites.
+
 > Historical evidence or work order. Results and contracts retain their named scope. Any “current,” “next” or prerequisite instructions below belong to that checkpoint. For candidate.35 and resumption use [current engineering status](current-engineering-status.md) and the [Desktop tracker](/Users/michaelfuscoletti/Desktop/mario_next_steps.md).
 
 > Historical implementation/evidence reference. Its recorded contracts and results retain their original meaning. Active next work and complete local private-beta requirements are in the [engineering plan](private-beta-engineering.md) and [Desktop worklist](/Users/michaelfuscoletti/Desktop/mario_next_steps.md), including contextual Codex interpretation and adaptive gameplay decisions. Do not use a continuation below as the current pickup.

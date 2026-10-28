@@ -1,5 +1,10 @@
 # Game Companion UI design
 
+> Active direction, October 27: [Minecraft Beta 1](beta-1-plan.md) uses a headless
+> bot, concurrent chat/play and Codex CLI. This document describes legacy
+> implementation or dated work; it does not override the new plan. Native screen
+> control and Mario/Stardew milestones are not Beta 1 prerequisites.
+
 ## Active model-driven interaction
 
 The model-backed workspace presents provider readiness/remedies, understood goal and clarification, readable approval, current action, observed progress, pending inference and meaningful replanning. Keep direct control available in every active/pending/error state and preserve drafts during asynchronous work.

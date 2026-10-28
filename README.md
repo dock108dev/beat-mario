@@ -1,16 +1,27 @@
 # Game Companion
 
-Game Companion is a local macOS application for discussing a game goal, reviewing
-bounded play, watching its results, and taking control. Mario and Stardew use
-Codex CLI for contextual conversation and gameplay decisions; guarded controllers
-validate actions and verify observed effects.
+Game Companion is becoming a chatbot that plays games: choose a game and open
+its live view beside a persistent conversation.
 
-As of October 25, candidate.35 has retained native evidence for narrow ordinary
-Stardew watering and handback. A completed coached Mario early-segment session on
-that installed build remains next. See [current status](docs/current-engineering-status.md)
-and the [next-session plan](docs/private-beta-pm-handoff.md).
+**Active plan: [Minecraft Beta 1](docs/beta-1-plan.md).** A headless bot plays as
+its own character while you chat or join the same world independently. Codex CLI
+is the AI engine. Ordinary conversation must not require pausing gameplay or
+controlling the user's screen. The next product goal is an NES emulator
+companion; Stardew is out of active delivery.
 
-## Supported capabilities
+**[MC-B1-02 passed local source qualification](docs/mc-b1-02-evidence-20261027.md).**
+Choose Minecraft, watch CompanionBot walk or follow, ask questions during play,
+redirect it and Stop. Chat survives full app reopening without resuming work.
+The human-client walkthrough remains deferred. Full Beta 1 and installed delivery
+are incomplete. [Launch, supported requests and next handoff](docs/mc-b1-02-chat-play.md).
+
+Double-click **Open Game Companion.command** for this source version, then choose
+Minecraft. The accepted retained practice world is reused. Java 21, Node 24.22.0,
+pinned worker dependencies and signed-in Codex CLI are required. No Screen
+Recording/Accessibility permission is used by the new Minecraft path. Stop Game
+Companion.command closes its owned game processes and saves the world.
+
+## Existing legacy capabilities
 
 - **Mario:** bounded World 1-1 strategy, opening-jump coaching, remembered
   stairs/pipe guidance, experimental coin routes, and a supported sky 1UP activity.
@@ -29,7 +40,7 @@ automatically update an installed app. Personal and small-group use follows
 See [known limitations](docs/known-limitations.md) and the
 [Mario](docs/mario-player-guide.md) and [Stardew](docs/stardew-operator-guide.md) guides.
 
-## Requirements
+## Legacy requirements
 
 - Python 3.11 or newer and [`uv`](https://docs.astral.sh/uv/).
 - macOS for native game observation and input; separately installed games.
@@ -46,7 +57,7 @@ See [known limitations](docs/known-limitations.md) and the
 Linux CI exercises offline contracts and tests, not native game behavior.
 OpenTTD additionally requires local Ollama with `gemma3:4b`.
 
-## Launch and first use
+## Source launch
 
 From the repository root:
 
@@ -55,11 +66,10 @@ uv sync --locked --all-extras
 .venv/bin/python -m smb3_agent lab ui --host 127.0.0.1 --port 8765
 ```
 
-Open `http://127.0.0.1:8765/` and choose a game. Setup reports missing prerequisites
-and provider readiness before play. `/mario` and `/stardew` are the ordinary
-workspaces; `/setup`, `/minecraft`, and `/openttd` serve the other supported
-profiles. `/onboarding` manages contributor fixtures; `/lab` exposes engineering
-review tools. The Stardew CLI remains inspection-only.
+Open `http://127.0.0.1:8765/` and choose Minecraft. `/minecraft` opens that same
+headless workspace. Historical games remain under `/legacy-games`; `/setup`,
+`/onboarding` and `/lab` are secondary engineering surfaces. Their older native
+controls are not part of Minecraft Beta 1. See the [current launch guide](docs/mc-b1-02-chat-play.md).
 
 The server accepts loopback hosts only. It has no remote-access authentication,
 TLS, or multi-user support. Do not expose it through a proxy, tunnel, or LAN bind.
@@ -67,7 +77,7 @@ The app does not load `.env` files. `GAME_COMPANION_EXPERIMENTAL_ROOT` overrides
 only the Experimental-adapter installation root. See
 [runtime and configuration](docs/runtime-and-configuration.md) for settings and storage.
 
-## History, recovery and safe shutdown
+## Legacy history, recovery and safe shutdown
 
 Review and Start authorize the displayed finite scope. Stop/Take control releases
 input and cancels continuation. Wait for confirmed handback before switching or
