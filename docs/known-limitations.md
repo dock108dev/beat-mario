@@ -2,6 +2,13 @@
 
 ## Minecraft
 
+Large creative-world projects are a new requirement, not an available feature.
+Current shelters are 3–7 blocks wide/deep with 2–4-block walls and a 192-cell
+ceiling. Island terraforming, broad architectural composition, an editable material/
+component catalog and multi-session large-build execution have no qualifying proof.
+Earlier owner acceptance was for the bounded foundation and does not establish
+these capabilities.
+
 The headless companion operates its own character in a local Java practice world.
 It supports bounded movement/following, resource gathering, saved places and
 protection areas, crafting, wooden shelters and revisions. Terrain, resource
@@ -13,6 +20,24 @@ Bedrock, arbitrary servers, unrestricted exploration, combat/progression and
 reliable stone-tool chains are outside the supported ordinary workflow.
 The separate native-camera Minecraft integration remains limited to setup and
 small camera requests; its movement, placement and wall actions are disabled.
+
+## Creative-building target
+
+The next goal is a general companion that helps a Minecraft novice create imagined
+or reference-inspired worlds: setup guidance, understandable materials/components,
+editable designs, shaped terrain, varied architecture/interiors/objects, durable
+work across sessions and conversational expansion. A replica-style island is an
+example, not a franchise-specific mode. The same implementation must handle a
+materially different project. Native items and assembled decorative approximations
+must be distinguished from working mechanisms.
+
+Creative is the proposed first route to avoid resource grinding, subject to the
+owner's project choices. Existing Survival functionality remains separate. Scale,
+fidelity, runtime/usage budgets and any privileged construction approach require an
+explicit project contract and feasibility measurement. Completion requires the whole
+approved project, actual-world and installed-app verification, usable exploration,
+data preservation and new owner acceptance. A small demo or the old acceptance
+cannot substitute. Public/paid distribution remains a separate scope decision.
 
 ## Older integrations
 

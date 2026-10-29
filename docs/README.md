@@ -10,6 +10,14 @@
 - [Runtime and configuration](runtime-and-configuration.md): settings and data locations.
 - [Error handling](error-handling.md) and [security](security.md): recovery and trust boundaries.
 
+## Product scope
+
+The supported Minecraft foundation is bounded chat/play and wooden construction.
+General novice-friendly world creation is the next product goal, not an existing
+capability; see [scope and limitations](known-limitations.md#creative-building-target).
+Local planning and dated evidence files are intentionally excluded from source
+exports; they do not establish capabilities in a freshly installed build.
+
 ## Develop and maintain
 
 - [Development](development.md): commands, repository layout and packaging requirements.
