@@ -47,7 +47,7 @@ def main():
             raise SystemExit("Unknown helper")
         module = importlib.import_module(sys.argv[2])
         args = sys.argv[3:]
-        if module.__name__.endswith(("model_gateway", "process_watchdog")) and args == ["--worker"]:
+        if module.__name__.endswith(("model_gateway", "http_inference", "process_watchdog")) and args == ["--worker"]:
             module._worker()
         elif (
             module.__name__.endswith("input_guardian")
@@ -71,7 +71,10 @@ def main():
     root.mkdir(parents=True, exist_ok=True)
     os.chdir(root)  # installation resources stay read-only; history is separate
     import logging
-    logging.basicConfig(filename=root / "runtime.log", level=logging.INFO,
+    from logging.handlers import RotatingFileHandler
+    logging.basicConfig(handlers=[RotatingFileHandler(
+                            root / "runtime.log", maxBytes=2 * 1024**2,
+                            backupCount=1, encoding="utf-8")], level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s", force=True)
     # Initialize the native frameworks before browser requests can race the Cocoa loop.
     if getattr(sys, "frozen", False) and sys.platform == "darwin":
@@ -103,7 +106,7 @@ def main():
                 return json.load(r)
 
         try:
-            for page, expected in (("/", b"combined-companion-catalog"), ("/mario", b"mario-conversation"), ("/stardew", b"import_day2_seed"), ("/help", b"local feedback"), ("/assets/candidate.js", b"cleanup_confirmed")):
+            for page, expected in (("/", b"/assets/minecraft-chat.js"), ("/minecraft", b"/assets/minecraft-chat.js"), ("/legacy-games", b"combined-companion-catalog"), ("/mario", b"mario-conversation"), ("/stardew", b"import_day2_seed"), ("/help", b"local feedback"), ("/assets/candidate.js", b"cleanup_confirmed")):
                 with urlopen(url + page, timeout=10) as response:
                     assert expected in response.read(), page
             from smb3_agent.candidate_resources import calibration_registration

@@ -8,8 +8,10 @@ from collections import Counter
 from copy import deepcopy
 import json
 import math
+import re
 
 from smb3_agent.minecraft_goals import identity
+from smb3_agent.minecraft_grounding import question_context as question_context
 
 
 def schema(properties):
@@ -31,6 +33,39 @@ INTENT = schema(
         "reply": TEXT,
     }
 )
+QUESTION_INTENT = deepcopy(INTENT)
+QUESTION_INTENT["properties"]["kind"]["enum"] = ["question", "clarify", "unavailable"]
+
+
+def informational_question(text):
+    """Conservative read-only admission; command-like requests keep normal routing."""
+    return text.rstrip().endswith("?") or bool(re.match(r"^(?:what|why|where|when|how|does|is|are)\b", text.strip(), re.I)) or bool(
+        re.search(r"\b(?:briefly )?explain\b", text, re.I)
+    )
+
+
+def reject_known_question_contradictions(reply, context):
+    """Reject known affirmative control contradictions, not certify arbitrary prose.
+
+    This is a bounded last-line guard. Live grounding qualification must still
+    assess relevance and factual correctness; schema validity is not truth.
+    """
+    for clause in re.split(r"[.;!?\n]", reply.lower()):
+        negative = re.search(r"\b(?:not|never|no|cannot|can't|doesn't|don't|won't)\b", clause)
+        if not negative and (
+            re.search(r"\bstop\b.*\b(?:pauses?|freezes?|halts?)\b.*\b(?:world|simulation|other players)\b", clause)
+            or re.search(r"\b(?:reopen\w*|restart\w*)\b.*\bresets?\b.*\bworld\b", clause)
+            or re.search(r"\b(?:reopen\w*|restart\w*)\b.*\bautomatically\s+resumes?\b", clause)
+        ):
+            raise ValueError("Model reply contradicted companion controls; reply withheld and no action authorized")
+        if context.get("project", {}).get("state") == "running" and re.search(
+            r"\b(?:no active (?:goals|work)|nothing is (?:running|underway)|project is idle)\b", clause
+        ):
+            raise ValueError("Model reply contradicted captured running project; reply withheld and no action authorized")
+        if re.search(r"\b(?:will not|won't|does not|doesn't|cannot|can't)\s+(?:stop|halt|cancel)\b.*\bstop\b", clause):
+            raise ValueError("Model reply contradicted Stop control; reply withheld and no action authorized")
+
+
 PLAN = schema(
     {
         "action": {

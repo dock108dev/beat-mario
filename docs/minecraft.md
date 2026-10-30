@@ -38,6 +38,18 @@ Bedrock, arbitrary servers and unrestricted autonomy are unsupported. Stone-tool
 chains and hostile survival are not established as reliable ordinary workflows.
 The bot owns its character; the companion does not attach to your player's controls.
 
+## Creative projects
+
+Create a Creative practice world with bounded construction explicitly enabled.
+Choose **Plan or revise my project**, describe named places and their dimensions,
+and resolve any clarification requests. Planning saves a design without changing
+blocks. Review terrain and start it explicitly; then review and build individual
+places under **Buildings and interiors**. Stop leaves partial work available for
+inspection and explicit continuation.
+
+See [world designs](minecraft-designs.md) for examples, materials and editing, and
+[construction and recovery](minecraft-build-service.md) for storage and undo limits.
+
 ## Stop, reconnect and recover
 
 **Stop** cancels work and inference. Requests sent while Stop settles retain their

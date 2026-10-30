@@ -1,4 +1,5 @@
 """Run checksum-pinned actionlint on supported CI/local review platforms."""
+
 import hashlib
 import platform
 import subprocess
@@ -9,8 +10,14 @@ from urllib.request import urlopen
 
 VERSION = "1.7.12"
 CHECKSUMS = {
-    ("Linux", "x86_64"): ("linux_amd64", "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"),
-    ("Darwin", "arm64"): ("darwin_arm64", "aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f"),
+    ("Linux", "x86_64"): (
+        "linux_amd64",
+        "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+    ),
+    ("Darwin", "arm64"): (
+        "darwin_arm64",
+        "aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f",
+    ),
 }
 
 

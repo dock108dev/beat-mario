@@ -59,12 +59,17 @@ def java_runtime():
     )
 
 
-def world_home(survival=False):
-    return data_artifacts() / (
+def world_directory(survival=False):
+    """Canonical directory name, independent of the active data profile."""
+    return (
         f"minecraft-b1-survival-{GAME_VERSION}"
         if survival
         else f"minecraft-b1-practice-{GAME_VERSION}"
     )
+
+
+def world_home(survival=False):
+    return data_artifacts() / world_directory(survival)
 
 
 def retained_world(home, *, expected_id=None, survival=None):

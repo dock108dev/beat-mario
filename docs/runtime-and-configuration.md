@@ -10,7 +10,7 @@ Canceling a caller's Python Future only abandons its reply: it does not stop the
 bot. Use bridge Stop for gameplay cancellation. Abandoned replies must not stop
 the reader or prevent other pending requests from receiving failure/results.
 
-Minecraft state uses JSON snapshots and JSONL event files, not SQL. `memory.json`
+Minecraft companion memory uses JSON snapshots and JSONL event files. `memory.json`
 is authoritative for the structure library and current selection;
 `construction.json` is its compatibility mirror. `places.json` stores scoped
 places/protections; `conversation.json` stores bounded conversation and request
@@ -30,9 +30,39 @@ a user message. Direct Stop remains available.
 The application coordinator serializes its writes; these files are not a
 multi-process database. Do not run source and installed delivery against the same
 writable state. Generations, incident copies and JSONL logs have no automatic pruning
-policy. The source-to-install migration activates multiple directories separately;
-an interruption can leave conflicting partial state. Preserve original data and
-inspect a failed migration before retrying rather than merging or overwriting it.
+policy, except the bounded diagnostic logs documented in
+[construction diagnostics](minecraft-build-service.md). The source-to-install
+migration journals directory activation and can resume when source, staged files
+and activated destinations still match their saved hashes. Changed data is refused;
+preserve it and inspect the conflict rather than merging or overwriting it.
+
+### Creative project journal
+
+`minecraft-chat/build-project/project.sqlite` stores Creative project identity,
+design revisions, write-ahead units, terrain manifests and architecture reviews
+with their stage bindings. It uses the SQLite bundled with Python's standard
+`sqlite3` module, WAL journaling and `synchronous=FULL`; there is no separate database
+server or pinned SQLite distribution. The coordinator admits one project writer.
+Do not share the writable project between application processes.
+
+Startup creates missing tables and additively upgrades older `terrain_stages`
+tables with `completed INTEGER NOT NULL DEFAULT 0`. It preserves prior rows and
+opens idle. Schema upgrades currently have no version ledger; future incompatible
+changes need an explicit additive migration and prior-data validation.
+
+A design becomes current only after its transaction commits. Each build unit's
+intent commits before the worker receives it; a failed receipt write rolls back
+without discarding that intent. Explicit continuation inspects the world and
+reconciles exact before/after states before admitting further writes. Every survey
+must return all requested positions in order with nonempty block states. Missing
+or mismatched observations are errors, never empty designs or proof of completion.
+
+For a recoverable checkpoint, Stop and fully close the application and Java server,
+then preserve the complete project/profile and matching world together in a fresh
+backup location. Never copy only `project.sqlite` from a running WAL database or
+mix world and journal checkpoints. Restore to a fresh location and reopen idle;
+continue only explicitly after inspection. Offline journal recovery tests do not
+establish recovery of a real Minecraft world after a machine or server failure.
 
 ## Other integrations
 
@@ -120,7 +150,8 @@ dependency changes against GitHub's advisory data.
 
 Tracked YAML files under `data/goals/`, `data/segments/`, `data/routes/`, and
 `data/worlds/` are repository inputs. Tests also use tracked PNG fixtures under
-`data/fixtures/`. There is no relational or remote data store.
+`data/fixtures/`. The Creative project journal is local SQLite; there is no remote
+data store.
 
 Generated state is filesystem-only and ignored by Git:
 

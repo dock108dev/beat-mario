@@ -76,3 +76,15 @@ def test_already_met_craft_is_not_claimed_as_crafting(tmp_path):
     chat.supervisor = goal
     goal.run()
     assert "nothing crafted or consumed" in chat.messages[-1]["text"]
+
+
+def test_migration_names_follow_delivery_version_without_active_profile_access(monkeypatch, tmp_path):
+    import runpy
+    from pathlib import Path
+    monkeypatch.setenv('GAME_COMPANION_USER_DATA', str(tmp_path))
+    monkeypatch.setattr(delivery, 'GAME_VERSION', 'synthetic-version')
+    script = Path(__file__).parents[1] / 'scripts/migrate_minecraft_delivery.py'
+    names = runpy.run_path(str(script))['NAMES']
+    assert names == ('minecraft-chat', 'minecraft-b1-practice-synthetic-version', 'minecraft-b1-survival-synthetic-version')
+    assert names[1:] == (delivery.world_home().name, delivery.world_home(True).name)
+    assert not (tmp_path / 'artifacts').exists()

@@ -1,0 +1,104 @@
+{
+  "island": {
+    "brief": "Plan Castaway Coast, a 256 by 256 island. Use warm timber, pale fabric, dark weathered wood and stone, with a protected buffer 32 blocks outside the project.\nOcean Border: water 256 by 256, 1 block high, elevation -2, border 16 blocks wide.\nLand: terrain 224 by 192, 36 blocks high, elevation -12.\nWest Bay: water 32 by 24, 4 blocks high, elevation -4, west.\nEast Bay: water 32 by 24, 4 blocks high, elevation -4, east.\nBeach: terrain 224 by 12, 2 blocks high, south. Beach depth 6 to 12 blocks.\nRidge: terrain 64 by 48, 32 blocks high, north. Slopes or stairs connect destinations.\nCove: water 24 by 16, 8 blocks high, elevation -8, east. Depth 4 to 8 blocks.\nWoodland: grove 64 by 48, 12 blocks high, west. Three separated patches.\nCave: cave 24 by 12, 4 blocks high, elevation 4, north. Passage 24 blocks long with chamber 10 by 8 and head clearance 2 blocks. Connects to Ridge, Beacon.\nBeach Camp: clearing 32 by 24, 3 blocks high, south. Three distinct awnings, storage and cooking corner. Objects: awning, bench, table, shelf, radio-like console, supply crate cluster, bollard, wreck rib. Radio and furniture are decorative. Connects to Dock, Research Station.\nCommunal Pavilion: open pavilion 14 by 10, 6 blocks high, elevation 4, south. Connects to Beach Camp.\nResearch Station: building 24 by 16, 6 blocks high, elevation 4, east. One-storey shallow asymmetric roof. Three rooms: workshop, bunkroom, records room. Native: doors, crafting table, chests, beds, lamps. Connects to Beach Camp.\nBeacon: tower 9 by 9, 18 blocks high, elevation 12, north. Rooms: lantern room. Objects: internal stair, railings. Connects to Lookout, Cave.\nLookout: terrain 12 by 12, 3 blocks high, elevation 28, north. Connects to Beacon.\nDock: dock 24 by 5, 2 blocks high, south. Wider landing and shore connection. Objects: bollard, supply crate cluster. Connects to Beach Camp.\nWreck: wreck 28 by 9, 5 blocks high, west. Two exposed ribs. Rooms: cargo cavity. Objects: wreck rib. Decorative, not a vehicle. Connects to Beach Camp.\nMain Path: path 96 by 3, 1 block high. Connects to Dock, Beach Camp, Research Station.\nTrails: path 96 by 2, 1 block high, north. Connects to Beach Camp, Cave, Beacon.\nJunctions: decoration 6 by 6, 3 blocks high. Three signposted junctions.",
+    "extent": 256,
+    "expected": {
+      "Research Station": {
+        "kind": "building",
+        "size": [
+          24,
+          16,
+          6
+        ],
+        "rooms": [
+          "workshop",
+          "bunkroom",
+          "records room"
+        ]
+      },
+      "Communal Pavilion": {
+        "kind": "pavilion",
+        "size": [
+          14,
+          10,
+          6
+        ]
+      },
+      "Beacon": {
+        "kind": "tower",
+        "size": [
+          9,
+          9,
+          18
+        ]
+      },
+      "Dock": {
+        "kind": "dock",
+        "size": [
+          24,
+          5,
+          2
+        ]
+      },
+      "Wreck": {
+        "kind": "wreck",
+        "size": [
+          28,
+          9,
+          5
+        ]
+      }
+    }
+  },
+  "town": {
+    "brief": "Plan Highwater, a 192 by 192 alpine river town. Use stone, spruce timber, dark roofs and warm windows with a protected buffer 32 blocks outside the project.\nRiver: water 12 by 192, 4 blocks high, elevation -4. Water channel 8 to 12 blocks wide.\nWest Slope: terrain 64 by 48, 28 blocks high, west. Slopes rise 12 to 28 blocks.\nEast Slope: terrain 64 by 48, 28 blocks high, east.\nMarket: clearing 28 by 20, 1 block high, west. Four stalls. Objects: stall, counter, bench, lamppost, pantry shelves, planter, static wheel, signpost. Connects to Road Bridge, Inn.\nInn: building 20 by 16, 10 blocks high, west. Two-storey. Rooms: common room, kitchen, four upstairs rooms. Objects: internal stairs. Native: doors, chests, beds, crafting table. Connects to Market.\nMill: building 16 by 12, 8 blocks high, east. Objects: static decorative wheel. No working mill mechanism. Connects to Road Bridge.\nLodge: building 18 by 14, 10 blocks high, east. Steep roof. Rooms: loft. Objects: loft stairs. Connects to Footbridge.\nFootbridge: bridge 16 by 3, 2 blocks high, elevation 1. Connects to River, Lodge, Terraces.\nRoad Bridge: bridge 16 by 5, 2 blocks high, elevation 1. Connects to River, Market, Mill.\nTerraces: terrain 48 by 36, 12 blocks high, west. Three terraces with retaining walls and vegetation. Connects to Footbridge, Market.\nOrchard: grove 24 by 24, 10 blocks high, east.\nTown Path: path 96 by 3, 1 block high. Connects to Market, Inn, Mill, Lodge, Terraces.\nBank Walk: path 96 by 2, 1 block high. Connects to Road Bridge, Mill.",
+    "extent": 192,
+    "expected": {
+      "Inn": {
+        "kind": "building",
+        "size": [
+          20,
+          16,
+          10
+        ],
+        "rooms": [
+          "common room",
+          "kitchen",
+          "four upstairs rooms"
+        ]
+      },
+      "Mill": {
+        "kind": "building",
+        "size": [
+          16,
+          12,
+          8
+        ]
+      },
+      "Lodge": {
+        "kind": "building",
+        "size": [
+          18,
+          14,
+          10
+        ]
+      },
+      "Footbridge": {
+        "kind": "bridge",
+        "size": [
+          16,
+          3,
+          2
+        ]
+      },
+      "Road Bridge": {
+        "kind": "bridge",
+        "size": [
+          16,
+          5,
+          2
+        ]
+      }
+    }
+  }
+}

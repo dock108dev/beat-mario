@@ -13,8 +13,9 @@ import pytest
 from smb3_agent.lab_ui import _Handler, LabUiError, LabUiForbidden, _new_lab_ui_server, _single
 
 
-def handler(headers=(), body=b""):
+def handler(headers=(), body=b"", path="/api/conversation"):
     value = object.__new__(_Handler)
+    value.path = path
     value.headers = Message()
     for key, item in headers:
         value.headers[key] = item
@@ -150,3 +151,19 @@ def test_artifact_growth_after_stat_cannot_exceed_response_limit(tmp_path, monke
     request.send_error = errors.append
     request._send_workspace_file(tmp_path, "growing.log", {".log": "text/plain"})
     assert errors == [413]
+
+
+def test_reference_upload_limit_does_not_expand_ordinary_form_limit():
+    from smb3_agent.lab_ui import MAX_FORM_BYTES
+    body = b"image=" + b"a" * MAX_FORM_BYTES
+    headers = [("Content-Length", str(len(body))),
+               ("Content-Type", "application/x-www-form-urlencoded")]
+    ordinary = handler(headers, body)
+    with pytest.raises(LabUiError, match="limit"):
+        ordinary._read_form()
+    assert ordinary.rfile.tell() == 0
+    assert handler(headers, body, "/api/minecraft/reference?upload=1")._read_form()["image"] == ["a" * MAX_FORM_BYTES]
+    oversized = handler([("Content-Length", "8000001")], path="/api/minecraft/reference")
+    with pytest.raises(LabUiError, match="limit"):
+        oversized._read_form()
+    assert oversized.rfile.tell() == 0

@@ -1,0 +1,575 @@
+{
+  "version": 1,
+  "scope": "Fixed selection-screening cases; synthetic state, source spans independently specified, no world actions. Expected topics are evaluator-only.",
+  "states": {
+    "running": {
+      "project": {
+        "state": "running",
+        "current_work": {
+          "state": "running",
+          "component": "Mill",
+          "phase": "building",
+          "verified_units_in_current_run": 17
+        },
+        "receipt_history": {
+          "verified_receipts_across_all_revisions": 314,
+          "latest_saved_completed_components": [
+            "Tower"
+          ]
+        },
+        "review_dependencies": {
+          "reported_dependencies": []
+        }
+      },
+      "observations": {
+        "health": 9,
+        "food": 18,
+        "held_item": "iron_axe"
+      }
+    },
+    "idle": {
+      "project": {
+        "state": "idle",
+        "current_work": {
+          "state": "idle",
+          "verified_units_in_current_run": 0
+        },
+        "receipt_history": {
+          "verified_receipts_across_all_revisions": 314,
+          "latest_saved_completed_components": [
+            "Tower"
+          ]
+        },
+        "review_dependencies": {
+          "reported_dependencies": []
+        }
+      },
+      "observations": {
+        "health": 20,
+        "food": 16,
+        "held_item": null
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "reopen-isolated",
+      "source_question": "and does reopening erase the existing world?",
+      "focus_span": {
+        "start": 0,
+        "end": 44,
+        "text": "and does reopening erase the existing world?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "reopen-after-history",
+      "source_question": "What does our old receipt count mean, and does reopening erase the existing world?",
+      "focus_span": {
+        "start": 38,
+        "end": 82,
+        "text": "and does reopening erase the existing world?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": true
+    },
+    {
+      "id": "reopen-before-history",
+      "source_question": "Does reopening erase the existing world, and what does our old receipt count mean?",
+      "focus_span": {
+        "start": 0,
+        "end": 41,
+        "text": "Does reopening erase the existing world, "
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": true
+    },
+    {
+      "id": "reload-unseen-isolated",
+      "source_question": "and will loading the same saved world delete its buildings?",
+      "focus_span": {
+        "start": 0,
+        "end": 59,
+        "text": "and will loading the same saved world delete its buildings?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "reload-unseen-history",
+      "source_question": "Do receipts describe earlier work, and will loading the same saved world delete its buildings?",
+      "focus_span": {
+        "start": 35,
+        "end": 94,
+        "text": "and will loading the same saved world delete its buildings?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": true
+    },
+    {
+      "id": "reopen-retention",
+      "source_question": "Will my buildings stay when I reopen, and are receipt totals historical?",
+      "focus_span": {
+        "start": 0,
+        "end": 38,
+        "text": "Will my buildings stay when I reopen, "
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": true
+    },
+    {
+      "id": "resume-negation",
+      "source_question": "Will closing and reopening avoid automatically resuming work?",
+      "focus_span": {
+        "start": 0,
+        "end": 61,
+        "text": "Will closing and reopening avoid automatically resuming work?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "reopening"
+        ],
+        "allowed_topics": [
+          "reopening"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "history-edits-control",
+      "source_question": "Does a completion receipt prove nobody edited the building afterward?",
+      "focus_span": {
+        "start": 0,
+        "end": 69,
+        "text": "Does a completion receipt prove nobody edited the building afterward?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "historical_records"
+        ],
+        "allowed_topics": [
+          "historical_records"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "stop-reviewed",
+      "source_question": "Can an already approved build ignore Stop?",
+      "focus_span": {
+        "start": 0,
+        "end": 42,
+        "text": "Can an already approved build ignore Stop?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "stop_scope"
+        ],
+        "allowed_topics": [
+          "stop_scope"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "stop-world",
+      "source_question": "Does canceling the companion also freeze everyone else?",
+      "focus_span": {
+        "start": 0,
+        "end": 55,
+        "text": "Does canceling the companion also freeze everyone else?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "stop_scope"
+        ],
+        "allowed_topics": [
+          "stop_scope"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "current-running",
+      "source_question": "What is being worked on now?",
+      "focus_span": {
+        "start": 0,
+        "end": 28,
+        "text": "What is being worked on now?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "current_work"
+        ],
+        "allowed_topics": [
+          "current_work"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "current-idle",
+      "source_question": "Are you not building anything now?",
+      "focus_span": {
+        "start": 0,
+        "end": 34,
+        "text": "Are you not building anything now?"
+      },
+      "state": "idle",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "current_work"
+        ],
+        "allowed_topics": [
+          "current_work"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "counter-comparison",
+      "source_question": "How does this run compare with the saved receipt history?",
+      "focus_span": {
+        "start": 0,
+        "end": 57,
+        "text": "How does this run compare with the saved receipt history?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "current_work",
+          "saved_history"
+        ],
+        "allowed_topics": [
+          "current_work",
+          "saved_history",
+          "count_scope"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "zero-current",
+      "source_question": "Does zero progress in this run mean nothing was built before?",
+      "focus_span": {
+        "start": 0,
+        "end": 61,
+        "text": "Does zero progress in this run mean nothing was built before?"
+      },
+      "state": "idle",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "count_scope",
+          "saved_history"
+        ],
+        "allowed_topics": [
+          "count_scope",
+          "saved_history",
+          "current_work"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "receipt-uniqueness",
+      "source_question": "Is the receipt total a count of distinct standing blocks?",
+      "focus_span": {
+        "start": 0,
+        "end": 57,
+        "text": "Is the receipt total a count of distinct standing blocks?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "count_scope"
+        ],
+        "allowed_topics": [
+          "count_scope",
+          "saved_history"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "height-procedure",
+      "source_question": "How do I make an approved building taller?",
+      "focus_span": {
+        "start": 0,
+        "end": 42,
+        "text": "How do I make an approved building taller?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "change_dimensions"
+        ],
+        "allowed_topics": [
+          "change_dimensions"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "terrain-conditional",
+      "source_question": "Does every width edit require new excavation?",
+      "focus_span": {
+        "start": 0,
+        "end": 45,
+        "text": "Does every width edit require new excavation?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "terrain_conditions"
+        ],
+        "allowed_topics": [
+          "terrain_conditions",
+          "change_dimensions"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "native-proof",
+      "source_question": "Does placing a crafting table prove its function was tested?",
+      "focus_span": {
+        "start": 0,
+        "end": 60,
+        "text": "Does placing a crafting table prove its function was tested?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "native_function"
+        ],
+        "allowed_topics": [
+          "native_function",
+          "native_test_evidence"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "native-unknown",
+      "source_question": "Do we know whether this particular chest passed a functional test?",
+      "focus_span": {
+        "start": 0,
+        "end": 66,
+        "text": "Do we know whether this particular chest passed a functional test?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "native_test_evidence"
+        ],
+        "allowed_topics": [
+          "native_test_evidence"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "decorative",
+      "source_question": "Will testing the decorative wheel make it a working machine?",
+      "focus_span": {
+        "start": 0,
+        "end": 60,
+        "text": "Will testing the decorative wheel make it a working machine?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "decorative_function"
+        ],
+        "allowed_topics": [
+          "decorative_function"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "contents-followup",
+      "source_question": "And what about the stuff inside it?",
+      "focus_span": {
+        "start": 0,
+        "end": 35,
+        "text": "And what about the stuff inside it?"
+      },
+      "state": "running",
+      "prior_user_messages": [
+        "Can you recover a chest block?"
+      ],
+      "review_only": {
+        "required_topics": [
+          "container_recovery"
+        ],
+        "allowed_topics": [
+          "container_recovery"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "state-multiple",
+      "source_question": "What are you doing and holding?",
+      "focus_span": {
+        "start": 0,
+        "end": 31,
+        "text": "What are you doing and holding?"
+      },
+      "state": "idle",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "current_work",
+          "held_item"
+        ],
+        "allowed_topics": [
+          "current_work",
+          "held_item"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "observations-multiple",
+      "source_question": "What are my health and food values?",
+      "focus_span": {
+        "start": 0,
+        "end": 35,
+        "text": "What are my health and food values?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "health",
+          "food"
+        ],
+        "allowed_topics": [
+          "health",
+          "food"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    },
+    {
+      "id": "unsupported-eta",
+      "source_question": "How many minutes until the whole town is finished?",
+      "focus_span": {
+        "start": 0,
+        "end": 50,
+        "text": "How many minutes until the whole town is finished?"
+      },
+      "state": "running",
+      "prior_user_messages": [],
+      "review_only": {
+        "required_topics": [
+          "unknown"
+        ],
+        "allowed_topics": [
+          "unknown"
+        ],
+        "rule": "Every requested topic must be answered; unrelated or unsupported claims and unnecessary refusals fail. Labels are never inference input."
+      },
+      "include_source_question": false
+    }
+  ]
+}

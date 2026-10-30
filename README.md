@@ -2,7 +2,8 @@
 
 Choose Minecraft and chat beside its live view with a bot that plays as its own
 character. It can gather resources, craft supplies, build bounded wooden shelters,
-answer questions during play, and Stop. The configured AI provider interprets requests; gameplay runs
+and develop Creative projects through separate design, landscape and building reviews.
+Chat stays available during work; Stop ends companion actions. The configured AI provider interprets requests; gameplay runs
 headlessly without taking over the desktop.
 
 Minecraft is the main supported experience. Older integrations remain available
@@ -22,7 +23,7 @@ npm ci --prefix minecraft-worker --ignore-scripts --no-audit --no-fund
 
 Open `http://127.0.0.1:8765/`; `/minecraft` opens the same workspace. Follow the
 in-app setup checks to open a retained world or explicitly create a practice world.
-[usage and development](docs/minecraft.md) explains the required runtimes and limits.
+[Minecraft usage](docs/minecraft.md) explains the required runtimes and limits.
 No Screen Recording or Accessibility permission is needed for headless Minecraft.
 
 Alternatively, use **Open Game Companion.command** after installing dependencies.
@@ -30,6 +31,9 @@ Use **Stop Game Companion.command** to close that background source instance and
 save its world. For a foreground server, use Control-C after Stop; packaged apps
 have their own Quit action. Closing a browser alone does not shut down the server.
 Reopening restores conversation and memory, never gameplay authority.
+For Creative projects, use Plan to describe a design, review the proposed work,
+then explicitly start or continue it. Building and conversational advice remain
+personal-beta features: inspect results and expect occasional adjustments.
 
 The server accepts loopback hosts only. It has no remote-access authentication,
 TLS or multi-user support; do not expose it through a proxy, tunnel or LAN bind.

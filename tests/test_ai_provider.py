@@ -1,5 +1,6 @@
 """Offline transport checks with a disposable loopback model server."""
 import json
+import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import threading
 import time
@@ -97,6 +98,8 @@ def test_streamed_completion_uses_configured_app_path_and_budgets(model_server):
     assert request['response_format']['json_schema']['schema'] == INTENT
     assert provider.usage[-1]['tokens']['completion_tokens'] == 20
     assert provider.usage[-1]['usage_known']
+    timing = provider.usage[-1]['timings']
+    assert 0 <= timing['identity_seconds'] <= timing['request_sent_seconds'] <= timing['headers_seconds'] <= timing['first_content_seconds'] <= timing['response_complete_seconds'] <= timing['verified_seconds']
     assert provider.lifecycle() == []
 
 
@@ -164,8 +167,10 @@ def test_factory_reads_only_selected_config_and_rejects_unknown_provider(monkeyp
     assert load_config()['provider'] == 'disabled'
 
 
-def test_factory_selects_authoritative_transport(model_server, monkeypatch, tmp_path):
+@pytest.mark.parametrize('provider_name', ['openai-compatible', 'ollama'])
+def test_factory_selects_authoritative_transport(model_server, monkeypatch, tmp_path, provider_name):
     _, _, config = model_server
+    config = {**config, 'provider': provider_name}
     for key in list(__import__('os').environ):
         if key.startswith('AI_'):
             monkeypatch.delenv(key)
@@ -179,3 +184,72 @@ def test_factory_selects_authoritative_transport(model_server, monkeypatch, tmp_
             assert provider.status['available']
     finally:
         provider.close()
+
+
+@pytest.mark.parametrize('failure', [TimeoutError('slow metadata'),
+                                    ConnectionResetError('connection reset'),
+                                    http.client.RemoteDisconnected('closed')])
+def test_optional_capability_transport_failure_keeps_verified_text_ready(monkeypatch, failure):
+    from smb3_agent import http_inference
+
+    def metadata(config, path, body=None):
+        if path.endswith('/models'):
+            return {'data': [{'id': 'fixture:local'}]}
+        if path == '/api/tags':
+            return {'models': [{'name': 'fixture:local', 'digest': 'fixture-digest'}]}
+        raise failure
+
+    monkeypatch.setattr(http_inference, 'metadata', metadata)
+    provider = LocalHTTPProvider({'provider': 'openai-compatible',
+                                  'base_url': 'http://127.0.0.1/v1', 'model': 'fixture:local'})
+    try:
+        with provider._discovery_lock:
+            pass
+        assert provider.status['available'] is True
+        assert provider.status['vision'] is False
+        assert provider.status['digest'] == 'fixture-digest'
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize('failed_path', ['/v1/models', '/api/tags', '/api/show'])
+def test_discovery_still_requires_identity_and_rejects_remote_forwarding(monkeypatch, failed_path):
+    from smb3_agent import http_inference
+
+    def metadata(config, path, body=None):
+        if path == failed_path:
+            if path == '/api/show':
+                return {'remote_host': 'remote.example', 'capabilities': ['vision']}
+            raise TimeoutError('required identity unavailable')
+        if path.endswith('/models'):
+            return {'data': [{'id': 'fixture:local'}]}
+        return {'models': [{'name': 'fixture:local', 'digest': 'fixture-digest'}]}
+
+    monkeypatch.setattr(http_inference, 'metadata', metadata)
+    provider = LocalHTTPProvider({'provider': 'openai-compatible',
+                                  'base_url': 'http://127.0.0.1/v1', 'model': 'fixture:local'})
+    try:
+        with provider._discovery_lock:
+            pass
+        assert provider.status['available'] is False
+    finally:
+        provider.close()
+
+
+def test_read_only_latest_question_is_separate_from_context(model_server):
+    provider, state, _ = model_server
+    context = {'read_only_question': True, 'validated_product_facts': ['Stop cancels companion work only.'], 'request': 'Does Stop pause the world?',
+               'project': {'state': 'running'}}
+    provider.infer('language', context, INTENT, threading.Event())
+    messages = state['requests'][0]['messages']
+    assert messages[-1] == {'role': 'user', 'content': context['request']}
+    assert context['request'] not in messages[-2]['content']
+    assert 'running' in messages[-2]['content']
+
+
+def test_question_interpretation_enforces_512_ceiling_without_changing_settings(model_server):
+    provider, state, _ = model_server
+    provider.config['max_tokens'] = 1024
+    provider.infer('language', {'read_only_question': True, 'question_stage': 'decompose', 'request': 'Health and food?'}, INTENT, threading.Event())
+    assert state['requests'][0]['max_tokens'] == 512
+    assert provider.config['max_tokens'] == 1024

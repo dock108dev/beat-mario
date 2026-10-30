@@ -27,7 +27,9 @@ README_PATH = REPOSITORY_ROOT / "README.md"
 RUNTIME_DOC_PATH = REPOSITORY_ROOT / "docs/runtime-and-configuration.md"
 STARDEW_GUIDE_PATH = REPOSITORY_ROOT / "docs/stardew-operator-guide.md"
 FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
-CAMPAIGN_ENTRY_SCHEMA_PATH = REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
+CAMPAIGN_ENTRY_SCHEMA_PATH = (
+    REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
+)
 CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP_PYTHON_PIN = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
 SETUP_UV_PIN = "astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e"
@@ -57,10 +59,14 @@ def project_markdown_files() -> tuple[Path, ...]:
     """Local ignored working notes are not part of the distributable documentation."""
     names = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-        cwd=REPOSITORY_ROOT, text=True,
+        cwd=REPOSITORY_ROOT,
+        text=True,
     ).split("\0")
-    return tuple(REPOSITORY_ROOT / name for name in sorted(set(names))
-                 if name == "README.md" or (name.startswith("docs/") and name.endswith(".md")))
+    return tuple(
+        REPOSITORY_ROOT / name
+        for name in sorted(set(names))
+        if name == "README.md" or (name.startswith("docs/") and name.endswith(".md"))
+    )
 
 
 def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> None:
@@ -70,7 +76,9 @@ def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> Non
     assert "pull_request:" in workflow
     assert re.search(r"push:\s+branches:\s+- main", workflow)
     assert "workflow_dispatch:" in workflow
-    assert "runs-on: ubuntu-latest" in workflow
+    assert "runs-on: ${{ matrix.os }}" in workflow
+    assert '"os":"ubuntu-latest","python":"3.11"' in workflow
+    assert '"os":"macos-14","python":"3.14"' in workflow
     assert "macos-latest" not in workflow
     assert "self-hosted" not in workflow
     assert "PYTHON=.venv/bin/python scripts/validate_phase0.sh" in workflow
@@ -85,7 +93,7 @@ def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
     assert "persist-credentials: false" in workflow
     assert "timeout-minutes: 20" in workflow
     assert 'CI: "true"' in workflow
-    assert "python-version: \"3.11\"" in workflow
+    assert "python-version: ${{ matrix.python }}" in workflow
     assert 'version: "0.9.10"' in workflow
     assert "enable-cache: true" in workflow
     assert "cache-dependency-glob: uv.lock" in workflow
@@ -118,7 +126,9 @@ def test_workflow_has_no_live_gameplay_steps() -> None:
 def test_diagnostics_upload_only_temporary_test_reports() -> None:
     workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
     steps = workflow["jobs"]["verify"]["steps"]
-    gate = next(step for step in steps if step.get("name") == "Run canonical repository gate")
+    gate = next(
+        step for step in steps if step.get("name") == "Run canonical repository gate"
+    )
     report_path = "${{ runner.temp }}/test-results/junit.xml"
     assert gate["env"]["PYTEST_ADDOPTS"] == f"--junitxml={report_path}"
     uploads = [
@@ -132,8 +142,19 @@ def test_diagnostics_upload_only_temporary_test_reports() -> None:
     assert upload in steps and steps.index(upload) > steps.index(gate)
     assert upload["if"] == "${{ always() && !cancelled() }}"
     assert upload["with"] == {
-        "name": "ci-test-results-${{ github.run_id }}-${{ github.run_attempt }}",
-        "path": "\n".join((report_path, "${{ runner.temp }}/test-results/metrics.json", "${{ runner.temp }}/test-results/summary.md", "${{ runner.temp }}/test-results/coverage.xml", "${{ runner.temp }}/test-results/coverage.json", "${{ runner.temp }}/test-results/build.json")) + "\n",
+        "name": "ci-test-results-${{ matrix.check }}-${{ github.run_id }}-${{ github.run_attempt }}",
+        "path": "\n".join(
+            (
+                report_path,
+                "${{ runner.temp }}/test-results/metrics.json",
+                "${{ runner.temp }}/test-results/summary.md",
+                "${{ runner.temp }}/test-results/coverage.xml",
+                "${{ runner.temp }}/test-results/coverage.json",
+                "${{ runner.temp }}/test-results/build.json",
+                "${{ runner.temp }}/test-results/python-audit.json",
+            )
+        )
+        + "\n",
         "if-no-files-found": "error",
         "retention-days": 7,
         "include-hidden-files": False,
@@ -213,9 +234,9 @@ def test_removed_legacy_ssot_paths_do_not_return() -> None:
         "recovery_policy: str | None",
     ):
         assert symbol not in commands
-    assert 'build_default_catalog_registry(' in catalog
-    assert 'CatalogRegistry((MarioCatalogProvider()' not in cli
-    assert 'CatalogRegistry((*base' not in lab_ui
+    assert "build_default_catalog_registry(" in catalog
+    assert "CatalogRegistry((MarioCatalogProvider()" not in cli
+    assert "CatalogRegistry((*base" not in lab_ui
 
 
 def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
@@ -240,7 +261,8 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
     markdown_files = project_markdown_files()
     tracked_files = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-        cwd=REPOSITORY_ROOT, text=True
+        cwd=REPOSITORY_ROOT,
+        text=True,
     ).split("\0")
     checkout_paths = set()
     for name in filter(None, tracked_files):
@@ -249,14 +271,18 @@ def test_repository_cleanup_keeps_docs_lean_linked_and_current() -> None:
         checkout_paths.update(path.parents)
     missing_links: list[tuple[Path, str]] = []
     for source in markdown_files:
-        for target in re.findall(r"\[[^]]+\]\(([^)#]+)", source.read_text(encoding="utf-8")):
+        for target in re.findall(
+            r"\[[^]]+\]\(([^)#]+)", source.read_text(encoding="utf-8")
+        ):
             if "://" in target or target.startswith("/"):
                 continue
             resolved = (source.parent / unquote(target)).resolve()
             # Historical evidence and packages remain local-only. A fresh clone
             # intentionally lacks them; all authored links still need source files.
-            if any(resolved.is_relative_to(REPOSITORY_ROOT / directory)
-                   for directory in ("artifacts", "dist")):
+            if any(
+                resolved.is_relative_to(REPOSITORY_ROOT / directory)
+                for directory in ("artifacts", "dist")
+            ):
                 continue
             if not resolved.exists() or resolved not in checkout_paths:
                 missing_links.append((source, target))
@@ -292,15 +318,25 @@ def test_root_readme_reports_current_product_and_execution_boundaries() -> None:
         README_PATH,
         RUNTIME_DOC_PATH,
         STARDEW_GUIDE_PATH,
-        *(REPOSITORY_ROOT / "docs" / name for name in (
-            "development.md", "agent-architecture.md", "minecraft.md",
-            "security.md", "error-handling.md", "ssot.md", "ui-design.md",
-            "ui-design-requirements.md", "mario-player-guide.md",
-        )),
+        *(
+            REPOSITORY_ROOT / "docs" / name
+            for name in (
+                "development.md",
+                "agent-architecture.md",
+                "minecraft.md",
+                "security.md",
+                "error-handling.md",
+                "ssot.md",
+                "ui-design.md",
+                "mario-player-guide.md",
+            )
+        ),
     )
     for source in current_guides:
         text = source.read_text(encoding="utf-8")
-        assert not re.search(r"\]\(/Users/|UI Templates|Desktop (?:tracker|worklist)", text), source
+        assert not re.search(
+            r"\]\(/Users/|UI Templates|Desktop (?:tracker|worklist)", text
+        ), source
 
 
 def test_public_documentation_omits_legacy_game_acquisition_language() -> None:
@@ -311,7 +347,9 @@ def test_public_documentation_omits_legacy_game_acquisition_language() -> None:
         assert forbidden.search(source.read_text(encoding="utf-8")) is None, source
 
 
-def test_runtime_docs_match_configuration_persistence_and_public_stardew_boundary() -> None:
+def test_runtime_docs_match_configuration_persistence_and_public_stardew_boundary() -> (
+    None
+):
     runtime = RUNTIME_DOC_PATH.read_text(encoding="utf-8")
     stardew = STARDEW_GUIDE_PATH.read_text(encoding="utf-8")
     experimental = EXPERIMENTAL_ADAPTERS_PATH.read_text(encoding="utf-8")
@@ -367,7 +405,9 @@ def test_gate_forbids_generated_evidence_game_assets_caches_and_metadata() -> No
         assert token in gate
 
 
-def test_legacy_mednafen_results_do_not_persist_or_log_accessibility_permission() -> None:
+def test_legacy_mednafen_results_do_not_persist_or_log_accessibility_permission() -> (
+    None
+):
     for module_path in LEGACY_MEDNAFEN_RESULT_MODULES:
         tree = ast.parse(module_path.read_text(encoding="utf-8"))
         persisted_keys = {
@@ -383,7 +423,10 @@ def test_legacy_mednafen_results_do_not_persist_or_log_accessibility_permission(
 def test_linux_dependency_surface_excludes_darwin_only_packages() -> None:
     pyproject = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))
     dependencies = pyproject["project"]["dependencies"]
-    normalized = {dependency.split(";", 1)[0].split(">=", 1)[0].lower(): dependency for dependency in dependencies}
+    normalized = {
+        dependency.split(";", 1)[0].split(">=", 1)[0].lower(): dependency
+        for dependency in dependencies
+    }
 
     assert "numpy" in normalized
     assert "opencv-python" not in normalized
@@ -396,7 +439,7 @@ def test_linux_dependency_surface_excludes_darwin_only_packages() -> None:
 def _run_cli_in_fresh_process(arguments: list[str]) -> subprocess.CompletedProcess[str]:
     code = f"""
 import sys
-sys.argv = {['smb3_agent', *arguments]!r}
+sys.argv = {["smb3_agent", *arguments]!r}
 from smb3_agent.cli import main
 main()
 macos_modules = {MACOS_MODULES!r}

@@ -2,12 +2,18 @@
 
 ## Minecraft
 
-Large creative-world projects are a new requirement, not an available feature.
-Current shelters are 3–7 blocks wide/deep with 2–4-block walls and a 192-cell
-ceiling. Island terraforming, broad architectural composition, an editable material/
-component catalog and multi-session large-build execution have no qualifying proof.
-Earlier owner acceptance was for the bounded foundation and does not establish
-these capabilities.
+Successful model discovery and schema-valid replies do not establish factual
+accuracy. Chat can give incorrect recipe advice, select irrelevant application
+facts or misunderstand compound questions. Validated game actions and verified
+recipe examples do not make all conversational answers reliable. Check important
+claims against visible game state and the documented controls.
+
+Survival shelters are bounded to 3–7 blocks wide/deep, 2–4-block walls and a
+192-cell ceiling. Enabled Creative projects use separate design, terrain and
+architecture reviews; they are not limited to the engineering fixture. See
+[Creative construction](minecraft-build-service.md) for execution and recovery.
+Fluid undo and contents-aware restoration remain unsupported. General world
+replication and reliable arbitrary-scale projects are not established capabilities.
 
 The headless companion operates its own character in a local Java practice world.
 It supports bounded movement/following, resource gathering, saved places and
@@ -23,21 +29,16 @@ small camera requests; its movement, placement and wall actions are disabled.
 
 ## Creative-building target
 
-The next goal is a general companion that helps a Minecraft novice create imagined
-or reference-inspired worlds: setup guidance, understandable materials/components,
-editable designs, shaped terrain, varied architecture/interiors/objects, durable
-work across sessions and conversational expansion. A replica-style island is an
-example, not a franchise-specific mode. The same implementation must handle a
-materially different project. Native items and assembled decorative approximations
-must be distinguished from working mechanisms.
+Creative projects accept named text requirements and reference captions, retain
+editable designs, and compile reviewed landscapes and buildings. Each review needs
+an explicit Start; reopening stays idle. Terrain supports 192×192 and 256×256
+regions. Architecture includes rooms, stairs, roofs, furniture and some native
+interactive blocks. Decorative assemblies are not working mechanisms.
 
-Creative is the proposed first route to avoid resource grinding, subject to the
-owner's project choices. Existing Survival functionality remains separate. Scale,
-fidelity, runtime/usage budgets and any privileged construction approach require an
-explicit project contract and feasibility measurement. Completion requires the whole
-approved project, actual-world and installed-app verification, usable exploration,
-data preservation and new owner acceptance. A small demo or the old acceptance
-cannot substitute. Public/paid distribution remains a separate scope decision.
+The parser often needs one named place per line and explicit dimensions. Image
+analysis is unavailable. Previews and saved counts do not prove usable interiors,
+faithful interpretation or completed world changes. Large projects and revisions
+can be slow. Survival gathering and construction use separate inventory accounting.
 
 ## Older integrations
 
@@ -68,3 +69,16 @@ Source changes do not update installed applications. Local packaging requires
 additional runtime/assets and a stable signing identity; see
 [development](development.md#local-review-packaging). Closing a browser does not
 stop the server. Stop or Quit explicitly, and verify reported cleanup failures.
+
+## World design preview
+
+Text requirements, reference captions, versioned previews and a direct place editor
+are available in enabled Creative projects. Named component descriptions preserve
+explicit dimensions, shapes, rotation, rooms and connections; arbitrary prose may
+need clarification. Unknown notes and conflicting requirements block build preparation.
+The checklist verifies design records, not generated terrain or usable interiors.
+Image analysis is unavailable. Terrain supports bounded coast/water, stepped
+elevation, paths, vegetation, terraces and caves. Interpretations are not exact
+replicas. Small edits can be slow because affected water is resealed and saved
+state inspected. Buildings and interiors require their own review and execution;
+a preview alone never proves world completion. See [world designs](minecraft-designs.md).

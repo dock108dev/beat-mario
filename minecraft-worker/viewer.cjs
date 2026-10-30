@@ -4,6 +4,7 @@ const express = require('express')
 const { createServer } = require('node:http')
 const { Server } = require('socket.io')
 const { WorldView } = require('prismarine-viewer/viewer/lib/worldView')
+const { pixelClass, installPixelProbe, attachPixelMeasurements } = require('./viewer-pixel.cjs')
 const { setupRoutes } = require('prismarine-viewer/lib/common')
 
 async function openViewer (bot, session, port, report) {
@@ -25,6 +26,15 @@ async function openViewer (bot, session, port, report) {
   const heightLoop = 'for(let i=0;i<256;i+=16)'
   if (bundle.split(heightLoop).length !== 3) throw Error('viewer_height_patch_mismatch')
   bundle = bundle.replaceAll(heightLoop, 'for(let i=-64;i<320;i+=16)')
+  const listen = 's=!0,u.listen(o),o.on("position"'
+  if(bundle.split(listen).length!==2)throw Error('viewer_measurement_patch_mismatch')
+  bundle = bundle.replace(listen, 's=!0,u.listen(o),o.on("view_sample",async t=>{await u.world.waitForChunksToRender();requestAnimationFrame(()=>requestAnimationFrame(()=>o.emit("view_sample_ack",t)))}),o.on("position"')
+  const install = 'u.listen(o),'
+  if (bundle.split(install).length !== 2) throw Error('viewer_pixel_patch_mismatch')
+  bundle = bundle.replace(install, install + `(${installPixelProbe.toString()})(u,l,o,THREE,${pixelClass.toString()}),`)
+  const firstPerson = 'if(void 0!==r&&void 0!==o)return h&&(h.dispose(),h=null),void u.setFirstPersonCamera(t,r,o);'
+  if(bundle.split(firstPerson).length!==2)throw Error('viewer_eye_level_patch_mismatch')
+  bundle=bundle.replace(firstPerson,'if(new URLSearchParams(location.search).get("view")==="inside")o=0;'+firstPerson)
   app.get('/index.js', (req, res) => res.type('js').send(bundle.replace(needle, cameraFollow)))
   let terrainWorker = fs.readFileSync(require.resolve('prismarine-viewer/public/worker.js'), 'utf8')
   for (const [before, after] of [
@@ -52,11 +62,24 @@ async function openViewer (bot, session, port, report) {
     }
     position()
     const timer = setInterval(position, 500)
+    let pending=null, sequence=0
+    const samples=setInterval(()=>{
+      if(pending===null){pending={id:++sequence,at_ms:Date.now()};socket.emit('view_sample',pending)}
+    },1000)
+    socket.on('view_sample_ack',value=>{
+      if(pending&&value?.id===pending.id){
+        report('viewer_sample',{age_ms:Date.now()-pending.at_ms,at_ms:Date.now(),scope:'all_pending_meshes_then_two_frames_round_trip'})
+        pending=null
+      }
+    })
     bot.on('move', position)
     world.listenToBot(bot)
+    const closeMeasurements = attachPixelMeasurements(bot, socket, report)
     // No blockClicked handler: rendering has no action authority.
     socket.on('disconnect', () => {
       clearInterval(timer)
+      clearInterval(samples)
+      closeMeasurements()
       bot.removeListener('move', position)
       world.removeListenersFromBot(bot)
       report('viewer', { connected: io.engine.clientsCount > 0, viewers: io.engine.clientsCount })

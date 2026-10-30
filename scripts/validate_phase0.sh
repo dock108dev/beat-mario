@@ -17,7 +17,9 @@ echo "== bash syntax =="
 bash -n scripts/validate_phase0.sh
 
 echo "== ruff lint =="
-"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py scripts/check_actions.py scripts/ci_npm_audit.py scripts/ci_build.py
+"${python_bin}" -m ruff check src tests scripts/security_check.py scripts/ci_report.py scripts/check_actions.py scripts/ci_npm_audit.py scripts/ci_build.py scripts/ci_python_audit.py
+
+"${python_bin}" -m ruff format --check scripts/ci_*.py scripts/check_actions.py tests/test_ci*.py
 
 echo "== tracked generated-file guard =="
 tracked_generated="$(
@@ -56,8 +58,8 @@ fi
 echo "== tracked credential and game-asset scan =="
 "${python_bin}" scripts/security_check.py
 
-echo "== ignored runtime artifact visibility =="
-git status --short --ignored
+echo "== source change visibility =="
+git status --short
 
 export GAME_COMPANION_USER_DATA="$(mktemp -d "${TMPDIR:-/tmp}/gc-ci-profile.XXXXXX")"
 trap 'rm -rf -- "$GAME_COMPANION_USER_DATA"' EXIT

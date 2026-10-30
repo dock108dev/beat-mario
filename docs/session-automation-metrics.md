@@ -53,7 +53,7 @@ The catalog at `data/scenarios/catalog.yaml` covers observation, first baseline,
 comparison, coaching, Show, learning review, takeover/reclaim, terminal
 failures, Mario full-game control, planned Stardew scenarios, adapter switching,
 unattended regression, experimental onboarding/removal, and final owner
-acceptance. Later-slice definitions expose their capability blockers.
+acceptance. Unavailable metric definitions expose their capability blockers.
 
 ## Lifecycle and dry plans
 

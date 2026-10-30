@@ -240,3 +240,16 @@ def test_display_profile_still_refuses_log_evidence(calibration_source, tmp_path
     )
     with pytest.raises(ValueError, match="Visible display feature eligibility refused"):
         release_resources.stage_resources(context.root, tmp_path / "refused-resources")
+
+
+def test_retained_package_calibration_is_hash_checked(calibration_source, tmp_path):
+    root = calibration_source.root
+    original = tmp_path / 'previous'
+    records = release_resources.stage_resources(root, original)
+    (original / 'build-manifest.json').write_text(json.dumps({'resources': records}))
+    (root / release_resources.DAY2_PROFILE).unlink()
+    copied = release_resources.stage_resources(root, tmp_path / 'next', retained_resources=original)
+    assert any(r['path'] == 'data/calibration/day2/profile.json' for r in copied)
+    (original / 'data/calibration/day2/profile.json').write_text('changed')
+    with pytest.raises(ValueError, match='digest mismatch'):
+        release_resources.stage_resources(root, tmp_path / 'refused', retained_resources=original)

@@ -31,7 +31,7 @@ def _relocate_resource_values(value, mapping):
     return value
 
 
-def stage_resources(root: Path, destination: Path):
+def stage_resources(root: Path, destination: Path, *, retained_resources: Path | None = None):
     destination.mkdir(parents=True, exist_ok=False)
     records = []
 
@@ -77,6 +77,21 @@ def stage_resources(root: Path, destination: Path):
         )
     # Frozen farm and display features have different eligibility rules.
     # Share only value relocation; each profile gets its own path mapping.
+    if not (root / DAY2_PROFILE).is_file() and retained_resources is not None:
+        previous = json.loads((retained_resources / "build-manifest.json").read_text())
+        calibration = [r for r in previous["resources"]
+                       if r["path"].startswith("data/calibration/")]
+        if not any(r["path"] == "data/calibration/day2/profile.json" for r in calibration):
+            raise ValueError("Retained package lacks the required calibration profile")
+        for row in calibration:
+            relative = Path(row["path"])
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError("Invalid retained calibration path")
+            source = retained_resources / relative
+            if hashlib.sha256(source.read_bytes()).hexdigest() != row["sha256"]:
+                raise ValueError("Retained calibration digest mismatch: " + str(relative))
+            copy_resource(source, relative, "retained packaged calibration; no new gameplay qualification")
+        return records
     original = json.loads((root / DAY2_PROFILE).read_text())
     evidence = original["evidence_hashes"]
     mapping = {}

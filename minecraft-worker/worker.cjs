@@ -6,6 +6,8 @@ const { Scheduler } = require('./scheduler.cjs')
 const { MINEABLE, LOGS, inside, regionsOf, resources, safeTarget, chooseTool, visibleFrom, stands, multiChanges, goalGuard } = require('./resource-skills.cjs')
 const crafting = require('./crafting.cjs')
 const construction = require('./construction.cjs')
+const build = require('./build-service.cjs')
+let buildRegion = null, lastBuildChange = 0
 const { openViewer } = require('./viewer.cjs')
 // stdout is exclusively JSONL. Do not forward game/chat/authentication text.
 console.log = () => {}
@@ -21,7 +23,7 @@ const position = () => bot?.entity?.position?.clone()
 function observe () {
   const p = position()
   return {
-    ready, world_id: worldId, game_mode: bot?.game?.gameMode, revision: scheduler?.revision ?? 0, character: bot?.username, game_version: VERSION,
+    ready, last_build_change_ms:lastBuildChange, world_id: worldId, game_mode: bot?.game?.gameMode, revision: scheduler?.revision ?? 0, character: bot?.username, game_version: VERSION,
     position: p, yaw: bot?.entity?.yaw, health: bot?.health, food: bot?.food, dimension: bot?.game?.dimension,
     active: scheduler?.active?.request.request_id ?? null, queued: scheduler?.queue.length ?? 0,
     held_item: bot?.heldItem?.name ?? null,
@@ -58,6 +60,16 @@ const routing = require('./routes.cjs')
 const travelByGoal = new Map()
 async function run (args, signal) {
   const local = bot
+  if(args.action==='place_batch'){
+    if(!buildRegion||!Array.isArray(args.cells)||args.cells.length<1||args.cells.length>8)throw Error('placement_batch_bound')
+    const results=[]
+    for(const c of args.cells){build.check(c.position,buildRegion);signal.throwIfAborted();results.push(await run({action:'place',target:c.position,item:c.item},signal))}
+    return {observed:'placement_batch',results}
+  }
+  if(args.action==='build_probe')return build.probe(local,args,signal,buildRegion,emit)
+  if(args.action==='build_focus')return build.focus(local,args,signal,buildRegion,emit)
+  if(args.action==='build_batch')return build.apply(local,args,signal,buildRegion,emit)
+  if(local.physics.gravity===0)local.creative.stopFlying()
   const before = observe()
   const abort = () => haltBot(local)
   signal.addEventListener('abort', abort, { once: true })
@@ -273,9 +285,11 @@ async function connect (request) {
   usedSessions.add(request.session_id)
   session = request.session_id
   worldId = typeof args.world_id === 'string' ? args.world_id : 'unknown'
+  buildRegion = args.build_region ?? null
   bot = mineflayer.createBot({ host: '127.0.0.1', port: args.port, username: 'CompanionBot', auth: 'offline', version: VERSION, hideErrors: true, checkTimeoutInterval: 60000 })
   const local = bot
   local.loadPlugin(pathfinder)
+  local.on('blockUpdate',(old,block)=>{if(buildRegion&&block&&build.inside(block.position,buildRegion.bounds))lastBuildChange=Date.now()})
   local.on('error', error => emit('connection_error', null, { error: error.message?.startsWith('client timed out') ? 'keepalive_timeout' : 'game_connection_error' }))
   local.on('end', () => {
     if (bot !== local) return
@@ -317,6 +331,7 @@ async function connect (request) {
     movements.allowParkour = false
     movements.allowFreeMotion = false
     movements.scafoldingBlocks = []
+    if(buildRegion)build.configureMovements(movements,local)
     local.pathfinder.setMovements(movements)
     scheduler = new Scheduler({ run, halt, emit, failClosed: () => { ready = false; local.end() } })
     ready = true
@@ -332,7 +347,7 @@ async function handle (request) {
   try {
     if (!request || request.v !== 1 || typeof request.request_id !== 'string' || typeof request.session_id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(request.request_id ?? '') || !/^[a-zA-Z0-9_-]{1,80}$/.test(request.session_id ?? '')) throw Error('invalid_envelope')
     if (requests.has(request.request_id)) throw Error('duplicate_request')
-    if (requests.size >= 10000) throw Error('worker_request_budget_restart_required')
+    if (requests.size >= 100000) throw Error('worker_request_budget_restart_required')
     requests.add(request.request_id)
     if (!Number.isInteger(request.timeout_ms) || request.timeout_ms < 100 || request.timeout_ms > 30000) throw Error('invalid_timeout')
     if (request.op === 'connect') {
@@ -349,12 +364,24 @@ async function handle (request) {
       return
     }
     if (lifecycleBusy || !ready) throw Error('not_ready')
-    if (request.op === 'observe' || request.op === 'capabilities') {
+    if(request.op==='recipe_facts') {
+      const rows=crafting.recipes(bot,request.args.item).slice(0,16).map(({recipe,...fact})=>fact)
+      emit('completed',request,{result:{item:request.args.item,recipes:rows}})
+    } else if(request.op==='select_build_region') {
+      if(!buildRegion||scheduler.active||scheduler.queue.length||stopBusy||request.revision!==scheduler.revision)throw Error('region_selection_not_idle')
+      buildRegion=build.region(request.args.region)
+      emit('completed',request,{result:{observed:'build_region_selected'}})
+    } else if(request.op==='inspect_build') {
+      emit('completed',request,{result:build.inspect(bot,request.args.positions,buildRegion)})
+    } else if(request.op==='build_palette') {
+      const Block=require('prismarine-block')(bot.registry)
+      emit('completed',request,{result:Object.fromEntries([...build.BLOCKS].map(n=>[n,build.state(Block.fromStateId(bot.registry.blocksByName[n].defaultState,0))]))})
+    } else if (request.op === 'observe' || request.op === 'capabilities') {
       emit('completed', request, { result: request.op === 'observe' ? observe() : { actions: ['move', 'dig', 'follow', 'approach', 'equip', 'pickup', 'recipe', 'craft', 'inspect_site', 'place', 'workstation', 'remove'], protocol: 1, max_distance: 32, max_timeout_ms: 30000 } })
     } else if (request.op === 'execute') {
-      if (!['move', 'dig', 'follow', 'approach', 'equip', 'pickup', 'recipe', 'craft', 'inspect_site', 'place', 'workstation', 'remove'].includes(request.args?.action)) throw Error('unsupported_action')
+      if (!['move', 'dig', 'follow', 'approach', 'equip', 'pickup', 'recipe', 'craft', 'inspect_site', 'place', 'workstation', 'remove','build_batch','place_batch','build_probe','build_focus'].includes(request.args?.action)) throw Error('unsupported_action')
       if (request.args.action === 'follow') followEntity(request.args)
-      else if (!['recipe','craft','inspect_site','workstation'].includes(request.args.action)) targetOf(request.args)
+      else if (!['recipe','craft','inspect_site','workstation','build_batch','place_batch','build_probe','build_focus'].includes(request.args.action)) targetOf(request.args)
       if (stopBusy) throw Error('stop_in_progress')
       scheduler.submit(request)
     } else if (request.op === 'cancel') {
@@ -370,9 +397,9 @@ async function handle (request) {
         const current = position()
         if (!current || current.distanceTo(p) >= 0.01) stableSince = Date.now()
         p = current
-        if (Date.now() - stableSince >= 300) { stationary = true; break }
+        if (Date.now() - stableSince >= 300 && (!buildRegion || Date.now()-lastBuildChange>=300)) { stationary = true; break }
       }
-      emit('completed', request, { result: { revision: scheduler.revision, controls_cleared: true, stopped_observed: !!stationary, confirmation: stationary ? 'stationary_position_observed' : 'unconfirmed', position: position() } })
+      emit('completed', request, { result: { revision: scheduler.revision, controls_cleared: true, stopped_observed: !!stationary, last_build_change_ms:lastBuildChange, confirmation: stationary ? 'stationary_position_observed' : 'unconfirmed', position: position() } })
       } finally { stopBusy = false }
     } else throw Error('unknown_operation')
   } catch (error) { emit('failed', request, { error: error.message || 'operation_failed' }) }

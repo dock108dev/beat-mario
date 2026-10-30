@@ -21,6 +21,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default=VERSION)
     parser.add_argument("--build", default="30036")
+    parser.add_argument("--calibration-app", type=Path,
+                        help="Verified existing app supplying retained calibration when original local evidence is unavailable")
     parser.add_argument(
         "--sign-identity",
         required=True,
@@ -38,12 +40,13 @@ def main(argv=None):
         raise SystemExit(
             "Retained candidate output already exists; choose a successor version"
         )
-    work = root / "build/private-beta" / version
-    work.mkdir(parents=True, exist_ok=True)
-    resources = work / "resources"
-    if resources.exists():
-        shutil.rmtree(resources)
-    inventory = stage_resources(root, resources)
+    for name in ("numpy", "Pillow", "PyYAML", "mss", "pyautogui", "pyobjc", "PyInstaller"):
+        distribution_version(name)
+    retained_resources = None
+    if args.calibration_app:
+        subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict",
+                        str(args.calibration_app)], check=True)
+        retained_resources = args.calibration_app / "Contents/Resources/resources"
     ocr = Path(shutil.which("tesseract") or "/opt/homebrew/bin/tesseract").resolve(
         strict=True
     )
@@ -56,6 +59,11 @@ def main(argv=None):
     node = Path(shutil.which("node")).resolve(strict=True)
     if subprocess.check_output([str(node), "--version"], text=True).strip() != "v24.22.0":
         raise SystemExit("Minecraft package requires the qualified Node 24.22.0 runtime")
+    work = root / "build/private-beta" / version
+    work.mkdir(parents=True, exist_ok=False)
+    resources = work / "resources"
+    inventory = stage_resources(root, resources, **(
+        {"retained_resources": retained_resources} if retained_resources else {}))
     worker = resources / "minecraft-worker"
     shutil.copytree(root / "minecraft-worker", worker, ignore=shutil.ignore_patterns("test", ".DS_Store"))
     (resources / "runtime").mkdir()
@@ -101,7 +109,7 @@ def main(argv=None):
     manifest_path = work / "build-manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     entry = work / "entry.py"
-    entry.write_text("from smb3_agent.app_runtime import main\ntry:\n    main()\nexcept Exception as exc:\n    import AppKit\n    alert = AppKit.NSAlert.alloc().init()\n    alert.setMessageText_('Game Companion could not open')\n    alert.setInformativeText_(str(exc) + '\\nYour saved worlds are retained. Quit any other Companion instance and try again.')\n    alert.runModal()\n    raise\n")
+    entry.write_text("import sys\nimport logging\nfrom smb3_agent.app_runtime import main\ntry:\n    main()\nexcept Exception as exc:\n    logging.exception('Application startup failed')\n    if '--smoke' in sys.argv:\n        raise\n    import AppKit\n    alert = AppKit.NSAlert.alloc().init()\n    alert.setMessageText_('Game Companion could not open')\n    alert.setInformativeText_(str(exc) + '\\nYour saved worlds are retained. Quit any other Companion instance and try again.')\n    alert.runModal()\n    raise\n")
     command = [
         sys.executable,
         "-m",

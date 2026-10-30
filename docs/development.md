@@ -64,6 +64,11 @@ Source development requires no signed app build. To distribute a local macOS app
 license, the exact worker runtime/dependencies, compatible calibration resources
 required by `release_resources.py`, and an existing stable signing identity.
 Those local assets are not all supplied by the source checkout or `uv sync`.
+Install the known compatible build tool into the project environment with
+`uv pip install --python .venv/bin/python 'PyInstaller==6.22.3'`.
+If original local calibration files are unavailable, pass `--calibration-app`
+with an existing signed Game Companion app. Its signature and retained calibration
+hashes are verified before reuse; this does not establish new gameplay results.
 
 Pass explicit new `--version`, `--build` and `--sign-identity` values; the builder
 refuses to overwrite existing output. Its default identifiers are not a release
@@ -80,9 +85,18 @@ separate from session authority, execution and storage. The remaining coordinato
 connect/inference/Stop transitions share one lock, epoch and cancellation state;
 extracting them needs an explicit shared authority interface.
 
-The legacy HTTP module still mixes composition and rendering. Extract presentation
-using explicit inputs before separating server ownership, preserving routes, CSP,
-CSRF and response contracts. Mario/Stardew conversation separation likewise needs
+The shared legacy document shell and CSRF form injection live in `lab_page.py`;
+`lab_page_styles.py` owns its stylesheet and `player_workspace_script.py` owns
+browser refresh behavior. `lab_ui.py` keeps existing import names for callers.
+These modules have no server or session dependencies. The stylesheet remains one
+roughly 610-line cascade: companion and Route Lab share primitives and responsive
+overrides, and separating selectors without a design boundary risks changing their
+precedence. It is reviewed as CSS, not exempted by its Python container.
+
+The remaining legacy HTTP module still mixes route dispatch, service composition
+and feature panels. Next extract pure panel renderers with explicit inputs; then
+introduce a service container before separating dispatch. Preserve routes, CSP,
+CSRF, patchable service hooks and response contracts. Mario/Stardew conversation separation likewise needs
 a shared descriptive-history/refusal interface rather than circular imports.
 CLI registration changes must preserve command groups and help/error behavior.
 
@@ -96,3 +110,31 @@ JavaScript uses 300/600, UI templates 250/500, CSS 300/600 and shell 100/200.
 Count physical lines, review embedded languages by role, and exclude generated
 files/lockfiles from mechanical splitting. These are maintenance guidance, not a
 reason to compress readable code or change existing lint policy.
+
+
+### Remaining structural work
+
+`MinecraftChat`, `BuildProject`, `LiveObservationManager` and `StardewRuntime`
+remain cohesive authority/transaction owners: their callbacks share locks, epochs,
+connection ownership or database transactions. Extracting methods into independent
+stateful services now would create competing owners. Before splitting them, define
+an explicit owner-supplied transaction/session interface and move pure projections
+first. Keep BuildProject storage and receipt validation in the same transaction.
+
+Other bounded follow-ups are CLI command-group registration/dispatch; independent
+report generation in `lab.py`, `learning.py`, `reliability.py` and `unattended.py`;
+and presentation versus input/accounting in the Stardew companion/adapter. These
+remain unresolved separations, not declarations that their current sizes are ideal.
+The FCEUX log parser is a single ordered protocol reducer: keep its event state and
+sequence validation together until typed event records can replace shared local
+state. Route-patch validation/promotion must retain its hash checks and atomic
+mutation boundary. Existing simulator-heavy test modules should be separated by
+protocol, HTTP/rendering and reliability scenarios after shared fixtures move into
+fixture modules; never import mutable setup from another test module.
+
+### Source hygiene
+
+Keep required replay fixtures in `data/fixtures/state/` and authored contracts in
+`data/`. Generated reports, caches, local notes, game assets and app builds stay
+ignored. Do not add credentials or owner profiles to source control. Documentation
+and tests must not require private trackers or previously generated local reports.

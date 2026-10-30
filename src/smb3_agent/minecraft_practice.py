@@ -30,6 +30,7 @@ class PracticeServer:
         self.owned = OwnedGameProcesses()
         self.process = None
         self.log = None
+        self.empty_build_site = False
 
     def prepare(self, *, accept_eula=False):
         marker = self.home / "companion-practice.json"
@@ -96,6 +97,9 @@ class PracticeServer:
             "max-players=4\nenable-rcon=false\nenable-query=false\n"
             "sync-chunk-writes=true\nmotd=Game Companion isolated practice\n"
         )
+        if not self.survival and (self.empty_build_site or (self.home / "build-permission.json").is_file()):
+            with (self.home / "server.properties").open("a") as properties:
+                properties.write("generate-structures=false\nlevel-seed=80408\n")
         if self.survival:
             props = self.home / "server.properties"
             text = (

@@ -19,6 +19,7 @@ WORKER = repository_path("minecraft-worker/worker.cjs")
 
 class MinecraftBridge:
     def __init__(self, *, node=None, worker=WORKER):
+        self.build_console = None
         self.owned = OwnedGameProcesses()
         diagnostics = (
             data_artifacts() / "minecraft-chat/worker-stderr.log"
@@ -51,6 +52,10 @@ class MinecraftBridge:
                 event = json.loads(line)
                 if event.get("v") != 1:
                     raise ValueError("Worker protocol mismatch")
+                if event.get("type") == "build_command":
+                    if self.build_console is None or event.get("session_id") != self.session_id:
+                        raise ValueError("Build command without current world authority")
+                    self.build_console(event["operation"])
                 with self.condition:
                     self.events.append(event)
                     pending = self.pending.get(event.get("request_id"))
@@ -148,9 +153,9 @@ class MinecraftBridge:
                 "Worker reply missing; connection closed, cessation unconfirmed"
             ) from None
 
-    def connect(self, *, port=25575, viewer_port=0, world_id="unknown"):
+    def connect(self, *, port=25575, viewer_port=0, world_id="unknown", build_region=None):
         self.connection_options = dict(
-            port=port, viewer_port=viewer_port, world_id=world_id
+            port=port, viewer_port=viewer_port, world_id=world_id, build_region=build_region
         )
         with self.lifecycle_lock:
             if self.session_id:
@@ -160,7 +165,7 @@ class MinecraftBridge:
             try:
                 return self.call(
                     "connect",
-                    {"port": port, "viewer_port": viewer_port, "world_id": world_id},
+                    {"port": port, "viewer_port": viewer_port, "world_id": world_id, "build_region": build_region},
                     timeout_ms=30000,
                 )
             except BaseException:

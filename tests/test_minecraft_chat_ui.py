@@ -69,3 +69,46 @@ def test_shell_serves_script_and_protects_commands(tmp_path, monkeypatch):
         server.shutdown()
         server.server_close()
         thread.join(5)
+
+
+def test_conversation_dom_retains_only_current_bounded_window():
+    import subprocess
+    from smb3_agent.minecraft_chat_script import CHAT_JS
+    helper = CHAT_JS.split('function renderMessages(',1)[1].split('async function refresh()',1)[0]
+    source = '''
+const assert=require('node:assert/strict');
+let known=new Set();
+class Node {
+ constructor(){this.children=[];this.dataset={};}
+ append(...nodes){for(const n of nodes){n.parent=this;this.children.push(n);}}
+ remove(){this.parent.children=this.parent.children.filter(n=>n!==this);}
+}
+const document={createElement:()=>new Node(),createTextNode:text=>({text})};
+const box=new Node();
+const placeholder=new Node();box.append(placeholder);
+''' + 'function renderMessages(' + helper + '''
+const messages=Array.from({length:700},(_,i)=>({id:String(i),role:'user',text:'message '+i}));
+renderMessages(messages.slice(0,500),box);
+const retained=box.children[251];
+renderMessages(messages,box);
+assert.equal(box.children.length,501);
+assert.equal(known.size,500);
+assert.equal(box.children[1].dataset.messageId,'200');
+assert.equal(box.children[51],retained);
+renderMessages(messages,box);
+assert.equal(box.children.length,501);
+renderMessages([],box);
+assert.equal(box.children.length,1);
+assert.equal(box.children[0],placeholder);
+assert.equal(known.size,0);
+'''
+    subprocess.run(['node','-e',source],check=True,capture_output=True,text=True)
+
+
+def test_preview_menu_consumes_server_policy_without_local_geometry_rules():
+    from smb3_agent.minecraft_chat_script import CHAT_JS
+    renderer = CHAT_JS.split('function renderDesign(s){', 1)[1].split('function loadDesignEditor()', 1)[0]
+    assert 'new Set(s.design.preview_components||[])' in renderer
+    assert 'previewComponents.has(c.name)' in renderer
+    assert 'const hasSample=previewComponents.size>0' in renderer
+    assert 'c.size[0]>=' not in renderer and 'w>=3' not in renderer

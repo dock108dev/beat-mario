@@ -71,6 +71,10 @@ class Provider:
             self.gate.wait(
                 3
             )  # Deliberately ignore cancellation: stale results must still fail closed.
+        if context.get('question_stage') == 'decompose':
+            return {'cuts': []}
+        if context.get('question_stage') == 'select_span':
+            return self.values.pop(0) if self.values and ('fact_ids' in self.values[0] or self.values[0].get('kind') == 'stop') else {'fact_ids': ['stop_scope']}
         value = self.values.pop(0)
         if isinstance(value, Exception):
             raise value
@@ -312,3 +316,238 @@ def test_setup_refresh_rejects_message_without_consuming_draft_or_stop(tmp_path)
     s.submit('Stop', 'stop', 'one')
     wait(lambda: not s.stopping)
     assert s.bridge.stops == 1
+
+
+def test_snapshot_during_shutdown_does_not_read_closed_project(tmp_path):
+    from smb3_agent.minecraft_build import BuildProject
+    from smb3_agent.minecraft_design import WorldDesign
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+
+    s = MinecraftChat(tmp_path / 'chat', provider=Provider([]))
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.designer = WorldDesign(s.project)
+    s.close()
+    snapshot = s.snapshot()
+    assert snapshot['project'] is None and snapshot['design'] is None
+
+
+def test_question_between_architecture_units_uses_language_without_new_plan(tmp_path):
+    from smb3_agent.minecraft_build import BuildProject
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+    provider = Provider([{'kind': 'question', 'reply': 'The building is underway.'}])
+    s = service(tmp_path / 'chat', provider)
+    s.bridge.state['active'] = None
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.project.architecture_active = True
+    try:
+        s.submit('What is happening?', 'architecture-question', 'one')
+        wait(lambda: not s.busy)
+        assert provider.calls[0][0] == 'language'
+        assert not s.bridge.actions and s.bridge.revision == 0
+        assert s.messages[-1]['text'] == 'The building is underway.'
+    finally:
+        s.project.architecture_active = False
+        s.close()
+
+
+def test_project_gap_during_answer_does_not_claim_build_ended(tmp_path):
+    from smb3_agent.minecraft_build import BuildProject
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+    gate = threading.Event()
+    provider = Provider([{'kind': 'question', 'reply': 'The building is underway.'}], gate)
+    s = service(tmp_path / 'chat', provider)
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.project.architecture_active = True
+    try:
+        s.submit('What is happening?', 'gap-question', 'one')
+        assert provider.entered.wait(2)
+        context = provider.calls[0][1]
+        assert context['question_stage'] == 'conversation'
+        s.bridge.state['active'] = None
+        gate.set()
+        wait(lambda: not s.busy)
+        assert s.messages[-1]['text'] == 'The building is underway.'
+    finally:
+        gate.set()
+        s.project.architecture_active = False
+        s.close()
+
+
+def test_oversized_diagnostic_batch_stops_work_without_deleting_retained_log(tmp_path):
+    s = service(tmp_path, Provider([]))
+    retained = tmp_path / 'events.jsonl'
+    retained.write_text('retained history\n')
+    s.log_limit = retained.stat().st_size
+    try:
+        assert not s.append_log('events.jsonl', [{'kind': 'oversized diagnostic batch'}])
+        wait(lambda: s.bridge.stops > 0 and not s.stopping)
+        assert retained.read_text() == 'retained history\n'
+        assert s.snapshot()['error'] == s.storage_error
+        with pytest.raises(ValueError, match='Diagnostic history'):
+            s.submit('Hello', 'full-log', 'one')
+        assert 'full-log' not in s.seen
+    finally:
+        s.close()
+
+
+def test_diagnostics_rotate_without_changing_saved_conversation(tmp_path):
+    s = service(tmp_path, Provider([]))
+    path = tmp_path / 'events.jsonl'
+    history = tmp_path / 'conversation.json'
+    history.write_text('retained conversation')
+    s.log_limit = 32
+    try:
+        path.write_text('old diagnostics' * 2)
+        assert s.append_log('events.jsonl', [{'kind': 'first'}])
+        assert path.with_name('events.jsonl.1').read_text() == 'old diagnostics' * 2
+        assert s.append_log('events.jsonl', [{'kind': 'second'}])
+        assert 'first' in path.with_name('events.jsonl.1').read_text()
+        assert 'second' in path.read_text()
+        assert history.read_text() == 'retained conversation'
+        assert s.storage_error is None
+        assert not s.cancel.is_set()
+    finally:
+        s.close()
+
+
+def test_diagnostic_compaction_does_not_modify_actual_observations(tmp_path):
+    import json
+    s = service(tmp_path, Provider([]))
+    row = {'type': 'completed', 'result': [{'position': {'x':1,'y':2,'z':3}, 'state':'stone'}]}
+    original = deepcopy(row)
+    try:
+        assert s.append_log('worker-events.jsonl', [row])
+        assert row == original
+        stored = json.loads((tmp_path/'worker-events.jsonl').read_text())
+        assert stored['result']['observation_count'] == 1
+        assert len(stored['result']['sha256']) == 64
+    finally:
+        s.close()
+
+
+@pytest.mark.parametrize("active", [False, True])
+@pytest.mark.parametrize("question", ["Does stopping this construction also stop other players?", "If I close and reopen, will construction resume by itself?"])
+def test_informational_project_question_cannot_become_model_stop(tmp_path, active, question):
+    from smb3_agent.minecraft_build import BuildProject
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+    provider = Provider([{'kind': 'stop', 'reply': 'No, other players continue.'}])
+    s = service(tmp_path / 'chat', provider)
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.project.architecture_active = active
+    s.bridge.state["active"] = None
+    try:
+        before = s.authority()
+        s.submit(question, 'stop-question', 'one')
+        wait(lambda: not s.busy)
+        assert s.error
+        assert s.authority() == before and s.bridge.stops == 0
+        assert s.project.architecture_active == active
+    finally:
+        s.project.architecture_active = False
+        s.close()
+
+
+def test_question_context_excludes_model_prose_and_preserves_factual_scope():
+    from smb3_agent.minecraft_planning import question_context
+    context = {'request': 'What is underway?', 'instructions': 'Plan destructive work',
+               'project': {'state': 'running'}, 'historical_outcomes': [{'complete': True}],
+               'construction': None, 'goal_progress': None, 'active_goal_id': None,
+               'observations': {'active': None, 'queued': 0, 'health': 20},
+               'recent_conversation': [{'role': 'assistant', 'text': 'World resets'},
+                                       {'role': 'user', 'text': 'Inspect the Inn'},
+                                       {'role': 'user', 'text': 'What is underway?'}]}
+    original = deepcopy(context)
+    result = question_context(context)
+    assert context == original
+    assert result['project'] == {'state': 'running'}
+    assert result['question_stage'] == 'select'
+    assert 'observations' not in result
+    assert 'recent_conversation' not in result
+    assert 'World resets' not in str(result)
+    assert 'not supplied' in result['evidence']['current_work']['text']
+
+
+
+@pytest.mark.parametrize('reply', [
+    'Stop pauses the world.', 'Stop halts the simulation loop.',
+    'Reopening resets the world.', 'Reopening automatically resumes construction.',
+    'There are no active goals at this moment.',
+    'This activity will not stop when you use Stop.',
+])
+def test_known_control_contradictions_are_withheld(reply):
+    from smb3_agent.minecraft_planning import reject_known_question_contradictions
+    with pytest.raises(ValueError, match='reply withheld'):
+        reject_known_question_contradictions(reply, {'project': {'state': 'running'}})
+
+
+@pytest.mark.parametrize('reply', [
+    'Stop does not pause the world.', 'Stop never freezes other players.',
+    'Reopening does not automatically resume construction.',
+    'The Inn is underway. Stop halts companion work only.',
+])
+def test_accurate_control_explanations_remain_model_replies(reply):
+    from smb3_agent.minecraft_planning import reject_known_question_contradictions
+    reject_known_question_contradictions(reply, {'project': {'state': 'running'}})
+
+
+def test_grounded_project_question_reaches_provider_without_raw_worker_fields(tmp_path):
+    from smb3_agent.minecraft_build import BuildProject
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+    provider = Provider([{'kind': 'question', 'reply': 'Stop cancels companion work; the world keeps running.'}])
+    s = service(tmp_path / 'chat', provider)
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.project.architecture_active = True
+    s.project.state = 'running'
+    s.bridge.state['active'] = None
+    try:
+        before = s.authority()
+        s.submit('Does Stop pause the world?', 'grounded-question', 'one')
+        wait(lambda: not s.busy)
+        assert not s.error
+        assert s.messages[-1]['text'] == 'Stop cancels companion work; the world keeps running.'
+        assert len(provider.calls) == 1
+        assert s.authority() == before and s.bridge.stops == 0
+        assert 'observations' not in provider.calls[-1][1]
+    finally:
+        s.project.architecture_active = False
+        s.close()
+
+
+@pytest.mark.parametrize('stage', ['conversation'])
+def test_question_expiry_at_any_stage_never_publishes_late_reply(tmp_path, stage):
+    from smb3_agent.minecraft_build import BuildProject
+    from test_minecraft_build import Bridge as BuildBridge, REGION
+
+    class ExpiringProvider(Provider):
+        def infer(self, role, context, schema, cancel):
+            value = super().infer(role, context, schema, cancel)
+            if context.get('question_stage') == stage:
+                cancel.until = 0
+            return value
+
+    provider = ExpiringProvider([{'kind': 'question', 'reply': 'LATE ANSWER'}])
+    s = service(tmp_path / 'chat', provider)
+    s.project = BuildProject(tmp_path / 'project', 'synthetic', REGION, BuildBridge())
+    s.project.architecture_active = True
+    s.project.state = 'running'
+    try:
+        authority = s.authority()
+        s.submit('Does Stop pause the world?', 'expiry', 'one')
+        wait(lambda: not s.busy)
+        assert all(m['text'] != 'LATE ANSWER' for m in s.messages)
+        assert len(provider.calls) == ['conversation'].index(stage) + 1
+        assert s.authority() == authority
+        assert not s.bridge.actions and s.bridge.stops == 0
+    finally:
+        s.project.architecture_active = False
+        s.close()
+
+
+def test_log_rotation_rejects_non_diagnostic_paths(tmp_path):
+    s = service(tmp_path, Provider([]))
+    try:
+        for name in ('conversation.json', '../world/level.dat', 'build-project'):
+            with pytest.raises(ValueError, match='Unknown diagnostic log'):
+                s.append_log(name, [])
+    finally:
+        s.close()

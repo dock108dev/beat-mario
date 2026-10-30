@@ -48,6 +48,14 @@ capability. Missing vision metadata disables image requests while text requests
 remain usable. Advertised readiness is not a tested inference result. No model
 is downloaded automatically. A cloud/remote-model indication is refused.
 
+Each metadata request has a 5-second socket timeout. An optional `/api/show`
+timeout or connection failure leaves verified text readiness available and vision
+unavailable; required model/tag discovery failures still prevent inference.
+Inference uses the configured timeout (up to 240 seconds) as both its socket
+timeout and overall request deadline, including the worker's before/after identity
+checks. Those identity requests retain their 5-second metadata limit. There is no
+15-second chat disconnect timer. Remote gateways may impose additional limits.
+
 Profile-qualified native activities retain their exact `backend_id`; selecting
 another tag does not requalify them. Those activities require native Ollama
 metadata/chat support and verified vision, and remain unavailable on mismatch.

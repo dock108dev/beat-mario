@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import hashlib
 from pathlib import Path
 import threading
 import time
@@ -12,10 +13,13 @@ from uuid import uuid4
 from smb3_agent.inference_contract import validate_object
 from smb3_agent.ai_provider import create_provider
 from smb3_agent.minecraft_goals import Goal, identity
+from smb3_agent.minecraft_grounding import conversation_context, QuestionDeadline
 from smb3_agent.minecraft_planning import (
     schema as schema,
     TEXT as TEXT,
     INTENT as INTENT,
+    informational_question,
+    QUESTION_INTENT,
     PLAN as PLAN,
     BUILD_PLAN as BUILD_PLAN,
     IDLE_PLAN as IDLE_PLAN,
@@ -41,11 +45,13 @@ class MinecraftChat:
     ):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
-        self.provider = provider or create_provider()
+        self.provider = provider if provider is not None else create_provider()
         self.bridge_factory, self.practice_factory = bridge_factory, practice_factory
         self.lock = threading.RLock()
         self.control = threading.Lock()
         self.bridge = self.practice = None
+        self.project = None
+        self.designer = None
         self.epoch = 0
         self.cancel = threading.Event()
         self.busy = False
@@ -89,6 +95,9 @@ class MinecraftChat:
         self.setup = {}
         self.check_setup()
         self.connection_fault = False
+        self.storage_error = None
+        self.log_limit = 64 * 1024**2
+        self.log_lock = threading.Lock()
         self.messages = []
         self.seen = set()
         self.events = []
@@ -104,6 +113,53 @@ class MinecraftChat:
             except (OSError, ValueError, KeyError, TypeError):
                 self.error = "Conversation could not be read; original file preserved."
                 self.history = self.root / f"conversation-recovery-{uuid4().hex}.json"
+
+    def append_log(self, name, rows):
+        """Keep current and previous diagnostics; durable state lives separately."""
+        if name not in {"events.jsonl", "worker-events.jsonl"}:
+            raise ValueError("Unknown diagnostic log")
+        if self.storage_error:
+            return False
+        path = self.root / name
+        if name == "worker-events.jsonl":
+            compact = []
+            for row in rows:
+                result = row.get("result")
+                if (row.get("type") == "completed" and isinstance(result, list)
+                    and result and all(isinstance(c, dict) and "position" in c
+                                       and "state" in c for c in result)):
+                    # Exact observations remain in the worker response and project
+                    # receipt validation. Diagnostics need not duplicate every survey.
+                    raw = json.dumps(result, sort_keys=True).encode()
+                    row = {**row, "result": {"observation_count": len(result),
+                           "sha256": hashlib.sha256(raw).hexdigest(),
+                           "detail": "observation payload omitted from diagnostic log"}}
+                compact.append(row)
+            rows = compact
+        encoded = "".join(json.dumps(row) + "\n" for row in rows).encode()
+        try:
+            if path.is_symlink() or path.with_name(path.name + ".1").is_symlink():
+                raise OSError("Diagnostic log must not be a symbolic link")
+            if len(encoded) > self.log_limit:
+                raise OSError("Single diagnostic batch exceeds file budget")
+            with self.log_lock:
+                if (path.stat().st_size if path.exists() else 0) + len(encoded) > self.log_limit:
+                    path.replace(path.with_name(path.name + ".1"))
+                with path.open("ab") as out:
+                    out.write(encoded)
+            return True
+        except OSError:
+            self.storage_error = (
+                "Diagnostic history cannot be saved or a single batch exceeded its file limit. "
+                "Work is stopped. Check available storage and folder permissions. "
+                "Saved worlds, project records and conversation are preserved."
+            )
+            self.cancel.set()
+            if self.project:
+                self.project.stop()
+            if self.bridge and not self.closed:
+                self.spawn(self.stop)
+            return False
 
     def event(self, kind, **data):
         with self.lock:
@@ -128,8 +184,7 @@ class MinecraftChat:
                 row["removed_count"] = len(row.get("removed", []))
             self.events.append(row)
             self.events[:] = self.events[-2000:]
-            with (self.root / "events.jsonl").open("a") as out:
-                out.write(json.dumps(row) + "\n")
+            self.append_log("events.jsonl", [row])
             if kind in {
                 "construction_outcome",
                 "craft_outcome",
@@ -315,7 +370,10 @@ class MinecraftChat:
         self.setup = setup_status()
         self.provider.refresh() if hasattr(self.provider, "refresh") else None
 
-    def connect(self, *, survival=False, create=False, accept_eula=False):
+    def connect(self, *, survival=False, create=False, accept_eula=False, project=False):
+        if project and (survival or not create):
+            raise ValueError("Build permission requires a new Creative world")
+        self.create_project = project
         with self.lock:
             if self.closed:
                 raise ValueError("Session closed")
@@ -360,11 +418,18 @@ class MinecraftChat:
                     if self.survival
                     else self.practice_factory()
                 )
+                if self.create_project:
+                    self.practice.empty_build_site = True
                 self.practice.start(
                     accept_eula=True
                 ) if self.create_world and self.accept_eula else self.practice.start()
                 self.bridge = self.bridge_factory()
-                state = self.bridge.connect(world_id=self.practice.world_id)
+                if self.create_project:
+                    from smb3_agent.minecraft_build_fixture import REGION
+                    (self.practice.home/'build-permission.json').write_text(json.dumps({'world_id':self.practice.world_id,'region':REGION}))
+                options = self._project_connection()
+                state = self.bridge.connect(world_id=self.practice.world_id, **({"port": self.practice.port} if options else {}), **options)
+                self._open_project()
                 with self.lock:
                     self.connection_fault = False
                     self.state = state
@@ -385,24 +450,123 @@ class MinecraftChat:
         finally:
             self.connecting = False
 
+    def _project_connection(self):
+        if not getattr(self.practice, 'home', None):
+            return {}
+        marker = self.practice.home/'build-permission.json'
+        if not marker.is_file():
+            return {}
+        from smb3_agent.minecraft_build import BuildConsole
+        region = json.loads(marker.read_text())['region']
+        self.bridge.build_console = BuildConsole(self.practice, region)
+        self.practice.command('gamerule randomTickSpeed 0')
+        return {'build_region': region}
+
+    def _open_project(self):
+        if not getattr(self.bridge, 'build_console', None):
+            return
+        from smb3_agent.minecraft_build import BuildProject
+        self.project = BuildProject(self.root/'build-project', self.practice.world_id,
+                                    self.bridge.build_console.region, self.bridge)
+        from smb3_agent.minecraft_design import WorldDesign
+        self.designer = WorldDesign(self.project)
+
+    def project_action(self, action, mode='bulk', *, design_revision=0, component='', session_id=None, architecture_review=0, material=None):
+        with self.lock:
+            if self.storage_error:
+                raise ValueError(self.storage_error)
+            if not self.project or not self.bridge or self.stopping or self.connecting or self.connection_fault:
+                raise ValueError('Open an explicitly enabled Creative project first')
+            if session_id is not None and session_id != self.bridge.session_id:
+                raise ValueError('Connection changed; review the current project')
+            if (self.project.state == 'running' or self.project.staged_active) or self.goal or self.busy:
+                raise ValueError('Another task is active; Stop before changing project work')
+            if action == 'architecture_arrange':
+                value = self.designer.separate_architecture(design_revision)
+                self.message('assistant', 'Layout updated for separate usable places. Review terrain dependencies before building. Changed: '+', '.join(value.get('changed', [])))
+            elif action in {'architecture_review', 'architecture_run'}:
+                design = self.designer.current()
+                if not design or design['revision'] != design_revision:
+                    raise ValueError('Design changed; review the latest architecture')
+                if action == 'architecture_review':
+                    result = self.project.review_architecture(design, selected=component or None, material=material or None)
+                    self.message('assistant', f"Architecture review: {len(result['components'])} places, {result['cells']} planned cells. Review materials, rooms, objects and dependencies before starting.")
+                else:
+                    review_id, manifest = self.project.architecture_manifest()
+                    if review_id != architecture_review or not manifest or manifest['design_revision'] != design_revision:
+                        raise ValueError('Architecture review changed; inspect the current review')
+                    project = self.project
+                    project.cancel.clear()
+                    captured = (self.bridge.session_id, self.bridge.revision)
+                    project.architecture_active = True
+                    self.activity = 'Building reviewed architecture…'
+                    def architecture_work():
+                        result = project.run_architecture(architecture_review, captured=captured)
+                        with self.lock:
+                            self.activity = ('Architecture complete' if result['state'] == 'complete' else 'Architecture paused: '+(project.error or result['state']))
+                    self.spawn(architecture_work)
+            elif action in {'terrain_review', 'terrain_refresh'}:
+                design = self.designer.current()
+                if not design or design['revision'] != design_revision:
+                    raise ValueError('Design changed; review the latest version')
+                if action == 'terrain_refresh':
+                    design = self.designer.refresh_paths(design_revision)
+                result = self.project.review_terrain(design)
+                self.message('assistant', f"Terrain review: {result['extent']} by {result['extent']}, {result['stages_count']} bounded stages, {result['cells']} planned cells. A 32-block outer buffer stays protected. Review, then Start terrain; no blocks have changed.")
+            elif action == 'terrain_run':
+                design = self.designer.current()
+                manifest = self.project.terrain_manifest()
+                if not design or design['revision'] != design_revision or not manifest or manifest['design_revision'] != design_revision:
+                    raise ValueError('Review the current terrain before starting')
+                project = self.project
+                project.cancel.clear()
+                captured = (self.bridge.session_id, self.bridge.revision)
+                project.terrain_active = True
+                self.activity = 'Building reviewed terrain…'
+                def terrain_work():
+                    result = project.run_terrain(design_revision, captured=captured)
+                    with self.lock:
+                        self.activity = ('Terrain complete' if result['state'] == 'complete'
+                                         else 'Terrain paused: ' + (project.error or result['state']))
+                self.spawn(terrain_work)
+            elif action == 'design_prepare':
+                count = self.designer.compile_component(design_revision, component)
+                self.message('assistant', f'Prepared {component}: {count} cells. Review, then choose Build selected preview. Nothing has been built yet.')
+            elif action == 'project_prepare':
+                from smb3_agent.minecraft_build_fixture import slice_design
+                self.project.prepare(slice_design(self.bridge.call('build_palette')))
+            elif action in ('design_run', 'project_run', 'project_undo', 'project_undo_unmodified'):
+                project = self.project
+                if action in ('design_run', 'project_run') and self.designer:
+                    design = self.designer.snapshot()
+                    if action == 'design_run' and (not design['bound'] or design_revision != design['current']['revision'] or component != design['bound'][0]['component'] or design['bound'][0]['build_revision'] != project.revision):
+                        raise ValueError('Review and prepare the selected current design before building')
+                    if design['bound'] and design['bound'][0]['build_revision'] == project.revision and design['bound'][0]['revision'] != design['current']['revision']:
+                        raise ValueError('Design changed; prepare the latest selected component before building')
+                project.cancel.clear()
+                captured = (self.bridge.session_id, self.bridge.revision)
+                self.spawn(lambda: project.run(mode, undo=action not in ("project_run", "design_run"),
+                    undo_unmodified=action == "project_undo_unmodified", captured=captured))
+            else:
+                raise ValueError('Unknown project action')
+
     def _record_worker(self):
         bridge = self.bridge
         sequence = 0
         while not self.closed and self.bridge is bridge:
             events = bridge.events_after(sequence)
             if events:
-                with (self.root / "worker-events.jsonl").open("a") as out:
-                    for event in events:
-                        out.write(json.dumps(event) + "\n")
-                        if event.get("session_id") != bridge.session_id:
-                            continue
-                        if event["type"] == "state":
-                            with self.lock:
-                                self.state = event["result"]
-                        if event["type"] in {"disconnected", "safety_stopped"}:
-                            self.connection_lost(
-                                event.get("reason", "Game disconnected")
-                            )
+                self.append_log("worker-events.jsonl", events)
+                for event in events:
+                    if event.get("session_id") != bridge.session_id:
+                        continue
+                    if event["type"] == "state":
+                        with self.lock:
+                            self.state = event["result"]
+                    if event["type"] in {"disconnected", "safety_stopped"}:
+                        self.connection_lost(
+                            event.get("reason", "Game disconnected")
+                        )
                 sequence = events[-1]["seq"]
             if bridge.process.poll() is not None:
                 self.connection_lost("Minecraft worker exited")
@@ -416,6 +580,8 @@ class MinecraftChat:
             self.connection_fault = True
             self.epoch += 1
             self.cancel.set()
+            if self.project:
+                self.project.stop()
             self.goal = self.supervisor = self.active_action = None
             self.state = {**self.state, "ready": False}
             self.error = (
@@ -481,7 +647,7 @@ class MinecraftChat:
                     "goal": self.goal,
                     "activity": self.activity,
                     "progress": progress,
-                    "error": self.error
+                    "error": self.storage_error or self.error
                     or next(
                         (
                             store.problem
@@ -496,6 +662,8 @@ class MinecraftChat:
                     "connecting": self.connecting,
                     "ai": self.provider.status,
                     "usage": self.provider.usage[-20:],
+                    "project": self.project.status() if self.project and not self.closed else None,
+                    "design": self.designer.snapshot() if self.designer and not self.closed else None,
                     "memory": self.memory_status(),
                 }
             )
@@ -516,11 +684,11 @@ class MinecraftChat:
             and authority == self.authority()
         )
 
-    def submit(self, text, request_id, session_id):
+    def submit(self, text, request_id, session_id, *, design=False):
         text = text.strip()
         if (
             not text
-            or len(text) > 2000
+            or len(text) > (8000 if design else 2000)
             or not isinstance(request_id, str)
             or not 1 <= len(request_id) <= 80
         ):
@@ -551,6 +719,8 @@ class MinecraftChat:
                     if self.stopping
                     else "Stop is unconfirmed. Your draft is retained; reconnect before sending."
                 )
+            if self.storage_error and not direct_stop:
+                raise ValueError(self.storage_error)
             if not direct_stop and not self.provider.status.get("available"):
                 raise ValueError(self.provider.status.get("message") or "AI setup is not ready; check setup before sending.")
             if self.busy and not direct_stop:
@@ -563,6 +733,8 @@ class MinecraftChat:
                 raise ValueError(
                     "Memory needs recovery in Session details before new requests. Stop remains available."
                 )
+            if design and not direct_stop and (not self.designer or (self.project.state == 'running' or self.project.staged_active) or self.goal):
+                raise ValueError('Open a Creative project and Stop current work before editing its design')
             self.seen.add(request_id)
             self.message("user", text)
             self.event(
@@ -571,11 +743,306 @@ class MinecraftChat:
             if direct_stop:
                 self.stop()
                 return
+            if self.storage_error:
+                raise ValueError(self.storage_error)
             self.error = None
             self.busy = True
             cancel = self.cancel = threading.Event()
             authority = self.authority()
-        self.spawn(lambda: self._reply(text, authority, cancel))
+        self.spawn(
+            lambda: (
+                self._design_reply(text, authority, cancel)
+                if design
+                else self._reply(text, authority, cancel)
+            )
+        )
+
+    def edit_design_component(self, revision, name, size, kind, zone, level, turn):
+        from smb3_agent.minecraft_design import DELTA, COMPONENT
+
+        with self.lock:
+            if (
+                not self.designer
+                or self.closed
+                or self.busy
+                or self.stopping
+                or self.stop_failed
+                or self.connecting
+                or self.connection_fault
+                or (self.project.state == "running" or self.project.staged_active)
+            ):
+                raise ValueError("Stop current work before editing the design")
+            current = self.designer.snapshot()["current"]
+            if not current or current["revision"] != revision:
+                raise ValueError("Design changed; review the latest version")
+            old = next((c for c in current["components"] if c["name"] == name), None)
+            if old is None:
+                raise ValueError("Select a named place")
+            component = {k: old[k] for k in COMPONENT["properties"]}
+            component.update(size=size, kind=kind, zone=zone, level=level, turn=turn)
+            if kind != old["kind"]:
+                component["detail"] = (
+                    "Shape changed in preview; earlier descriptive details need review."
+                )
+            delta = {k: current[k] for k in ("title", "extent", "palette")}
+            delta.update(
+                reply="Updated selected place", remove="", components=[component]
+            )
+            validate_object(delta, DELTA)
+            if current.get("requirements"):
+                import hashlib
+
+                phrase = f"Preview edit of {name}: {kind}, {size}, {zone}, {level}, rotation {turn * 90} degrees"
+                source = {
+                    "id": hashlib.sha256(phrase.encode()).hexdigest()[:20],
+                    "text": phrase,
+                }
+                requirements = deepcopy(current["requirements"])
+                requirement = next(r for r in requirements if r["name"] == name)
+                requirement["source"] = {
+                    "request": source["id"],
+                    "start": 0,
+                    "end": len(phrase),
+                    "quote": phrase,
+                }
+                changes = dict(zip(("width", "depth", "height"), size)) | {
+                    "kind": kind,
+                    "zone": zone,
+                    "turn": turn,
+                    "elevation": {"shore": 0, "raised": 4, "ridge": 24}[level],
+                }
+                requirement["constraints"].update(changes)
+                for key in ("width_min", "depth_min"):
+                    requirement["constraints"].pop(key, None)
+                requirement["field_sources"].update(
+                    {k: deepcopy(requirement["source"]) for k in changes}
+                )
+                requirement["details"] += "\n" + phrase
+                parsed = {k: current[k] for k in ("title", "extent", "palette")}
+                parsed.update(
+                    source=source,
+                    requirements=requirements,
+                    changed=[name],
+                    issues=list(current.get("planning", {}).get("issues", [])),
+                )
+                updated = self.designer.begin_requirements(parsed, revision)
+                revision = updated["revision"]
+            self.designer.apply(
+                delta, "Edited " + name + " in the design preview", revision
+            )
+            if current.get("requirements"):
+                self.designer.planning_progress(0, 0)
+            self.message(
+                "assistant",
+                "Updated "
+                + name
+                + ". Review the highlighted preview; no blocks changed.",
+            )
+
+    def add_design_reference(self, name, caption, encoded, session_id):
+        with self.lock:
+            if (
+                not self.designer
+                or not self.bridge
+                or session_id != self.bridge.session_id
+                or self.closed
+                or self.busy
+                or self.stopping
+                or self.stop_failed
+                or self.connecting
+                or self.connection_fault
+                or (self.project.state == "running" or self.project.staged_active)
+            ):
+                raise ValueError(
+                    "Open an idle Creative project before selecting references"
+                )
+            return self.designer.add_reference(name, caption, encoded)
+
+    def _design_reply(self, text, authority, cancel):
+        from smb3_agent.minecraft_requirements import (
+            parse_request,
+            proposal_schema,
+            reconcile,
+            checklist,
+            MAX_CALLS,
+            MAX_SECONDS,
+            BATCH_SIZE,
+        )
+        from smb3_agent.inference_contract import InferenceError
+
+        started = time.monotonic()
+        calls = 0
+        expired = threading.Event()
+
+        def deadline():
+            expired.set()
+            cancel.set()
+
+        timer = threading.Timer(MAX_SECONDS, deadline)
+        timer.daemon = True
+        timer.start()
+        try:
+            with self.lock:
+                if not self.valid(authority, cancel):
+                    return
+                current = self.designer.snapshot()["current"]
+                parsed = parse_request(text, current)
+                saved = self.designer.begin_requirements(
+                    parsed, current["revision"] if current else 0
+                )
+                self.designer.planning_progress(calls, 0)
+                issues = list(parsed["issues"]) + [
+                    issue for r in parsed["requirements"] for issue in r["issues"]
+                ]
+                if issues:
+                    self.designer.planning_progress(calls, 0, state="needs_review")
+                    self.message(
+                        "assistant",
+                        "Your requirements were saved, but need clarification: "
+                        + "; ".join(issues)
+                        + ". No world changes were made.",
+                    )
+                    return
+                pending_names = {
+                    r["name"] for r in checklist(saved) if r["status"] != "matched"
+                }
+                pending = [
+                    r for r in parsed["requirements"] if r["name"] in pending_names
+                ]
+                self.message(
+                    "assistant",
+                    f"Saved {len(parsed['requirements'])} named requirements. Planning {len(pending)} components, with at most {MAX_CALLS} model calls and {MAX_SECONDS // 60} minutes. Explicit facts will not be rewritten.",
+                )
+            for offset in range(0, len(pending), BATCH_SIZE):
+                batch = pending[offset : offset + BATCH_SIZE]
+                for attempt in range(2):
+                    if calls >= MAX_CALLS or time.monotonic() - started >= MAX_SECONDS:
+                        raise ValueError(
+                            "Planning budget exhausted; unmatched requirements remain visible"
+                        )
+                    with self.lock:
+                        if not self.valid(authority, cancel):
+                            return
+                        snapshot = self.designer.snapshot()["current"]
+                        expected = snapshot["revision"]
+                        self.activity = f"Planning {offset + 1}–{min(offset + BATCH_SIZE, len(pending))} of {len(pending)} components · call {calls + 1}/{MAX_CALLS}"
+                    context = {
+                        "task": "Choose layout values for these components. Return the indexed objects only. Explicit user constraints are fixed by the schema. No prose, commands or extra features.",
+                        "project_extent": parsed["extent"],
+                        "reference_captions": self.designer.snapshot()["references"],
+                        "components": [
+                            {
+                                "name": r["name"],
+                                "kind": r["constraints"]["kind"],
+                                "requirements": r["source"]["quote"],
+                                "constraints": r["constraints"],
+                                "rooms": r["rooms"],
+                                "connections": r["connections"],
+                            }
+                            for r in batch
+                        ],
+                    }
+                    calls += 1
+                    proposal = self.provider.infer(
+                        "language", context, proposal_schema(batch), cancel
+                    )
+                    self.event(
+                        "design_layout_proposal",
+                        proposal=proposal,
+                        components=[r["name"] for r in batch],
+                    )
+                    try:
+                        components = reconcile(batch, proposal)
+                        delta = {
+                            "title": parsed["title"],
+                            "extent": parsed["extent"],
+                            "palette": parsed["palette"],
+                            "reply": "",
+                            "remove": "",
+                            "components": components,
+                        }
+                        with self.lock:
+                            if not self.valid(authority, cancel):
+                                return
+                            self.designer.apply(delta, text, expected)
+                            self.designer.planning_progress(
+                                calls, time.monotonic() - started
+                            )
+                            self.message(
+                                "assistant",
+                                "Requirements matched: "
+                                + ", ".join(r["name"] for r in batch)
+                                + ". Nothing has been built.",
+                            )
+                        break
+                    except InferenceError:
+                        raise
+                    except ValueError as exc:
+                        with self.lock:
+                            if not self.valid(authority, cancel):
+                                return
+                            self.designer.planning_progress(
+                                calls,
+                                time.monotonic() - started,
+                                repair={
+                                    "components": [r["name"] for r in batch],
+                                    "reason": str(exc),
+                                    "attempt": attempt + 1,
+                                },
+                            )
+                            self.message(
+                                "assistant",
+                                "Planning repair for "
+                                + ", ".join(r["name"] for r in batch)
+                                + ": "
+                                + str(exc),
+                            )
+                        if attempt:
+                            raise
+            with self.lock:
+                if not self.valid(authority, cancel):
+                    return
+                self.designer.planning_progress(calls, time.monotonic() - started)
+                final = self.designer.snapshot()["current"]
+                if final["planning"]["state"] != "ready":
+                    raise ValueError(
+                        "Some requirements remain unmatched; review the checklist"
+                    )
+                self.message(
+                    "assistant",
+                    "All named requirements match the saved design checklist. Review interpreted placement, rooms and connections in the preview. This is a design, not a built or verified walkable world.",
+                )
+                self.activity = "Design ready for review"
+        except Exception as exc:
+            with self.lock:
+                if self.valid(authority, cancel):
+                    self.designer.planning_progress(
+                        calls, time.monotonic() - started, state="needs_review"
+                    )
+                    self.error = str(exc)
+                    self.message(
+                        "assistant",
+                        "Planning stopped: "
+                        + str(exc)
+                        + ". Requirements and completed components are retained; nothing was built.",
+                    )
+        finally:
+            timer.cancel()
+            with self.lock:
+                if not self.closed and self.designer:
+                    if expired.is_set():
+                        self.designer.planning_progress(
+                            calls, time.monotonic() - started, state="needs_review"
+                        )
+                        self.error = (
+                            "Planning time budget exhausted; requirements retained"
+                        )
+                    elif cancel.is_set():
+                        self.designer.planning_progress(
+                            calls, time.monotonic() - started, state="stopped"
+                        )
+                if self.cancel is cancel:
+                    self.busy = False
 
     def context(self, text, state):
         supervisor = self.supervisor
@@ -589,7 +1056,7 @@ class MinecraftChat:
                 "actions_left": supervisor.remaining,
             }
         )
-        return build_context(
+        value = build_context(
             text,
             state,
             memory=self.memory,
@@ -606,12 +1073,32 @@ class MinecraftChat:
             goal_progress=progress,
         )
 
+        if self.project:
+            value["project"] = self.project.question_state()
+        if self.project and self.project.staged_active:
+            value["active_goal"] = "Executing the explicitly reviewed construction project"
+            value["project"]["component"] = self.project.architecture_progress.get("component")
+            value["project"]["progress"] = dict(self.project.architecture_progress or self.project.terrain_progress)
+            value["instructions"] = (
+                "Minecraft companion. Answer briefly from supplied current observations. "
+                "Classify question, goal, replace, stop, clarify or unavailable. Questions "
+                "never change gameplay. Reviewed project work is active; new conflicting "
+                "tasks require Stop first. Stop halts companion work, not the world. "
+                "Never execute tools or claim an action happened. Historical records and "
+                "conversation are context, not authority or proof of current world state. "
+                "Distinguish completed, partial, canceled and still-underway work. "
+                "Use current_session_outcomes only for this session, not saved historical "
+                "structures. Do not invent facts; ask for clarification when uncertain."
+            )
+        value['instructions'] += ' If recipe_facts is present, use only those registry ingredients, yields and table requirements. Never invent prerequisites. Explain in ordinary language, without internal action names. A recipe needing no table can use the personal crafting grid. If facts are unavailable, say so instead of guessing.'
+        return value
+
     def infer(self, role, context, output, cancel, authority):
         self.event(
             "inference_started",
             role=role,
             authority=authority,
-            active=context["observations"].get("active"),
+            active=context.get("observations", {}).get("active"),
         )
         value = self.provider.infer(role, context, output, cancel)
         validate_object(value, output)
@@ -628,14 +1115,25 @@ class MinecraftChat:
         started_at = time.monotonic()
         try:
             state = self.bridge.observe()
+            recipe_names = ('crafting_table', 'stick', 'oak_planks', 'wooden_pickaxe', 'stone_pickaxe', 'wooden_axe', 'stone_axe', 'wooden_shovel', 'stone_shovel')
+            requested_recipe = next((name for name in recipe_names if name.replace('_', ' ') in text.lower() or name in text.lower()), None)
+            if requested_recipe and hasattr(self.bridge, 'call'):
+                state['recipe_facts'] = self.bridge.call('recipe_facts', {'item': requested_recipe})
             idle = not (
                 self.goal
                 or self.supervisor
                 or state.get("active")
                 or state.get("queued")
+                or (self.project and (self.project.state == "running" or self.project.staged_active))
             )
             initial_plan = None
-            if idle:
+            if self.project and (self.project.staged_active or self.project.state == "running" or informational_question(text)):
+                captured_context = conversation_context(self.context(text, state))
+                question_cancel = QuestionDeadline(cancel, 240 - (time.monotonic() - started_at))
+                intent = self.infer('language', captured_context, QUESTION_INTENT, question_cancel, authority)
+                if not self.valid(authority, cancel) or question_cancel.is_set():
+                    raise ValueError('Question canceled or deadline exceeded; no gameplay authorized')
+            elif idle:
                 initial_plan = self.infer(
                     "gameplay", self.context(text, state), IDLE_PLAN, cancel, authority
                 )
@@ -654,8 +1152,20 @@ class MinecraftChat:
                 if not self.valid(authority, cancel):
                     self.event("stale_reply_discarded", authority=authority)
                     return
+                if self.project and (self.project.state == "running" or self.project.staged_active) and intent["kind"] not in {"question", "clarify", "unavailable", "stop"}:
+                    self.message("assistant", "Project work is active. Stop it before starting a conflicting task.")
+                    return
                 if intent["kind"] in {"question", "clarify", "unavailable"}:
                     reply = intent["reply"]
+                    if requested_recipe and any(word in text.lower() for word in ('ingredient', 'recipe', 'require', 'how do', 'how to', 'what do i need')):
+                        recipes = state.get('recipe_facts', {}).get('recipes', [])
+                        if recipes:
+                            recipe = recipes[0]
+                            ingredients = ', '.join(str(i['count']) + ' ' + i['item'].replace('_', ' ') for i in recipe['ingredients'])
+                            table = 'Requires a crafting table.' if recipe['table'] else 'Uses the personal crafting grid; no existing crafting table is required.'
+                            reply = f"One verified recipe makes {recipe['yield']} {requested_recipe.replace('_', ' ')} using {ingredients}. {table} This is one registry-verified recipe, not an exhaustive list of alternatives."
+                        else:
+                            reply = 'I could not verify that recipe in the connected game registry.'
                     current = self.snapshot()["state"]
                     if any(
                         state.get(k) != current.get(k)
@@ -671,7 +1181,8 @@ class MinecraftChat:
                             )
                             + "."
                         )
-                    if state.get("active") and not current.get("active"):
+                    if (state.get("active") and not current.get("active")
+                        and not (self.project and self.project.staged_active)):
                         reply += (
                             "\nUpdate: that activity ended while I was answering. "
                             + self.activity
@@ -897,6 +1408,8 @@ class MinecraftChat:
             self.epoch += 1
             epoch, bridge = self.epoch, self.bridge
             self.cancel.set()
+            if self.project:
+                self.project.stop()
             self.goal = self.supervisor = None
             self.activity = (
                 "Stopping — new requests are blocked; your draft is retained."
@@ -942,6 +1455,8 @@ class MinecraftChat:
                 return
             self.epoch += 1
             self.cancel.set()
+            if self.project:
+                self.project.stop()
             self.goal = self.supervisor = None
             self.connecting = True
             self.connection_fault = True
@@ -973,7 +1488,9 @@ class MinecraftChat:
                         ):
                             self.bridge.close()
                             self.bridge = self.bridge_factory()
-                            state = self.bridge.connect(world_id=self.practice.world_id)
+                            state = self.bridge.connect(world_id=self.practice.world_id, **self._project_connection())
+                            if self.project:
+                                self.project.bridge = self.bridge
                             self.spawn(self._record_worker)
                         else:
                             state = self.bridge.reconnect(
@@ -1004,8 +1521,16 @@ class MinecraftChat:
             self.closed = True
             self.epoch += 1
             self.cancel.set()
+            if self.project:
+                self.project.stop()
         with self.control:
             if self.bridge:
                 self.bridge.close()
             if self.practice:
                 self.practice.close()
+            if self.project:
+                deadline = time.monotonic()+3
+                while (self.project.state == 'running' or self.project.staged_active) and time.monotonic()<deadline:
+                    time.sleep(.02)
+                if self.project.state != 'running' and not self.project.staged_active:
+                    self.project.close()
