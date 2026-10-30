@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from smb3_agent.metrics import EventEnvelope, MetricsError, integrity_hash
+from smb3_agent.lab_ui import render_lab_ui
 from smb3_agent.companion_catalog import CatalogRegistry
 from smb3_agent.mario_product import MarioCatalogProvider
 from smb3_agent.scenarios import load_scenario_catalog
@@ -190,12 +191,28 @@ def test_unattended_contract_preserves_v212_catalog_and_standalone_surfaces() ->
     ]
 
 
-def test_lab_prepares_desktop_and_narrow_truthful_unattended_presentation() -> None:
-    lab = Path("src/smb3_agent/lab_ui.py").read_text(encoding="utf-8")
+def test_lab_prepares_desktop_and_narrow_truthful_unattended_presentation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    attempt = tmp_path / "artifacts/unattended-regression/test-attempt"
+    attempt.mkdir(parents=True)
+    (attempt / "status.json").write_text(
+        json.dumps({
+            "attempt_id": "test-attempt",
+            "lifecycle": "unavailable",
+            "first_missing_requirement": "Declared display provider required",
+        }),
+        encoding="utf-8",
+    )
+
+    lab = render_lab_ui()
     assert 'data-testid="lab-unattended-regression"' in lab
-    assert "@media (max-width:" in lab
+    assert "@media (max-width: 760px)" in lab
+    assert "@media (max-width: 420px)" in lab
     assert "Regression only" in lab
-    assert "First unmet requirement" in lab
+    assert "First unmet requirement: Declared display provider required" in lab
+    assert "not visible player proof" in lab
     assert "retained attempts" in lab.lower()
 
 
