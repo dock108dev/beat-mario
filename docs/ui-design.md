@@ -5,20 +5,36 @@ errors actionable and implementation diagnostics behind named disclosures.
 
 ## Minecraft workspace
 
-World setup appears before an empty scene. Once connected, the live view and
-conversation occupy the main columns. Progress and viewer controls stay nearby.
-Closing the view hides its frame without stopping gameplay; explain that distinction.
+The play screen is a viewport-filling world with a compact, opaque conversation
+column. The composer stays visible while conversation scrolls independently. At
+narrow widths the world and conversation stack within the viewport. Hide chat and
+Full screen are reversible viewing controls; neither changes execution authority.
 
-Stop remains visible during inference and work. Send shows why it is unavailable.
-Drafts survive rejected requests and asynchronous updates. Only describe ongoing
-gameplay when a task is actually active. Keep local command errors and server errors
-visible together. Recovery details open once when memory needs attention; polling
-must not repeatedly reopen details the user closed.
+Only connection, active work, errors, Stop and camera controls appear around play.
+Idle project bookkeeping, model metadata and privacy explanations do not occupy
+chat space. Settings owns AI connection information, world selection, reconnect,
+save/quit, recovery and engineering disclosures. Project opens a modal review with
+landscape/building actions; no review or start happens merely by opening it.
 
-`minecraft_chat_ui.py` owns markup and page styles. `minecraft_chat_script.py` owns
-the independently served script. Credentials come from the escaped document dataset,
-not interpolated script text. Incremental message updates preserve edits and scroll
-position. Keep the practice-world limits accessible in a named disclosure.
+Stop remains visible in both the main view and project review. Modal failures are
+shown inside the open panel as well as in chat. Escape/Done returns to play, with
+native dialog focus handling. Memory recovery opens Settings once when needed.
+
+Chat renders paragraphs, bold spans and bullet lists using text nodes only, never
+untrusted HTML. Enter sends and Shift+Enter adds a line; IME composition does not
+send. Drafts survive rejection. The initial view scrolls to the latest message;
+subsequent polling preserves a reader's position. Planning mode remains an explicit
+checkbox because the current backend distinguishes discussion from design changes.
+
+`minecraft_chat_ui.py` owns markup and page styles; `minecraft_chat_script.py` owns
+behavior. CSRF/CSP, captured review identities, explicit Start, retained state and
+world execution remain unchanged by presentation controls.
+
+## Desktop launch
+
+The browser is the play window. The native process keeps its Dock/menu Quit and
+reopen actions, but creates no status/launcher window. Browser Save and quit uses
+the same cleanup path. Closing a browser tab alone does not quit the world.
 
 ## Older workspaces
 
@@ -34,17 +50,13 @@ CSRF/CSP, action authority, data persistence and game-driver behavior.
 
 ## Project controls
 
-The Minecraft workspace keeps camera/reconnect controls directly below the scene.
-Conversation precedes project review in the document order and narrow layout;
-landscape and building controls form two numbered stages with aligned field labels.
-New-world settings open on first use, while checking setup remains secondary.
-Planning syntax appears beside the composer only in Plan mode. Empty terrain maps
-are hidden; optional geometry, measurements and building inventories remain available
-in named disclosures. Blockers and recovery messages stay visible.
+Project review is separate from the play surface. Geometry, requirements, material
+selection and editing stay available there. Technical inventories and measurements
+use closed disclosures. The main chat shows a short notice when planning needs
+attention. Planning syntax appears only when Plan a build is selected.
 
-Polling preserves open building details and unsaved place edits when unrelated
-reference/version metadata changes. Command names, captured review identities,
-world creation consent, Stop, and backend approval rules are unchanged.
+Polling preserves open building details and unsaved place edits. Command names,
+review identity checks, world creation consent and backend approval rules remain.
 
 ## Direction
 

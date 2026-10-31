@@ -60,9 +60,8 @@ def run_native(server):
             import webbrowser
             webbrowser.open(f'http://127.0.0.1:{server.server_port}/')
 
-        def windowShouldClose_(self, window):
-            # The native close button has the same verified cleanup as Quit.
-            AppKit.NSApplication.sharedApplication().terminate_(None)
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, app, visible):
+            self.openCompanion_(None)
             return False
 
         def poll_(self, timer):
@@ -77,33 +76,13 @@ def run_native(server):
     delegate = CompanionDelegate.alloc().init()
     app.setDelegate_(delegate)
     app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
-    window = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
-        Foundation.NSMakeRect(0, 0, 460, 190),
-        AppKit.NSWindowStyleMaskTitled | AppKit.NSWindowStyleMaskClosable
-        | AppKit.NSWindowStyleMaskMiniaturizable,
-        AppKit.NSBackingStoreBuffered, False)
-    window.setTitle_('Game Companion')
-    window.setDelegate_(delegate)
-    window.setReleasedWhenClosed_(False)
-    label = AppKit.NSTextField.labelWithString_(
-        'Game Companion is running.\nOpen companion to discuss and review a game activity.\nQuit releases control and closes companion-owned test games.\nSaved configuration and results remain available when you reopen.')
-    label.setFrame_(Foundation.NSMakeRect(24, 65, 412, 100))
-    window.contentView().addSubview_(label)
-    for title, x, width, action in (
-        ('Open companion', 24, 180, 'openCompanion:'),
-        ('Quit', 324, 112, 'terminate:')):
-        button = AppKit.NSButton.alloc().initWithFrame_(Foundation.NSMakeRect(x, 20, width, 32))
-        button.setTitle_(title)
-        button.setBezelStyle_(AppKit.NSBezelStyleRounded)
-        button.setTarget_(delegate if action == 'openCompanion:' else app)
-        button.setAction_(action)
-        window.contentView().addSubview_(button)
-    window.center()
-    window.makeKeyAndOrderFront_(None)
-    app.activateIgnoringOtherApps_(True)
+    # The browser is the play window. Keep only the Dock/menu lifecycle so
+    # there is no second, empty launcher window competing with it.
     menu = AppKit.NSMenu.alloc().init()
     item = AppKit.NSMenuItem.alloc().init()
     submenu = AppKit.NSMenu.alloc().initWithTitle_('Game Companion')
+    open_item = submenu.addItemWithTitle_action_keyEquivalent_('Open Game Companion', 'openCompanion:', 'o')
+    open_item.setTarget_(delegate)
     submenu.addItemWithTitle_action_keyEquivalent_('Quit Game Companion', 'terminate:', 'q')
     item.setSubmenu_(submenu)
     menu.addItem_(item)

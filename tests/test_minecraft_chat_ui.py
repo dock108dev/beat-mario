@@ -74,7 +74,7 @@ def test_shell_serves_script_and_protects_commands(tmp_path, monkeypatch):
 def test_conversation_dom_retains_only_current_bounded_window():
     import subprocess
     from smb3_agent.minecraft_chat_script import CHAT_JS
-    helper = CHAT_JS.split('function renderMessages(',1)[1].split('async function refresh()',1)[0]
+    helper = CHAT_JS.split('function messageBody(',1)[1].split('async function refresh()',1)[0]
     source = '''
 const assert=require('node:assert/strict');
 let known=new Set();
@@ -86,7 +86,7 @@ class Node {
 const document={createElement:()=>new Node(),createTextNode:text=>({text})};
 const box=new Node();
 const placeholder=new Node();box.append(placeholder);
-''' + 'function renderMessages(' + helper + '''
+''' + 'function messageBody(' + helper + '''
 const messages=Array.from({length:700},(_,i)=>({id:String(i),role:'user',text:'message '+i}));
 renderMessages(messages.slice(0,500),box);
 const retained=box.children[251];

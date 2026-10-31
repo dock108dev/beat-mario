@@ -7,6 +7,27 @@ Session credentials come from the escaped document dataset, never script text.
 CHAT_JS = r"""
 const token=document.body.dataset.token, $=id=>document.getElementById(id);
 let sid=null,url=null,shown=true,known=new Set(),sending=false,localError='',connectionError='';
+function openPanel(id){const panel=$(id);if(!panel.open)panel.showModal();}
+$('open-project').onclick=()=>openPanel('project-dialog');
+$('project-notice').onclick=()=>openPanel('project-dialog');
+$('close-project').onclick=()=>$('project-dialog').close();
+$('open-settings').onclick=()=>openPanel('settings-dialog');
+$('close-settings').onclick=()=>$('settings-dialog').close();
+$('review-stop').onclick=()=>$('stop').click();
+$('theater').onclick=()=>{
+  const hide=document.body.dataset.theater!=='true';
+  document.body.dataset.theater=String(hide);
+  $('theater').textContent=hide?'Show chat':'Hide chat';
+  $('theater').setAttribute('aria-pressed',String(hide));
+};
+$('fullscreen').onclick=async()=>{
+  try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}
+  catch(e){failure(Error('Full screen is unavailable in this window.'));}
+};
+document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'Exit full screen':'Full screen';});
+$('draft').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!$('send').disabled){e.preventDefault();$('compose').requestSubmit();}
+});
 $('draft').value=sessionStorage.getItem('minecraft-draft')||'';
 $('design-mode').onchange=()=>{$('draft').maxLength=$('design-mode').checked?8000:2000;$('plan-guide').hidden=!$('design-mode').checked;};
 $('draft').oninput=()=>sessionStorage.setItem('minecraft-draft',$('draft').value);
@@ -26,6 +47,7 @@ async function command(action,extra={}){
 function failure(e){
   localError=e.message;
   $('error').textContent=e.message;
+  for(const id of ['project-feedback','settings-feedback'])$(id).textContent=e.message;
 }
 $('game').onchange=()=>{
   if($('game').value==='minecraft')$('setup-panel').hidden=false;
@@ -93,7 +115,11 @@ function svgNode(parent,tag,attrs){const n=document.createElementNS('http://www.
 let architectureReview=0,initialDesignMode=false,architectureKey='',editorKey='';
 function renderDesign(s){
   $('design-panel').hidden=!s.design;$('design-mode-label').hidden=!s.design;
-  if(!s.design){$('design-mode').checked=false;return;}
+  $('open-project').hidden=!s.design;
+  if(!s.design&&$('project-dialog').open)$('project-dialog').close();
+  $('project-notice').hidden=!s.design?.current?.planning||s.design.current.planning.state==='ready';
+  $('project-notice').textContent=s.design?.current?.planning?.state==='running'?'Planning your build…':'Your plan needs attention · Review';
+  if(!s.design){$('design-mode').checked=false;$('design-mode').onchange();return;}
   const d=s.design.current,locked=s.busy||s.stopping||s.connecting||s.project?.state==='running';
   const reviewReady=!d?.planning||d.planning.state==='ready';
   if(!initialDesignMode){initialDesignMode=true;$('design-mode').checked=!d;$('design-mode').onchange();}
@@ -137,7 +163,7 @@ function renderDesign(s){
   }
   designRevision=d?.revision||0;
   const key=JSON.stringify(s.design);if(key===designKey)return;designKey=key;
-  $('design-summary').textContent=d?`${d.title} · ${d.extent} × ${d.extent} blocks · version ${d.revision}. ${d.uncertainty}`:'';
+  $('design-summary').textContent=d?`${d.extent} × ${d.extent} blocks · ${d.components.length} ${d.components.length===1?'place':'places'}`:'';
   for(const id of ['design-map','design-mass','design-components','design-palette','design-references','design-component','design-checklist-items'])$(id).replaceChildren();
   for(const ref of s.design.references){const card=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption');img.src='/api/minecraft/reference?id='+encodeURIComponent(ref.id);img.alt=ref.name;caption.textContent=ref.name+' — '+ref.caption;card.append(img,caption);$('design-references').append(card);}
   if(!d)return;
@@ -190,6 +216,21 @@ $('design-upload').onclick=async()=>{try{
   $('design-file').value='';$('design-caption').value='';
 }catch(e){failure(e);}};
 
+function messageBody(text){
+  const body=document.createElement('div');
+  const inline=(parent,line)=>{
+    for(const piece of line.split(/(\*\*[^*]+\*\*)/g)){
+      if(piece.startsWith('**')&&piece.endsWith('**')){const strong=document.createElement('strong');strong.textContent=piece.slice(2,-2);parent.append(strong);}
+      else parent.append(document.createTextNode(piece));
+    }
+  };
+  for(const paragraph of text.split(/\n\s*\n/)){
+    const lines=paragraph.split('\n');
+    if(lines.every(line=>/^\s*[-*] /.test(line))){const list=document.createElement('ul');for(const line of lines){const item=document.createElement('li');inline(item,line.replace(/^\s*[-*] /,''));list.append(item);}body.append(list);}
+    else {const p=document.createElement('p');inline(p,paragraph);body.append(p);}
+  }
+  return body;
+}
 function renderMessages(messages,box){
   const current=messages.slice(-500),retained=new Set(current.map(m=>m.id));
   for(const node of [...box.children]){
@@ -204,7 +245,7 @@ function renderMessages(messages,box){
     const name=document.createElement('span');
     name.className='role';
     name.textContent=m.role==='user'?'You':'Companion';
-    div.append(name,document.createTextNode(m.text));
+    div.append(name,messageBody(m.text));
     box.append(div);
   }
 }
@@ -233,7 +274,7 @@ async function refresh(){
     $('live-panel').hidden=!shown||(!sid&&!s.connecting);
     $('session-tools').hidden=!sid&&!s.connecting&&!s.error&&!s.connection_fault;
     $('toggle').disabled=!state.viewer_url;
-    $('activity-panel').hidden=!sid&&!s.connecting;
+    $('activity-panel').hidden=(!sid&&!s.connecting)||(!s.busy&&!s.stopping&&!s.goal&&!state.active&&(!s.project||s.project.state==='idle')&&!s.project?.error);
     $('get-java').hidden=!!setup.java?.ready;
     $('setup-links').hidden=!!setup.java?.ready;
     $('setup-status').textContent=[!setup.node?.ready?setup.node?.message:null,!setup.java?.ready?setup.java?.message:null,w?.ready?'Your saved world is ready.':w?.message].filter(Boolean).join(' · ');
@@ -244,7 +285,7 @@ async function refresh(){
     $('project-tools').hidden=!s.project;
     renderDesign(s);
     for(const id of ['project-prepare','project-run','project-undo','project-undo-unmodified'])$(id).disabled=s.project?.state==='running'||s.stopping||s.connecting;
-    $('activity').textContent=s.busy?s.activity:s.project?'Project: '+s.project.state+(s.project.error?' · '+s.project.error:''):s.activity;
+    $('activity').textContent=s.stopping?'Stopping…':s.busy?s.activity:s.project?.error?s.project.error:s.project?.state==='running'?'Building…':s.activity;
     $('progress').textContent=s.progress||'';
     $('goal').textContent=s.goal?s.goal:'';
     $('ai').textContent=s.ai.message;
@@ -255,17 +296,18 @@ async function refresh(){
     $('send-status').textContent=s.stopping?'Wait for Stop to finish.':s.stop_failed?'Reconnect to continue.':s.connecting?'Connecting to your world…':!state.ready?'Open a world to send a message.':!s.ai.available?'Check AI setup before sending.':s.busy?'You can keep editing your draft.':'';
     connectionError='';
     $('error').textContent=[...new Set([localError,s.error].filter(Boolean))].join('\n');
+    for(const id of ['project-feedback','settings-feedback'])$(id).textContent=$('error').textContent||(s.stopping?'Stopping…':s.stop_failed?'Stop unconfirmed. Reconnect in Settings.':'');
     if(state.viewer_url!==url){
       url=state.viewer_url;
       if(shown)$('view').src=viewerSource();
     }
-    $('viewer-status').textContent=!state.ready?'Bot disconnected':!shown?'View closed · bot connection stays active':state.viewer_clients?'Live bot view':state.ready?'Viewer unavailable or loading · bot connection remains active':'';
+    $('viewer-status').textContent=!state.ready?(s.connecting?'Connecting to the world…':''):!shown?'View hidden. Reopen it in Settings.':state.viewer_clients?'':'Loading world view…';
     $('details').textContent=JSON.stringify({
       session:sid,version:state.game_version,position:state.position,players:state.players,revision:state.revision
     },null,2);
     const memory=$('memory-recovery');
     const hasProblem=Object.values(s.memory||{}).some(info=>info.problem);
-    if(hasProblem&&!memory.dataset.problem)$('session-details').open=true;
+    if(hasProblem&&!memory.dataset.problem){$('session-details').open=true;if(!$('project-dialog').open)openPanel('settings-dialog');}
     memory.dataset.problem=hasProblem?'true':'';
     const stamp=JSON.stringify(s.memory);
     if(memory.dataset.stamp!==stamp){
@@ -297,12 +339,13 @@ async function refresh(){
         }
       }
     }
-    const box=$('messages'),bottom=box.scrollHeight-box.scrollTop-box.clientHeight<50;
+    const box=$('messages'),bottom=known.size===0||box.scrollHeight-box.scrollTop-box.clientHeight<50;
     renderMessages(s.messages,box);
     if(bottom)box.scrollTop=box.scrollHeight;
   } catch(e){
     connectionError=e.message;
     $('error').textContent=connectionError;
+    for(const id of ['project-feedback','settings-feedback'])$(id).textContent=connectionError;
   }
   setTimeout(refresh,400);
 }
