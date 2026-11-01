@@ -30,12 +30,6 @@ FINAL_CAMPAIGN_PATH = REPOSITORY_ROOT / "data/scenarios/final-campaign.yaml"
 CAMPAIGN_ENTRY_SCHEMA_PATH = (
     REPOSITORY_ROOT / "data/scenarios/campaign-entry-manifest-schema.json"
 )
-CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
-SETUP_PYTHON_PIN = "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
-SETUP_UV_PIN = "astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e"
-DEPENDENCY_REVIEW_PIN = (
-    "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294"
-)
 MACOS_MODULES = (
     "smb3_agent.backends.mednafen",
     "smb3_agent.probes.mednafen_probe",
@@ -85,9 +79,15 @@ def test_workflow_uses_required_unix_runner_triggers_and_canonical_gate() -> Non
     assert "uv sync --locked --all-extras" in workflow
 
 
-def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
+def test_workflow_is_read_only_bounded_and_uses_immutable_pins() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    action_refs = re.findall(r"^\s*uses:\s*([^\s#]+)", workflow, flags=re.MULTILINE)
+    parsed = yaml.safe_load(workflow)
+    action_refs = [
+        step["uses"]
+        for job in parsed["jobs"].values()
+        for step in job["steps"]
+        if "uses" in step
+    ]
 
     assert re.search(r"permissions:\s+contents: read", workflow)
     assert "persist-credentials: false" in workflow
@@ -100,12 +100,17 @@ def test_workflow_is_read_only_bounded_and_uses_immutable_house_pins() -> None:
     assert "python -m pip install" not in workflow
     assert "if: github.event_name == 'pull_request'" in workflow
     assert "fail-on-severity: moderate" in workflow
-    assert CHECKOUT_PIN in action_refs
-    assert SETUP_PYTHON_PIN in action_refs
-    assert SETUP_UV_PIN in action_refs
-    assert DEPENDENCY_REVIEW_PIN in action_refs
-    assert action_refs
-    assert all(re.search(r"@[0-9a-f]{40}$", action_ref) for action_ref in action_refs)
+    # Dependabot updates the workflow pins; do not duplicate their hashes here.
+    required_actions = {
+        "actions/checkout",
+        "actions/setup-python",
+        "actions/setup-node",
+        "astral-sh/setup-uv",
+        "actions/dependency-review-action",
+        "actions/upload-artifact",
+    }
+    assert required_actions <= {ref.partition("@")[0] for ref in action_refs}
+    assert all(re.fullmatch(r"[^@]+@[0-9a-f]{40}", ref) for ref in action_refs)
 
 
 def test_workflow_has_no_live_gameplay_steps() -> None:
